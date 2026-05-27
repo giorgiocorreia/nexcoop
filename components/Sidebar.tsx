@@ -4,7 +4,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Usuario, Organizacao } from '@/types/database'
 
-const NAV = [
+interface NavItem {
+  label: string
+  href: string
+  icone: string
+  em_breve?: boolean
+}
+
+const NAV: { grupo: string; itens: NavItem[] }[] = [
   {
     grupo: 'Principal',
     itens: [

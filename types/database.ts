@@ -183,16 +183,30 @@ export interface Notificacao {
   criado_em: string
 }
 
-export interface Database {
+// Formato compatível com GenericSchema do @supabase/ssr
+// A intersecção com Record<string, unknown> é necessária para satisfazer
+// o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
+type TableDef<T> = {
+  Row:    T & Record<string, unknown>
+  Insert: Partial<T> & Record<string, unknown>
+  Update: Partial<T> & Record<string, unknown>
+  Relationships: never[]
+}
+
+export type Database = {
   public: {
     Tables: {
-      organizacoes: { Row: Organizacao; Insert: Partial<Organizacao>; Update: Partial<Organizacao> }
-      usuarios: { Row: Usuario; Insert: Partial<Usuario>; Update: Partial<Usuario> }
-      cooperados: { Row: Cooperado; Insert: Partial<Cooperado>; Update: Partial<Cooperado> }
-      lancamentos: { Row: Lancamento; Insert: Partial<Lancamento>; Update: Partial<Lancamento> }
-      assembleias: { Row: Assembleia; Insert: Partial<Assembleia>; Update: Partial<Assembleia> }
-      documentos: { Row: Documento; Insert: Partial<Documento>; Update: Partial<Documento> }
-      notificacoes: { Row: Notificacao; Insert: Partial<Notificacao>; Update: Partial<Notificacao> }
+      organizacoes: TableDef<Organizacao>
+      usuarios:     TableDef<Usuario>
+      cooperados:   TableDef<Cooperado>
+      lancamentos:  TableDef<Lancamento>
+      assembleias:  TableDef<Assembleia>
+      documentos:   TableDef<Documento>
+      notificacoes: TableDef<Notificacao>
     }
+    Views:          { [_ in never]: never }
+    Functions:      { [_ in never]: never }
+    Enums:          { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
   }
 }

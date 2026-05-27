@@ -18,8 +18,6 @@ export default async function SistemaLayout({
     .eq('id', user.id)
     .single()
 
-  console.log('usuario:', JSON.stringify(usuario))
-
   let organizacao = null
   if (usuario?.organizacao_id) {
     const { data: org } = await supabase
@@ -28,9 +26,6 @@ export default async function SistemaLayout({
       .eq('id', usuario.organizacao_id)
       .single()
     organizacao = org
-    console.log('organizacao:', JSON.stringify(organizacao))
-  } else {
-    console.log('organizacao_id nulo — usuario nao tem org vinculada')
   }
 
   const usuarioComOrg = usuario ? { ...usuario, organizacao } : null
