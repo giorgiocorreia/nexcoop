@@ -1,15 +1,14 @@
 import Stripe from 'stripe'
-import { loadStripe } from '@stripe/stripe-js'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-05-27.dahlia',
-})
+let _stripe: Stripe | null = null
 
-let stripePromise: ReturnType<typeof loadStripe>
-
-export function getStripe() {
-  if (!stripePromise) {
-    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+export function getStripeServer(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY não configurada')
+    _stripe = new Stripe(key, {
+      apiVersion: '2026-05-27.dahlia',
+    })
   }
-  return stripePromise
+  return _stripe
 }

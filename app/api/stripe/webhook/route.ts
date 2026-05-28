@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { stripe } from '@/lib/stripe'
+import { getStripeServer } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { StatusAssinatura } from '@/types/database'
 
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Assinatura ausente' }, { status: 400 })
   }
 
+  const stripe = getStripeServer()
   let event: Stripe.Event
 
   try {

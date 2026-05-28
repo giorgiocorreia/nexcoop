@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripeServer } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -39,6 +39,8 @@ export async function POST(request: Request) {
   if (!org) {
     return NextResponse.json({ error: 'Organização não encontrada' }, { status: 404 })
   }
+
+  const stripe = getStripeServer()
 
   let customerId = org.stripe_customer_id
 
