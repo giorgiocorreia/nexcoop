@@ -10,11 +10,11 @@ Lista de tarefas pendentes. Marque com `[x]` ao concluir.
 
 ## 🧩 Funcionalidades
 
-- [ ] Criar módulo de Documentos (lista + upload + gestão)
+- [x] Criar módulo de Documentos (lista + upload + gestão)
 
 ## 🗄️ Dados
 
-- [ ] Cadastrar organização COOPAIBI e usuário admin no banco
+- [ ] Cadastrar organização COOPAIBI e usuário admin no banco — seed em `supabase/seeds/001_coopaibi.sql`
 
 ## 🌐 Deploy
 
@@ -23,4 +23,4 @@ Lista de tarefas pendentes. Marque com `[x]` ao concluir.
 
 ---
 
-> Atualizado em: 2026-05-27
+> Atualizado em: 2026-05-28
