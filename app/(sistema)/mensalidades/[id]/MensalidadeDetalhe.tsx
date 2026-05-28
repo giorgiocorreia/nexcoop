@@ -201,7 +201,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
         </button>
         <span>/</span>
         <span style={{ color: '#1a1a1a', fontWeight: '500', textTransform: 'capitalize' }}>
-          {cooperado?.nome_completo ?? 'Cooperado'} — {formatarMes(mens.mes_referencia)}
+          {cooperado?.nome_completo ?? 'Filiado'} — {formatarMes(mens.mes_referencia)}
         </span>
       </div>
 
@@ -310,7 +310,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
 
           {/* Cooperado */}
-          <Secao titulo="Cooperado" icone="👤">
+          <Secao titulo="Filiado" icone="👤">
             {cooperado ? (
               <button onClick={() => router.push(`/cooperados/${cooperado.id}`)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: '#f8fdf9', border: '1px solid #c4e9dc', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' }}
@@ -326,7 +326,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
                 <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#888' }}>Ver perfil →</span>
               </button>
             ) : (
-              <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>Cooperado removido</p>
+              <p style={{ fontSize: '13px', color: '#aaa', margin: 0 }}>Filiado removido</p>
             )}
             {cooperado && (
               <div style={{ marginTop: '8px' }}>

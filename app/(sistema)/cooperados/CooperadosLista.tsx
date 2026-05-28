@@ -73,10 +73,10 @@ export default function CooperadosLista({ cooperados }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Cooperados
+            Filiados
           </h1>
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
-            {cooperados.length} cooperado{cooperados.length !== 1 ? 's' : ''} cadastrado{cooperados.length !== 1 ? 's' : ''}
+            {cooperados.length} filiado{cooperados.length !== 1 ? 's' : ''} cadastrado{cooperados.length !== 1 ? 's' : ''}
           </p>
         </div>
         <button
@@ -90,7 +90,7 @@ export default function CooperadosLista({ cooperados }: Props) {
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
           onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
         >
-          <span style={{ fontSize: '16px' }}>+</span> Novo cooperado
+          <span style={{ fontSize: '16px' }}>+</span> Novo filiado
         </button>
       </div>
 
@@ -157,8 +157,8 @@ export default function CooperadosLista({ cooperados }: Props) {
         {filtrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: '14px' }}>
             {busca || filtroStatus !== 'todos'
-              ? 'Nenhum cooperado encontrado com esses filtros.'
-              : 'Nenhum cooperado cadastrado ainda.'}
+              ? 'Nenhum filiado encontrado com esses filtros.'
+              : 'Nenhum filiado cadastrado ainda.'}
             {(busca || filtroStatus !== 'todos') && (
               <div style={{ marginTop: '8px' }}>
                 <button

@@ -118,7 +118,7 @@ export default function CooperadoPerfil({ cooperado: initial }: Props) {
           onClick={() => router.push('/cooperados')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D9E75', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
         >
-          ← Cooperados
+          ← Filiados
         </button>
         <span>/</span>
         <span style={{ color: '#1a1a1a', fontWeight: '500' }}>{cooperado.nome_completo}</span>

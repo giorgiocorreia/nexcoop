@@ -74,7 +74,7 @@ export default async function DashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '2rem' }}>
-        <CardResumo label="Total de cooperados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#1D9E75" bg="#E1F5EE" />
+        <CardResumo label="Total de filiados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#1D9E75" bg="#E1F5EE" />
         <CardResumo label="A receber" valor={formatBRL(totalReceber)} sub="Lançamentos pendentes" cor="#185FA5" bg="#E6F1FB" />
         <CardResumo label="A pagar" valor={formatBRL(totalPagar)} sub="Lançamentos pendentes" cor="#993C1D" bg="#FAECE7" />
         <CardResumo label="Docs vencendo" valor={String(documentosVencendo?.length || 0)} sub="Próximos 30 dias" cor="#854F0B" bg="#FAEEDA" />
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '10px' }}>Ações rápidas</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {[
-                { label: 'Novo cooperado', href: '/cooperados/novo', icone: '👤' },
+                { label: 'Novo filiado', href: '/cooperados/novo', icone: '👤' },
                 { label: 'Novo lançamento', href: '/financeiro/novo', icone: '💸' },
                 { label: 'Nova assembleia', href: '/assembleias/nova', icone: '🏛️' },
                 { label: 'Novo documento', href: '/documentos/novo', icone: '📄' },

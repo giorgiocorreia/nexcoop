@@ -375,7 +375,7 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
 
         {/* Cooperado vinculado */}
         {cooperado && (
-          <Secao titulo="Cooperado vinculado" icone="👤">
+          <Secao titulo="Filiado vinculado" icone="👤">
             <button
               onClick={() => router.push(`/cooperados/${cooperado!.id}`)}
               style={{

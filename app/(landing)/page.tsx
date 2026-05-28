@@ -201,7 +201,7 @@ const FEATURES = [
   {
     icon: '👥',
     title: 'Gestão de Filiados',
-    desc: 'Cadastro completo com status, histórico e quota-parte de cada cooperado.',
+    desc: 'Cadastro completo com status, histórico e quota-parte de cada filiado.',
   },
   {
     icon: '💳',

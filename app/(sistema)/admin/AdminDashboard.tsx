@@ -94,7 +94,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
         {[
           { label: 'Orgs ativas', valor: totalAtivas, cor: '#0F6E56', bg: '#E1F5EE', border: '#1D9E7533' },
           { label: 'Total usuários', valor: totalUsuarios, cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },
-          { label: 'Total cooperados', valor: totalCooperados, cor: '#444', bg: '#f5f5f2', border: '#e5e3dc' },
+          { label: 'Total filiados', valor: totalCooperados, cor: '#444', bg: '#f5f5f2', border: '#e5e3dc' },
           { label: 'Organizações', valor: organizacoes.length, cor: '#6366f1', bg: '#ede9fe', border: '#6366f133' },
         ].map(card => (
           <div key={card.label} style={{
@@ -169,7 +169,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                {['Organização', 'Tipo', 'Cidade / UF', 'Plano', 'Cooperados', 'Criado em', 'Status'].map(col => (
+                {['Organização', 'Tipo', 'Cidade / UF', 'Plano', 'Filiados', 'Criado em', 'Status'].map(col => (
                   <th key={col} style={{
                     padding: '10px 16px', textAlign: 'left',
                     fontSize: '11px', fontWeight: '600', color: '#888',

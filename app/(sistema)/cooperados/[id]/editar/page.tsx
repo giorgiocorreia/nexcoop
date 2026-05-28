@@ -239,7 +239,7 @@ export default function EditarCooperadoPage() {
   if (!form) {
     return (
       <div style={{ color: '#dc2626', fontSize: '14px', padding: '2rem' }}>
-        {erro || 'Cooperado não encontrado.'}
+        {erro || 'Filiado não encontrado.'}
       </div>
     )
   }
@@ -258,7 +258,7 @@ export default function EditarCooperadoPage() {
         </button>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Editar cooperado
+            Editar filiado
           </h1>
           <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Atualize os dados nas abas abaixo</p>
         </div>

@@ -257,7 +257,7 @@ export default function NovaAssembleiaPage() {
               Pauta e Quórum
             </p>
 
-            <InputGroup label="Quórum mínimo" dica="Número mínimo de cooperados para validade da assembleia">
+            <InputGroup label="Quórum mínimo" dica="Número mínimo de filiados para validade da assembleia">
               <input type="number" value={form.quorum_minimo} onChange={set('quorum_minimo')}
                 placeholder="Ex.: 30" min="1"
                 style={{ ...inp, maxWidth: '160px' }} onFocus={fo} onBlur={bl}

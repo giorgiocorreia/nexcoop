@@ -151,7 +151,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       {/* Cards de estatísticas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Cooperados', valor: totalCooperados, cor: '#0F6E56', bg: '#E1F5EE' },
+          { label: 'Filiados', valor: totalCooperados, cor: '#0F6E56', bg: '#E1F5EE' },
           { label: 'Mensalidades', valor: totalMensalidades, cor: '#185FA5', bg: '#E6F1FB' },
           { label: 'Documentos', valor: totalDocumentos, cor: '#6366f1', bg: '#ede9fe' },
         ].map(s => (

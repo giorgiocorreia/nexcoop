@@ -168,7 +168,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                {['Cooperado', 'Mês de referência', 'Vencimento', 'Valor', 'Status'].map(col => (
+                {['Filiado', 'Mês de referência', 'Vencimento', 'Valor', 'Status'].map(col => (
                   <th key={col} style={{ padding: '10px 16px', textAlign: col === 'Valor' ? 'right' : 'left', fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {col}
                   </th>
