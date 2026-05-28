@@ -9,7 +9,8 @@ export type StatusLancamento = 'pendente' | 'pago' | 'cancelado' | 'agendado'
 export type TipoAssembleia = 'AGO' | 'AGE' | 'reuniao_CA' | 'reuniao_CF'
 export type StatusAssembleia = 'agendada' | 'realizada' | 'cancelada'
 export type CategoriaDocumento = 'estatuto' | 'ata' | 'contrato' | 'convenio' | 'edital' | 'certidao' | 'licenca' | 'relatorio' | 'financeiro' | 'projeto' | 'aditivo' | 'outro'
-export type TipoNotificacao = 'alerta_documento' | 'alerta_caf' | 'alerta_certidao' | 'assembleia_convocacao' | 'financeiro_vencimento' | 'cooperado_novo' | 'sistema' | 'outro'
+export type TipoNotificacao   = 'alerta_documento' | 'alerta_caf' | 'alerta_certidao' | 'assembleia_convocacao' | 'financeiro_vencimento' | 'cooperado_novo' | 'sistema' | 'outro'
+export type StatusMensalidade = 'pendente' | 'pago' | 'vencido'
 
 export interface Organizacao {
   id: string
@@ -74,6 +75,7 @@ export interface Cooperado {
   bairro: string | null
   cidade: string | null
   estado: string | null
+  quota_parte: number | null
   nome_propriedade: string | null
   area_total_ha: number | null
   latitude: number | null
@@ -168,6 +170,21 @@ export interface Documento {
   atualizado_em: string
 }
 
+export interface Mensalidade {
+  id: string
+  organizacao_id: string
+  cooperado_id: string
+  mes_referencia: string
+  valor: number
+  status: StatusMensalidade
+  data_vencimento: string
+  data_pagamento: string | null
+  observacoes: string | null
+  usuario_id: string | null
+  criado_em: string
+  atualizado_em: string
+}
+
 export interface Notificacao {
   id: string
   organizacao_id: string
@@ -201,8 +218,9 @@ export type Database = {
       cooperados:   TableDef<Cooperado>
       lancamentos:  TableDef<Lancamento>
       assembleias:  TableDef<Assembleia>
-      documentos:   TableDef<Documento>
-      notificacoes: TableDef<Notificacao>
+      documentos:    TableDef<Documento>
+      mensalidades:  TableDef<Mensalidade>
+      notificacoes:  TableDef<Notificacao>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

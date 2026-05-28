@@ -17,6 +17,7 @@ const NAV: { grupo: string; itens: NavItem[] }[] = [
     itens: [
       { label: 'Dashboard',     href: '/dashboard',     icone: '📊' },
       { label: 'Cooperados',    href: '/cooperados',    icone: '👥' },
+      { label: 'Mensalidades',  href: '/mensalidades',  icone: '💳' },
       { label: 'Financeiro',    href: '/financeiro',    icone: '💰' },
       { label: 'Assembleias',   href: '/assembleias',   icone: '🏛️' },
       { label: 'Documentos',    href: '/documentos',    icone: '📁' },
