@@ -1,15 +1,19 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Mensalidade, StatusMensalidade } from '@/types/database'
 import type { CooperadoResumo } from './page'
 
+// â”€â”€â”€ ConfiguraÃ§Ãµes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 const STATUS_CONFIG: Record<StatusMensalidade, { label: string; cor: string; bg: string }> = {
   pendente: { label: 'Pendente', cor: '#854F0B', bg: '#FAEEDA' },
   pago:     { label: 'Pago',     cor: '#0F6E56', bg: '#E1F5EE' },
   vencido:  { label: 'Vencido',  cor: '#993C1D', bg: '#FAECE7' },
 }
+
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const BRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -24,7 +28,7 @@ function formatarMesCurto(data: string) {
 }
 
 function formatarData(d: string | null) {
-  if (!d) return '—'
+  if (!d) return 'â€”'
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 }
 
@@ -42,10 +46,14 @@ function calcStatusEfetivo(m: Mensalidade): StatusMensalidade {
   return 'pendente'
 }
 
+// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 interface Props {
   mensalidades: Mensalidade[]
   cooperadoMap: Record<string, CooperadoResumo>
 }
+
+// â”€â”€â”€ Componente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props) {
   const router = useRouter()
@@ -55,16 +63,19 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
   const [filtroStatus, setFiltroStatus] = useState<StatusMensalidade | 'todos'>('todos')
   const [hovered, setHovered]           = useState<string | null>(null)
 
+  // Meses disponÃ­veis
   const mesesDisponiveis = useMemo(() => {
     const set = new Set<string>()
     for (const m of mensalidades) set.add(m.mes_referencia.slice(0, 7))
     return Array.from(set).sort((a, b) => b.localeCompare(a))
   }, [mensalidades])
 
+  // Mensalidades com status efetivo calculado
   const comStatus = useMemo(() =>
     mensalidades.map(m => ({ ...m, _status: calcStatusEfetivo(m) })),
   [mensalidades])
 
+  // Filtrados
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
     return comStatus.filter(m => {
@@ -76,6 +87,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
     })
   }, [comStatus, cooperadoMap, busca, filtroMes, filtroStatus])
 
+  // Resumo (sobre todos os dados, nÃ£o os filtrados)
   const resumo = useMemo(() => {
     let pagas = 0, pendentes = 0, vencidas = 0, arrecadado = 0
     for (const m of comStatus) {
@@ -91,10 +103,11 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
   return (
     <div style={{ maxWidth: '1100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
+      {/* â”€â”€ CabeÃ§alho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Mensalidades</h1>
-          <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>Cobranças mensais</p>
+          <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>CobranÃ§as mensais dos cooperados</p>
         </div>
         <button
           onClick={() => router.push('/mensalidades/gerar')}
@@ -102,14 +115,15 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
           onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
         >
-          ⚡ Gerar mensalidades
+          âš¡ Gerar mensalidades
         </button>
       </div>
 
+      {/* â”€â”€ Cards de resumo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Total',      valor: String(resumo.total),     sub: 'nos últimos 12 meses', cor: '#444',    bg: '#f5f5f2',  border: '#e5e3dc' },
-          { label: 'Arrecadado', valor: BRL(resumo.arrecadado),   sub: `${resumo.pagas} cobranças pagas`,       cor: '#0F6E56', bg: '#E1F5EE',  border: '#1D9E7533' },
+          { label: 'Total',      valor: String(resumo.total),     sub: 'nos Ãºltimos 12 meses', cor: '#444',    bg: '#f5f5f2',  border: '#e5e3dc' },
+          { label: 'Arrecadado', valor: BRL(resumo.arrecadado),   sub: `${resumo.pagas} cobranÃ§as pagas`,       cor: '#0F6E56', bg: '#E1F5EE',  border: '#1D9E7533' },
           { label: 'Pendentes',  valor: String(resumo.pendentes), sub: 'aguardando pagamento', cor: '#854F0B', bg: '#FAEEDA',  border: '#854F0B33' },
           { label: 'Vencidas',   valor: String(resumo.vencidas),  sub: 'prazo expirado',       cor: '#993C1D', bg: '#FAECE7',  border: '#993C1D33' },
         ].map(c => (
@@ -123,9 +137,10 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
         ))}
       </div>
 
+      {/* â”€â”€ Filtros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#aaa' }}>🔍</span>
+          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#aaa' }}>ðŸ”</span>
           <input
             type="text" value={busca} onChange={e => setBusca(e.target.value)}
             placeholder="Buscar membro..."
@@ -152,23 +167,24 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
           <button
             onClick={() => { setBusca(''); setFiltroMes('todos'); setFiltroStatus('todos') }}
             style={{ padding: '9px 14px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '12px', background: '#fff', color: '#666', cursor: 'pointer' }}>
-            ✕ Limpar
+            âœ• Limpar
           </button>
         )}
       </div>
 
+      {/* â”€â”€ Tabela â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
         {filtrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: '14px' }}>
             {mensalidades.length === 0
-              ? 'Nenhuma mensalidade gerada ainda. Clique em "Gerar mensalidades" para começar.'
-              : 'Nenhuma cobrança encontrada com os filtros aplicados.'}
+              ? 'Nenhuma mensalidade gerada ainda. Clique em "Gerar mensalidades" para comeÃ§ar.'
+              : 'Nenhuma cobranÃ§a encontrada com os filtros aplicados.'}
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                {['Cooperado', 'Mês de referência', 'Vencimento', 'Valor', 'Status'].map(col => (
+                {['Cooperado', 'MÃªs de referÃªncia', 'Vencimento', 'Valor', 'Status'].map(col => (
                   <th key={col} style={{ padding: '10px 16px', textAlign: col === 'Valor' ? 'right' : 'left', fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {col}
                   </th>
@@ -189,6 +205,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
                     onMouseLeave={() => setHovered(null)}
                     style={{ borderTop: i > 0 ? '1px solid #f0eeea' : 'none', cursor: 'pointer', background: isHov ? '#fafaf8' : 'transparent', transition: 'background 0.1s' }}>
 
+                    {/* Cooperado */}
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e8f7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', color: '#0F6E56', flexShrink: 0 }}>
@@ -196,7 +213,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
                         </div>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
-                            {coop?.nome_completo ?? 'Membro removido'}
+                            {coop?.nome_completo ?? 'Cooperado removido'}
                           </div>
                           {coop?.cpf && (
                             <div style={{ fontSize: '11px', color: '#aaa', marginTop: '1px' }}>
@@ -207,19 +224,23 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
                       </div>
                     </td>
 
+                    {/* MÃªs */}
                     <td style={{ padding: '12px 16px', fontSize: '13px', color: '#555', textTransform: 'capitalize' }}>
                       {formatarMes(m.mes_referencia)}
                     </td>
 
+                    {/* Vencimento */}
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: vencido ? '600' : '400', color: vencido ? '#993C1D' : '#555' }}>
                       {formatarData(m.data_vencimento)}
-                      {vencido && <span style={{ marginLeft: '4px', fontSize: '10px' }}>⚠</span>}
+                      {vencido && <span style={{ marginLeft: '4px', fontSize: '10px' }}>âš </span>}
                     </td>
 
+                    {/* Valor */}
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '13px', fontWeight: '600', color: m._status === 'pago' ? '#0F6E56' : '#1a1a1a' }}>
                       {BRL(Number(m.valor))}
                     </td>
 
+                    {/* Status */}
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: st.cor, background: st.bg }}>
                         {st.label}
@@ -235,7 +256,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
 
       {filtrados.length > 0 && (
         <p style={{ fontSize: '12px', color: '#aaa', marginTop: '8px', textAlign: 'right' }}>
-          {filtrados.length} de {mensalidades.length} cobrança{mensalidades.length !== 1 ? 's' : ''}
+          {filtrados.length} de {mensalidades.length} cobranÃ§a{mensalidades.length !== 1 ? 's' : ''}
         </p>
       )}
     </div>
