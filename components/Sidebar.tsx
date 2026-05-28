@@ -44,6 +44,18 @@ interface Props {
   usuario: (Usuario & { organizacao: Organizacao | null }) | null
 }
 
+function labelRole(role: string | undefined) {
+  switch (role) {
+    case 'super_admin':  return 'Administrador da Plataforma'
+    case 'org_admin':    return 'Administrador'
+    case 'financeiro':   return 'Financeiro'
+    case 'tecnico':      return 'Técnico'
+    case 'cooperado':    return 'Cooperado'
+    case 'parceiro':     return 'Parceiro'
+    default:             return role || ''
+  }
+}
+
 export default function Sidebar({ usuario }: Props) {
   const pathname = usePathname()
   const router = useRouter()
@@ -55,7 +67,21 @@ export default function Sidebar({ usuario }: Props) {
     router.refresh()
   }
 
+  const isSuperAdmin = usuario?.role === 'super_admin'
   const org = usuario?.organizacao
+
+  // Cabeçalho: super_admin vê "NextCoop" com badge "Plataforma"
+  // org_admin e demais veem o nome da organização
+  const orgNome = isSuperAdmin
+    ? 'NextCoop'
+    : (org?.nome_curto || org?.nome || 'NextCoop')
+
+  const orgTipo = isSuperAdmin
+    ? 'Plataforma'
+    : org?.tipo === 'cooperativa' ? 'Cooperativa'
+    : org?.tipo === 'associacao'  ? 'Associação'
+    : org?.tipo === 'central'     ? 'Central'
+    : ''
 
   return (
     <aside style={{
@@ -64,26 +90,31 @@ export default function Sidebar({ usuario }: Props) {
       display: 'flex', flexDirection: 'column',
       fontFamily: 'system-ui, -apple-system, sans-serif', zIndex: 100,
     }}>
+      {/* Cabeçalho org */}
       <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '36px', height: '36px', borderRadius: '10px', background: '#1D9E75',
+            width: '36px', height: '36px', borderRadius: '10px',
+            background: isSuperAdmin ? '#1a1a1a' : '#1D9E75',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '18px', flexShrink: 0,
-          }}>🌱</div>
+          }}>
+            {isSuperAdmin ? '⚡' : '🌱'}
+          </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {org?.nome_curto || org?.nome || 'NextCoop'}
+              {orgNome}
             </div>
-            <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
-              {org?.tipo === 'cooperativa' ? 'Cooperativa' : org?.tipo === 'associacao' ? 'Associação' : 'Central'}
+            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#1D9E75' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
+              {orgTipo}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Navegação */}
       <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto' }}>
-        {usuario?.role === 'super_admin' && (
+        {isSuperAdmin && (
           <div style={{ marginBottom: '0.5rem' }}>
             <div style={{
               fontSize: '10px', fontWeight: '600', color: '#aaa',
@@ -114,6 +145,7 @@ export default function Sidebar({ usuario }: Props) {
             })}
           </div>
         )}
+
         {NAV.map(grupo => (
           <div key={grupo.grupo} style={{ marginBottom: '0.5rem' }}>
             <div style={{
@@ -153,12 +185,16 @@ export default function Sidebar({ usuario }: Props) {
         ))}
       </nav>
 
+      {/* Rodapé usuário */}
       <div style={{ borderTop: '1px solid #e5e3dc', padding: '0.75rem 1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <div style={{
-            width: '32px', height: '32px', borderRadius: '50%', background: '#e8f7f2',
+            width: '32px', height: '32px', borderRadius: '50%',
+            background: isSuperAdmin ? '#1a1a1a' : '#e8f7f2',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '13px', fontWeight: '600', color: '#0F6E56', flexShrink: 0,
+            fontSize: '13px', fontWeight: '600',
+            color: isSuperAdmin ? '#fff' : '#0F6E56',
+            flexShrink: 0,
           }}>
             {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
           </div>
@@ -166,11 +202,8 @@ export default function Sidebar({ usuario }: Props) {
             <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {usuario?.nome_completo || 'Usuário'}
             </div>
-            <div style={{ fontSize: '11px', color: '#888' }}>
-              {usuario?.role === 'org_admin' ? 'Administrador' :
-               usuario?.role === 'financeiro' ? 'Financeiro' :
-               usuario?.role === 'tecnico' ? 'Técnico' :
-               usuario?.role === 'cooperado' ? 'Cooperado' : usuario?.role}
+            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#1D9E75' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
+              {labelRole(usuario?.role)}
             </div>
           </div>
         </div>

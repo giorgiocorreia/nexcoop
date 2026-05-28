@@ -7,9 +7,14 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Queries com tipagem explícita via .returns<>() para evitar falhas de
-  // inferência de tupla no TypeScript quando há muitas queries heterogêneas
-  // no mesmo Promise.all
+  // Redireciona super_admin para /admin
+  const { data: usuarioRole } = await supabase
+    .from('usuarios')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (usuarioRole?.role === 'super_admin') redirect('/admin')
+
   const [
     { count: totalCooperados },
     { count: cooperadosAtivos },
