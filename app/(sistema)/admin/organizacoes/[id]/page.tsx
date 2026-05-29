@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import OrgDetalhe from './OrgDetalhe'
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata() {
   return { title: 'Organização — Admin — NextCoop' }
 }
 
@@ -11,7 +12,9 @@ export default async function OrgDetalhePage({ params }: { params: { id: string 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: org } = await supabase
+  const admin = createAdminClient()
+
+  const { data: org } = await admin
     .from('organizacoes')
     .select('*')
     .eq('id', params.id)
@@ -25,10 +28,10 @@ export default async function OrgDetalhePage({ params }: { params: { id: string 
     { count: totalMensalidades },
     { count: totalDocumentos },
   ] = await Promise.all([
-    supabase.from('usuarios').select('*').eq('organizacao_id', params.id).order('nome_completo'),
-    supabase.from('cooperados').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
-    supabase.from('mensalidades').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
-    supabase.from('documentos').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
+    admin.from('usuarios').select('*').eq('organizacao_id', params.id).order('nome_completo'),
+    admin.from('cooperados').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
+    admin.from('mensalidades').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
+    admin.from('documentos').select('*', { count: 'exact', head: true }).eq('organizacao_id', params.id),
   ])
 
   return (
