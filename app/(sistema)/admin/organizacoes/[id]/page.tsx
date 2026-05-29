@@ -14,11 +14,15 @@ export default async function OrgDetalhePage({ params }: { params: { id: string 
 
   const admin = createAdminClient()
 
-  const { data: org } = await admin
+  const { data: org, error: orgError } = await admin
     .from('organizacoes')
     .select('*')
     .eq('id', params.id)
     .single()
+
+  console.log('[OrgDetalhePage] id:', params.id)
+  console.log('[OrgDetalhePage] org:', org)
+  console.log('[OrgDetalhePage] error:', orgError)
 
   if (!org) redirect('/admin')
 
