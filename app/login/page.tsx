@@ -50,7 +50,7 @@ function AuthForm() {
       return
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
       options: {
@@ -66,6 +66,14 @@ function AuthForm() {
       return
     }
 
+    // Se sessão foi criada, redireciona direto (confirm email desabilitado)
+    if (data.session) {
+      router.push(redirect)
+      router.refresh()
+      return
+    }
+
+    // Confirm email habilitado — pede confirmação
     setSucesso('Conta criada! Verifique seu e-mail para confirmar o cadastro.')
     setCarregando(false)
   }
@@ -89,7 +97,6 @@ function AuthForm() {
 
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '16px', overflow: 'hidden' }}>
-      {/* Abas */}
       <div style={{ display: 'flex', borderBottom: '1px solid #e5e3dc' }}>
         {(['login', 'cadastro'] as const).map(a => (
           <button key={a} onClick={() => { setAba(a); setErro(''); setSucesso('') }}
