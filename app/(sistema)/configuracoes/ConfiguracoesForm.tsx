@@ -93,26 +93,26 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin }: Pro
     const supabase = createClient()
 
     const payload: Record<string, unknown> = {
-  nome_curto: form.nome_curto.trim() || undefined,
-  email: form.email.trim() || undefined,
-  telefone: form.telefone.trim() || undefined,
-  site: form.site.trim() || undefined,
-  cep: form.cep.replace(/\D/g, '') || undefined,
-  logradouro: form.logradouro.trim() || undefined,
-  numero: form.numero.trim() || undefined,
-  complemento: form.complemento.trim() || undefined,
-  bairro: form.bairro.trim() || undefined,
-  cidade: form.cidade.trim() || undefined,
-  estado: form.estado || undefined,
-}
+      email: form.email.trim() || undefined,
+      telefone: form.telefone.trim() || undefined,
+      site: form.site.trim() || undefined,
+      cep: form.cep.replace(/\D/g, '') || undefined,
+      logradouro: form.logradouro.trim() || undefined,
+      numero: form.numero.trim() || undefined,
+      complemento: form.complemento.trim() || undefined,
+      bairro: form.bairro.trim() || undefined,
+      cidade: form.cidade.trim() || undefined,
+      estado: form.estado || undefined,
+    }
 
-if (isSuperAdmin) {
-  payload.nome = form.nome.trim()
-  payload.tipo = form.tipo
-  payload.cnpj = form.cnpj.replace(/\D/g, '') || undefined
-  payload.data_fundacao = form.data_fundacao || undefined
-  payload.registro_juceb = form.registro_juceb.trim() || undefined
-}
+    if (isSuperAdmin) {
+      payload.nome = form.nome.trim()
+      payload.nome_curto = form.nome_curto.trim() || undefined
+      payload.tipo = form.tipo
+      payload.cnpj = form.cnpj.replace(/\D/g, '') || undefined
+      payload.data_fundacao = form.data_fundacao || undefined
+      payload.registro_juceb = form.registro_juceb.trim() || undefined
+    }
 
     const { error } = await supabase
       .from('organizacoes')
@@ -143,11 +143,13 @@ if (isSuperAdmin) {
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '1rem' }}>Identificação</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: '12px' }}>
               <div>
                 <Label required>Nome completo</Label>
                 <input type="text" value={form.nome} onChange={set('nome')}
-                  disabled={!isSuperAdmin} style={isSuperAdmin ? inputStyle : disabledStyle}
+                  disabled={!isSuperAdmin}
+                  style={isSuperAdmin ? inputStyle : disabledStyle}
                   onFocus={e => { if (isSuperAdmin) e.target.style.borderColor = GREEN }}
                   onBlur={e => e.target.style.borderColor = '#d5d3cc'}
                 />
@@ -155,8 +157,10 @@ if (isSuperAdmin) {
               <div>
                 <Label>Sigla / Nome curto</Label>
                 <input type="text" value={form.nome_curto} onChange={set('nome_curto')}
-                  placeholder="Ex: COOPAIBI" style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = GREEN}
+                  disabled={!isSuperAdmin}
+                  placeholder="Ex: COOPAIBI"
+                  style={isSuperAdmin ? inputStyle : disabledStyle}
+                  onFocus={e => { if (isSuperAdmin) e.target.style.borderColor = GREEN }}
                   onBlur={e => e.target.style.borderColor = '#d5d3cc'}
                 />
               </div>
@@ -166,7 +170,8 @@ if (isSuperAdmin) {
               <div>
                 <Label>Tipo</Label>
                 <select value={form.tipo} onChange={set('tipo')}
-                  disabled={!isSuperAdmin} style={isSuperAdmin ? inputStyle : disabledStyle}>
+                  disabled={!isSuperAdmin}
+                  style={isSuperAdmin ? inputStyle : disabledStyle}>
                   <option value="cooperativa">Cooperativa</option>
                   <option value="associacao">Associação</option>
                   <option value="central">Central</option>
@@ -175,7 +180,8 @@ if (isSuperAdmin) {
               <div>
                 <Label>CNPJ</Label>
                 <input type="text" value={form.cnpj} onChange={set('cnpj')}
-                  disabled={!isSuperAdmin} placeholder="00.000.000/0001-00"
+                  disabled={!isSuperAdmin}
+                  placeholder="00.000.000/0001-00"
                   style={isSuperAdmin ? inputStyle : disabledStyle}
                   onFocus={e => { if (isSuperAdmin) e.target.style.borderColor = GREEN }}
                   onBlur={e => e.target.style.borderColor = '#d5d3cc'}
