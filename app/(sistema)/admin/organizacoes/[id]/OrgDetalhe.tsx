@@ -183,7 +183,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
   }
 
   return (
-    <div style={{ maxWidth: '1200px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ width: '100%', maxWidth: '1200px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1.25rem' }}>
         <button onClick={() => router.push('/admin')}
