@@ -31,6 +31,7 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha')
   const isPublicPage = pathname === '/' || pathname.startsWith('/assinar')
   const isOnboarding = pathname.startsWith('/onboarding')
+  const isRSC = request.headers.get('rsc') === '1'
 
   // Não autenticado — redireciona para login
   if (!user && !isAuthPage && !isPublicPage) {
@@ -47,8 +48,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Verifica onboarding para usuários autenticados no sistema
-  if (user && !isAuthPage && !isPublicPage && !isOnboarding) {
+  // Verifica onboarding apenas em navegação completa (não RSC)
+  if (user && !isAuthPage && !isPublicPage && !isOnboarding && !isRSC) {
     const { data: usuario } = await supabase
       .from('usuarios')
       .select('organizacao_id, role')
