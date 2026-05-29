@@ -4,14 +4,15 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Organizacao, PlanoOrganizacao, TipoOrganizacao } from '@/types/database'
 
-const PLANO_CONFIG: Record<PlanoOrganizacao, { label: string; cor: string; bg: string }> = {
+const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
+  gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
   essencial:   { label: 'Essencial',   cor: '#444',    bg: '#f5f5f2' },
   cooperativa: { label: 'Cooperativa', cor: '#185FA5', bg: '#E6F1FB' },
+  profissional:{ label: 'Profissional',cor: '#0F6E56', bg: '#E1F5EE' },
   agro:        { label: 'Agro',        cor: '#0F6E56', bg: '#E1F5EE' },
   impacto:     { label: 'Impacto',     cor: '#6366f1', bg: '#ede9fe' },
   enterprise:  { label: 'Enterprise',  cor: '#854F0B', bg: '#FAEEDA' },
 }
-
 const TIPO_LABEL: Record<TipoOrganizacao, string> = {
   cooperativa: 'Cooperativa',
   associacao: 'Associação',
