@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9,14 +9,14 @@ import type { Documento, CategoriaDocumento } from '@/types/database'
 
 const CATEGORIA_CONFIG: Record<CategoriaDocumento, { label: string; cor: string; bg: string; icone: string }> = {
   estatuto:   { label: 'Estatuto',    cor: '#185FA5', bg: '#E6F1FB', icone: '📋' },
-  ata:        { label: 'Ata',         cor: '#0F6E56', bg: '#E1F5EE', icone: '📝' },
+  ata:        { label: 'Ata',         cor: '#4840CC', bg: '#EEF0FF', icone: '📝' },
   contrato:   { label: 'Contrato',    cor: '#6366f1', bg: '#ede9fe', icone: '🤝' },
   convenio:   { label: 'Convênio',    cor: '#7c3aed', bg: '#f5f3ff', icone: '🔗' },
   edital:     { label: 'Edital',      cor: '#0e7490', bg: '#ecfeff', icone: '📢' },
   certidao:   { label: 'Certidão',    cor: '#854F0B', bg: '#FAEEDA', icone: '📜' },
   licenca:    { label: 'Licença',     cor: '#993C1D', bg: '#FAECE7', icone: '🔑' },
   relatorio:  { label: 'Relatório',   cor: '#374151', bg: '#f3f4f6', icone: '📊' },
-  financeiro: { label: 'Financeiro',  cor: '#0F6E56', bg: '#E1F5EE', icone: '💰' },
+  financeiro: { label: 'Financeiro',  cor: '#4840CC', bg: '#EEF0FF', icone: '💰' },
   projeto:    { label: 'Projeto',     cor: '#6366f1', bg: '#ede9fe', icone: '🎯' },
   aditivo:    { label: 'Aditivo',     cor: '#854F0B', bg: '#FAEEDA', icone: '📎' },
   outro:      { label: 'Outro',       cor: '#374151', bg: '#f3f4f6', icone: '📄' },
@@ -88,7 +88,7 @@ const inp: React.CSSProperties = {
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
 const fo = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#1D9E75')
+  (e.target.style.borderColor = '#635BFF')
 const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
   (e.target.style.borderColor = '#d5d3cc')
 
@@ -311,7 +311,7 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
                 )}
               </div>
               <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: '#1D9E75', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: '#635BFF', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>
                 ↓ Baixar / Visualizar
               </a>
             </div>
@@ -479,11 +479,11 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', paddingTop: '6px' }}>
                   <div
                     onClick={() => setEditForm(p => ({ ...p, restrito: !p.restrito }))}
-                    style={{ width: '36px', height: '20px', borderRadius: '10px', background: editForm.restrito ? '#1D9E75' : '#d5d3cc', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}
+                    style={{ width: '36px', height: '20px', borderRadius: '10px', background: editForm.restrito ? '#635BFF' : '#d5d3cc', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}
                   >
                     <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '2px', left: editForm.restrito ? '18px' : '2px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                   </div>
-                  <span style={{ fontSize: '13px', color: editForm.restrito ? '#0F6E56' : '#555', fontWeight: editForm.restrito ? '600' : '400' }}>
+                  <span style={{ fontSize: '13px', color: editForm.restrito ? '#4840CC' : '#555', fontWeight: editForm.restrito ? '600' : '400' }}>
                     {editForm.restrito ? 'Restrito' : 'Público interno'}
                   </span>
                 </label>
@@ -505,7 +505,7 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
               Cancelar
             </button>
             <button type="button" onClick={handleSalvar} disabled={salvando}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#7fceb1' : '#1D9E75', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
               {salvando ? (uploadStatus === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : '✓ Salvar alterações'}
             </button>
           </div>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,14 +8,14 @@ import type { Lancamento, Cooperado, TipoLancamento, StatusLancamento } from '@/
 // ─── Configurações ───────────────────────────────────────────────────────────
 
 const TIPO_CONFIG: Record<TipoLancamento, { label: string; cor: string; bg: string; border: string; icone: string; sinal: string }> = {
-  receita:      { label: 'Receita',      cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7', icone: '↑', sinal: '+' },
+  receita:      { label: 'Receita',      cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7', icone: '↑', sinal: '+' },
   despesa:      { label: 'Despesa',      cor: '#993C1D', bg: '#FAECE7', border: '#fca5a5', icone: '↓', sinal: '-' },
   transferencia:{ label: 'Transferência',cor: '#185FA5', bg: '#E6F1FB', border: '#93c5fd', icone: '↔', sinal:  '' },
 }
 
 const STATUS_CONFIG: Record<StatusLancamento, { label: string; cor: string; bg: string; border: string }> = {
   pendente: { label: 'Pendente', cor: '#854F0B', bg: '#FAEEDA', border: '#fcd34d' },
-  pago:     { label: 'Pago',     cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7' },
+  pago:     { label: 'Pago',     cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7' },
   cancelado:{ label: 'Cancelado',cor: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
   agendado: { label: 'Agendado', cor: '#6366f1', bg: '#ede9fe', border: '#a5b4fc' },
 }
@@ -41,7 +41,7 @@ function InfoLinha({ label, valor, destaque }: {
       borderBottom: '1px solid #f5f3ef',
     }}>
       <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: destaque ? '#0F6E56' : '#1a1a1a', fontWeight: destaque ? '600' : '400', textAlign: 'right', maxWidth: '60%' }}>
+      <span style={{ fontSize: '13px', color: destaque ? '#4840CC' : '#1a1a1a', fontWeight: destaque ? '600' : '400', textAlign: 'right', maxWidth: '60%' }}>
         {valor ?? '—'}
       </span>
     </div>
@@ -154,7 +154,7 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
         <button
           onClick={() => router.push('/financeiro')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D9E75', fontSize: '13px', padding: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0 }}
         >
           ← Financeiro
         </button>
@@ -168,9 +168,9 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
       {mensagem && (
         <div style={{
           padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem',
-          background: mensagem.tipo === 'ok' ? '#E1F5EE' : '#fef2f2',
+          background: mensagem.tipo === 'ok' ? '#EEF0FF' : '#fef2f2',
           border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`,
-          color: mensagem.tipo === 'ok' ? '#0F6E56' : '#dc2626',
+          color: mensagem.tipo === 'ok' ? '#4840CC' : '#dc2626',
         }}>
           {mensagem.tipo === 'ok' ? '✓' : '⚠'} {mensagem.texto}
         </div>
@@ -383,18 +383,18 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
                 padding: '8px', background: '#f8fdf9', border: '1px solid #c4e9dc',
                 borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E1F5EE' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EEF0FF' }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f8fdf9' }}
             >
               <div style={{
-                width: '36px', height: '36px', borderRadius: '50%', background: '#e8f7f2',
+                width: '36px', height: '36px', borderRadius: '50%', background: '#EEEDFE',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '700', color: '#0F6E56', flexShrink: 0,
+                fontSize: '14px', fontWeight: '700', color: '#4840CC', flexShrink: 0,
               }}>
                 {cooperado.nome_completo.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#0F6E56' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#4840CC' }}>
                   {cooperado.nome_completo}
                 </div>
                 <div style={{ fontSize: '11px', color: '#888' }}>

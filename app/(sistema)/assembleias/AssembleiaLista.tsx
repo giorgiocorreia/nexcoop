@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9,13 +9,13 @@ import type { Assembleia, TipoAssembleia, StatusAssembleia } from '@/types/datab
 const TIPO_CONFIG: Record<TipoAssembleia, { sigla: string; label: string; cor: string; bg: string }> = {
   AGO:        { sigla: 'AGO', label: 'Assembleia Geral Ordinária',              cor: '#185FA5', bg: '#E6F1FB' },
   AGE:        { sigla: 'AGE', label: 'Assembleia Geral Extraordinária',         cor: '#6366f1', bg: '#ede9fe' },
-  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração',    cor: '#0F6E56', bg: '#E1F5EE' },
+  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração',    cor: '#4840CC', bg: '#EEF0FF' },
   reuniao_CF: { sigla: 'CF',  label: 'Reunião do Conselho Fiscal',              cor: '#854F0B', bg: '#FAEEDA' },
 }
 
 const STATUS_CONFIG: Record<StatusAssembleia, { label: string; cor: string; bg: string }> = {
   agendada:  { label: 'Agendada',  cor: '#185FA5', bg: '#E6F1FB' },
-  realizada: { label: 'Realizada', cor: '#0F6E56', bg: '#E1F5EE' },
+  realizada: { label: 'Realizada', cor: '#4840CC', bg: '#EEF0FF' },
   cancelada: { label: 'Cancelada', cor: '#374151', bg: '#f3f4f6' },
 }
 
@@ -94,12 +94,12 @@ export default function AssembleiaLista({ assembleias }: Props) {
         <button
           onClick={() => router.push('/assembleias/nova')}
           style={{
-            padding: '9px 18px', background: '#1D9E75', color: '#fff',
+            padding: '9px 18px', background: '#635BFF', color: '#fff',
             border: 'none', borderRadius: '8px', fontSize: '13px',
             fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
           }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
         >
           <span style={{ fontSize: '16px' }}>+</span> Nova assembleia
         </button>
@@ -110,7 +110,7 @@ export default function AssembleiaLista({ assembleias }: Props) {
         {[
           { label: 'Total',      valor: resumo.total,      cor: '#444',    bg: '#f5f5f2', border: '#e5e3dc' },
           { label: 'Agendadas',  valor: resumo.agendadas,  cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },
-          { label: 'Realizadas', valor: resumo.realizadas, cor: '#0F6E56', bg: '#E1F5EE', border: '#1D9E7533' },
+          { label: 'Realizadas', valor: resumo.realizadas, cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
           { label: 'Canceladas', valor: resumo.canceladas, cor: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
         ].map(c => (
           <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '12px', padding: '1rem 1.25rem' }}>
@@ -132,7 +132,7 @@ export default function AssembleiaLista({ assembleias }: Props) {
               borderRadius: '8px', fontSize: '13px', background: '#fff', color: '#1a1a1a',
               outline: 'none', boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+            onFocus={e => (e.target.style.borderColor = '#635BFF')}
             onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
           />
         </div>
@@ -261,7 +261,7 @@ export default function AssembleiaLista({ assembleias }: Props) {
                     <td style={{ padding: '12px 16px' }}>
                       {a.status === 'realizada' ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '600', color: a.quorum_atingido ? '#0F6E56' : '#993C1D' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: a.quorum_atingido ? '#4840CC' : '#993C1D' }}>
                             {a.total_presentes}
                           </span>
                           {a.quorum_minimo ? (

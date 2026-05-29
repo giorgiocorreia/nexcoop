@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -30,7 +30,7 @@ const inp: React.CSSProperties = {
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
 const fo = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#1D9E75')
+  (e.target.style.borderColor = '#635BFF')
 const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
   (e.target.style.borderColor = '#d5d3cc')
 
@@ -251,7 +251,7 @@ export default function NovoDocumentoPage() {
               <div
                 onClick={() => fileRef.current?.click()}
                 style={{
-                  border: `2px dashed ${arquivo ? '#1D9E75' : '#d5d3cc'}`,
+                  border: `2px dashed ${arquivo ? '#635BFF' : '#d5d3cc'}`,
                   borderRadius: '10px', padding: '1.25rem', textAlign: 'center',
                   cursor: 'pointer', background: arquivo ? '#f0fbf7' : '#fafaf8',
                   transition: 'all 0.15s',
@@ -260,7 +260,7 @@ export default function NovoDocumentoPage() {
                 {arquivo ? (
                   <div>
                     <div style={{ fontSize: '24px', marginBottom: '4px' }}>{catAtual.icone}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0F6E56' }}>{arquivo.name}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#4840CC' }}>{arquivo.name}</div>
                     <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
                       {arquivo.type} · {formatBytes(arquivo.size)}
                     </div>
@@ -334,7 +334,7 @@ export default function NovoDocumentoPage() {
                     onClick={() => setForm(p => ({ ...p, restrito: !p.restrito }))}
                     style={{
                       width: '36px', height: '20px', borderRadius: '10px',
-                      background: form.restrito ? '#1D9E75' : '#d5d3cc',
+                      background: form.restrito ? '#635BFF' : '#d5d3cc',
                       position: 'relative', cursor: 'pointer', flexShrink: 0,
                       transition: 'background 0.2s',
                     }}
@@ -346,7 +346,7 @@ export default function NovoDocumentoPage() {
                       boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                     }} />
                   </div>
-                  <span style={{ fontSize: '13px', color: form.restrito ? '#0F6E56' : '#555', fontWeight: form.restrito ? '600' : '400' }}>
+                  <span style={{ fontSize: '13px', color: form.restrito ? '#4840CC' : '#555', fontWeight: form.restrito ? '600' : '400' }}>
                     {form.restrito ? 'Restrito' : 'Público interno'}
                   </span>
                 </label>
@@ -368,7 +368,7 @@ export default function NovoDocumentoPage() {
               Cancelar
             </button>
             <button type="submit" disabled={salvando}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#7fceb1' : '#1D9E75', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
               {salvando ? (progresso === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : '✓ Cadastrar documento'}
             </button>
           </div>

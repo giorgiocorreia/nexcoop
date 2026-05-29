@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -7,7 +7,7 @@ import type { CooperadoResumo } from './page'
 
 const STATUS_CONFIG: Record<StatusMensalidade, { label: string; cor: string; bg: string }> = {
   pendente: { label: 'Pendente', cor: '#854F0B', bg: '#FAEEDA' },
-  pago:     { label: 'Pago',     cor: '#0F6E56', bg: '#E1F5EE' },
+  pago:     { label: 'Pago',     cor: '#4840CC', bg: '#EEF0FF' },
   vencido:  { label: 'Vencido',  cor: '#993C1D', bg: '#FAECE7' },
 }
 
@@ -98,9 +98,9 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
         </div>
         <button
           onClick={() => router.push('/mensalidades/gerar')}
-          style={{ padding: '9px 18px', background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ padding: '9px 18px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
         >
           ⚡ Gerar mensalidades
         </button>
@@ -109,7 +109,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
           { label: 'Total',      valor: String(resumo.total),     sub: 'nos últimos 12 meses', cor: '#444',    bg: '#f5f5f2',  border: '#e5e3dc' },
-          { label: 'Arrecadado', valor: BRL(resumo.arrecadado),   sub: `${resumo.pagas} cobranças pagas`,       cor: '#0F6E56', bg: '#E1F5EE',  border: '#1D9E7533' },
+          { label: 'Arrecadado', valor: BRL(resumo.arrecadado),   sub: `${resumo.pagas} cobranças pagas`,       cor: '#4840CC', bg: '#EEF0FF',  border: '#635BFF33' },
           { label: 'Pendentes',  valor: String(resumo.pendentes), sub: 'aguardando pagamento', cor: '#854F0B', bg: '#FAEEDA',  border: '#854F0B33' },
           { label: 'Vencidas',   valor: String(resumo.vencidas),  sub: 'prazo expirado',       cor: '#993C1D', bg: '#FAECE7',  border: '#993C1D33' },
         ].map(c => (
@@ -130,7 +130,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
             type="text" value={busca} onChange={e => setBusca(e.target.value)}
             placeholder="Buscar membro..."
             style={{ width: '100%', padding: '9px 12px 9px 32px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '13px', background: '#fff', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box' }}
-            onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+            onFocus={e => (e.target.style.borderColor = '#635BFF')}
             onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
           />
         </div>
@@ -191,7 +191,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
 
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e8f7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', color: '#0F6E56', flexShrink: 0 }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', color: '#4840CC', flexShrink: 0 }}>
                           {coop?.nome_completo.charAt(0).toUpperCase() ?? '?'}
                         </div>
                         <div>
@@ -216,7 +216,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
                       {vencido && <span style={{ marginLeft: '4px', fontSize: '10px' }}>⚠</span>}
                     </td>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '13px', fontWeight: '600', color: m._status === 'pago' ? '#0F6E56' : '#1a1a1a' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '13px', fontWeight: '600', color: m._status === 'pago' ? '#4840CC' : '#1a1a1a' }}>
                       {BRL(Number(m.valor))}
                     </td>
 

@@ -1,7 +1,7 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 
-const GREEN = '#1D9E75'
-const GREEN_DARK = '#0F6E56'
+const GREEN = '#635BFF'
+const GREEN_DARK = '#4840CC'
 const TEXT = '#1a1a1a'
 const BG = '#f8f7f4'
 const FONT = "system-ui, -apple-system, 'Segoe UI', sans-serif"

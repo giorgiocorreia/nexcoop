@@ -1,10 +1,10 @@
-import { redirect } from 'next/navigation'
+﻿import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AssinarPlanos from './AssinarPlanos'
 
-const GREEN = '#1D9E75'
-const GREEN_DARK = '#0F6E56'
+const GREEN = '#635BFF'
+const GREEN_DARK = '#4840CC'
 const TEXT = '#1a1a1a'
 const BG = '#f8f7f4'
 const FONT = "system-ui, -apple-system, 'Segoe UI', sans-serif"
@@ -112,7 +112,7 @@ export default async function AssinarPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
-            <span style={{ fontSize: 24 }}>🌱</span>
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>
             <span style={{ fontWeight: 700, fontSize: 20, color: GREEN_DARK }}>NextCoop</span>
           </div>
 

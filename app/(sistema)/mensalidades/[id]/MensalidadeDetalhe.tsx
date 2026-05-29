@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,12 +10,12 @@ import type { CooperadoDetalhe, HistoricoItem } from './page'
 
 const STATUS_CONFIG: Record<StatusMensalidade, { label: string; cor: string; bg: string; border: string }> = {
   pendente: { label: 'Pendente', cor: '#854F0B', bg: '#FAEEDA', border: '#fcd34d' },
-  pago:     { label: 'Pago',     cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7' },
+  pago:     { label: 'Pago',     cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7' },
   vencido:  { label: 'Vencido',  cor: '#993C1D', bg: '#FAECE7', border: '#fca5a5' },
 }
 
 const STATUS_COOPERADO: Record<string, { label: string; cor: string; bg: string }> = {
-  ativo:        { label: 'Ativo',       cor: '#0F6E56', bg: '#E1F5EE' },
+  ativo:        { label: 'Ativo',       cor: '#4840CC', bg: '#EEF0FF' },
   probatorio:   { label: 'Probatório',  cor: '#185FA5', bg: '#E6F1FB' },
   inadimplente: { label: 'Inadimplente',cor: '#854F0B', bg: '#FAEEDA' },
   suspenso:     { label: 'Suspenso',    cor: '#993C1D', bg: '#FAECE7' },
@@ -80,7 +80,7 @@ const inpStyle: React.CSSProperties = {
   borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
-const fo = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#1D9E75')
+const fo = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#635BFF')
 const bl = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#d5d3cc')
 
 function CampoEdit({ label, children }: { label: string; children: React.ReactNode }) {
@@ -196,7 +196,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
         <button onClick={() => router.push('/mensalidades')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D9E75', fontSize: '13px', padding: 0 }}>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0 }}>
           ← Mensalidades
         </button>
         <span>/</span>
@@ -207,7 +207,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
 
       {/* Feedback */}
       {mensagem && (
-        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem', background: mensagem.tipo === 'ok' ? '#E1F5EE' : '#fef2f2', border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`, color: mensagem.tipo === 'ok' ? '#0F6E56' : '#dc2626' }}>
+        <div style={{ padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem', background: mensagem.tipo === 'ok' ? '#EEF0FF' : '#fef2f2', border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`, color: mensagem.tipo === 'ok' ? '#4840CC' : '#dc2626' }}>
           {mensagem.tipo === 'ok' ? '✓' : '⚠'} {mensagem.texto}
         </div>
       )}
@@ -216,7 +216,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.5rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#e8f7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '700', color: '#0F6E56', flexShrink: 0 }}>
+            <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '700', color: '#4840CC', flexShrink: 0 }}>
               {cooperado?.nome_completo.charAt(0).toUpperCase() ?? '?'}
             </div>
             <div>
@@ -235,7 +235,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
               </span>
               {sv !== 'pago' && (
                 <button onClick={() => { setModo('pagamento'); setDataPagamento(new Date().toISOString().split('T')[0]); setObsPagamento('') }}
-                  style={{ padding: '7px 16px', background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  style={{ padding: '7px 16px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                   ✓ Registrar pagamento
                 </button>
               )}
@@ -257,7 +257,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
 
         {/* Valor em destaque */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '1rem' }}>
-          <div style={{ fontSize: '32px', fontWeight: '800', color: sv === 'pago' ? '#0F6E56' : '#1a1a1a', letterSpacing: '-1px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '800', color: sv === 'pago' ? '#4840CC' : '#1a1a1a', letterSpacing: '-1px' }}>
             {BRL(Number(mens.valor))}
           </div>
           {sv === 'vencido' && diasVenc !== null && (
@@ -275,8 +275,8 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
 
       {/* ── Formulário de pagamento ───────────────────────────────────────── */}
       {modo === 'pagamento' && (
-        <div style={{ background: '#E1F5EE', border: '1px solid #6ee7b7', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
-          <p style={{ fontSize: '12px', fontWeight: '600', color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 1rem' }}>
+        <div style={{ background: '#EEF0FF', border: '1px solid #6ee7b7', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
+          <p style={{ fontSize: '12px', fontWeight: '600', color: '#4840CC', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 1rem' }}>
             ✓ Registrar pagamento
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
@@ -298,7 +298,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
               Cancelar
             </button>
             <button onClick={handlePagar} disabled={salvando}
-              style={{ padding: '8px 22px', border: 'none', borderRadius: '8px', background: salvando ? '#7fceb1' : '#0F6E56', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '8px 22px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#4840CC', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
               {salvando ? 'Salvando…' : '✓ Confirmar pagamento'}
             </button>
           </div>
@@ -314,13 +314,13 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
             {cooperado ? (
               <button onClick={() => router.push(`/cooperados/${cooperado.id}`)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: '#f8fdf9', border: '1px solid #c4e9dc', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E1F5EE' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EEF0FF' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f8fdf9' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e8f7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: '#0F6E56', flexShrink: 0 }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: '#4840CC', flexShrink: 0 }}>
                   {cooperado.nome_completo.charAt(0).toUpperCase()}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0F6E56', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cooperado.nome_completo}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#4840CC', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cooperado.nome_completo}</div>
                   {cooperado.cpf && <div style={{ fontSize: '11px', color: '#888' }}>{formatarCPF(cooperado.cpf)}</div>}
                 </div>
                 <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#888' }}>Ver perfil →</span>
@@ -388,7 +388,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
               Cancelar
             </button>
             <button onClick={handleSalvar} disabled={salvando}
-              style={{ padding: '8px 22px', border: 'none', borderRadius: '8px', background: salvando ? '#7fceb1' : '#1D9E75', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '8px 22px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
               {salvando ? 'Salvando…' : '✓ Salvar alterações'}
             </button>
           </div>
@@ -423,7 +423,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
                     onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent' }}>
                     <td style={{ padding: '8px 16px', fontSize: '12px', color: '#555', textTransform: 'capitalize' }}>{formatarMesCurto(h.mes_referencia)}</td>
                     <td style={{ padding: '8px 16px', fontSize: '12px', color: sv2 === 'vencido' ? '#993C1D' : '#555' }}>{formatarData(h.data_vencimento)}</td>
-                    <td style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '600', color: sv2 === 'pago' ? '#0F6E56' : '#1a1a1a', textAlign: 'right' }}>{BRL(Number(h.valor))}</td>
+                    <td style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '600', color: sv2 === 'pago' ? '#4840CC' : '#1a1a1a', textAlign: 'right' }}>{BRL(Number(h.valor))}</td>
                     <td style={{ padding: '8px 16px', fontSize: '12px', color: '#555' }}>{formatarData(h.data_pagamento)}</td>
                     <td style={{ padding: '8px 16px' }}>
                       <span style={{ fontSize: '10px', fontWeight: '600', color: st2.cor, background: st2.bg, padding: '2px 8px', borderRadius: '6px' }}>

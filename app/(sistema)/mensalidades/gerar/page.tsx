@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -18,7 +18,7 @@ const inp: React.CSSProperties = {
   borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
-const fo = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = '#1D9E75')
+const fo = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = '#635BFF')
 const bl = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = '#d5d3cc')
 
 function InputGroup({ label, children, dica }: { label: string; children: React.ReactNode; dica?: string }) {
@@ -188,7 +188,7 @@ export default function GerarMensalidadesPage() {
 
         <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={carregarPreview} disabled={carregando || carregandoPreview}
-            style={{ padding: '9px 20px', background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: carregando || carregandoPreview ? 'not-allowed' : 'pointer', opacity: carregando || carregandoPreview ? 0.7 : 1 }}>
+            style={{ padding: '9px 20px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: carregando || carregandoPreview ? 'not-allowed' : 'pointer', opacity: carregando || carregandoPreview ? 0.7 : 1 }}>
             {carregandoPreview ? '⏳ Carregando…' : '👁 Visualizar cobranças'}
           </button>
           {carregando && <span style={{ fontSize: '12px', color: '#888' }}>Carregando membros…</span>}
@@ -204,10 +204,10 @@ export default function GerarMensalidadesPage() {
       {preview && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1rem' }}>
-            <div style={{ background: '#E1F5EE', border: '1px solid #1D9E7533', borderRadius: '10px', padding: '0.875rem 1rem' }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Novas cobranças</div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#0F6E56', margin: '2px 0' }}>{novosCount}</div>
-              <div style={{ fontSize: '11px', color: '#0F6E5699' }}>
+            <div style={{ background: '#EEF0FF', border: '1px solid #635BFF33', borderRadius: '10px', padding: '0.875rem 1rem' }}>
+              <div style={{ fontSize: '11px', fontWeight: '600', color: '#4840CC', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Novas cobranças</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#4840CC', margin: '2px 0' }}>{novosCount}</div>
+              <div style={{ fontSize: '11px', color: '#4840CC99' }}>
                 Total: {BRL(preview.filter(p => !p.jaExiste).reduce((s, p) => s + Number(p.valor), 0))}
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function GerarMensalidadesPage() {
                   {p.coop.nome_completo}
                 </div>
                 <div>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: p.coop.status === 'ativo' ? '#0F6E56' : '#185FA5', background: p.coop.status === 'ativo' ? '#E1F5EE' : '#E6F1FB', padding: '2px 7px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: p.coop.status === 'ativo' ? '#4840CC' : '#185FA5', background: p.coop.status === 'ativo' ? '#EEF0FF' : '#E6F1FB', padding: '2px 7px', borderRadius: '6px' }}>
                     {p.coop.status === 'ativo' ? 'Ativo' : 'Probatório'}
                   </span>
                 </div>
@@ -245,7 +245,7 @@ export default function GerarMensalidadesPage() {
                     value={p.valor}
                     onChange={e => setPreview(prev => prev!.map(x => x.coop.id === p.coop.id ? { ...x, valor: e.target.value } : x))}
                     style={{ padding: '5px 8px', border: '1px solid #d5d3cc', borderRadius: '6px', fontSize: '13px', width: '100px', background: '#fafaf8', outline: 'none' }}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 )}
@@ -259,7 +259,7 @@ export default function GerarMensalidadesPage() {
               Cancelar
             </button>
             <button onClick={handleGerar} disabled={gerando || novosCount === 0}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: gerando || novosCount === 0 ? '#7fceb1' : '#1D9E75', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: gerando || novosCount === 0 ? 'not-allowed' : 'pointer' }}>
+              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: gerando || novosCount === 0 ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: gerando || novosCount === 0 ? 'not-allowed' : 'pointer' }}>
               {gerando ? 'Gerando…' : `⚡ Gerar ${novosCount} cobrança${novosCount !== 1 ? 's' : ''}`}
             </button>
           </div>

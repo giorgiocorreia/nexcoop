@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ const STATUS_CONFIG: Record<
 > = {
   proposta:     { label: 'Proposta',     cor: '#6366f1', bg: '#ede9fe', border: '#a5b4fc' },
   probatorio:   { label: 'Probatório',   cor: '#185FA5', bg: '#E6F1FB', border: '#93c5fd' },
-  ativo:        { label: 'Ativo',        cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7' },
+  ativo:        { label: 'Ativo',        cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7' },
   inadimplente: { label: 'Inadimplente', cor: '#854F0B', bg: '#FAEEDA', border: '#fcd34d' },
   suspenso:     { label: 'Suspenso',     cor: '#993C1D', bg: '#FAECE7', border: '#f9a8d4' },
   demitido:     { label: 'Demitido',     cor: '#7f1d1d', bg: '#fee2e2', border: '#fca5a5' },
@@ -116,7 +116,7 @@ export default function CooperadoPerfil({ cooperado: initial }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
         <button
           onClick={() => router.push('/cooperados')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D9E75', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
         >
           ← Filiados
         </button>
@@ -128,9 +128,9 @@ export default function CooperadoPerfil({ cooperado: initial }: Props) {
       {mensagem && (
         <div style={{
           padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem',
-          background: mensagem.tipo === 'ok' ? '#E1F5EE' : '#fef2f2',
+          background: mensagem.tipo === 'ok' ? '#EEF0FF' : '#fef2f2',
           border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`,
-          color: mensagem.tipo === 'ok' ? '#0F6E56' : '#dc2626',
+          color: mensagem.tipo === 'ok' ? '#4840CC' : '#dc2626',
         }}>
           {mensagem.tipo === 'ok' ? '✓' : '⚠'} {mensagem.texto}
         </div>
@@ -141,9 +141,9 @@ export default function CooperadoPerfil({ cooperado: initial }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Avatar */}
           <div style={{
-            width: '64px', height: '64px', borderRadius: '50%', background: '#e8f7f2',
+            width: '64px', height: '64px', borderRadius: '50%', background: '#EEEDFE',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '22px', fontWeight: '700', color: '#0F6E56', flexShrink: 0,
+            fontSize: '22px', fontWeight: '700', color: '#4840CC', flexShrink: 0,
             border: '2px solid #b8e8d6',
           }}>
             {iniciais}

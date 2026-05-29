@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRouter } from 'next/navigation'
 import { getProximoPlano, PLANOS } from '@/lib/planos'
@@ -41,7 +41,7 @@ export default function BannerLimiteAtingido({ planoAtual, totalAtual, limite }:
                 onClick={() => router.push('/assinar')}
                 style={{
                   padding: '8px 18px',
-                  background: '#1D9E75',
+                  background: '#635BFF',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '8px',

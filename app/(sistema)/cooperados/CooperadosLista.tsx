@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,7 +10,7 @@ const STATUS_CONFIG: Record<
 > = {
   proposta:    { label: 'Proposta',     cor: '#6366f1', bg: '#ede9fe' },
   probatorio:  { label: 'Probatório',   cor: '#185FA5', bg: '#E6F1FB' },
-  ativo:       { label: 'Ativo',        cor: '#0F6E56', bg: '#E1F5EE' },
+  ativo:       { label: 'Ativo',        cor: '#4840CC', bg: '#EEF0FF' },
   inadimplente:{ label: 'Inadimplente', cor: '#854F0B', bg: '#FAEEDA' },
   suspenso:    { label: 'Suspenso',     cor: '#993C1D', bg: '#FAECE7' },
   demitido:    { label: 'Demitido',     cor: '#7f1d1d', bg: '#fee2e2' },
@@ -82,13 +82,13 @@ export default function CooperadosLista({ cooperados }: Props) {
         <button
           onClick={() => router.push('/cooperados/novo')}
           style={{
-            padding: '9px 18px', background: '#1D9E75', color: '#fff',
+            padding: '9px 18px', background: '#635BFF', color: '#fff',
             border: 'none', borderRadius: '8px', fontSize: '13px',
             fontWeight: '600', cursor: 'pointer', display: 'flex',
             alignItems: 'center', gap: '6px',
           }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
         >
           <span style={{ fontSize: '16px' }}>+</span> Novo filiado
         </button>
@@ -98,7 +98,7 @@ export default function CooperadosLista({ cooperados }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
           { label: 'Total', valor: resumo.total, cor: '#444', bg: '#f5f5f2', border: '#e5e3dc' },
-          { label: 'Ativos', valor: resumo.ativos, cor: '#0F6E56', bg: '#E1F5EE', border: '#1D9E7533' },
+          { label: 'Ativos', valor: resumo.ativos, cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
           { label: 'Probatórios', valor: resumo.probatorios, cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },
           { label: 'Inadimplentes', valor: resumo.inadimplentes, cor: '#854F0B', bg: '#FAEEDA', border: '#854F0B33' },
         ].map(card => (
@@ -131,7 +131,7 @@ export default function CooperadosLista({ cooperados }: Props) {
               fontSize: '13px', background: '#fff', color: '#1a1a1a',
               outline: 'none', boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+            onFocus={e => (e.target.style.borderColor = '#635BFF')}
             onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
           />
         </div>
@@ -163,7 +163,7 @@ export default function CooperadosLista({ cooperados }: Props) {
               <div style={{ marginTop: '8px' }}>
                 <button
                   onClick={() => { setBusca(''); setFiltroStatus('todos') }}
-                  style={{ fontSize: '12px', color: '#1D9E75', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ fontSize: '12px', color: '#635BFF', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   Limpar filtros
                 </button>
@@ -206,9 +206,9 @@ export default function CooperadosLista({ cooperados }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '50%',
-                          background: '#e8f7f2', display: 'flex', alignItems: 'center',
+                          background: '#EEEDFE', display: 'flex', alignItems: 'center',
                           justifyContent: 'center', fontSize: '13px', fontWeight: '600',
-                          color: '#0F6E56', flexShrink: 0,
+                          color: '#4840CC', flexShrink: 0,
                         }}>
                           {c.nome_completo.charAt(0).toUpperCase()}
                         </div>

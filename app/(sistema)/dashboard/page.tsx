@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Lancamento, Assembleia, Documento } from '@/types/database'
 
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '2rem' }}>
-        <CardResumo label="Total de filiados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#1D9E75" bg="#E1F5EE" />
+        <CardResumo label="Total de filiados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#635BFF" bg="#EEF0FF" />
         <CardResumo label="A receber" valor={formatBRL(totalReceber)} sub="Lançamentos pendentes" cor="#185FA5" bg="#E6F1FB" />
         <CardResumo label="A pagar" valor={formatBRL(totalPagar)} sub="Lançamentos pendentes" cor="#993C1D" bg="#FAECE7" />
         <CardResumo label="Docs vencendo" valor={String(documentosVencendo?.length || 0)} sub="Próximos 30 dias" cor="#854F0B" bg="#FAEEDA" />
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>Últimos lançamentos</h2>
-            <a href="/financeiro" style={{ fontSize: '12px', color: '#1D9E75', textDecoration: 'none' }}>Ver todos →</a>
+            <a href="/financeiro" style={{ fontSize: '12px', color: '#635BFF', textDecoration: 'none' }}>Ver todos →</a>
           </div>
           {ultimosLancamentos?.length ? (
             <div>
@@ -94,12 +94,12 @@ export default async function DashboardPage() {
                     <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>{l.descricao}</div>
                     <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
                       {new Date(l.data_competencia).toLocaleDateString('pt-BR')} ·{' '}
-                      <span style={{ color: l.status === 'pago' ? '#0F6E56' : '#854F0B' }}>
+                      <span style={{ color: l.status === 'pago' ? '#4840CC' : '#854F0B' }}>
                         {l.status === 'pago' ? 'Pago' : 'Pendente'}
                       </span>
                     </div>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: l.tipo === 'receita' ? '#0F6E56' : '#993C1D' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: l.tipo === 'receita' ? '#4840CC' : '#993C1D' }}>
                     {l.tipo === 'receita' ? '+' : '-'}{formatBRL(Number(l.valor))}
                   </div>
                 </div>

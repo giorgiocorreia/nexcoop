@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,13 +10,13 @@ import type { Assembleia, TipoAssembleia, StatusAssembleia } from '@/types/datab
 const TIPO_CONFIG: Record<TipoAssembleia, { sigla: string; label: string; cor: string; bg: string; border: string }> = {
   AGO:        { sigla: 'AGO', label: 'Assembleia Geral Ordinária',           cor: '#185FA5', bg: '#E6F1FB', border: '#93c5fd' },
   AGE:        { sigla: 'AGE', label: 'Assembleia Geral Extraordinária',      cor: '#6366f1', bg: '#ede9fe', border: '#a5b4fc' },
-  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração', cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7' },
+  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração', cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7' },
   reuniao_CF: { sigla: 'CF',  label: 'Reunião do Conselho Fiscal',           cor: '#854F0B', bg: '#FAEEDA', border: '#fcd34d' },
 }
 
 const STATUS_CONFIG: Record<StatusAssembleia, { label: string; cor: string; bg: string; border: string }> = {
   agendada:  { label: 'Agendada',  cor: '#185FA5', bg: '#E6F1FB', border: '#93c5fd' },
-  realizada: { label: 'Realizada', cor: '#0F6E56', bg: '#E1F5EE', border: '#6ee7b7' },
+  realizada: { label: 'Realizada', cor: '#4840CC', bg: '#EEF0FF', border: '#6ee7b7' },
   cancelada: { label: 'Cancelada', cor: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
 }
 
@@ -82,16 +82,16 @@ function Toggle({ ativo, label, labelAtivo, onChange, disabled }: {
       style={{
         display: 'flex', alignItems: 'center', gap: '8px',
         padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: disabled ? 'wait' : 'pointer',
-        background: ativo ? '#E1F5EE' : '#f5f5f2',
-        color: ativo ? '#0F6E56' : '#666',
+        background: ativo ? '#EEF0FF' : '#f5f5f2',
+        color: ativo ? '#4840CC' : '#666',
         fontSize: '12px', fontWeight: '600', transition: 'all 0.15s',
       }}
       onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
     >
       <span style={{
-        width: '14px', height: '14px', borderRadius: '3px', border: `2px solid ${ativo ? '#1D9E75' : '#d5d3cc'}`,
-        background: ativo ? '#1D9E75' : 'transparent',
+        width: '14px', height: '14px', borderRadius: '3px', border: `2px solid ${ativo ? '#635BFF' : '#d5d3cc'}`,
+        background: ativo ? '#635BFF' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
         {ativo && <span style={{ color: '#fff', fontSize: '9px', fontWeight: '900' }}>✓</span>}
@@ -213,7 +213,7 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
         <button onClick={() => router.push('/assembleias')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1D9E75', fontSize: '13px', padding: 0 }}>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0 }}>
           ← Assembleias
         </button>
         <span>/</span>
@@ -226,9 +226,9 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
       {mensagem && (
         <div style={{
           padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem',
-          background: mensagem.tipo === 'ok' ? '#E1F5EE' : '#fef2f2',
+          background: mensagem.tipo === 'ok' ? '#EEF0FF' : '#fef2f2',
           border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`,
-          color: mensagem.tipo === 'ok' ? '#0F6E56' : '#dc2626',
+          color: mensagem.tipo === 'ok' ? '#4840CC' : '#dc2626',
         }}>
           {mensagem.tipo === 'ok' ? '✓' : '⚠'} {mensagem.texto}
         </div>
@@ -366,12 +366,12 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
             </span>
           )}
           {asm.ata_gerada && (
-            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: '#E1F5EE', color: '#0F6E56' }}>
+            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: '#EEF0FF', color: '#4840CC' }}>
               📄 ATA gerada
             </span>
           )}
           {asm.ata_assinada && (
-            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: '#E1F5EE', color: '#0F6E56' }}>
+            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: '#EEF0FF', color: '#4840CC' }}>
               ✅ ATA assinada
             </span>
           )}
@@ -462,7 +462,7 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
                 flex: 1, padding: '8px 12px', border: '1px solid #d5d3cc',
                 borderRadius: '8px', fontSize: '13px', outline: 'none',
               }}
-              onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+              onFocus={e => (e.target.style.borderColor = '#635BFF')}
               onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
             />
             <button
@@ -470,7 +470,7 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
               disabled={salvandoPresenca}
               style={{
                 padding: '8px 14px', border: 'none', borderRadius: '8px',
-                background: salvandoPresenca ? '#7fceb1' : '#1D9E75',
+                background: salvandoPresenca ? '#9F9BFF' : '#635BFF',
                 color: '#fff', fontSize: '12px', fontWeight: '600',
                 cursor: salvandoPresenca ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
               }}
@@ -505,8 +505,8 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
             <a href={asm.ata_url} target="_blank" rel="noopener noreferrer"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '7px 14px', background: '#E1F5EE', border: '1px solid #6ee7b7',
-                borderRadius: '8px', fontSize: '12px', color: '#0F6E56',
+                padding: '7px 14px', background: '#EEF0FF', border: '1px solid #6ee7b7',
+                borderRadius: '8px', fontSize: '12px', color: '#4840CC',
                 textDecoration: 'none', fontWeight: '600',
               }}>
               📎 Ver ATA

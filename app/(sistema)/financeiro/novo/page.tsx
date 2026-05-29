@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -30,7 +30,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#1D9E75')
+  (e.target.style.borderColor = '#635BFF')
 const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
   (e.target.style.borderColor = '#d5d3cc')
 
@@ -75,7 +75,7 @@ const FORM_INICIAL: FormData = {
 }
 
 const TIPO_CONFIG = {
-  receita:      { label: 'Receita',      icone: '↑', cor: '#0F6E56', bg: '#E1F5EE' },
+  receita:      { label: 'Receita',      icone: '↑', cor: '#4840CC', bg: '#EEF0FF' },
   despesa:      { label: 'Despesa',      icone: '↓', cor: '#993C1D', bg: '#FAECE7' },
   transferencia:{ label: 'Transferência',icone: '↔', cor: '#185FA5', bg: '#E6F1FB' },
 } as const
@@ -350,7 +350,7 @@ export default function NovoLancamentoPage() {
                 type="checkbox"
                 checked={form.recorrente}
                 onChange={e => setForm(prev => ({ ...prev, recorrente: e.target.checked, frequencia: '' }))}
-                style={{ accentColor: '#1D9E75', width: '16px', height: '16px' }}
+                style={{ accentColor: '#635BFF', width: '16px', height: '16px' }}
               />
               Este lançamento se repete periodicamente
             </label>
@@ -400,7 +400,7 @@ export default function NovoLancamentoPage() {
               disabled={salvando}
               style={{
                 padding: '9px 24px', border: 'none', borderRadius: '8px',
-                background: salvando ? '#7fceb1' : tipo.cor,
+                background: salvando ? '#9F9BFF' : tipo.cor,
                 color: '#fff', fontSize: '13px', fontWeight: '600',
                 cursor: salvando ? 'not-allowed' : 'pointer',
               }}

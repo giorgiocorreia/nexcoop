@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9,8 +9,8 @@ const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> =
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
   essencial:   { label: 'Essencial',   cor: '#444',    bg: '#f5f5f2' },
   cooperativa: { label: 'Cooperativa', cor: '#185FA5', bg: '#E6F1FB' },
-  profissional:{ label: 'Profissional',cor: '#0F6E56', bg: '#E1F5EE' },
-  agro:        { label: 'Agro',        cor: '#0F6E56', bg: '#E1F5EE' },
+  profissional:{ label: 'Profissional',cor: '#4840CC', bg: '#EEF0FF' },
+  agro:        { label: 'Agro',        cor: '#4840CC', bg: '#EEF0FF' },
   impacto:     { label: 'Impacto',     cor: '#6366f1', bg: '#ede9fe' },
   enterprise:  { label: 'Enterprise',  cor: '#854F0B', bg: '#FAEEDA' },
 }
@@ -77,7 +77,7 @@ function IsentarForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Orga
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
         <input type="checkbox" checked={isento} onChange={e => setIsento(e.target.checked)}
-          style={{ accentColor: '#1D9E75', width: '16px', height: '16px' }} />
+          style={{ accentColor: '#635BFF', width: '16px', height: '16px' }} />
         <span style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
           Organização isenta de pagamento
         </span>
@@ -94,7 +94,7 @@ function IsentarForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Orga
                 <input type="radio" name="modo_isencao" value={op.val}
                   checked={modo === op.val}
                   onChange={() => setModo(op.val as 'data' | 'indefinido')}
-                  style={{ accentColor: '#1D9E75' }} />
+                  style={{ accentColor: '#635BFF' }} />
                 {op.label}
               </label>
             ))}
@@ -124,10 +124,10 @@ function IsentarForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Orga
       )}
 
       {erro && <div style={{ fontSize: '12px', color: '#dc2626' }}>{erro}</div>}
-      {sucesso && <div style={{ fontSize: '12px', color: '#0F6E56' }}>✓ {sucesso}</div>}
+      {sucesso && <div style={{ fontSize: '12px', color: '#4840CC' }}>✓ {sucesso}</div>}
 
       <button onClick={salvar} disabled={salvando} style={{
-        padding: '8px 16px', background: salvando ? '#7fceb1' : '#1D9E75',
+        padding: '8px 16px', background: salvando ? '#9F9BFF' : '#635BFF',
         color: '#fff', border: 'none', borderRadius: '8px',
         fontSize: '13px', fontWeight: '600',
         cursor: salvando ? 'not-allowed' : 'pointer',
@@ -187,7 +187,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1.25rem' }}>
         <button onClick={() => router.push('/admin')}
-          style={{ fontSize: '13px', color: '#1D9E75', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          style={{ fontSize: '13px', color: '#635BFF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
           Admin
         </button>
         <span style={{ color: '#aaa', fontSize: '13px' }}>›</span>
@@ -201,9 +201,9 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '48px', height: '48px', borderRadius: '12px',
-            background: '#E1F5EE', display: 'flex', alignItems: 'center',
+            background: '#EEF0FF', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: '22px', flexShrink: 0,
-          }}>🌱</div>
+          }}><svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>{org.nome}</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
@@ -211,8 +211,8 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
               <span style={{
                 display: 'inline-block', padding: '2px 8px', borderRadius: '20px',
                 fontSize: '11px', fontWeight: '600',
-                color: org.ativo ? '#0F6E56' : '#7f1d1d',
-                background: org.ativo ? '#E1F5EE' : '#fee2e2',
+                color: org.ativo ? '#4840CC' : '#7f1d1d',
+                background: org.ativo ? '#EEF0FF' : '#fee2e2',
               }}>
                 {org.ativo ? 'Ativa' : 'Inativa'}
               </span>
@@ -229,9 +229,9 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
         </div>
         <button onClick={toggleAtivo} disabled={salvando} style={{
           padding: '9px 18px',
-          background: org.ativo ? '#fef2f2' : '#E1F5EE',
-          color: org.ativo ? '#dc2626' : '#0F6E56',
-          border: `1px solid ${org.ativo ? '#fca5a5' : '#1D9E7533'}`,
+          background: org.ativo ? '#fef2f2' : '#EEF0FF',
+          color: org.ativo ? '#dc2626' : '#4840CC',
+          border: `1px solid ${org.ativo ? '#fca5a5' : '#635BFF33'}`,
           borderRadius: '8px', fontSize: '13px', fontWeight: '600',
           cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.6 : 1,
         }}>
@@ -245,7 +245,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
         </div>
       )}
       {sucesso && (
-        <div style={{ background: '#E1F5EE', border: '1px solid #1D9E7533', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', fontSize: '13px', color: '#0F6E56' }}>
+        <div style={{ background: '#EEF0FF', border: '1px solid #635BFF33', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', fontSize: '13px', color: '#4840CC' }}>
           {sucesso}
         </div>
       )}
@@ -253,7 +253,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       {/* Cards de estatísticas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Filiados', valor: totalCooperados, cor: '#0F6E56', bg: '#E1F5EE' },
+          { label: 'Filiados', valor: totalCooperados, cor: '#4840CC', bg: '#EEF0FF' },
           { label: 'Mensalidades', valor: totalMensalidades, cor: '#185FA5', bg: '#E6F1FB' },
           { label: 'Documentos', valor: totalDocumentos, cor: '#6366f1', bg: '#ede9fe' },
         ].map(s => (
@@ -384,9 +384,9 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{
                         width: '28px', height: '28px', borderRadius: '50%',
-                        background: '#e8f7f2', display: 'flex', alignItems: 'center',
+                        background: '#EEEDFE', display: 'flex', alignItems: 'center',
                         justifyContent: 'center', fontSize: '12px', fontWeight: '600',
-                        color: '#0F6E56', flexShrink: 0,
+                        color: '#4840CC', flexShrink: 0,
                       }}>
                         {u.nome_completo.charAt(0).toUpperCase()}
                       </div>
@@ -400,8 +400,8 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
                     <span style={{
                       display: 'inline-block', padding: '2px 8px',
                       borderRadius: '12px', fontSize: '11px', fontWeight: '600',
-                      color: u.role === 'org_admin' ? '#0F6E56' : u.role === 'super_admin' ? '#6366f1' : '#555',
-                      background: u.role === 'org_admin' ? '#E1F5EE' : u.role === 'super_admin' ? '#ede9fe' : '#f5f5f2',
+                      color: u.role === 'org_admin' ? '#4840CC' : u.role === 'super_admin' ? '#6366f1' : '#555',
+                      background: u.role === 'org_admin' ? '#EEF0FF' : u.role === 'super_admin' ? '#ede9fe' : '#f5f5f2',
                     }}>
                       {ROLE_LABEL[u.role]}
                     </span>
@@ -410,8 +410,8 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
                     <span style={{
                       display: 'inline-block', padding: '2px 8px',
                       borderRadius: '12px', fontSize: '11px', fontWeight: '600',
-                      color: u.ativo ? '#0F6E56' : '#7f1d1d',
-                      background: u.ativo ? '#E1F5EE' : '#fee2e2',
+                      color: u.ativo ? '#4840CC' : '#7f1d1d',
+                      background: u.ativo ? '#EEF0FF' : '#fee2e2',
                     }}>
                       {u.ativo ? 'Ativo' : 'Inativo'}
                     </span>

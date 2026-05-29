@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -93,17 +93,17 @@ export default function Sidebar({ usuario }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '36px', height: '36px', borderRadius: '10px',
-            background: isSuperAdmin ? '#1a1a1a' : '#1D9E75',
+            background: isSuperAdmin ? '#1a1a1a' : '#635BFF',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '18px', flexShrink: 0,
           }}>
-            {isSuperAdmin ? '⚡' : '🌱'}
+            {isSuperAdmin ? '⚡' : <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {orgNome}
             </div>
-            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#1D9E75' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
+            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
               {orgTipo}
             </div>
           </div>
@@ -128,14 +128,14 @@ export default function Sidebar({ usuario }: Props) {
                   onClick={() => router.push(item.href)}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '8px 1rem', background: ativo ? '#e8f7f2' : 'transparent',
+                    padding: '8px 1rem', background: ativo ? '#EEEDFE' : 'transparent',
                     border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                   onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
                   onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                 >
                   <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
-                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#0F6E56' : '#444' }}>
+                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444' }}>
                     {item.label}
                   </span>
                 </button>
@@ -160,7 +160,7 @@ export default function Sidebar({ usuario }: Props) {
                   onClick={() => !item.em_breve && router.push(item.href)}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '8px 1rem', background: ativo ? '#e8f7f2' : 'transparent',
+                    padding: '8px 1rem', background: ativo ? '#EEEDFE' : 'transparent',
                     border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
                     textAlign: 'left', opacity: item.em_breve ? 0.5 : 1,
                   }}
@@ -168,7 +168,7 @@ export default function Sidebar({ usuario }: Props) {
                   onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                 >
                   <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
-                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#0F6E56' : '#444', flex: 1 }}>
+                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444', flex: 1 }}>
                     {item.label}
                   </span>
                   {item.em_breve && (
@@ -199,14 +199,14 @@ export default function Sidebar({ usuario }: Props) {
                   onClick={() => router.push('/configuracoes')}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '8px 1rem', background: ativo ? '#e8f7f2' : 'transparent',
+                    padding: '8px 1rem', background: ativo ? '#EEEDFE' : 'transparent',
                     border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                   onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
                   onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                 >
                   <span style={{ fontSize: '16px', flexShrink: 0 }}>⚙️</span>
-                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#0F6E56' : '#444' }}>
+                  <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444' }}>
                     Configurações
                   </span>
                 </button>
@@ -221,10 +221,10 @@ export default function Sidebar({ usuario }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <div style={{
             width: '32px', height: '32px', borderRadius: '50%',
-            background: isSuperAdmin ? '#1a1a1a' : '#e8f7f2',
+            background: isSuperAdmin ? '#1a1a1a' : '#EEEDFE',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '13px', fontWeight: '600',
-            color: isSuperAdmin ? '#fff' : '#0F6E56',
+            color: isSuperAdmin ? '#fff' : '#4840CC',
             flexShrink: 0,
           }}>
             {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
@@ -233,7 +233,7 @@ export default function Sidebar({ usuario }: Props) {
             <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {usuario?.nome_completo || 'Usuário'}
             </div>
-            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#1D9E75' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
+            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
               {labelRole(usuario?.role)}
             </div>
           </div>

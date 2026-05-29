@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -7,14 +7,14 @@ import type { Lancamento, TipoLancamento, StatusLancamento } from '@/types/datab
 // ─── Configurações de cores ───────────────────────────────────────────────────
 
 const TIPO_CONFIG: Record<TipoLancamento, { label: string; cor: string; bg: string; icone: string; sinal: string }> = {
-  receita:      { label: 'Receita',      cor: '#0F6E56', bg: '#E1F5EE', icone: '↑', sinal: '+' },
+  receita:      { label: 'Receita',      cor: '#4840CC', bg: '#EEF0FF', icone: '↑', sinal: '+' },
   despesa:      { label: 'Despesa',      cor: '#993C1D', bg: '#FAECE7', icone: '↓', sinal: '-' },
   transferencia:{ label: 'Transferência',cor: '#185FA5', bg: '#E6F1FB', icone: '↔', sinal: '' },
 }
 
 const STATUS_CONFIG: Record<StatusLancamento, { label: string; cor: string; bg: string }> = {
   pendente: { label: 'Pendente', cor: '#854F0B', bg: '#FAEEDA' },
-  pago:     { label: 'Pago',     cor: '#0F6E56', bg: '#E1F5EE' },
+  pago:     { label: 'Pago',     cor: '#4840CC', bg: '#EEF0FF' },
   cancelado:{ label: 'Cancelado',cor: '#374151', bg: '#f3f4f6' },
   agendado: { label: 'Agendado', cor: '#6366f1', bg: '#ede9fe' },
 }
@@ -104,13 +104,13 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
         <button
           onClick={() => router.push('/financeiro/novo')}
           style={{
-            padding: '9px 18px', background: '#1D9E75', color: '#fff',
+            padding: '9px 18px', background: '#635BFF', color: '#fff',
             border: 'none', borderRadius: '8px', fontSize: '13px',
             fontWeight: '600', cursor: 'pointer', display: 'flex',
             alignItems: 'center', gap: '6px',
           }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
         >
           <span style={{ fontSize: '16px' }}>+</span> Novo lançamento
         </button>
@@ -119,9 +119,9 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
       {/* ── Cards de resumo (calculados sobre dados filtrados) ─────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Receitas',  valor: totais.receitas,  cor: '#0F6E56', bg: '#E1F5EE', border: '#1D9E7533' },
+          { label: 'Receitas',  valor: totais.receitas,  cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
           { label: 'Despesas',  valor: totais.despesas,  cor: '#993C1D', bg: '#FAECE7', border: '#993C1D33' },
-          { label: 'Saldo',     valor: totais.saldo,     cor: totais.saldo >= 0 ? '#0F6E56' : '#993C1D', bg: totais.saldo >= 0 ? '#E1F5EE' : '#FAECE7', border: totais.saldo >= 0 ? '#1D9E7533' : '#993C1D33' },
+          { label: 'Saldo',     valor: totais.saldo,     cor: totais.saldo >= 0 ? '#4840CC' : '#993C1D', bg: totais.saldo >= 0 ? '#EEF0FF' : '#FAECE7', border: totais.saldo >= 0 ? '#635BFF33' : '#993C1D33' },
           { label: 'Pendentes', valor: totais.pendentes, cor: '#854F0B', bg: '#FAEEDA', border: '#854F0B33' },
         ].map(card => (
           <div key={card.label} style={{
@@ -162,7 +162,7 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
               fontSize: '13px', background: '#fff', color: '#1a1a1a',
               outline: 'none', boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+            onFocus={e => (e.target.style.borderColor = '#635BFF')}
             onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
           />
         </div>

@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const GREEN = '#1D9E75'
-const GREEN_DARK = '#0F6E56'
+const GREEN = '#635BFF'
+const GREEN_DARK = '#4840CC'
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -100,7 +100,7 @@ export default function OnboardingPage() {
             width: '56px', height: '56px', borderRadius: '14px', background: GREEN,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1rem', fontSize: '28px',
-          }}>🌱</div>
+          }}><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>
             Complete seu cadastro
           </h1>
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
                       flex: 1, display: 'flex', alignItems: 'center', gap: '6px',
                       padding: '8px 10px', border: `1px solid ${form.tipo === op.val ? GREEN : '#d5d3cc'}`,
                       borderRadius: '8px', cursor: 'pointer', fontSize: '12px',
-                      background: form.tipo === op.val ? '#E1F5EE' : '#fafaf8',
+                      background: form.tipo === op.val ? '#EEF0FF' : '#fafaf8',
                       color: form.tipo === op.val ? GREEN_DARK : '#555',
                       fontWeight: form.tipo === op.val ? '600' : '400',
                     }}>
@@ -187,7 +187,7 @@ export default function OnboardingPage() {
               )}
 
               <button type="submit" disabled={salvando}
-                style={{ width: '100%', padding: '12px', background: salvando ? '#7fceb1' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer', marginTop: '0.5rem' }}>
+                style={{ width: '100%', padding: '12px', background: salvando ? '#9F9BFF' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer', marginTop: '0.5rem' }}>
                 {salvando ? 'Salvando...' : 'Concluir cadastro →'}
               </button>
             </div>

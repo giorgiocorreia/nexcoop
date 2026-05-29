@@ -1,10 +1,10 @@
-'use client'
+﻿'use client'
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const GREEN = '#1D9E75'
+const GREEN = '#635BFF'
 
 function AuthForm() {
   const router = useRouter()
@@ -153,7 +153,7 @@ function AuthForm() {
             {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>{erro}</div>}
 
             <button type="submit" disabled={carregando}
-              style={{ width: '100%', padding: '11px', background: carregando ? '#7fceb1' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: carregando ? 'not-allowed' : 'pointer' }}>
+              style={{ width: '100%', padding: '11px', background: carregando ? '#9F9BFF' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: carregando ? 'not-allowed' : 'pointer' }}>
               {carregando ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
@@ -196,7 +196,7 @@ function AuthForm() {
             {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>{erro}</div>}
 
             <button type="submit" disabled={carregando}
-              style={{ width: '100%', padding: '11px', background: carregando ? '#7fceb1' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: carregando ? 'not-allowed' : 'pointer' }}>
+              style={{ width: '100%', padding: '11px', background: carregando ? '#9F9BFF' : GREEN, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: carregando ? 'not-allowed' : 'pointer' }}>
               {carregando ? 'Criando conta...' : 'Criar conta grátis'}
             </button>
 
@@ -223,7 +223,7 @@ export default function LoginPage() {
             width: '56px', height: '56px', borderRadius: '14px', background: GREEN,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1rem', fontSize: '28px',
-          }}>🌱</div>
+          }}><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
           <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>NextCoop</h1>
           <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Plataforma cooperativista</p>
         </div>

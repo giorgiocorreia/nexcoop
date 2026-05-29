@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -246,9 +246,9 @@ export default function NovoCooperadoPage() {
               onClick={() => setAbaAtiva(aba.id)}
               style={{
                 padding: '9px 16px', background: 'none', border: 'none',
-                borderBottom: ativo ? '2px solid #1D9E75' : '2px solid transparent',
+                borderBottom: ativo ? '2px solid #635BFF' : '2px solid transparent',
                 cursor: 'pointer', fontSize: '13px', fontWeight: ativo ? '600' : '400',
-                color: ativo ? '#1D9E75' : '#666', display: 'flex', alignItems: 'center', gap: '6px',
+                color: ativo ? '#635BFF' : '#666', display: 'flex', alignItems: 'center', gap: '6px',
                 marginBottom: '-1px', transition: 'all 0.15s',
               }}
             >
@@ -273,16 +273,16 @@ export default function NovoCooperadoPage() {
                   ].map(op => (
                     <label key={op.val} style={{
                       flex: 1, display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 14px', border: `1px solid ${form.tipo === op.val ? '#1D9E75' : '#d5d3cc'}`,
+                      padding: '10px 14px', border: `1px solid ${form.tipo === op.val ? '#635BFF' : '#d5d3cc'}`,
                       borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
-                      background: form.tipo === op.val ? '#E1F5EE' : '#fafaf8',
-                      color: form.tipo === op.val ? '#0F6E56' : '#555', fontWeight: form.tipo === op.val ? '600' : '400',
+                      background: form.tipo === op.val ? '#EEF0FF' : '#fafaf8',
+                      color: form.tipo === op.val ? '#4840CC' : '#555', fontWeight: form.tipo === op.val ? '600' : '400',
                     }}>
                       <input
                         type="radio" name="tipo" value={op.val}
                         checked={form.tipo === op.val}
                         onChange={set('tipo')}
-                        style={{ accentColor: '#1D9E75' }}
+                        style={{ accentColor: '#635BFF' }}
                       />
                       {op.label}
                     </label>
@@ -294,7 +294,7 @@ export default function NovoCooperadoPage() {
                 <input type="text" value={form.nome_completo} onChange={set('nome_completo')}
                   placeholder={form.tipo === 'pessoa_fisica' ? 'João da Silva' : 'Razão social'}
                   required style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
                   onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                 />
               </InputGroup>
@@ -305,14 +305,14 @@ export default function NovoCooperadoPage() {
                     <InputGroup label="CPF">
                       <input type="text" value={form.cpf} onChange={set('cpf')}
                         placeholder="000.000.000-00" maxLength={14} style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                       />
                     </InputGroup>
                     <InputGroup label="RG">
                       <input type="text" value={form.rg} onChange={set('rg')}
                         placeholder="0000000" style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                       />
                     </InputGroup>
@@ -321,7 +321,7 @@ export default function NovoCooperadoPage() {
                     <InputGroup label="Data de nascimento">
                       <input type="date" value={form.data_nascimento} onChange={set('data_nascimento')}
                         style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                       />
                     </InputGroup>
@@ -340,7 +340,7 @@ export default function NovoCooperadoPage() {
                   <InputGroup label="CNPJ">
                     <input type="text" value={form.cnpj_pj} onChange={set('cnpj_pj')}
                       placeholder="00.000.000/0001-00" style={inputStyle}
-                      onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                      onFocus={e => (e.target.style.borderColor = '#635BFF')}
                       onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                     />
                   </InputGroup>
@@ -348,14 +348,14 @@ export default function NovoCooperadoPage() {
                     <InputGroup label="Nome do representante">
                       <input type="text" value={form.representante_nome} onChange={set('representante_nome')}
                         placeholder="Nome completo" style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                       />
                     </InputGroup>
                     <InputGroup label="CPF do representante">
                       <input type="text" value={form.representante_cpf} onChange={set('representante_cpf')}
                         placeholder="000.000.000-00" maxLength={14} style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                       />
                     </InputGroup>
@@ -372,21 +372,21 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="E-mail">
                   <input type="email" value={form.email} onChange={set('email')}
                     placeholder="nome@email.com" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Telefone">
                   <input type="tel" value={form.telefone} onChange={set('telefone')}
                     placeholder="(00) 00000-0000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="WhatsApp">
                   <input type="tel" value={form.whatsapp} onChange={set('whatsapp')}
                     placeholder="(00) 00000-0000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -408,14 +408,14 @@ export default function NovoCooperadoPage() {
                       }}
                       placeholder="00000-000" maxLength={9}
                       style={{ ...inputStyle, paddingRight: buscandoCep ? '32px' : undefined }}
-                      onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                      onFocus={e => (e.target.style.borderColor = '#635BFF')}
                       onBlur={e => {
                         e.target.style.borderColor = '#d5d3cc'
                         buscarCEP(form.cep)
                       }}
                     />
                     {buscandoCep && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#1D9E75' }}>
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#635BFF' }}>
                         ⟳
                       </span>
                     )}
@@ -424,7 +424,7 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Logradouro">
                   <input type="text" value={form.logradouro} onChange={set('logradouro')}
                     placeholder="Rua, Avenida…" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -434,21 +434,21 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Número">
                   <input type="text" value={form.numero} onChange={set('numero')}
                     placeholder="123" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Complemento">
                   <input type="text" value={form.complemento} onChange={set('complemento')}
                     placeholder="Apto, sala…" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Bairro">
                   <input type="text" value={form.bairro} onChange={set('bairro')}
                     placeholder="Bairro" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -458,7 +458,7 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Cidade">
                   <input type="text" value={form.cidade} onChange={set('cidade')}
                     placeholder="Cidade" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -475,7 +475,7 @@ export default function NovoCooperadoPage() {
           {/* ─── ABA 3: PROPRIEDADE RURAL ─── */}
           {abaAtiva === 'propriedade' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ background: '#f8fdf9', border: '1px solid #c4e9dc', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#0F6E56' }}>
+              <div style={{ background: '#f8fdf9', border: '1px solid #c4e9dc', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#4840CC' }}>
                 💡 Preencha apenas se o cooperado possuir propriedade rural vinculada. Todos os campos são opcionais.
               </div>
 
@@ -483,14 +483,14 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Nome da propriedade">
                   <input type="text" value={form.nome_propriedade} onChange={set('nome_propriedade')}
                     placeholder="Sítio São João" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Área total (ha)">
                   <input type="number" value={form.area_total_ha} onChange={set('area_total_ha')}
                     placeholder="12.5" min="0" step="0.01" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -500,14 +500,14 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Latitude">
                   <input type="number" value={form.latitude} onChange={set('latitude')}
                     placeholder="-15.7801" step="any" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Longitude">
                   <input type="number" value={form.longitude} onChange={set('longitude')}
                     placeholder="-47.9292" step="any" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -520,7 +520,7 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Número CAF">
                   <input type="text" value={form.caf_numero} onChange={set('caf_numero')}
                     placeholder="CAF-000000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -540,14 +540,14 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Validade CAF">
                   <input type="date" value={form.caf_validade} onChange={set('caf_validade')}
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="Número DAP">
                   <input type="text" value={form.dap_numero} onChange={set('dap_numero')}
                     placeholder="DAP-000000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -573,7 +573,7 @@ export default function NovoCooperadoPage() {
                 <InputGroup label="Número de matrícula">
                   <input type="text" value={form.numero_matricula} onChange={set('numero_matricula')}
                     placeholder="001" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -582,7 +582,7 @@ export default function NovoCooperadoPage() {
               <InputGroup label="Data de admissão">
                 <input type="date" value={form.data_admissao} onChange={set('data_admissao')}
                   style={{ ...inputStyle, maxWidth: '200px' }}
-                  onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
                   onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                 />
               </InputGroup>
@@ -595,7 +595,7 @@ export default function NovoCooperadoPage() {
                     placeholder="Descreva o motivo…"
                     rows={3}
                     style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -633,11 +633,11 @@ export default function NovoCooperadoPage() {
                 onClick={() => setAbaAtiva(ABAS[abaIdx + 1].id)}
                 style={{
                   padding: '9px 20px', border: 'none', borderRadius: '8px',
-                  background: '#1D9E75', color: '#fff', fontSize: '13px',
+                  background: '#635BFF', color: '#fff', fontSize: '13px',
                   fontWeight: '600', cursor: 'pointer',
                 }}
                 onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
               >
                 Próximo →
               </button>
@@ -647,7 +647,7 @@ export default function NovoCooperadoPage() {
                 disabled={salvando}
                 style={{
                   padding: '9px 24px', border: 'none', borderRadius: '8px',
-                  background: salvando ? '#7fceb1' : '#1D9E75', color: '#fff',
+                  background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff',
                   fontSize: '13px', fontWeight: '600',
                   cursor: salvando ? 'not-allowed' : 'pointer',
                 }}

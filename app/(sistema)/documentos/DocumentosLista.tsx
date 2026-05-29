@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,14 +8,14 @@ import type { Documento, CategoriaDocumento } from '@/types/database'
 
 const CATEGORIA_CONFIG: Record<CategoriaDocumento, { label: string; cor: string; bg: string; icone: string }> = {
   estatuto:   { label: 'Estatuto',    cor: '#185FA5', bg: '#E6F1FB', icone: '📋' },
-  ata:        { label: 'Ata',         cor: '#0F6E56', bg: '#E1F5EE', icone: '📝' },
+  ata:        { label: 'Ata',         cor: '#4840CC', bg: '#EEF0FF', icone: '📝' },
   contrato:   { label: 'Contrato',    cor: '#6366f1', bg: '#ede9fe', icone: '🤝' },
   convenio:   { label: 'Convênio',    cor: '#7c3aed', bg: '#f5f3ff', icone: '🔗' },
   edital:     { label: 'Edital',      cor: '#0e7490', bg: '#ecfeff', icone: '📢' },
   certidao:   { label: 'Certidão',    cor: '#854F0B', bg: '#FAEEDA', icone: '📜' },
   licenca:    { label: 'Licença',     cor: '#993C1D', bg: '#FAECE7', icone: '🔑' },
   relatorio:  { label: 'Relatório',   cor: '#374151', bg: '#f3f4f6', icone: '📊' },
-  financeiro: { label: 'Financeiro',  cor: '#0F6E56', bg: '#E1F5EE', icone: '💰' },
+  financeiro: { label: 'Financeiro',  cor: '#4840CC', bg: '#EEF0FF', icone: '💰' },
   projeto:    { label: 'Projeto',     cor: '#6366f1', bg: '#ede9fe', icone: '🎯' },
   aditivo:    { label: 'Aditivo',     cor: '#854F0B', bg: '#FAEEDA', icone: '📎' },
   outro:      { label: 'Outro',       cor: '#374151', bg: '#f3f4f6', icone: '📄' },
@@ -40,7 +40,7 @@ function calcStatus(doc: Documento): StatusValidade {
 const STATUS_VALIDADE: Record<StatusValidade, { label: string; cor: string; bg: string }> = {
   vencido:      { label: 'Vencido',      cor: '#993C1D', bg: '#FAECE7' },
   alerta:       { label: 'Vencendo',     cor: '#854F0B', bg: '#FAEEDA' },
-  ok:           { label: 'Em dia',       cor: '#0F6E56', bg: '#E1F5EE' },
+  ok:           { label: 'Em dia',       cor: '#4840CC', bg: '#EEF0FF' },
   sem_validade: { label: 'Sem validade', cor: '#6b7280', bg: '#f3f4f6' },
 }
 
@@ -105,7 +105,7 @@ export default function DocumentosLista({ documentos }: Props) {
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>Gestão documental da cooperativa</p>
         </div>
         <button onClick={() => router.push('/documentos/novo')}
-          style={{ padding: '9px 18px', background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+          style={{ padding: '9px 18px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
           + Novo documento
         </button>
       </div>
@@ -132,7 +132,7 @@ export default function DocumentosLista({ documentos }: Props) {
           type="text" value={busca} onChange={e => setBusca(e.target.value)}
           placeholder="Buscar por nome, número, órgão…"
           style={{ flex: '1 1 220px', minWidth: '220px', padding: '8px 12px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '13px', background: '#fafaf8', color: '#1a1a1a', outline: 'none' }}
-          onFocus={e => e.target.style.borderColor = '#1D9E75'}
+          onFocus={e => e.target.style.borderColor = '#635BFF'}
           onBlur={e => e.target.style.borderColor = '#d5d3cc'}
         />
         <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value as CategoriaDocumento | 'todas')} style={sel}>

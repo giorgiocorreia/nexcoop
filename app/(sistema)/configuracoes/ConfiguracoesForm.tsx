@@ -1,12 +1,12 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Organizacao } from '@/types/database'
 
-const GREEN = '#1D9E75'
-const GREEN_DARK = '#0F6E56'
+const GREEN = '#635BFF'
+const GREEN_DARK = '#4840CC'
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -136,7 +136,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin }: Pro
       </div>
 
       {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>{erro}</div>}
-      {sucesso && <div style={{ background: '#E1F5EE', border: '1px solid #1D9E7533', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: GREEN_DARK, marginBottom: '1rem' }}>✓ {sucesso}</div>}
+      {sucesso && <div style={{ background: '#EEF0FF', border: '1px solid #635BFF33', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: GREEN_DARK, marginBottom: '1rem' }}>✓ {sucesso}</div>}
 
       <form onSubmit={handleSubmit}>
         {/* Identificação */}
@@ -310,7 +310,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin }: Pro
         </div>
 
         <button type="submit" disabled={salvando} style={{
-          padding: '10px 24px', background: salvando ? '#7fceb1' : GREEN,
+          padding: '10px 24px', background: salvando ? '#9F9BFF' : GREEN,
           color: '#fff', border: 'none', borderRadius: '8px',
           fontSize: '14px', fontWeight: '600',
           cursor: salvando ? 'not-allowed' : 'pointer',

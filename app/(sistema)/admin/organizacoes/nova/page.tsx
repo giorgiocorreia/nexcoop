@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -126,7 +126,7 @@ export default function NovaOrganizacaoPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1.25rem' }}>
         <button
           onClick={() => router.push('/admin')}
-          style={{ fontSize: '13px', color: '#1D9E75', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          style={{ fontSize: '13px', color: '#635BFF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
           Admin
         </button>
@@ -191,7 +191,7 @@ export default function NovaOrganizacaoPage() {
                   type="text" value={form.nome} onChange={set('nome')}
                   placeholder="Ex: Cooperativa Agrícola do Vale"
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
                   onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                 />
               </InputGroup>
@@ -202,7 +202,7 @@ export default function NovaOrganizacaoPage() {
                     type="text" value={form.nome_curto} onChange={set('nome_curto')}
                     placeholder="Ex: COOPVALE"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -211,7 +211,7 @@ export default function NovaOrganizacaoPage() {
                     type="text" value={form.cnpj} onChange={set('cnpj')}
                     placeholder="00.000.000/0001-00"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -242,7 +242,7 @@ export default function NovaOrganizacaoPage() {
                     type="text" value={form.cidade} onChange={set('cidade')}
                     placeholder="Ex: Feira de Santana"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -260,7 +260,7 @@ export default function NovaOrganizacaoPage() {
                     type="email" value={form.email} onChange={set('email')}
                     placeholder="contato@cooperativa.coop.br"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -269,7 +269,7 @@ export default function NovaOrganizacaoPage() {
                     type="tel" value={form.telefone} onChange={set('telefone')}
                     placeholder="(00) 00000-0000"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -280,7 +280,7 @@ export default function NovaOrganizacaoPage() {
           {/* ABA: Usuário admin */}
           {aba === 'admin' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ background: '#E1F5EE', border: '1px solid #1D9E7533', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#0F6E56' }}>
+              <div style={{ background: '#EEF0FF', border: '1px solid #635BFF33', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#4840CC' }}>
                 Este usuário será criado com <strong>role = org_admin</strong> e terá acesso completo à organização.
               </div>
               <InputGroup label="Nome completo" required>
@@ -288,7 +288,7 @@ export default function NovaOrganizacaoPage() {
                   type="text" value={form.admin_nome} onChange={set('admin_nome')}
                   placeholder="Ex: João da Silva"
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
                   onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                 />
               </InputGroup>
@@ -297,7 +297,7 @@ export default function NovaOrganizacaoPage() {
                   type="email" value={form.admin_email} onChange={set('admin_email')}
                   placeholder="admin@cooperativa.coop.br"
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
                   onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                 />
               </InputGroup>
@@ -307,7 +307,7 @@ export default function NovaOrganizacaoPage() {
                     type="password" value={form.admin_senha} onChange={set('admin_senha')}
                     placeholder="Mín. 6 caracteres"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -316,7 +316,7 @@ export default function NovaOrganizacaoPage() {
                     type="password" value={form.admin_senha_confirma} onChange={set('admin_senha_confirma')}
                     placeholder="Repetir senha"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
@@ -346,12 +346,12 @@ export default function NovaOrganizacaoPage() {
               type="button"
               onClick={avancar}
               style={{
-                padding: '9px 18px', background: '#1D9E75', color: '#fff',
+                padding: '9px 18px', background: '#635BFF', color: '#fff',
                 border: 'none', borderRadius: '8px', fontSize: '13px',
                 fontWeight: '600', cursor: 'pointer',
               }}
               onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-              onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+              onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
             >
               Próximo →
             </button>
@@ -360,7 +360,7 @@ export default function NovaOrganizacaoPage() {
               type="submit"
               disabled={salvando}
               style={{
-                padding: '9px 18px', background: salvando ? '#aaa' : '#1D9E75', color: '#fff',
+                padding: '9px 18px', background: salvando ? '#aaa' : '#635BFF', color: '#fff',
                 border: 'none', borderRadius: '8px', fontSize: '13px',
                 fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer',
               }}

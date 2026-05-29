@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -30,7 +30,7 @@ const inp: React.CSSProperties = {
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
 const fo = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#1D9E75')
+  (e.target.style.borderColor = '#635BFF')
 const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
   (e.target.style.borderColor = '#d5d3cc')
 
@@ -39,7 +39,7 @@ const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextA
 const TIPOS: { valor: TipoAssembleia; sigla: string; label: string; cor: string; bg: string }[] = [
   { valor: 'AGO',        sigla: 'AGO', label: 'Assembleia Geral Ordinária',           cor: '#185FA5', bg: '#E6F1FB' },
   { valor: 'AGE',        sigla: 'AGE', label: 'Assembleia Geral Extraordinária',      cor: '#6366f1', bg: '#ede9fe' },
-  { valor: 'reuniao_CA', sigla: 'CA',  label: 'Reunião do Conselho de Administração', cor: '#0F6E56', bg: '#E1F5EE' },
+  { valor: 'reuniao_CA', sigla: 'CA',  label: 'Reunião do Conselho de Administração', cor: '#4840CC', bg: '#EEF0FF' },
   { valor: 'reuniao_CF', sigla: 'CF',  label: 'Reunião do Conselho Fiscal',           cor: '#854F0B', bg: '#FAEEDA' },
 ]
 
@@ -199,16 +199,16 @@ export default function NovaAssembleiaPage() {
                 {(['presencial', 'remota', 'hibrida'] as const).map(m => (
                   <label key={m} style={{
                     flex: 1, display: 'flex', alignItems: 'center', gap: '7px',
-                    padding: '9px 12px', border: `1px solid ${form.modalidade === m ? '#1D9E75' : '#d5d3cc'}`,
+                    padding: '9px 12px', border: `1px solid ${form.modalidade === m ? '#635BFF' : '#d5d3cc'}`,
                     borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
-                    background: form.modalidade === m ? '#E1F5EE' : '#fafaf8',
-                    color: form.modalidade === m ? '#0F6E56' : '#555',
+                    background: form.modalidade === m ? '#EEF0FF' : '#fafaf8',
+                    color: form.modalidade === m ? '#4840CC' : '#555',
                     fontWeight: form.modalidade === m ? '600' : '400',
                   }}>
                     <input type="radio" name="modalidade" value={m}
                       checked={form.modalidade === m}
                       onChange={set('modalidade')}
-                      style={{ accentColor: '#1D9E75' }}
+                      style={{ accentColor: '#635BFF' }}
                     />
                     {m === 'presencial' ? 'Presencial' : m === 'remota' ? 'Remota' : 'Híbrida'}
                   </label>
@@ -300,7 +300,7 @@ export default function NovaAssembleiaPage() {
             <button type="submit" disabled={salvando}
               style={{
                 padding: '9px 24px', border: 'none', borderRadius: '8px',
-                background: salvando ? '#7fceb1' : tipoAtual.cor,
+                background: salvando ? '#9F9BFF' : tipoAtual.cor,
                 color: '#fff', fontSize: '13px', fontWeight: '600',
                 cursor: salvando ? 'not-allowed' : 'pointer',
               }}>

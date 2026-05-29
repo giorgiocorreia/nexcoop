@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,8 +8,8 @@ const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> =
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
   essencial:   { label: 'Essencial',   cor: '#444',    bg: '#f5f5f2' },
   cooperativa: { label: 'Cooperativa', cor: '#185FA5', bg: '#E6F1FB' },
-  profissional:{ label: 'Profissional',cor: '#0F6E56', bg: '#E1F5EE' },
-  agro:        { label: 'Agro',        cor: '#0F6E56', bg: '#E1F5EE' },
+  profissional:{ label: 'Profissional',cor: '#4840CC', bg: '#EEF0FF' },
+  agro:        { label: 'Agro',        cor: '#4840CC', bg: '#EEF0FF' },
   impacto:     { label: 'Impacto',     cor: '#6366f1', bg: '#ede9fe' },
   enterprise:  { label: 'Enterprise',  cor: '#854F0B', bg: '#FAEEDA' },
 }
@@ -78,13 +78,13 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
         <button
           onClick={() => router.push('/admin/organizacoes/nova')}
           style={{
-            padding: '9px 18px', background: '#1D9E75', color: '#fff',
+            padding: '9px 18px', background: '#635BFF', color: '#fff',
             border: 'none', borderRadius: '8px', fontSize: '13px',
             fontWeight: '600', cursor: 'pointer', display: 'flex',
             alignItems: 'center', gap: '6px',
           }}
           onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}
+          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
         >
           <span>+</span> Nova organização
         </button>
@@ -93,7 +93,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
       {/* Cards de resumo */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Orgs ativas', valor: totalAtivas, cor: '#0F6E56', bg: '#E1F5EE', border: '#1D9E7533' },
+          { label: 'Orgs ativas', valor: totalAtivas, cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
           { label: 'Total usuários', valor: totalUsuarios, cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },
           { label: 'Total filiados', valor: totalCooperados, cor: '#444', bg: '#f5f5f2', border: '#e5e3dc' },
           { label: 'Organizações', valor: organizacoes.length, cor: '#6366f1', bg: '#ede9fe', border: '#6366f133' },
@@ -155,7 +155,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
             fontSize: '13px', background: '#fff', color: '#1a1a1a',
             outline: 'none', boxSizing: 'border-box',
           }}
-          onFocus={e => (e.target.style.borderColor = '#1D9E75')}
+          onFocus={e => (e.target.style.borderColor = '#635BFF')}
           onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
         />
       </div>
@@ -202,9 +202,9 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '8px',
-                          background: '#E1F5EE', display: 'flex', alignItems: 'center',
+                          background: '#EEF0FF', display: 'flex', alignItems: 'center',
                           justifyContent: 'center', fontSize: '14px', flexShrink: 0,
-                        }}>🌱</div>
+                        }}><svg width="16" height="16" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
                             {org.nome}
@@ -240,8 +240,8 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
                       <span style={{
                         display: 'inline-block', padding: '3px 10px',
                         borderRadius: '20px', fontSize: '11px', fontWeight: '600',
-                        color: org.ativo ? '#0F6E56' : '#7f1d1d',
-                        background: org.ativo ? '#E1F5EE' : '#fee2e2',
+                        color: org.ativo ? '#4840CC' : '#7f1d1d',
+                        background: org.ativo ? '#EEF0FF' : '#fee2e2',
                       }}>
                         {org.ativo ? 'Ativa' : 'Inativa'}
                       </span>

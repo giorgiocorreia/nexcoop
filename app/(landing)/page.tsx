@@ -1,7 +1,7 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 
-const GREEN = '#1D9E75'
-const GREEN_DARK = '#0F6E56'
+const GREEN = '#635BFF'
+const GREEN_DARK = '#4840CC'
 const BG = '#f8f7f4'
 const TEXT = '#1a1a1a'
 const FONT = "system-ui, -apple-system, 'Segoe UI', sans-serif"
@@ -51,7 +51,7 @@ function Header() {
 function Logo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={{ fontSize: 22 }}>🌱</span>
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>
       <span style={{ fontWeight: 700, fontSize: 18, color: GREEN_DARK, letterSpacing: '-0.3px' }}>NextCoop</span>
     </div>
   )
@@ -261,7 +261,7 @@ function Footer() {
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 24 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 20 }}>🌱</span>
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>
             <span style={{ fontWeight: 700, color: '#fff', fontSize: 16 }}>NextCoop</span>
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.6, maxWidth: 220 }}>Gestão cooperativa para o Brasil</p>
