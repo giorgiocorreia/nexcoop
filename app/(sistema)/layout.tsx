@@ -42,6 +42,11 @@ export default async function SistemaLayout({
 
   const isSuperAdmin = usuario?.role === 'super_admin'
 
+  // Verifica onboarding
+  if (!isSuperAdmin && organizacao && !organizacao.onboarding_concluido) {
+    redirect('/onboarding')
+  }
+
   if (!isSuperAdmin && !assinaturaAtiva(organizacao)) {
     redirect('/assinar')
   }
