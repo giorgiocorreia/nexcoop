@@ -153,7 +153,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
     setSucesso('')
     const { error } = await supabase
       .from('organizacoes')
-      .update({ plano: novoPlano })
+      .update({ plano: novoPlano as any })
       .eq('id', org.id)
     if (error) {
       setErro(error.message)
