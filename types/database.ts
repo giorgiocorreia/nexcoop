@@ -121,9 +121,43 @@ export interface PerfilCaptacao {
   porte_min: number | null
   porte_max: number | null
   idiomas: string[]
+  municipios: string[]
+  tipo_org: string[]
+  descricao_org: string | null
   ativo: boolean
   criado_em: string
   atualizado_em: string
+}
+
+export interface RadarFonte {
+  id: string
+  organizacao_id: string
+  nome: string
+  url: string
+  tipo: string
+  ativo: boolean
+  ultima_varredura: string | null
+  criado_em: string
+}
+
+export interface RadarResultado {
+  id: string
+  organizacao_id: string
+  fonte_id: string | null
+  titulo: string
+  descricao: string | null
+  financiador: string | null
+  url_edital: string | null
+  valor_estimado: number | null
+  prazo_submissao: string | null
+  areas_tematicas: string[]
+  publico_alvo: string[]
+  score: number
+  compatibilidade: string
+  motivo: string | null
+  adicionado_ao_pipeline: boolean
+  oportunidade_id: string | null
+  varredura_em: string
 }
 
 export interface FuncaoDisponivel {
@@ -307,6 +341,8 @@ export type Database = {
       oportunidades:       TableDef<Oportunidade>
       oportunidade_logs:   TableDef<OportunidadeLog>
       perfil_captacao:     TableDef<PerfilCaptacao>
+      radar_fontes:        TableDef<RadarFonte>
+      radar_resultados:    TableDef<RadarResultado>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

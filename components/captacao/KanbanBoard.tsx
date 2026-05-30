@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import type { Oportunidade, Usuario } from '@/types/database'
+import type { Oportunidade, Usuario, RadarFonte, RadarResultado } from '@/types/database'
 import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
 import { moverOportunidade, buscarOportunidade } from '@/lib/captacao/actions'
 import OportunidadeModal from './OportunidadeModal'
+import RadarPanel from './RadarPanel'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,7 @@ const COLUNAS = [
   { id: 'resultado',    label: 'Resultado',    statuses: ['aprovado', 'reprovado'] },
 ]
 
-type Aba = 'abertas' | 'a_abrir' | 'vencidas'
+type Aba = 'abertas' | 'a_abrir' | 'vencidas' | 'radar'
 
 type ModalState =
   | { open: false }
@@ -36,6 +37,8 @@ type ModalState =
 interface Props {
   oportunidades: Oportunidade[]
   responsaveis: Pick<Usuario, 'id' | 'nome_completo'>[]
+  fontes?: RadarFonte[]
+  resultados?: RadarResultado[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -172,7 +175,7 @@ import React from 'react'
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function KanbanBoard({ oportunidades, responsaveis }: Props) {
+export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], resultados = [] }: Props) {
   const [aba, setAba] = useState<Aba>('abertas')
   const [modal, setModal] = useState<ModalState>({ open: false })
 
@@ -241,9 +244,10 @@ export default function KanbanBoard({ oportunidades, responsaveis }: Props) {
           { id: 'abertas' as Aba,  label: 'Abertas agora' },
           { id: 'a_abrir' as Aba,  label: 'A abrir' },
           { id: 'vencidas' as Aba, label: 'Vencidas' },
+          { id: 'radar' as Aba,    label: '🔍 Radar' },
         ] as const).map(({ id, label }) => {
           const ativo = aba === id
-          const count = countAba(id)
+          const count = id !== 'radar' ? countAba(id as Exclude<Aba, 'radar'>) : 0
           return (
             <button
               key={id}
@@ -272,8 +276,13 @@ export default function KanbanBoard({ oportunidades, responsaveis }: Props) {
         })}
       </div>
 
+      {/* Aba Radar */}
+      {aba === 'radar' && (
+        <RadarPanel fontesIniciais={fontes} resultadosIniciais={resultados} />
+      )}
+
       {/* Kanban */}
-      <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '1rem', alignItems: 'flex-start', minHeight: 'calc(100vh - 240px)' }}>
+      {aba !== 'radar' && <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '1rem', alignItems: 'flex-start', minHeight: 'calc(100vh - 240px)' }}>
         {COLUNAS.map(coluna => {
           const cards = filtradas.filter(op => coluna.statuses.includes(op.status))
           const aprovados  = cards.filter(op => op.status === 'aprovado')
@@ -345,7 +354,7 @@ export default function KanbanBoard({ oportunidades, responsaveis }: Props) {
             </div>
           )
         })}
-      </div>
+      </div>}
 
       {/* Modal */}
       {modal.open && (

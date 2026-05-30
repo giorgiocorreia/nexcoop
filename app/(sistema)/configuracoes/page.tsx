@@ -17,15 +17,14 @@ export default async function ConfiguracoesPage() {
 
   if (!usuario?.organizacao_id) redirect('/dashboard')
 
-  const { data: org } = await supabase
-    .from('organizacoes')
-    .select('*')
-    .eq('id', usuario.organizacao_id)
-    .single()
+  const [{ data: org }, { data: perfilCaptacao }] = await Promise.all([
+    supabase.from('organizacoes').select('*').eq('id', usuario.organizacao_id).single(),
+    supabase.from('perfil_captacao').select('*').eq('organizacao_id', usuario.organizacao_id).maybeSingle(),
+  ])
 
   if (!org) redirect('/dashboard')
 
   const isSuperAdmin = usuario.role === 'super_admin'
 
-  return <ConfiguracoesForm org={org} isSuperAdmin={isSuperAdmin} />
+  return <ConfiguracoesForm org={org} isSuperAdmin={isSuperAdmin} perfilCaptacao={perfilCaptacao ?? null} />
 }
