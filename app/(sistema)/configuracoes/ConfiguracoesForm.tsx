@@ -142,6 +142,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
       setErro('Erro ao salvar. Tente novamente.')
     } else {
       setSucesso('Dados salvos com sucesso.')
+      setTimeout(() => setSucesso(''), 3000)
       router.refresh()
     }
     setSalvando(false)
@@ -193,6 +194,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
       setErroPerfil(res.error)
     } else {
       setSucessoPerfil('Perfil de captação salvo com sucesso.')
+      setTimeout(() => setSucessoPerfil(''), 3000)
     }
     setSalvandoPerfil(false)
   }

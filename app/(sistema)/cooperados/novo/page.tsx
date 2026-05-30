@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import BannerLimiteAtingido from '@/components/BannerLimiteAtingido'
 import type { ResultadoLimite } from '@/lib/assinatura'
 import type { StatusCooperado } from '@/types/database'
@@ -199,7 +200,7 @@ export default function NovoCooperadoPage() {
       .single()
 
     if (error) {
-      setErro(`Erro ao salvar: ${error.message}`)
+      setErro(traduzirErro(error.message))
       setSalvando(false)
       return
     }

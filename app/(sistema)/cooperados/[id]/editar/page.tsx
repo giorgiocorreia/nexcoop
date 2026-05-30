@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { StatusCooperado } from '@/types/database'
 
 const UFS = [
@@ -220,7 +221,7 @@ export default function EditarCooperadoPage() {
       .eq('id', id)
 
     if (error) {
-      setErro(`Erro ao salvar: ${error.message}`)
+      setErro(traduzirErro(error.message))
       setSalvando(false)
       return
     }

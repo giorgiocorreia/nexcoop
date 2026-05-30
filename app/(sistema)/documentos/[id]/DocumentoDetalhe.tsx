@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Documento, CategoriaDocumento } from '@/types/database'
+import { traduzirErro } from '@/lib/utils/erros'
 
 // ─── Configurações ────────────────────────────────────────────────────────────
 
@@ -195,7 +196,7 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
       .from('documentos').update(payload).eq('id', doc.id).select().single()
 
     if (updateErr) {
-      setErro(`Erro ao salvar: ${updateErr.message}`)
+      setErro(traduzirErro(updateErr.message))
       setSalvando(false)
       return
     }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { TipoAssembleia } from '@/types/database'
 
 // ─── Helpers visuais ─────────────────────────────────────────────────────────
@@ -129,7 +130,7 @@ export default function NovaAssembleiaPage() {
       .from('assembleias').insert(payload).select().single()
 
     if (error) {
-      setErro(`Erro ao salvar: ${error.message}`)
+      setErro(traduzirErro(error.message))
       setSalvando(false)
       return
     }

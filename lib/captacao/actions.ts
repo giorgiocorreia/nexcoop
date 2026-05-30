@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { Oportunidade, OportunidadeLog, PerfilCaptacao, StatusOportunidade, FonteOportunidade, RadarFonte, RadarResultado } from '@/types/database'
 
 export type OportunidadeLogComUsuario = OportunidadeLog & {
@@ -35,7 +36,7 @@ export async function listarOportunidades(filtro?: { status?: string; fonte?: st
     if (filtro?.fonte)  query = query.eq('fonte',  filtro.fonte  as FonteOportunidade)
 
     const { data, error } = await query
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     return { data: data as Oportunidade[] }
   } catch (e) {
     return { error: String(e) }
@@ -50,7 +51,7 @@ export async function criarOportunidade(dados: Partial<Oportunidade>) {
       .insert({ ...dados, organizacao_id: orgId, criado_por: usuarioId })
       .select()
       .single()
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
 
     await supabase.from('oportunidade_logs').insert({
       oportunidade_id: data.id,
@@ -80,7 +81,7 @@ export async function moverOportunidade(id: string, novoStatus: string) {
       .from('oportunidades')
       .update({ status: novoStatus as StatusOportunidade })
       .eq('id', id)
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
 
     await supabase.from('oportunidade_logs').insert({
       oportunidade_id: id,
@@ -107,7 +108,7 @@ export async function atualizarOportunidade(id: string, dados: Partial<Oportunid
       .eq('id', id)
       .select()
       .single()
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
 
     await supabase.from('oportunidade_logs').insert({
       oportunidade_id: id,
@@ -134,7 +135,7 @@ export async function buscarOportunidade(id: string) {
         .eq('oportunidade_id', id)
         .order('criado_em', { ascending: false }),
     ])
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
 
     // Busca nomes dos usuários separadamente (join não inferido pelo tipo Database)
     const userIds = [...new Set(
@@ -164,7 +165,7 @@ export async function salvarPerfilCaptacao(dados: Partial<PerfilCaptacao>) {
       .upsert({ ...dados, organizacao_id: orgId }, { onConflict: 'organizacao_id' })
       .select()
       .single()
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
     return { data: data as PerfilCaptacao }
   } catch (e) {
@@ -182,7 +183,7 @@ export async function listarFontes() {
       .select('*')
       .eq('organizacao_id', orgId)
       .order('criado_em')
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     return { data: data as RadarFonte[] }
   } catch (e) {
     return { error: String(e) }
@@ -208,7 +209,7 @@ export async function salvarFonte(dados: { nome: string; url: string; tipo: stri
         .single()
     }
     const { data, error } = await query
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
     return { data: data as RadarFonte }
   } catch (e) {
@@ -220,7 +221,7 @@ export async function removerFonte(id: string) {
   try {
     const { supabase } = await getCtx()
     const { error } = await supabase.from('radar_fontes').delete().eq('id', id)
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
     return { ok: true }
   } catch (e) {
@@ -232,7 +233,7 @@ export async function toggleFonteAtivo(id: string, ativo: boolean) {
   try {
     const { supabase } = await getCtx()
     const { error } = await supabase.from('radar_fontes').update({ ativo }).eq('id', id)
-    if (error) return { error: error.message }
+    if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
     return { ok: true }
   } catch (e) {

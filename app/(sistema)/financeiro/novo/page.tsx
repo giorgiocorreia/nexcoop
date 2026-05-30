@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { TipoLancamento, StatusLancamento } from '@/types/database'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -168,7 +169,7 @@ export default function NovoLancamentoPage() {
       .single()
 
     if (error) {
-      setErro(`Erro ao salvar: ${error.message}`)
+      setErro(traduzirErro(error.message))
       setSalvando(false)
       return
     }

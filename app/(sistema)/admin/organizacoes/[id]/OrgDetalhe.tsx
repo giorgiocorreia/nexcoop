@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Organizacao, Usuario } from '@/types/database'
+import { traduzirErro } from '@/lib/utils/erros'
 
 const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
@@ -79,9 +80,10 @@ function IsentarForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Orga
       .eq('id', org.id)
 
     if (error) {
-      setErro(error.message)
+      setErro(traduzirErro(error.message))
     } else {
       setSucesso('Isenção atualizada.')
+      setTimeout(() => setSucesso(''), 3000)
       onUpdate({ ...org, ...payload } as Organizacao)
     }
     setSalvando(false)
@@ -170,10 +172,11 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       .update({ plano: novoPlano as any })
       .eq('id', org.id)
     if (error) {
-      setErro(error.message)
+      setErro(traduzirErro(error.message))
     } else {
       setOrg(prev => ({ ...prev, plano: novoPlano as any }))
       setSucesso(`Plano alterado para ${PLANO_CONFIG[novoPlano]?.label ?? novoPlano}.`)
+      setTimeout(() => setSucesso(''), 3000)
     }
     setSalvando(false)
   }
@@ -188,10 +191,11 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       .update({ ativo: novoAtivo })
       .eq('id', org.id)
     if (error) {
-      setErro(error.message)
+      setErro(traduzirErro(error.message))
     } else {
       setOrg(prev => ({ ...prev, ativo: novoAtivo }))
       setSucesso(novoAtivo ? 'Organização ativada.' : 'Organização desativada.')
+      setTimeout(() => setSucesso(''), 3000)
     }
     setSalvando(false)
   }

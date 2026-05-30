@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { Cooperado } from '@/types/database'
 
 type CoopAtivo = Pick<Cooperado, 'id' | 'nome_completo' | 'cpf' | 'quota_parte' | 'status'>
@@ -137,7 +138,7 @@ export default function GerarMensalidadesPage() {
 
     const { error } = await supabase.from('mensalidades').insert(payload)
     if (error) {
-      setErro(`Erro ao gerar: ${error.message}`)
+      setErro(traduzirErro(error.message))
       setGerando(false)
       return
     }

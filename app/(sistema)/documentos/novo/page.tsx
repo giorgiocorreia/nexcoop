@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { CategoriaDocumento } from '@/types/database'
 
 // ─── Configurações ────────────────────────────────────────────────────────────
@@ -145,7 +146,7 @@ export default function NovoDocumentoPage() {
         // Se o bucket não existir, mostra mensagem clara
         const msg = uploadErr.message.includes('Bucket not found')
           ? 'Bucket "documentos" não existe no Supabase Storage. Crie-o primeiro ou informe a URL manualmente.'
-          : `Erro no upload: ${uploadErr.message}`
+          : traduzirErro(uploadErr.message)
         setErro(msg)
         setSalvando(false)
         setProgresso('idle')
@@ -179,7 +180,7 @@ export default function NovoDocumentoPage() {
       .from('documentos').insert(payload).select().single()
 
     if (insertErr) {
-      setErro(`Erro ao salvar: ${insertErr.message}`)
+      setErro(traduzirErro(insertErr.message))
       setSalvando(false)
       return
     }
