@@ -23,18 +23,12 @@ interface NavGrupo {
 
 const NAV_ADMIN: NavGrupo[] = [
   {
-    grupo: 'Sistema',
-    itens: [
-      { label: 'Dashboard', href: '/admin', icone: '📊', exact: true },
-    ],
-  },
-  {
     grupo: 'Plataforma',
     itens: [
-      { label: 'Organizações', href: '/admin/organizacoes', icone: '🏢' },
-      { label: 'Usuários',     href: '/admin/usuarios',     icone: '👥', em_breve: true },
-      { label: 'Módulos',      href: '/admin/modulos',      icone: '🧩', em_breve: true },
-      { label: 'Planos',       href: '/admin/planos',       icone: '💳', em_breve: true },
+      { label: 'Organizações', href: '/admin',          icone: '🏢', exact: true },
+      { label: 'Usuários',     href: '/admin/usuarios', icone: '👥', em_breve: true },
+      { label: 'Módulos',      href: '/admin/modulos',  icone: '🧩', em_breve: true },
+      { label: 'Planos',       href: '/admin/planos',   icone: '💳', em_breve: true },
     ],
   },
 ]
