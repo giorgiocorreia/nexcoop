@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import type { RadarFonte, RadarResultado } from '@/types/database'
 import {
   salvarFonte, atualizarFonte, removerFonte, toggleFonteAtivo,
-  executarRadar, adicionarAoPipeline, removerResultadoRadar,
+  executarRadarFonte, adicionarAoPipeline, removerResultadoRadar,
 } from '@/lib/captacao/actions'
 
 interface Props {
@@ -80,6 +80,10 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   const [modoUltimaVarredura, setModoUltimaVarredura] = useState<'novidades' | 'completo' | null>(null)
   const [mensagemNovidades, setMensagemNovidades] = useState<string | null>(null)
   const [mostrarAnteriores, setMostrarAnteriores] = useState(false)
+  const [progressFonte, setProgressFonte]         = useState<{ atual: number; total: number; nome: string } | null>(null)
+  const [tokensTotal, setTokensTotal]             = useState(0)
+  const [custoTotal, setCustoTotal]               = useState(0)
+  const [forcandoId, setForcandoId]               = useState<string | null>(null)
   const canceladoRef = useRef(false)
 
   const ultimaVarredura = resultados.length > 0
@@ -138,34 +142,84 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     setNovosCount(null)
     setMensagemNovidades(null)
     setMostrarAnteriores(false)
+    setProgressFonte(null)
+    setTokensTotal(0)
+    setCustoTotal(0)
 
-    const res = await executarRadar()
+    const fontesParaVarrer = fontes.filter(f => f.ativo)
+    const warnings: string[] = []
+    const novosIdsAccum = new Set<string>()
+    let totalTokens = 0
+    let totalCusto  = 0
+
+    for (let i = 0; i < fontesParaVarrer.length; i++) {
+      if (canceladoRef.current) break
+      const fonte = fontesParaVarrer[i]
+      setProgressFonte({ atual: i + 1, total: fontesParaVarrer.length, nome: fonte.nome })
+
+      const res = await executarRadarFonte(fonte.id)
+
+      if (canceladoRef.current) break
+
+      if ('error' in res) {
+        warnings.push(res.error)
+      } else {
+        if (!res.cached && res.novosResultados.length > 0) {
+          setResultados(prev => [...res.novosResultados, ...prev])
+          res.novosIds.forEach(id => novosIdsAccum.add(id))
+          setNovosIds(new Set(novosIdsAccum))
+          totalTokens += res.tokens
+          totalCusto  += res.custoUSD
+          setTokensTotal(totalTokens)
+          setCustoTotal(totalCusto)
+        }
+        setFontes(prev => prev.map(f =>
+          f.id === fonte.id ? { ...f, ultima_varredura: new Date().toISOString() } : f
+        ))
+      }
+    }
+
+    setProgressFonte(null)
 
     if (canceladoRef.current) {
-      if (res.data) setResultados(res.data)
-      return
-    }
-
-    if (res.error) {
-      setErroRadar(res.error)
-    } else if (res.data) {
-      setResultados(res.data)
-      const ids = new Set(res.novosIds ?? [])
-      setNovosIds(ids)
-      setNovosCount(ids.size)
+      setErroRadar('Varredura cancelada. Os resultados parciais já foram salvos.')
+    } else {
+      setNovosCount(novosIdsAccum.size)
       setModoUltimaVarredura('novidades')
-      setMensagemNovidades(res.mensagem ?? null)
-      const agora = new Date().toISOString()
-      setFontes(prev => prev.map(f => f.ativo ? { ...f, ultima_varredura: agora } : f))
-      if (res.warnings?.length) setWarningsRadar(res.warnings)
+      if (warnings.length) setWarningsRadar(warnings)
+      setExecutando(false)
     }
-    setExecutando(false)
   }
 
   function handleCancelar() {
     canceladoRef.current = true
+    setProgressFonte(null)
     setExecutando(false)
-    setErroRadar('Varredura cancelada. Os resultados parciais já foram salvos.')
+  }
+
+  async function handleForcarFonte(fonteId: string) {
+    setForcandoId(fonteId)
+    setErroRadar('')
+    const res = await executarRadarFonte(fonteId, true)
+    if ('error' in res) {
+      setErroRadar(res.error)
+    } else {
+      if (res.novosResultados.length > 0) {
+        setResultados(prev => [...res.novosResultados, ...prev])
+        setNovosIds(prev => {
+          const next = new Set(prev)
+          res.novosIds.forEach(id => next.add(id))
+          return next
+        })
+        setNovosCount(prev => (prev ?? 0) + res.novosIds.length)
+        setTokensTotal(prev => prev + res.tokens)
+        setCustoTotal(prev => prev + res.custoUSD)
+      }
+      setFontes(prev => prev.map(f =>
+        f.id === fonteId ? { ...f, ultima_varredura: new Date().toISOString() } : f
+      ))
+    }
+    setForcandoId(null)
   }
 
   async function handleIgnorar(id: string) {
@@ -288,7 +342,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
               )}
 
               {editandoId !== fonte.id && (
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => handleIniciarEditar(fonte)}
                     style={{
@@ -308,6 +362,20 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                     }}
                   >
                     × Excluir
+                  </button>
+                  <button
+                    onClick={() => handleForcarFonte(fonte.id)}
+                    disabled={forcandoId === fonte.id || executando}
+                    title="Ignorar cache e varrer agora"
+                    style={{
+                      fontSize: '11px', fontWeight: '500', padding: '4px 8px', borderRadius: '6px',
+                      background: forcandoId === fonte.id ? '#f0eeea' : '#f5f5f2',
+                      color: '#666', border: '1px solid #d5d3cc', cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: '3px',
+                      opacity: (forcandoId !== null || executando) && forcandoId !== fonte.id ? 0.4 : 1,
+                    }}
+                  >
+                    {forcandoId === fonte.id ? '…' : '↺'}
                   </button>
                 </div>
               )}
@@ -356,6 +424,11 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                     : '✓ Nenhuma novidade desde a última varredura'}
                 </div>
               )}
+              {!executando && tokensTotal > 0 && (
+                <div style={{ fontSize: '10px', color: '#bbb', marginTop: '2px' }}>
+                  Última varredura: ~{tokensTotal.toLocaleString('pt-BR')} tokens | ~US$ {custoTotal.toFixed(3).replace('.', ',')}
+                </div>
+              )}
             </div>
 
             {!executando && (
@@ -396,9 +469,14 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                 ⏱ {formatTimer(timerSeg)}
               </div>
 
-              <div style={{ fontSize: '12px', color: '#888', marginBottom: '20px', minHeight: '18px' }}>
+              <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px', minHeight: '18px' }}>
                 {msgStatus}
               </div>
+              {progressFonte && (
+                <div style={{ fontSize: '12px', color: TEAL, fontWeight: '600', marginBottom: '14px' }}>
+                  Varrendo fonte {progressFonte.atual} de {progressFonte.total}: {progressFonte.nome}
+                </div>
+              )}
 
               <button
                 onClick={handleCancelar}
