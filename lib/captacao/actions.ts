@@ -347,7 +347,7 @@ Retorne SOMENTE JSON válido, sem markdown, sem texto fora do JSON:
 Se não encontrar editais, retorne: {"editais":[]}`
 }
 
-export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades') {
+export async function executarRadar() {
   try {
     const { supabase, orgId } = await getCtx()
 
@@ -356,7 +356,6 @@ export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades'
     console.log('[Radar] ANTHROPIC_API_KEY:', apiKey
       ? `definida (${apiKey.length} chars, prefixo: ${apiKey.slice(0, 14)}...)`
       : 'INDEFINIDA ⚠️ — varredura vai falhar')
-    console.log('[Radar] Modo:', modo)
 
     const [{ data: perfil }, { data: fontes }] = await Promise.all([
       supabase.from('perfil_captacao').select('*').eq('organizacao_id', orgId).maybeSingle(),
@@ -366,19 +365,16 @@ export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades'
     console.log('[Radar] Fontes ativas encontradas:', fontes?.length ?? 0)
     if (!fontes?.length) return { error: 'Nenhuma fonte ativa cadastrada' }
 
-    // ── 2. Para modo novidades: carrega URLs já existentes ────────────────────
-    let urlsExistentes = new Set<string>()
-    if (modo === 'novidades') {
-      const { data: existentes } = await supabase
-        .from('radar_resultados')
-        .select('url_edital')
-        .eq('organizacao_id', orgId)
-        .not('url_edital', 'is', null)
-      urlsExistentes = new Set(
-        (existentes ?? []).map(r => r.url_edital).filter((u): u is string => u != null)
-      )
-      console.log('[Radar] URLs já existentes:', urlsExistentes.size)
-    }
+    // ── 2. Carrega URLs já existentes para filtrar novidades ──────────────────
+    const { data: existentes } = await supabase
+      .from('radar_resultados')
+      .select('url_edital')
+      .eq('organizacao_id', orgId)
+      .not('url_edital', 'is', null)
+    const urlsExistentes = new Set<string>(
+      (existentes ?? []).map(r => r.url_edital).filter((u): u is string => u != null)
+    )
+    console.log('[Radar] URLs já existentes:', urlsExistentes.size)
 
     const client = new Anthropic({ apiKey })
     const admin  = createAdminClient()
@@ -388,15 +384,6 @@ export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades'
 
     for (const fonte of fontes) {
       console.log(`[Radar] ── Fonte: "${fonte.nome}" | ${fonte.url}`)
-
-      if (modo === 'completo') {
-        // Limpa resultados antigos não adicionados ao pipeline
-        await admin
-          .from('radar_resultados')
-          .delete()
-          .eq('fonte_id', fonte.id)
-          .eq('adicionado_ao_pipeline', false)
-      }
 
       // ── 3. Claude com web_search ───────────────────────────────────────────
       let editais: ParsedEdital[] = []
@@ -448,12 +435,10 @@ export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades'
         continue
       }
 
-      // ── 4. Para modo novidades: filtra apenas editais com URLs novas ────────
-      if (modo === 'novidades') {
-        const antes = editais.length
-        editais = editais.filter(e => !e.url_edital || !urlsExistentes.has(e.url_edital))
-        console.log(`[Radar] "${fonte.nome}" — ${antes} encontrados, ${editais.length} novos após filtragem`)
-      }
+      // ── 4. Filtra apenas editais com URLs novas ───────────────────────────
+      const antes = editais.length
+      editais = editais.filter(e => !e.url_edital || !urlsExistentes.has(e.url_edital))
+      console.log(`[Radar] "${fonte.nome}" — ${antes} encontrados, ${editais.length} novos após filtragem`)
 
       // ── 5. Salva resultados via admin ──────────────────────────────────────
       const inserts = editais.map(edital => ({
@@ -506,12 +491,28 @@ export async function executarRadar(modo: 'completo' | 'novidades' = 'novidades'
       data:     (allResults ?? []) as RadarResultado[],
       novosIds: allNovosIds,
       warnings: errosPorFonte.length ? errosPorFonte : undefined,
-      mensagem: allNovosIds.length === 0 && modo === 'novidades'
+      mensagem: allNovosIds.length === 0
         ? 'Nenhuma novidade desde a última varredura'
         : undefined,
     }
   } catch (e) {
     console.error('[Radar] Erro geral não capturado:', e)
+    return { error: String(e) }
+  }
+}
+
+export async function removerResultadoRadar(id: string) {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { error } = await supabase
+      .from('radar_resultados')
+      .delete()
+      .eq('id', id)
+      .eq('organizacao_id', orgId)
+    if (error) return { error: traduzirErro(error.message) }
+    revalidatePath('/captacao')
+    return { ok: true }
+  } catch (e) {
     return { error: String(e) }
   }
 }

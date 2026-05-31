@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import type { RadarFonte, RadarResultado } from '@/types/database'
 import {
   salvarFonte, atualizarFonte, removerFonte, toggleFonteAtivo,
-  executarRadar, adicionarAoPipeline,
+  executarRadar, adicionarAoPipeline, removerResultadoRadar,
 } from '@/lib/captacao/actions'
 
 interface Props {
@@ -128,7 +128,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     setFontes(prev => prev.map(f => f.id === fonte.id ? { ...f, ativo: !f.ativo } : f))
   }
 
-  async function handleExecutar(modo: 'novidades' | 'completo') {
+  async function handleExecutar() {
     canceladoRef.current = false
     setExecutando(true)
     setErroRadar('')
@@ -139,7 +139,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     setMensagemNovidades(null)
     setMostrarAnteriores(false)
 
-    const res = await executarRadar(modo)
+    const res = await executarRadar()
 
     if (canceladoRef.current) {
       if (res.data) setResultados(res.data)
@@ -153,7 +153,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
       const ids = new Set(res.novosIds ?? [])
       setNovosIds(ids)
       setNovosCount(ids.size)
-      setModoUltimaVarredura(modo)
+      setModoUltimaVarredura('novidades')
       setMensagemNovidades(res.mensagem ?? null)
       const agora = new Date().toISOString()
       setFontes(prev => prev.map(f => f.ativo ? { ...f, ultima_varredura: agora } : f))
@@ -166,6 +166,11 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     canceladoRef.current = true
     setExecutando(false)
     setErroRadar('Varredura cancelada. Os resultados parciais já foram salvos.')
+  }
+
+  async function handleIgnorar(id: string) {
+    setResultados(prev => prev.filter(r => r.id !== id))
+    await removerResultadoRadar(id)
   }
 
   async function handleAdicionarPipeline(resultadoId: string) {
@@ -354,34 +359,19 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
             </div>
 
             {!executando && (
-              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                <button
-                  onClick={() => handleExecutar('novidades')}
-                  disabled={fontesAtivas === 0}
-                  style={{
-                    padding: '8px 14px', fontSize: '13px', fontWeight: '600',
-                    background: fontesAtivas === 0 ? '#e5e3dc' : TEAL,
-                    color: '#fff', border: 'none', borderRadius: '8px',
-                    cursor: fontesAtivas === 0 ? 'not-allowed' : 'pointer',
-                    opacity: fontesAtivas === 0 ? 0.5 : 1, whiteSpace: 'nowrap',
-                  }}
-                >
-                  🔔 Buscar novidades
-                </button>
-                <button
-                  onClick={() => handleExecutar('completo')}
-                  disabled={fontesAtivas === 0}
-                  style={{
-                    padding: '8px 14px', fontSize: '13px', fontWeight: '600',
-                    background: fontesAtivas === 0 ? '#e5e3dc' : '#6B7280',
-                    color: '#fff', border: 'none', borderRadius: '8px',
-                    cursor: fontesAtivas === 0 ? 'not-allowed' : 'pointer',
-                    opacity: fontesAtivas === 0 ? 0.5 : 1, whiteSpace: 'nowrap',
-                  }}
-                >
-                  🔄 Varredura completa
-                </button>
-              </div>
+              <button
+                onClick={handleExecutar}
+                disabled={fontesAtivas === 0}
+                style={{
+                  padding: '8px 14px', fontSize: '13px', fontWeight: '600',
+                  background: fontesAtivas === 0 ? '#e5e3dc' : TEAL,
+                  color: '#fff', border: 'none', borderRadius: '8px',
+                  cursor: fontesAtivas === 0 ? 'not-allowed' : 'pointer',
+                  opacity: fontesAtivas === 0 ? 0.5 : 1, whiteSpace: 'nowrap',
+                }}
+              >
+                🔔 Buscar novidades
+              </button>
             )}
           </div>
 
@@ -461,7 +451,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                 </span>
               </div>
               {resultadosNovos.map(r => (
-                <ResultadoCard key={r.id} resultado={r} isNovo onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} />
+                <ResultadoCard key={r.id} resultado={r} isNovo onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} onIgnorar={() => handleIgnorar(r.id)} />
               ))}
               {resultadosAnteriores.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
@@ -472,7 +462,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                     {mostrarAnteriores ? '▲ Ocultar anteriores' : `▼ Ver todos os ${resultadosAnteriores.length} resultados anteriores`}
                   </button>
                   {mostrarAnteriores && resultadosAnteriores.map(r => (
-                    <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} />
+                    <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} onIgnorar={() => handleIgnorar(r.id)} />
                   ))}
                 </div>
               )}
@@ -500,7 +490,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                 )}
               </div>
               {mostrarAnteriores && resultados.map(r => (
-                <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} />
+                <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} onIgnorar={() => handleIgnorar(r.id)} />
               ))}
             </>
           )}
@@ -514,7 +504,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                 </div>
               )}
               {resultados.map(r => (
-                <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} />
+                <ResultadoCard key={r.id} resultado={r} onAdicionarPipeline={() => handleAdicionarPipeline(r.id)} onIgnorar={() => handleIgnorar(r.id)} />
               ))}
             </>
           )}
@@ -539,9 +529,10 @@ function TipoBadge({ tipo }: { tipo: string }) {
   )
 }
 
-function ResultadoCard({ resultado: r, onAdicionarPipeline, isNovo }: {
+function ResultadoCard({ resultado: r, onAdicionarPipeline, onIgnorar, isNovo }: {
   resultado: RadarResultado
   onAdicionarPipeline: () => void
+  onIgnorar: () => void
   isNovo?: boolean
 }) {
   const [adicionando, setAdicionando] = useState(false)
@@ -554,11 +545,23 @@ function ResultadoCard({ resultado: r, onAdicionarPipeline, isNovo }: {
 
   return (
     <div style={{
+      position: 'relative',
       border: `1px solid ${isNovo ? '#a7f3d0' : '#e5e3dc'}`,
       borderRadius: '10px', padding: '14px', marginBottom: '10px',
       background: isNovo ? '#f0fdf9' : '#fafaf8',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+      <button
+        onClick={onIgnorar}
+        title="Ignorar"
+        style={{
+          position: 'absolute', top: '8px', right: '8px',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          fontSize: '12px', color: '#999', padding: '2px 6px', lineHeight: 1,
+        }}
+      >
+        ✕ Ignorar
+      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', paddingRight: '64px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <CompatBadge compatibilidade={r.compatibilidade} score={r.score} />
