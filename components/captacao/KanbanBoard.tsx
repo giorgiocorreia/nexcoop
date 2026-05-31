@@ -3,15 +3,14 @@
 import { useState } from 'react'
 import type { Oportunidade, Usuario, RadarFonte, RadarResultado } from '@/types/database'
 import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
-import { moverOportunidade, buscarOportunidade } from '@/lib/captacao/actions'
+import { buscarOportunidade } from '@/lib/captacao/actions'
 import OportunidadeModal from './OportunidadeModal'
 import RadarPanel from './RadarPanel'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const STATUSES_ATIVOS   = ['identificado', 'contatado', 'proposta', 'aguardando'] as const
-const STATUSES_FINAIS   = ['aprovado', 'reprovado', 'arquivado']
-const STATUSES_LINEARES = ['identificado', 'contatado', 'proposta', 'aguardando']
+const STATUSES_FINAIS = ['aprovado', 'reprovado', 'arquivado']
 
 const FONTE_BADGE: Record<string, { label: string; cor: string; bg: string }> = {
   internacional: { label: 'Internacional', cor: '#185FA5', bg: '#E6F1FB' },
@@ -69,24 +68,11 @@ function formatValorCurto(v: number | null | undefined, moeda = 'BRL') {
 interface CardProps {
   op: Oportunidade
   onCardClick: (op: Oportunidade) => void
-  onMover: (id: string, novoStatus: string) => void
 }
 
-function KanbanCard({ op, onCardClick, onMover }: CardProps) {
-  const [pendente, setPendente] = useState(false)
-  const idx = STATUSES_LINEARES.indexOf(op.status)
-  const prevStatus = idx > 0 ? STATUSES_LINEARES[idx - 1] : null
-  const nextStatus = idx >= 0 && idx < STATUSES_LINEARES.length - 1 ? STATUSES_LINEARES[idx + 1] : null
-  const isAguardando = op.status === 'aguardando'
-  const isResultado  = STATUSES_FINAIS.includes(op.status)
+function KanbanCard({ op, onCardClick }: CardProps) {
   const urgencia = urgenciaPrazo(op.prazo_submissao)
   const fonte = FONTE_BADGE[op.fonte] ?? FONTE_BADGE.manual
-
-  async function mover(novoStatus: string) {
-    setPendente(true)
-    await onMover(op.id, novoStatus)
-    setPendente(false)
-  }
 
   return (
     <div
@@ -94,13 +80,12 @@ function KanbanCard({ op, onCardClick, onMover }: CardProps) {
       style={{
         background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px',
         padding: '12px', cursor: 'pointer', marginBottom: '8px',
-        opacity: pendente ? 0.6 : 1,
         transition: 'box-shadow 0.15s',
       }}
       onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
       onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+      <div style={{ marginBottom: '6px' }}>
         <span style={{ fontSize: '11px', fontWeight: '600', color: fonte.cor, background: fonte.bg, padding: '2px 7px', borderRadius: '10px' }}>
           {fonte.label}
         </span>
@@ -120,80 +105,14 @@ function KanbanCard({ op, onCardClick, onMover }: CardProps) {
 
       {op.prazo_submissao && (
         <div style={{
-          fontSize: '11px', fontWeight: '500', marginBottom: '8px',
+          fontSize: '11px', fontWeight: '500',
           color: urgencia === 'urgente' ? '#dc2626' : urgencia === 'alerta' ? '#d97706' : '#888',
         }}>
           Prazo: {formatData(op.prazo_submissao)}
           {urgencia !== 'normal' && <span style={{ marginLeft: '4px' }}>{urgencia === 'urgente' ? '🔴' : '🟡'}</span>}
         </div>
       )}
-
-      {/* Botões de mover */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', marginTop: '8px', borderTop: '1px solid #f0eeea', paddingTop: '8px' }}
-      >
-        <div>
-          {prevStatus && !isResultado && (
-            <BtnVoltar onClick={() => mover(prevStatus)}>← Voltar</BtnVoltar>
-          )}
-          {isResultado && (
-            <BtnVoltar onClick={() => mover('aguardando')}>↺ Voltar</BtnVoltar>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {!isAguardando && !isResultado && nextStatus && (
-            <BtnAvancar onClick={() => mover(nextStatus)}>Avançar →</BtnAvancar>
-          )}
-          {isAguardando && (
-            <>
-              <BtnAprovar onClick={() => mover('aprovado')}>✓ Aprovado</BtnAprovar>
-              <BtnReprovar onClick={() => mover('reprovado')}>✗ Reprovar</BtnReprovar>
-            </>
-          )}
-        </div>
-      </div>
     </div>
-  )
-}
-
-function BtnVoltar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', background: '#f0eeea', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#555' }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#e5e3dc')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#f0eeea')}>
-      {children}
-    </button>
-  )
-}
-
-function BtnAvancar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', background: '#1D9E75', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}>
-      {children}
-    </button>
-  )
-}
-
-function BtnAprovar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ padding: '6px 10px', fontSize: '11px', fontWeight: '600', background: '#1D9E75', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}>
-      {children}
-    </button>
-  )
-}
-
-function BtnReprovar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ padding: '6px 10px', fontSize: '11px', fontWeight: '600', background: '#f0eeea', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#dc2626' }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#fee2e2')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#f0eeea')}>
-      {children}
-    </button>
   )
 }
 
@@ -222,10 +141,6 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
     } else {
       setModal(prev => prev.open && prev.mode === 'view' ? { ...prev, carregando: false } : prev)
     }
-  }
-
-  async function handleMover(id: string, novoStatus: string) {
-    await moverOportunidade(id, novoStatus)
   }
 
   function handleEditar() {
@@ -340,7 +255,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
                   <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '8px', marginBottom: '8px', minHeight: '40px' }}>
                     <div style={{ fontSize: '10px', fontWeight: '700', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>✓ Aprovado</div>
                     {aprovados.map(op => (
-                      <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} onMover={handleMover} />
+                      <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} />
                     ))}
                     {aprovados.length === 0 && <div style={{ fontSize: '11px', color: '#86efac', textAlign: 'center', padding: '4px 0' }}>—</div>}
                   </div>
@@ -348,7 +263,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
                   <div style={{ background: '#f0eeea', borderRadius: '8px', padding: '8px', minHeight: '40px' }}>
                     <div style={{ fontSize: '10px', fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>✗ Reprovado</div>
                     {reprovados.map(op => (
-                      <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} onMover={handleMover} />
+                      <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} />
                     ))}
                     {reprovados.length === 0 && <div style={{ fontSize: '11px', color: '#aaa', textAlign: 'center', padding: '4px 0' }}>—</div>}
                   </div>
@@ -356,7 +271,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
               ) : (
                 <>
                   {outros.map(op => (
-                    <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} onMover={handleMover} />
+                    <KanbanCard key={op.id} op={op} onCardClick={handleCardClick} />
                   ))}
                   {coluna.id === 'identificado' && (
                     <button

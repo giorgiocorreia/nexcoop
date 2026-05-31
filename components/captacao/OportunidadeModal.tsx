@@ -63,6 +63,32 @@ function parseJson(s: string | null): Record<string, string> {
   try { return s ? JSON.parse(s) : {} } catch { return {} }
 }
 
+function parseBRValor(v: string): number | null {
+  if (!v?.trim()) return null
+  const clean = v.replace(/\./g, '').replace(',', '.')
+  const n = parseFloat(clean)
+  return isNaN(n) ? null : n
+}
+
+function formatBRL(n: number | null | undefined): string {
+  if (n == null) return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+}
+
+const CANAL_CORES: Record<string, { bg: string; cor: string }> = {
+  email:    { bg: '#DBEAFE', cor: '#1E40AF' },
+  reuniao:  { bg: '#EDE9FE', cor: '#6D28D9' },
+  ligacao:  { bg: '#E6F7F1', cor: '#1D9E75' },
+  whatsapp: { bg: '#D1FAE5', cor: '#065F46' },
+  outro:    { bg: '#f0eeea', cor: '#555' },
+}
+
+const STATUS_PROPOSTA_CORES: Record<string, { bg: string; cor: string }> = {
+  'Em elaboração':      { bg: '#fef9c3', cor: '#854d0e' },
+  'Enviada':            { bg: '#dcfce7', cor: '#166534' },
+  'Revisão solicitada': { bg: '#ffedd5', cor: '#9a3412' },
+}
+
 interface Props {
   mode: 'create' | 'view' | 'edit'
   oportunidade?: Oportunidade
@@ -89,7 +115,9 @@ export default function OportunidadeModal({
     fonte_detalhe:   oportunidade?.fonte_detalhe   ?? '',
     fonte_url:       oportunidade?.fonte_url       ?? '',
     area_tematica:   oportunidade?.area_tematica   ?? [],
-    valor_estimado:  oportunidade?.valor_estimado != null ? String(oportunidade.valor_estimado) : '',
+    valor_estimado:  oportunidade?.valor_estimado != null
+      ? oportunidade.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+      : '',
     moeda:           oportunidade?.moeda           ?? 'BRL',
     prazo_submissao: oportunidade?.prazo_submissao ?? '',
     prazo_resultado: oportunidade?.prazo_resultado ?? '',
@@ -111,7 +139,7 @@ export default function OportunidadeModal({
     if (!values.financiador.trim()) { setError('financiador', { message: 'Obrigatório' }); return }
 
     setSalvando(true); setErro('')
-    const valorNum = values.valor_estimado ? parseFloat(values.valor_estimado) : null
+    const valorNum = values.valor_estimado ? parseBRValor(values.valor_estimado) : null
     const dados: Partial<Oportunidade> = {
       titulo: values.titulo, financiador: values.financiador, fonte: values.fonte,
       fonte_detalhe: values.fonte_detalhe || null, fonte_url: values.fonte_url || null,
@@ -376,11 +404,12 @@ export default function OportunidadeModal({
                       </p>
                     ) : contatos.map(log => {
                       const d = parseJson(log.descricao)
+                      const canalCor = CANAL_CORES[d.canal] ?? CANAL_CORES.outro
                       return (
                         <div key={log.id} style={{ border: '1px solid #e5e3dc', borderRadius: '10px', padding: '12px', marginBottom: '8px', background: '#fafaf8' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                              <span style={{ fontSize: '11px', fontWeight: '600', background: '#EEF0FF', color: '#4840CC', padding: '2px 8px', borderRadius: '10px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '600', background: canalCor.bg, color: canalCor.cor, padding: '2px 8px', borderRadius: '10px' }}>
                                 {CANAL_LABEL[d.canal] ?? d.canal ?? 'Contato'}
                               </span>
                               {d.data && <span style={{ fontSize: '11px', color: '#888' }}>{formatData(d.data)}</span>}
@@ -393,8 +422,9 @@ export default function OportunidadeModal({
                           </div>
                           {d.descricao && <p style={{ fontSize: '13px', color: '#444', margin: '0 0 4px', whiteSpace: 'pre-wrap' }}>{d.descricao}</p>}
                           {d.proximo_passo && (
-                            <div style={{ fontSize: '12px', color: '#1D9E75', marginTop: '6px', padding: '4px 8px', background: '#E6F7F1', borderRadius: '6px' }}>
-                              Próximo passo: {d.proximo_passo}
+                            <div style={{ fontSize: '12px', color: '#1D9E75', marginTop: '6px', padding: '6px 10px', background: '#E6F7F1', borderRadius: '6px', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                              <span style={{ flexShrink: 0, fontWeight: '700' }}>→</span>
+                              <span>{d.proximo_passo}</span>
                             </div>
                           )}
                         </div>
@@ -436,10 +466,13 @@ export default function OportunidadeModal({
                           </div>
                           <div>
                             <FormLabel text="Valor solicitado (R$)" />
-                            <input type="number" value={proposta.valor_solicitado}
-                              onChange={e => setProposta(p => ({ ...p, valor_solicitado: e.target.value }))}
+                            <input
+                              type="text"
+                              value={proposta.valor_solicitado}
+                              onChange={e => setProposta(p => ({ ...p, valor_solicitado: e.target.value.replace(/[^0-9.,]/g, '') }))}
                               placeholder="0,00"
-                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}
+                            />
                           </div>
                           <div>
                             <FormLabel text="Link do documento" />
@@ -469,21 +502,22 @@ export default function OportunidadeModal({
                       </p>
                     ) : propostas.map(log => {
                       const d = parseJson(log.descricao)
+                      const statusCor = STATUS_PROPOSTA_CORES[d.status_proposta ?? ''] ?? { bg: '#f0eeea', cor: '#555' }
                       return (
                         <div key={log.id} style={{ border: '1px solid #e5e3dc', borderRadius: '10px', padding: '12px', marginBottom: '8px', background: '#fafaf8' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: '600', background: '#f0eeea', color: '#555', padding: '2px 8px', borderRadius: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '600', background: statusCor.bg, color: statusCor.cor, padding: '2px 8px', borderRadius: '10px' }}>
                               {d.status_proposta ?? 'Proposta'}
                             </span>
                             {d.data_envio && <span style={{ fontSize: '11px', color: '#888' }}>{formatData(d.data_envio)}</span>}
                           </div>
                           {d.valor_solicitado && (
-                            <div style={{ fontSize: '13px', fontWeight: '600', color: TEAL, marginBottom: '4px' }}>
-                              R$ {parseFloat(d.valor_solicitado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            <div style={{ fontSize: '13px', fontWeight: '600', color: TEAL, marginBottom: '6px' }}>
+                              {formatBRL(parseBRValor(d.valor_solicitado))}
                             </div>
                           )}
                           {d.documento_url && (
-                            <a href={d.documento_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#635BFF', display: 'block', marginBottom: '4px', wordBreak: 'break-all' }}>
+                            <a href={d.documento_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#635BFF', display: 'inline-flex', alignItems: 'center', gap: '3px', marginBottom: '6px' }}>
                               Ver documento ↗
                             </a>
                           )}
@@ -572,7 +606,16 @@ export default function OportunidadeModal({
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
                     </select>
-                    <input {...register('valor_estimado')} placeholder="0,00" style={{ ...inputStyle, flex: 1 }} />
+                    <input
+                      {...register('valor_estimado')}
+                      type="text"
+                      placeholder="0,00"
+                      style={{ ...inputStyle, flex: 1 }}
+                      onKeyDown={e => {
+                        const ok = /[\d,.]/.test(e.key) || ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) || e.ctrlKey || e.metaKey
+                        if (!ok) e.preventDefault()
+                      }}
+                    />
                   </div>
                 </div>
 
