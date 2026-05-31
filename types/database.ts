@@ -22,7 +22,7 @@ export type StatusMensalidade = 'pendente' | 'pago' | 'vencido'
 export type StatusAssinatura = 'active' | 'past_due' | 'canceled' | 'trialing'
 
 export type StatusOportunidade = 'identificado' | 'contatado' | 'proposta' | 'aguardando' | 'aprovado' | 'reprovado' | 'arquivado'
-export type FonteOportunidade  = 'internacional' | 'nacional' | 'manual'
+export type FonteOportunidade  = 'internacional' | 'nacional' | 'manual' | 'agregador'
 
 export interface Organizacao {
   id: string

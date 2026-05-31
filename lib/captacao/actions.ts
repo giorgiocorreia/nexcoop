@@ -259,6 +259,28 @@ export async function atualizarFonte(id: string, dados: { nome: string; url: str
   }
 }
 
+export async function excluirOportunidade(id: string): Promise<{ error?: string }> {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data: op } = await supabase
+      .from('oportunidades')
+      .select('organizacao_id')
+      .eq('id', id)
+      .single()
+    if (!op) return { error: 'Oportunidade não encontrada.' }
+    if (op.organizacao_id !== orgId) return { error: 'Sem permissão.' }
+
+    await supabase.from('oportunidade_logs').delete().eq('oportunidade_id', id)
+    const { error } = await supabase.from('oportunidades').delete().eq('id', id)
+    if (error) return { error: traduzirErro(error.message) }
+
+    revalidatePath('/captacao')
+    return {}
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
 // ── Radar: Pipeline ───────────────────────────────────────────────────────────
 
 export async function adicionarAoPipeline(resultadoId: string) {
@@ -316,7 +338,7 @@ interface ParsedEdital {
   motivo?: string
 }
 
-function buildWebSearchPrompt(perfil: PerfilCaptacao | null, url: string): string {
+function buildWebSearchPrompt(perfil: PerfilCaptacao | null, url: string, hoje: string): string {
   const p = perfil
   const perfilJson = p
     ? {
@@ -332,6 +354,8 @@ function buildWebSearchPrompt(perfil: PerfilCaptacao | null, url: string): strin
     : null
 
   return `Acesse a URL ${url} e extraia todos os editais, chamadas públicas e oportunidades de financiamento listados.
+
+Hoje é ${hoje}. Ignore editais cujo prazo de submissão já passou.
 
 Para cada um compare com este perfil de organização:
 ${JSON.stringify(perfilJson, null, 2)}
@@ -379,6 +403,7 @@ export async function executarRadar() {
     const client = new Anthropic({ apiKey })
     const admin  = createAdminClient()
     const agora  = new Date().toISOString()
+    const hoje   = agora.split('T')[0]
     const errosPorFonte: string[] = []
     const allNovosIds: string[] = []
 
@@ -394,7 +419,7 @@ export async function executarRadar() {
           max_tokens: 4096,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tools:    [{ type: 'web_search_20250305', name: 'web_search' }] as any,
-          messages: [{ role: 'user', content: buildWebSearchPrompt(perfil as PerfilCaptacao | null, fonte.url) }],
+          messages: [{ role: 'user', content: buildWebSearchPrompt(perfil as PerfilCaptacao | null, fonte.url, hoje) }],
         })
 
         console.log(`[Radar] stop_reason=${msg.stop_reason} | blocos=${msg.content.length}`)
@@ -435,7 +460,8 @@ export async function executarRadar() {
         continue
       }
 
-      // ── 4. Filtra apenas editais com URLs novas ───────────────────────────
+      // ── 4. Filtra editais vencidos e com URLs já existentes ──────────────
+      editais = editais.filter(e => !e.prazo_submissao || e.prazo_submissao >= hoje)
       const antes = editais.length
       editais = editais.filter(e => !e.url_edital || !urlsExistentes.has(e.url_edital))
       console.log(`[Radar] "${fonte.nome}" — ${antes} encontrados, ${editais.length} novos após filtragem`)

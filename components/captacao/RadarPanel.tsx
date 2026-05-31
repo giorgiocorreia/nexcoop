@@ -545,24 +545,12 @@ function ResultadoCard({ resultado: r, onAdicionarPipeline, onIgnorar, isNovo }:
 
   return (
     <div style={{
-      position: 'relative',
       border: `1px solid ${isNovo ? '#a7f3d0' : '#e5e3dc'}`,
       borderRadius: '10px', padding: '14px', marginBottom: '10px',
       background: isNovo ? '#f0fdf9' : '#fafaf8',
     }}>
-      <button
-        onClick={onIgnorar}
-        title="Ignorar"
-        style={{
-          position: 'absolute', top: '8px', right: '8px',
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          fontSize: '12px', color: '#999', padding: '2px 6px', lineHeight: 1,
-        }}
-      >
-        ✕ Ignorar
-      </button>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', paddingRight: '64px' }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <CompatBadge compatibilidade={r.compatibilidade} score={r.score} />
             {isNovo && (
@@ -595,17 +583,17 @@ function ResultadoCard({ resultado: r, onAdicionarPipeline, onIgnorar, isNovo }:
           )}
         </div>
 
-        <div style={{ flexShrink: 0 }}>
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch' }}>
           {r.adicionado_ao_pipeline ? (
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>✓ No pipeline</span>
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#1D9E75', textAlign: 'center', padding: '8px 0' }}>✓ No pipeline</span>
           ) : (
             <button
               onClick={handleClick}
               disabled={adicionando || r.compatibilidade === 'incompativel'}
               style={{
-                fontSize: '12px', fontWeight: '600', padding: '6px 12px',
-                background: adicionando ? '#9F9BFF' : '#635BFF',
-                color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer',
+                width: '120px', padding: '8px 16px', fontSize: '13px', fontWeight: '600',
+                background: adicionando ? '#57C4A3' : '#1D9E75',
+                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
                 opacity: r.compatibilidade === 'incompativel' ? 0.45 : 1,
                 whiteSpace: 'nowrap',
               }}
@@ -613,6 +601,17 @@ function ResultadoCard({ resultado: r, onAdicionarPipeline, onIgnorar, isNovo }:
               {adicionando ? '…' : '+ Pipeline'}
             </button>
           )}
+          <button
+            onClick={onIgnorar}
+            style={{
+              width: '120px', padding: '8px 16px', fontSize: '13px', fontWeight: '600',
+              background: '#FEE2E2', color: '#991B1B',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ✕ Ignorar
+          </button>
         </div>
       </div>
     </div>

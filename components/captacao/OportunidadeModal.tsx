@@ -24,6 +24,7 @@ const FONTE_BADGE: Record<string, { label: string; cor: string; bg: string }> = 
   internacional: { label: 'Internacional', cor: '#185FA5', bg: '#E6F1FB' },
   nacional:      { label: 'Nacional',      cor: '#1D9E75', bg: '#E6F7F1' },
   manual:        { label: 'Manual',        cor: '#555',    bg: '#f5f5f2' },
+  agregador:     { label: 'Agregador',     cor: '#7C3AED', bg: '#EDE9FE' },
 }
 
 const CANAL_LABEL: Record<string, string> = {
@@ -31,7 +32,7 @@ const CANAL_LABEL: Record<string, string> = {
   whatsapp: 'WhatsApp', outro: 'Outro',
 }
 
-type FonteOp   = 'internacional' | 'nacional' | 'manual'
+type FonteOp   = 'internacional' | 'nacional' | 'manual' | 'agregador'
 type AbaModal  = 'identificacao' | 'contatos' | 'proposta' | 'resultado' | 'historico'
 
 interface FormValues {
@@ -585,6 +586,7 @@ export default function OportunidadeModal({
                     <option value="nacional">Nacional</option>
                     <option value="internacional">Internacional</option>
                     <option value="manual">Manual</option>
+                    <option value="agregador">Agregador</option>
                   </select>
                 </div>
 

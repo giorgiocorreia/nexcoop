@@ -486,29 +486,6 @@ function AbaCaptacao({ perfilCaptacao }: { perfilCaptacao: PerfilCaptacao | null
           </Field>
         </div>
 
-        {/* Idiomas */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <Field label="Idiomas aceitos">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#999', cursor: 'not-allowed' }}>
-                <input type="checkbox" checked disabled style={{ accentColor: TEAL, width: 15, height: 15 }} />
-                Português
-              </label>
-              {[{ value: 'en', label: 'Inglês' }, { value: 'es', label: 'Espanhol' }].map(({ value, label }) => (
-                <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#444', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={perfil.idiomas.includes(value)}
-                    onChange={() => toggleArray('idiomas', value)}
-                    style={{ accentColor: TEAL, width: 15, height: 15 }}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </Field>
-        </div>
-
         {/* Descrição */}
         <div style={{ marginBottom: '1.25rem' }}>
           <Field label="Descrição da organização">
