@@ -23,6 +23,7 @@ export type StatusAssinatura = 'active' | 'past_due' | 'canceled' | 'trialing'
 
 export type StatusOportunidade = 'identificado' | 'contatado' | 'proposta' | 'aguardando' | 'aprovado' | 'reprovado' | 'arquivado'
 export type FonteOportunidade  = 'internacional' | 'nacional' | 'manual' | 'agregador'
+export type StatusCota         = 'integralizada' | 'parcial' | 'pendente'
 
 export interface Organizacao {
   id: string
@@ -158,6 +159,28 @@ export interface RadarResultado {
   adicionado_ao_pipeline: boolean
   oportunidade_id: string | null
   varredura_em: string
+}
+
+export interface CotaCooperado {
+  id:             string
+  cooperado_id:   string
+  organizacao_id: string
+  quantidade:     number
+  valor_cota:     number
+  status:         StatusCota
+  criado_em:      string
+  atualizado_em:  string
+}
+
+export interface CotaIntegralizacao {
+  id:             string
+  cota_id:        string
+  cooperado_id:   string
+  organizacao_id: string
+  data:           string
+  quantidade:     number
+  valor_pago:     number
+  criado_em:      string
 }
 
 export interface FuncaoDisponivel {
@@ -341,8 +364,10 @@ export type Database = {
       oportunidades:       TableDef<Oportunidade>
       oportunidade_logs:   TableDef<OportunidadeLog>
       perfil_captacao:     TableDef<PerfilCaptacao>
-      radar_fontes:        TableDef<RadarFonte>
-      radar_resultados:    TableDef<RadarResultado>
+      radar_fontes:         TableDef<RadarFonte>
+      radar_resultados:     TableDef<RadarResultado>
+      cotas_cooperado:      TableDef<CotaCooperado>
+      cotas_integralizacao: TableDef<CotaIntegralizacao>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

@@ -34,5 +34,11 @@ export default async function CooperadoPage({ params }: Props) {
 
   if (error || !cooperado) notFound()
 
-  return <CooperadoPerfil cooperado={cooperado} />
+  const { data: org } = await supabase
+    .from('organizacoes')
+    .select('tipo')
+    .eq('id', cooperado.organizacao_id)
+    .single()
+
+  return <CooperadoPerfil cooperado={cooperado} orgTipo={org?.tipo ?? null} />
 }

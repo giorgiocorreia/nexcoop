@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Cooperado, StatusCooperado } from '@/types/database'
+import CotasSection from './CotasSection'
 
 const STATUS_CONFIG: Record<
   StatusCooperado,
@@ -58,9 +59,10 @@ function Secao({ titulo, icone, children }: { titulo: string; icone: string; chi
 
 interface Props {
   cooperado: Cooperado
+  orgTipo:   string | null
 }
 
-export default function CooperadoPerfil({ cooperado: initial }: Props) {
+export default function CooperadoPerfil({ cooperado: initial, orgTipo }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -329,6 +331,11 @@ export default function CooperadoPerfil({ cooperado: initial }: Props) {
           </Secao>
         )}
       </div>
+
+      {/* Cotas de Participação — exclusivo cooperativas */}
+      {orgTipo === 'cooperativa' && (
+        <CotasSection cooperadoId={cooperado.id} orgId={cooperado.organizacao_id} />
+      )}
 
       {/* Rodapé com ID */}
       <p style={{ fontSize: '11px', color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
