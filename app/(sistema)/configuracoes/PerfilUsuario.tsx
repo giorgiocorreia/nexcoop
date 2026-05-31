@@ -250,7 +250,7 @@ const inp: React.CSSProperties = {
 }
 
 const btnPrimary: React.CSSProperties = {
-  padding: '9px 20px', background: '#635BFF', color: '#fff',
-  border: 'none', borderRadius: '8px', fontSize: '13px',
+  padding: '10px 24px', background: '#1D9E75', color: '#fff',
+  border: 'none', borderRadius: '8px', fontSize: '14px',
   fontWeight: '600', cursor: 'pointer',
 }

@@ -1,7 +1,9 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { isAdmin } from '@/lib/permissoes'
 import ConfiguracoesForm from './ConfiguracoesForm'
-import type { Organizacao, PerfilCaptacao, Usuario } from '@/types/database'
+import type { Organizacao, PerfilCaptacao, Usuario, FuncaoDisponivel } from '@/types/database'
 
 export const metadata = { title: 'Configurações — NextCoop' }
 
@@ -18,13 +20,13 @@ export default async function ConfiguracoesPage() {
 
   if (!usuario) redirect('/login')
 
-  const isSuperAdmin = usuario.role === 'super_admin'
-
-  // super_admin pode não ter org; outros usuários sem org vão para o dashboard
-  if (!usuario.organizacao_id && !isSuperAdmin) redirect('/dashboard')
+  const superAdmin = usuario.role === 'super_admin'
+  if (!usuario.organizacao_id && !superAdmin) redirect('/dashboard')
 
   let org: Organizacao | null = null
   let perfilCaptacao: PerfilCaptacao | null = null
+  let usuarios: Usuario[] = []
+  let funcoes: FuncaoDisponivel[] = []
 
   if (usuario.organizacao_id) {
     const [orgRes, perfilRes] = await Promise.all([
@@ -33,14 +35,35 @@ export default async function ConfiguracoesPage() {
     ])
     org = orgRes.data ?? null
     perfilCaptacao = perfilRes.data ?? null
+
+    if (isAdmin(usuario)) {
+      const [usersRes, funcoesRes] = await Promise.all([
+        supabase
+          .from('usuarios')
+          .select('*')
+          .eq('organizacao_id', usuario.organizacao_id)
+          .order('nome_completo'),
+        supabase
+          .from('funcoes_disponiveis')
+          .select('*')
+          .or(`organizacao_id.is.null,organizacao_id.eq.${usuario.organizacao_id}`)
+          .order('nome'),
+      ])
+      usuarios = (usersRes.data ?? []) as Usuario[]
+      funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
+    }
   }
 
   return (
-    <ConfiguracoesForm
-      org={org}
-      isSuperAdmin={isSuperAdmin}
-      perfilCaptacao={perfilCaptacao}
-      usuario={usuario as Usuario}
-    />
+    <Suspense fallback={null}>
+      <ConfiguracoesForm
+        org={org}
+        isSuperAdmin={superAdmin}
+        perfilCaptacao={perfilCaptacao}
+        usuario={usuario as Usuario}
+        usuarios={usuarios}
+        funcoes={funcoes}
+      />
+    </Suspense>
   )
 }

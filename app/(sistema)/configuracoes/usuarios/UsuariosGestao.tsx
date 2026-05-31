@@ -30,9 +30,10 @@ interface Props {
   funcoes: FuncaoDisponivel[]
   usuarioAtualId: string
   isSuperAdmin: boolean
+  embeddedMode?: boolean
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuarioAtualId, isSuperAdmin }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
   const [busca, setBusca] = useState('')
@@ -132,13 +133,13 @@ export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuari
   }
 
   return (
-    <div style={{ maxWidth: '760px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Usuários</h1>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '4px', marginBottom: 0 }}>
+          {!embeddedMode && <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Usuários</h1>}
+          <p style={{ fontSize: '13px', color: '#888', marginTop: embeddedMode ? 0 : '4px', marginBottom: 0 }}>
             {totalAtivos} membro{totalAtivos !== 1 ? 's' : ''} ativo{totalAtivos !== 1 ? 's' : ''}
             {usuarios.length > totalAtivos && ` · ${usuarios.length - totalAtivos} inativo${usuarios.length - totalAtivos !== 1 ? 's' : ''}`}
           </p>
