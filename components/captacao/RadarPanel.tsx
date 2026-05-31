@@ -13,6 +13,7 @@ interface Props {
 }
 
 const TEAL = '#1D9E75'
+const USD_TO_BRL = 5.70
 
 const MSGS_STATUS = [
   'Varrendo fontes cadastradas...',
@@ -426,7 +427,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
               )}
               {!executando && tokensTotal > 0 && (
                 <div style={{ fontSize: '10px', color: '#bbb', marginTop: '2px' }}>
-                  Última varredura: ~{tokensTotal.toLocaleString('pt-BR')} tokens | ~US$ {custoTotal.toFixed(3).replace('.', ',')}
+                  Última varredura: ~{tokensTotal.toLocaleString('pt-BR')} tokens | ~R$ {(custoTotal * USD_TO_BRL).toFixed(2).replace('.', ',')}
                 </div>
               )}
             </div>
