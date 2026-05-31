@@ -203,9 +203,9 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   return (
     <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', minHeight: 'calc(100vh - 240px)' }}>
       <style>{`
-        @keyframes radar-pulse {
-          0%, 100% { opacity: 1; transform: scaleX(1); }
-          50%       { opacity: 0.45; transform: scaleX(0.9); }
+        @keyframes radar-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
       `}</style>
 
@@ -391,17 +391,15 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
               border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px 24px',
               marginBottom: '1rem', textAlign: 'center',
             }}>
-              <div style={{ fontSize: '28px', marginBottom: '10px' }}>🔍</div>
+              <div style={{
+                width: '60px', height: '60px', margin: '0 auto 16px',
+                border: '4px solid #e5e3dc',
+                borderTop: `4px solid ${TEAL}`,
+                borderRadius: '50%',
+                animation: 'radar-spin 1s linear infinite',
+              }} />
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', marginBottom: '12px' }}>
                 Analisando fontes...
-              </div>
-
-              <div style={{ background: '#f0eeea', borderRadius: '4px', height: '6px', margin: '0 0 16px', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', background: TEAL, borderRadius: '4px', width: '100%',
-                  animation: 'radar-pulse 1.5s ease-in-out infinite',
-                  transformOrigin: 'left',
-                }} />
               </div>
 
               <div style={{ fontFamily: 'monospace', fontSize: '22px', fontWeight: '700', color: '#1a1a1a', marginBottom: '10px' }}>
