@@ -3,10 +3,21 @@
 import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
 
 const ACAO_LABEL: Record<string, string> = {
-  criado:      'Oportunidade criada',
-  movido:      'Status alterado',
-  editado:     'Dados atualizados',
-  comentario:  'Comentário adicionado',
+  criado:     'Oportunidade criada',
+  movido:     'Status alterado',
+  editado:    'Dados atualizados',
+  comentario: 'Comentário adicionado',
+  contato:    'Contato registrado',
+  proposta:   'Proposta registrada',
+}
+
+const CANAL_LABEL: Record<string, string> = {
+  email: 'E-mail', reuniao: 'Reunião', ligacao: 'Ligação',
+  whatsapp: 'WhatsApp', outro: 'Outro',
+}
+
+function parseJson(s: string | null): Record<string, string> {
+  try { return s ? JSON.parse(s) : {} } catch { return {} }
 }
 
 function formatDataHora(iso: string) {
@@ -57,13 +68,27 @@ export default function LogTimeline({ logs }: Props) {
                 {log.status_anterior} → {log.status_novo}
               </span>
             )}
+            {log.acao === 'contato' && (() => {
+              const d = parseJson(log.descricao)
+              return d.canal ? (
+                <span style={{ fontWeight: '400', color: '#888', marginLeft: '6px' }}>
+                  via {CANAL_LABEL[d.canal] ?? d.canal}
+                </span>
+              ) : null
+            })()}
           </div>
 
-          {log.descricao && (
+          {log.acao === 'contato' || log.acao === 'proposta' ? (() => {
+            const d = parseJson(log.descricao)
+            const texto = log.acao === 'contato' ? d.descricao : `${d.status_proposta ? d.status_proposta + ' · ' : ''}${d.observacoes ?? ''}`
+            return texto ? (
+              <div style={{ fontSize: '12px', color: '#555', marginTop: '2px' }}>{texto}</div>
+            ) : null
+          })() : log.descricao ? (
             <div style={{ fontSize: '12px', color: '#555', marginTop: '2px' }}>
               {log.descricao}
             </div>
-          )}
+          ) : null}
 
           <div style={{ fontSize: '11px', color: '#aaa', marginTop: '3px' }}>
             {log.usuario?.nome_completo || 'Sistema'} · {formatDataHora(log.criado_em)}

@@ -131,41 +131,67 @@ function KanbanCard({ op, onCardClick, onMover }: CardProps) {
       {/* Botões de mover */}
       <div
         onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', marginTop: '8px', borderTop: '1px solid #f0eeea', paddingTop: '8px' }}
       >
-        {prevStatus && (
-          <MoverBtn onClick={() => mover(prevStatus)} title={`← ${prevStatus}`}>←</MoverBtn>
-        )}
-        {!isAguardando && !isResultado && nextStatus && (
-          <MoverBtn onClick={() => mover(nextStatus)} title={`→ ${nextStatus}`}>→</MoverBtn>
-        )}
-        {isAguardando && (
-          <>
-            <MoverBtn onClick={() => mover('aprovado')} cor="#1D9E75" title="Aprovar">✓</MoverBtn>
-            <MoverBtn onClick={() => mover('reprovado')} cor="#dc2626" title="Reprovar">✗</MoverBtn>
-          </>
-        )}
-        {isResultado && (
-          <MoverBtn onClick={() => mover('aguardando')} title="Voltar para Aguardando">↺</MoverBtn>
-        )}
+        <div>
+          {prevStatus && !isResultado && (
+            <BtnVoltar onClick={() => mover(prevStatus)}>← Voltar</BtnVoltar>
+          )}
+          {isResultado && (
+            <BtnVoltar onClick={() => mover('aguardando')}>↺ Voltar</BtnVoltar>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {!isAguardando && !isResultado && nextStatus && (
+            <BtnAvancar onClick={() => mover(nextStatus)}>Avançar →</BtnAvancar>
+          )}
+          {isAguardando && (
+            <>
+              <BtnAprovar onClick={() => mover('aprovado')}>✓ Aprovado</BtnAprovar>
+              <BtnReprovar onClick={() => mover('reprovado')}>✗ Reprovar</BtnReprovar>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-function MoverBtn({ onClick, title, cor, children }: { onClick: () => void; title?: string; cor?: string; children: React.ReactNode }) {
+function BtnVoltar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        padding: '2px 8px', fontSize: '12px', fontWeight: '600',
-        background: '#f5f5f2', border: '1px solid #e5e3dc', borderRadius: '6px',
-        cursor: 'pointer', color: cor || '#555',
-      }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#eae8e2')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2')}
-    >
+    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', background: '#f0eeea', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#555' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#e5e3dc')}
+      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#f0eeea')}>
+      {children}
+    </button>
+  )
+}
+
+function BtnAvancar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', background: '#1D9E75', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
+      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}>
+      {children}
+    </button>
+  )
+}
+
+function BtnAprovar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ padding: '6px 10px', fontSize: '11px', fontWeight: '600', background: '#1D9E75', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
+      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#1D9E75')}>
+      {children}
+    </button>
+  )
+}
+
+function BtnReprovar({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ padding: '6px 10px', fontSize: '11px', fontWeight: '600', background: '#f0eeea', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#dc2626' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#fee2e2')}
+      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#f0eeea')}>
       {children}
     </button>
   )

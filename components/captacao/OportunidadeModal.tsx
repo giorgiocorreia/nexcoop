@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import type { Oportunidade, Usuario } from '@/types/database'
-import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
-import { criarOportunidade, atualizarOportunidade } from '@/lib/captacao/actions'
+import type { OportunidadeLogComUsuario, DadosContato, DadosProposta } from '@/lib/captacao/actions'
+import { criarOportunidade, atualizarOportunidade, registrarContato, registrarProposta } from '@/lib/captacao/actions'
 import LogTimeline from './LogTimeline'
+
+const TEAL = '#1D9E75'
 
 const AREAS_TEMATICAS = [
   'agrofloresta', 'cacau', 'café', 'pecuária', 'pesca', 'mel',
@@ -24,7 +26,13 @@ const FONTE_BADGE: Record<string, { label: string; cor: string; bg: string }> = 
   manual:        { label: 'Manual',        cor: '#555',    bg: '#f5f5f2' },
 }
 
-type FonteOp = 'internacional' | 'nacional' | 'manual'
+const CANAL_LABEL: Record<string, string> = {
+  email: 'E-mail', reuniao: 'Reunião', ligacao: 'Ligação',
+  whatsapp: 'WhatsApp', outro: 'Outro',
+}
+
+type FonteOp   = 'internacional' | 'nacional' | 'manual'
+type AbaModal  = 'identificacao' | 'contatos' | 'proposta' | 'resultado' | 'historico'
 
 interface FormValues {
   titulo:          string
@@ -51,6 +59,10 @@ function formatValor(v: number | null | undefined, moeda = 'BRL') {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: moeda })
 }
 
+function parseJson(s: string | null): Record<string, string> {
+  try { return s ? JSON.parse(s) : {} } catch { return {} }
+}
+
 interface Props {
   mode: 'create' | 'view' | 'edit'
   oportunidade?: Oportunidade
@@ -66,6 +78,7 @@ export default function OportunidadeModal({
   mode, oportunidade, logs = [], carregando = false,
   responsaveis, onClose, onSalvo, onEditar,
 }: Props) {
+  // ── Form state (create/edit) ───────────────────────────────────────────────
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState('')
 
@@ -85,261 +98,539 @@ export default function OportunidadeModal({
   }
 
   const { register, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({ defaultValues })
-
   const areasTematicas = watch('area_tematica') ?? []
 
   function toggleArea(area: string) {
-    if (areasTematicas.includes(area)) {
-      setValue('area_tematica', areasTematicas.filter(a => a !== area))
-    } else {
-      setValue('area_tematica', [...areasTematicas, area])
-    }
+    setValue('area_tematica', areasTematicas.includes(area)
+      ? areasTematicas.filter(a => a !== area)
+      : [...areasTematicas, area])
   }
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    if (!values.titulo.trim())     { setError('titulo',     { message: 'Obrigatório' }); return }
-    if (!values.financiador.trim()){ setError('financiador',{ message: 'Obrigatório' }); return }
+    if (!values.titulo.trim())      { setError('titulo',      { message: 'Obrigatório' }); return }
+    if (!values.financiador.trim()) { setError('financiador', { message: 'Obrigatório' }); return }
 
-    setSalvando(true)
-    setErro('')
-
+    setSalvando(true); setErro('')
     const valorNum = values.valor_estimado ? parseFloat(values.valor_estimado) : null
     const dados: Partial<Oportunidade> = {
-      titulo:          values.titulo,
-      financiador:     values.financiador,
-      fonte:           values.fonte,
-      fonte_detalhe:   values.fonte_detalhe   || null,
-      fonte_url:       values.fonte_url       || null,
-      area_tematica:   values.area_tematica,
-      valor_estimado:  valorNum != null && !isNaN(valorNum) ? valorNum : null,
-      moeda:           values.moeda,
-      prazo_submissao: values.prazo_submissao || null,
-      prazo_resultado: values.prazo_resultado || null,
-      responsavel_id:  values.responsavel_id  || null,
-      observacoes:     values.observacoes     || null,
+      titulo: values.titulo, financiador: values.financiador, fonte: values.fonte,
+      fonte_detalhe: values.fonte_detalhe || null, fonte_url: values.fonte_url || null,
+      area_tematica: values.area_tematica,
+      valor_estimado: valorNum != null && !isNaN(valorNum) ? valorNum : null,
+      moeda: values.moeda,
+      prazo_submissao: values.prazo_submissao || null, prazo_resultado: values.prazo_resultado || null,
+      responsavel_id: values.responsavel_id || null, observacoes: values.observacoes || null,
     }
-
     const res = mode === 'create'
       ? await criarOportunidade(dados)
       : await atualizarOportunidade(oportunidade!.id, dados)
-
     setSalvando(false)
     if (res.error) { setErro(res.error); return }
     onSalvo()
   }
 
+  // ── View state (abas) ──────────────────────────────────────────────────────
+  const [abaAtiva, setAbaAtiva] = useState<AbaModal>('identificacao')
+  const [logsState, setLogsState] = useState<OportunidadeLogComUsuario[]>(logs)
+
+  useEffect(() => { setLogsState(logs) }, [logs])
+
+  const contatos  = logsState.filter(l => l.acao === 'contato')
+  const propostas = logsState.filter(l => l.acao === 'proposta')
+  const isResultadoFinal = oportunidade && ['aprovado', 'reprovado'].includes(oportunidade.status)
+
+  // ── Contato form ───────────────────────────────────────────────────────────
+  const [showContato, setShowContato] = useState(false)
+  const [contato, setContato] = useState<DadosContato>({
+    data: new Date().toISOString().split('T')[0],
+    canal: 'email', responsavel_id: '', descricao: '', proximo_passo: '',
+  })
+  const [salvandoContato, setSalvandoContato] = useState(false)
+  const [erroContato, setErroContato] = useState('')
+
+  async function handleSalvarContato() {
+    if (!contato.descricao.trim()) { setErroContato('Descreva o que foi tratado.'); return }
+    setSalvandoContato(true); setErroContato('')
+    const res = await registrarContato(oportunidade!.id, contato)
+    setSalvandoContato(false)
+    if (res.error) { setErroContato(res.error); return }
+    const novoLog: OportunidadeLogComUsuario = {
+      id: String(Date.now()), oportunidade_id: oportunidade!.id,
+      usuario_id: null, acao: 'contato', status_anterior: null, status_novo: null,
+      descricao: JSON.stringify(contato), criado_em: new Date().toISOString(), usuario: null,
+    }
+    setLogsState(prev => [novoLog, ...prev])
+    setContato({ data: new Date().toISOString().split('T')[0], canal: 'email', responsavel_id: '', descricao: '', proximo_passo: '' })
+    setShowContato(false)
+  }
+
+  // ── Proposta form ──────────────────────────────────────────────────────────
+  const [showProposta, setShowProposta] = useState(false)
+  const [proposta, setProposta] = useState<DadosProposta>({
+    data_envio: new Date().toISOString().split('T')[0],
+    valor_solicitado: '', status_proposta: 'Em elaboração',
+    documento_url: '', observacoes: '',
+  })
+  const [salvandoProposta, setSalvandoProposta] = useState(false)
+  const [erroProposta, setErroProposta] = useState('')
+
+  async function handleSalvarProposta() {
+    setSalvandoProposta(true); setErroProposta('')
+    const res = await registrarProposta(oportunidade!.id, proposta)
+    setSalvandoProposta(false)
+    if (res.error) { setErroProposta(res.error); return }
+    const novoLog: OportunidadeLogComUsuario = {
+      id: String(Date.now()), oportunidade_id: oportunidade!.id,
+      usuario_id: null, acao: 'proposta', status_anterior: null, status_novo: null,
+      descricao: JSON.stringify(proposta), criado_em: new Date().toISOString(), usuario: null,
+    }
+    setLogsState(prev => [novoLog, ...prev])
+    setProposta({ data_envio: new Date().toISOString().split('T')[0], valor_solicitado: '', status_proposta: 'Em elaboração', documento_url: '', observacoes: '' })
+    setShowProposta(false)
+  }
+
   const isForm = mode === 'create' || mode === 'edit'
+
+  const ABAS: Array<{ id: AbaModal; label: string }> = [
+    { id: 'identificacao', label: 'Identificação' },
+    { id: 'contatos',      label: `Contatos${contatos.length ? ` (${contatos.length})` : ''}` },
+    { id: 'proposta',      label: `Proposta${propostas.length ? ` (${propostas.length})` : ''}` },
+    ...(isResultadoFinal ? [{ id: 'resultado' as AbaModal, label: 'Resultado' }] : []),
+    { id: 'historico',     label: 'Histórico' },
+  ]
 
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-        zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
-      }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{
-          background: '#fff', borderRadius: '16px', padding: '1.5rem',
-          width: '100%', maxWidth: '680px', maxHeight: '90vh',
-          overflowY: 'auto',
-        }}
+        style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '720px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-          <div>
-            <h2 style={{ fontSize: '17px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-              {mode === 'create' ? 'Nova oportunidade' : isForm ? 'Editar oportunidade' : oportunidade?.titulo}
-            </h2>
-            {mode === 'view' && oportunidade && (
-              <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                {(() => { const f = FONTE_BADGE[oportunidade.fonte] ?? FONTE_BADGE.manual; return (
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: f.cor, background: f.bg, padding: '2px 8px', borderRadius: '12px' }}>
-                    {f.label}
+        {/* Header fixo */}
+        <div style={{ padding: '1.25rem 1.5rem 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div>
+              <h2 style={{ fontSize: '17px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
+                {mode === 'create' ? 'Nova oportunidade' : isForm ? 'Editar oportunidade' : oportunidade?.titulo}
+              </h2>
+              {mode === 'view' && oportunidade && (
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  {(() => { const f = FONTE_BADGE[oportunidade.fonte] ?? FONTE_BADGE.manual; return (
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: f.cor, background: f.bg, padding: '2px 8px', borderRadius: '12px' }}>{f.label}</span>
+                  )})()}
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#635BFF', background: '#EEEDFE', padding: '2px 8px', borderRadius: '12px' }}>
+                    {STATUS_LABEL[oportunidade.status] || oportunidade.status}
                   </span>
-                )})()}
-                <span style={{ fontSize: '11px', fontWeight: '600', color: '#635BFF', background: '#EEEDFE', padding: '2px 8px', borderRadius: '12px' }}>
-                  {STATUS_LABEL[oportunidade.status] || oportunidade.status}
-                </span>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#888', lineHeight: 1, padding: '0 4px' }}>×</button>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#888', lineHeight: 1, padding: '0 4px' }}>×</button>
+
+          {/* Abas — só em view */}
+          {mode === 'view' && !carregando && (
+            <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #e5e3dc' }}>
+              {ABAS.map(aba => (
+                <button
+                  key={aba.id}
+                  onClick={() => setAbaAtiva(aba.id)}
+                  style={{
+                    padding: '8px 14px', fontSize: '12px', fontWeight: abaAtiva === aba.id ? '600' : '400',
+                    color: abaAtiva === aba.id ? TEAL : '#888',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    borderBottom: abaAtiva === aba.id ? `2px solid ${TEAL}` : '2px solid transparent',
+                    marginBottom: '-1px', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {aba.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* VIEW MODE */}
-        {mode === 'view' && oportunidade && (
-          carregando ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem', color: '#aaa', fontSize: '13px' }}>Carregando…</div>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
-                <Campo label="Financiador"       valor={oportunidade.financiador} />
-                <Campo label="Fonte detalhe"     valor={oportunidade.fonte_detalhe || '—'} />
-                <Campo label="Valor estimado"    valor={formatValor(oportunidade.valor_estimado, oportunidade.moeda)} />
-                <Campo label="Prazo submissão"   valor={formatData(oportunidade.prazo_submissao)} />
-                <Campo label="Prazo resultado"   valor={formatData(oportunidade.prazo_resultado)} />
-                <Campo label="Responsável"       valor={responsaveis.find(r => r.id === oportunidade.responsavel_id)?.nome_completo || '—'} />
-              </div>
+        {/* Corpo com scroll */}
+        <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', flex: 1 }}>
 
-              {oportunidade.fonte_url && (
-                <div style={{ marginBottom: '12px' }}>
-                  <FieldLabel text="URL do edital" />
-                  <a href={oportunidade.fonte_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#635BFF', wordBreak: 'break-all' }}>
-                    {oportunidade.fonte_url}
-                  </a>
+          {/* ── VIEW MODE ────────────────────────────────────────────────── */}
+          {mode === 'view' && oportunidade && (
+            carregando ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem', color: '#aaa', fontSize: '13px' }}>Carregando…</div>
+            ) : (
+              <>
+                {/* ── Aba: Identificação ─────────────────────────────────── */}
+                {abaAtiva === 'identificacao' && (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
+                      <Campo label="Financiador"     valor={oportunidade.financiador} />
+                      <Campo label="Fonte detalhe"   valor={oportunidade.fonte_detalhe || '—'} />
+                      <Campo label="Valor estimado"  valor={formatValor(oportunidade.valor_estimado, oportunidade.moeda)} />
+                      <Campo label="Prazo submissão" valor={formatData(oportunidade.prazo_submissao)} />
+                      <Campo label="Prazo resultado" valor={formatData(oportunidade.prazo_resultado)} />
+                      <Campo label="Responsável"     valor={responsaveis.find(r => r.id === oportunidade.responsavel_id)?.nome_completo || '—'} />
+                    </div>
+
+                    {oportunidade.fonte_url && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <FieldLabel text="URL do edital" />
+                        <a href={oportunidade.fonte_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#635BFF', wordBreak: 'break-all' }}>
+                          {oportunidade.fonte_url}
+                        </a>
+                      </div>
+                    )}
+
+                    {(oportunidade.area_tematica?.length ?? 0) > 0 && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <FieldLabel text="Áreas temáticas" />
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                          {oportunidade.area_tematica.map(a => (
+                            <span key={a} style={{ fontSize: '11px', background: '#f0eeea', color: '#555', padding: '3px 8px', borderRadius: '12px' }}>{a}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {oportunidade.observacoes && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <FieldLabel text="Observações" />
+                        <p style={{ fontSize: '13px', color: '#444', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{oportunidade.observacoes}</p>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e3dc', gap: '8px' }}>
+                      <button onClick={onClose} style={btnSecondary}>Fechar</button>
+                      {onEditar && <button onClick={onEditar} style={btnPrimary}>Editar</button>}
+                    </div>
+                  </>
+                )}
+
+                {/* ── Aba: Contatos ──────────────────────────────────────── */}
+                {abaAtiva === 'contatos' && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                      <button
+                        onClick={() => { setShowContato(v => !v); setErroContato('') }}
+                        style={showContato ? btnSecondary : btnPrimary}
+                      >
+                        {showContato ? 'Cancelar' : '+ Registrar contato'}
+                      </button>
+                    </div>
+
+                    {showContato && (
+                      <div style={{ background: '#f8f7f4', borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                          <div>
+                            <FormLabel text="Data" />
+                            <input type="date" value={contato.data}
+                              onChange={e => setContato(p => ({ ...p, data: e.target.value }))}
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                          </div>
+                          <div>
+                            <FormLabel text="Canal" />
+                            <select value={contato.canal}
+                              onChange={e => setContato(p => ({ ...p, canal: e.target.value }))}
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                              <option value="email">E-mail</option>
+                              <option value="reuniao">Reunião</option>
+                              <option value="ligacao">Ligação</option>
+                              <option value="whatsapp">WhatsApp</option>
+                              <option value="outro">Outro</option>
+                            </select>
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <FormLabel text="Responsável" />
+                            <select value={contato.responsavel_id}
+                              onChange={e => setContato(p => ({ ...p, responsavel_id: e.target.value }))}
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                              <option value="">Selecionar...</option>
+                              {responsaveis.map(u => <option key={u.id} value={u.id}>{u.nome_completo}</option>)}
+                            </select>
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <FormLabel text="O que foi tratado *" />
+                            <textarea value={contato.descricao}
+                              onChange={e => setContato(p => ({ ...p, descricao: e.target.value }))}
+                              rows={3} placeholder="Descreva o contato realizado…"
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <FormLabel text="Próximo passo" />
+                            <textarea value={contato.proximo_passo}
+                              onChange={e => setContato(p => ({ ...p, proximo_passo: e.target.value }))}
+                              rows={2} placeholder="O que precisa acontecer a seguir…"
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+                          </div>
+                        </div>
+                        {erroContato && <p style={{ fontSize: '12px', color: '#dc2626', margin: '0 0 8px' }}>{erroContato}</p>}
+                        <button onClick={handleSalvarContato} disabled={salvandoContato} style={{ ...btnPrimary, opacity: salvandoContato ? 0.7 : 1 }}>
+                          {salvandoContato ? 'Salvando…' : 'Salvar contato'}
+                        </button>
+                      </div>
+                    )}
+
+                    {contatos.length === 0 ? (
+                      <p style={{ fontSize: '13px', color: '#aaa', textAlign: 'center', padding: '2rem 0' }}>
+                        Nenhum contato registrado ainda.
+                      </p>
+                    ) : contatos.map(log => {
+                      const d = parseJson(log.descricao)
+                      return (
+                        <div key={log.id} style={{ border: '1px solid #e5e3dc', borderRadius: '10px', padding: '12px', marginBottom: '8px', background: '#fafaf8' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '600', background: '#EEF0FF', color: '#4840CC', padding: '2px 8px', borderRadius: '10px' }}>
+                                {CANAL_LABEL[d.canal] ?? d.canal ?? 'Contato'}
+                              </span>
+                              {d.data && <span style={{ fontSize: '11px', color: '#888' }}>{formatData(d.data)}</span>}
+                            </div>
+                            {d.responsavel_id && (
+                              <span style={{ fontSize: '11px', color: '#888' }}>
+                                {responsaveis.find(r => r.id === d.responsavel_id)?.nome_completo ?? ''}
+                              </span>
+                            )}
+                          </div>
+                          {d.descricao && <p style={{ fontSize: '13px', color: '#444', margin: '0 0 4px', whiteSpace: 'pre-wrap' }}>{d.descricao}</p>}
+                          {d.proximo_passo && (
+                            <div style={{ fontSize: '12px', color: '#1D9E75', marginTop: '6px', padding: '4px 8px', background: '#E6F7F1', borderRadius: '6px' }}>
+                              Próximo passo: {d.proximo_passo}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* ── Aba: Proposta ──────────────────────────────────────── */}
+                {abaAtiva === 'proposta' && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                      <button
+                        onClick={() => { setShowProposta(v => !v); setErroProposta('') }}
+                        style={showProposta ? btnSecondary : btnPrimary}
+                      >
+                        {showProposta ? 'Cancelar' : '+ Registrar envio de proposta'}
+                      </button>
+                    </div>
+
+                    {showProposta && (
+                      <div style={{ background: '#f8f7f4', borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                          <div>
+                            <FormLabel text="Data de envio" />
+                            <input type="date" value={proposta.data_envio}
+                              onChange={e => setProposta(p => ({ ...p, data_envio: e.target.value }))}
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                          </div>
+                          <div>
+                            <FormLabel text="Status" />
+                            <select value={proposta.status_proposta}
+                              onChange={e => setProposta(p => ({ ...p, status_proposta: e.target.value }))}
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                              <option>Em elaboração</option>
+                              <option>Enviada</option>
+                              <option>Revisão solicitada</option>
+                            </select>
+                          </div>
+                          <div>
+                            <FormLabel text="Valor solicitado (R$)" />
+                            <input type="number" value={proposta.valor_solicitado}
+                              onChange={e => setProposta(p => ({ ...p, valor_solicitado: e.target.value }))}
+                              placeholder="0,00"
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                          </div>
+                          <div>
+                            <FormLabel text="Link do documento" />
+                            <input type="url" value={proposta.documento_url}
+                              onChange={e => setProposta(p => ({ ...p, documento_url: e.target.value }))}
+                              placeholder="https://..."
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <FormLabel text="Observações" />
+                            <textarea value={proposta.observacoes}
+                              onChange={e => setProposta(p => ({ ...p, observacoes: e.target.value }))}
+                              rows={3} placeholder="Notas sobre a proposta…"
+                              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+                          </div>
+                        </div>
+                        {erroProposta && <p style={{ fontSize: '12px', color: '#dc2626', margin: '0 0 8px' }}>{erroProposta}</p>}
+                        <button onClick={handleSalvarProposta} disabled={salvandoProposta} style={{ ...btnPrimary, opacity: salvandoProposta ? 0.7 : 1 }}>
+                          {salvandoProposta ? 'Salvando…' : 'Registrar proposta'}
+                        </button>
+                      </div>
+                    )}
+
+                    {propostas.length === 0 ? (
+                      <p style={{ fontSize: '13px', color: '#aaa', textAlign: 'center', padding: '2rem 0' }}>
+                        Nenhuma proposta registrada ainda.
+                      </p>
+                    ) : propostas.map(log => {
+                      const d = parseJson(log.descricao)
+                      return (
+                        <div key={log.id} style={{ border: '1px solid #e5e3dc', borderRadius: '10px', padding: '12px', marginBottom: '8px', background: '#fafaf8' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '600', background: '#f0eeea', color: '#555', padding: '2px 8px', borderRadius: '10px' }}>
+                              {d.status_proposta ?? 'Proposta'}
+                            </span>
+                            {d.data_envio && <span style={{ fontSize: '11px', color: '#888' }}>{formatData(d.data_envio)}</span>}
+                          </div>
+                          {d.valor_solicitado && (
+                            <div style={{ fontSize: '13px', fontWeight: '600', color: TEAL, marginBottom: '4px' }}>
+                              R$ {parseFloat(d.valor_solicitado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                          )}
+                          {d.documento_url && (
+                            <a href={d.documento_url} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#635BFF', display: 'block', marginBottom: '4px', wordBreak: 'break-all' }}>
+                              Ver documento ↗
+                            </a>
+                          )}
+                          {d.observacoes && <p style={{ fontSize: '12px', color: '#555', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{d.observacoes}</p>}
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* ── Aba: Resultado ─────────────────────────────────────── */}
+                {abaAtiva === 'resultado' && isResultadoFinal && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
+                      <span style={{
+                        fontSize: '14px', fontWeight: '700', padding: '6px 16px', borderRadius: '12px',
+                        background: oportunidade.status === 'aprovado' ? '#dcfce7' : '#fee2e2',
+                        color:      oportunidade.status === 'aprovado' ? '#166534' : '#991b1b',
+                      }}>
+                        {oportunidade.status === 'aprovado' ? '✓ Aprovado' : '✗ Reprovado'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
+                      <Campo label="Valor aprovado"   valor={formatValor(oportunidade.valor_estimado, oportunidade.moeda)} />
+                      <Campo label="Prazo resultado"  valor={formatData(oportunidade.prazo_resultado)} />
+                    </div>
+                    {oportunidade.observacoes && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <FieldLabel text="Observações / Feedback" />
+                        <p style={{ fontSize: '13px', color: '#444', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{oportunidade.observacoes}</p>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e3dc' }}>
+                      {onEditar && <button onClick={onEditar} style={btnPrimary}>Editar dados</button>}
+                    </div>
+                  </>
+                )}
+
+                {/* ── Aba: Histórico ─────────────────────────────────────── */}
+                {abaAtiva === 'historico' && (
+                  <LogTimeline logs={logsState} />
+                )}
+              </>
+            )
+          )}
+
+          {/* ── FORM MODE (create / edit) — inalterado ───────────────── */}
+          {isForm && (
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormLabel text="Título *" error={errors.titulo?.message} />
+                  <input {...register('titulo')} placeholder="Nome da oportunidade" style={{ ...inputStyle, borderColor: errors.titulo ? '#dc2626' : '#d5d3cc', width: '100%', boxSizing: 'border-box' }} />
                 </div>
-              )}
 
-              {(oportunidade.area_tematica?.length ?? 0) > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <FieldLabel text="Áreas temáticas" />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
-                    {oportunidade.area_tematica.map(a => (
-                      <span key={a} style={{ fontSize: '11px', background: '#f0eeea', color: '#555', padding: '3px 8px', borderRadius: '12px' }}>{a}</span>
-                    ))}
+                <div>
+                  <FormLabel text="Financiador *" error={errors.financiador?.message} />
+                  <input {...register('financiador')} placeholder="ex: GIZ, CAR, BNDES" style={{ ...inputStyle, borderColor: errors.financiador ? '#dc2626' : '#d5d3cc', width: '100%', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <FormLabel text="Fonte" />
+                  <select {...register('fonte')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    <option value="nacional">Nacional</option>
+                    <option value="internacional">Internacional</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </div>
+
+                <div>
+                  <FormLabel text="Detalhe da fonte" />
+                  <input {...register('fonte_detalhe')} placeholder="ex: NORAD, Petrobras" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <FormLabel text="URL do edital" />
+                  <input {...register('fonte_url')} placeholder="https://..." style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <FormLabel text="Valor estimado" />
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <select {...register('moeda')} style={{ ...inputStyle, width: '80px', flexShrink: 0, cursor: 'pointer' }}>
+                      <option value="BRL">BRL</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                    <input {...register('valor_estimado')} placeholder="0,00" style={{ ...inputStyle, flex: 1 }} />
                   </div>
                 </div>
-              )}
 
-              {oportunidade.observacoes && (
-                <div style={{ marginBottom: '12px' }}>
-                  <FieldLabel text="Observações" />
-                  <p style={{ fontSize: '13px', color: '#444', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{oportunidade.observacoes}</p>
+                <div>
+                  <FormLabel text="Prazo de submissão" />
+                  <input type="date" {...register('prazo_submissao')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
                 </div>
-              )}
 
-              <div style={{ borderTop: '1px solid #e5e3dc', marginTop: '1.25rem', paddingTop: '1.25rem' }}>
-                <FieldLabel text="Histórico" />
-                <div style={{ marginTop: '12px' }}>
-                  <LogTimeline logs={logs} />
+                <div>
+                  <FormLabel text="Prazo de resultado" />
+                  <input type="date" {...register('prazo_resultado')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
                 </div>
-              </div>
 
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #e5e3dc', paddingTop: '1rem' }}>
-                <button onClick={onClose} style={btnSecondary}>Fechar</button>
-                {onEditar && <button onClick={onEditar} style={btnPrimary}>Editar</button>}
-              </div>
-            </>
-          )
-        )}
-
-        {/* FORM MODE */}
-        {isForm && (
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-
-              <div style={{ gridColumn: '1 / -1' }}>
-                <FormLabel text="Título *" error={errors.titulo?.message} />
-                <input {...register('titulo')} placeholder="Nome da oportunidade" style={{ ...inputStyle, borderColor: errors.titulo ? '#dc2626' : '#d5d3cc', width: '100%', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <FormLabel text="Financiador *" error={errors.financiador?.message} />
-                <input {...register('financiador')} placeholder="ex: GIZ, CAR, BNDES" style={{ ...inputStyle, borderColor: errors.financiador ? '#dc2626' : '#d5d3cc', width: '100%', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <FormLabel text="Fonte" />
-                <select {...register('fonte')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
-                  <option value="nacional">Nacional</option>
-                  <option value="internacional">Internacional</option>
-                  <option value="manual">Manual</option>
-                </select>
-              </div>
-
-              <div>
-                <FormLabel text="Detalhe da fonte" />
-                <input {...register('fonte_detalhe')} placeholder="ex: NORAD, Petrobras" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <FormLabel text="URL do edital" />
-                <input {...register('fonte_url')} placeholder="https://..." style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-              </div>
-
-              <div>
-                <FormLabel text="Valor estimado" />
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <select {...register('moeda')} style={{ ...inputStyle, width: '80px', flexShrink: 0, cursor: 'pointer' }}>
-                    <option value="BRL">BRL</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                <div>
+                  <FormLabel text="Responsável" />
+                  <select {...register('responsavel_id')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    <option value="">Nenhum</option>
+                    {responsaveis.map(u => (
+                      <option key={u.id} value={u.id}>{u.nome_completo}</option>
+                    ))}
                   </select>
-                  <input {...register('valor_estimado')} placeholder="0,00" style={{ ...inputStyle, flex: 1 }} />
+                </div>
+
+              </div>
+
+              <div style={{ marginTop: '14px' }}>
+                <FormLabel text="Áreas temáticas" />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {AREAS_TEMATICAS.map(area => {
+                    const sel = areasTematicas.includes(area)
+                    return (
+                      <button key={area} type="button" onClick={() => toggleArea(area)}
+                        style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px', border: `1px solid ${sel ? TEAL : '#d5d3cc'}`, background: sel ? '#E6F7F1' : '#fff', color: sel ? TEAL : '#555', cursor: 'pointer', fontWeight: sel ? '600' : '400' }}>
+                        {area}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              <div>
-                <FormLabel text="Prazo de submissão" />
-                <input type="date" {...register('prazo_submissao')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+              <div style={{ marginTop: '14px' }}>
+                <FormLabel text="Observações" />
+                <textarea {...register('observacoes')} rows={3}
+                  style={{ ...inputStyle, resize: 'vertical', width: '100%', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  placeholder="Informações adicionais…" />
               </div>
 
-              <div>
-                <FormLabel text="Prazo de resultado" />
-                <input type="date" {...register('prazo_resultado')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+              {erro && <p style={{ fontSize: '13px', color: '#dc2626', marginTop: '8px' }}>{erro}</p>}
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '1.25rem', borderTop: '1px solid #e5e3dc', paddingTop: '1rem' }}>
+                <button type="button" onClick={onClose} style={btnSecondary}>Cancelar</button>
+                <button type="submit" disabled={salvando} style={{ ...btnPrimary, opacity: salvando ? 0.7 : 1 }}>
+                  {salvando ? 'Salvando…' : mode === 'create' ? 'Criar oportunidade' : 'Salvar alterações'}
+                </button>
               </div>
-
-              <div>
-                <FormLabel text="Responsável" />
-                <select {...register('responsavel_id')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
-                  <option value="">Nenhum</option>
-                  {responsaveis.map(u => (
-                    <option key={u.id} value={u.id}>{u.nome_completo}</option>
-                  ))}
-                </select>
-              </div>
-
-            </div>
-
-            {/* Áreas temáticas */}
-            <div style={{ marginTop: '14px' }}>
-              <FormLabel text="Áreas temáticas" />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                {AREAS_TEMATICAS.map(area => {
-                  const sel = areasTematicas.includes(area)
-                  return (
-                    <button
-                      key={area} type="button"
-                      onClick={() => toggleArea(area)}
-                      style={{
-                        fontSize: '12px', padding: '4px 10px', borderRadius: '12px',
-                        border: `1px solid ${sel ? '#1D9E75' : '#d5d3cc'}`,
-                        background: sel ? '#E6F7F1' : '#fff',
-                        color: sel ? '#1D9E75' : '#555',
-                        cursor: 'pointer', fontWeight: sel ? '600' : '400',
-                      }}
-                    >
-                      {area}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Observações */}
-            <div style={{ marginTop: '14px' }}>
-              <FormLabel text="Observações" />
-              <textarea
-                {...register('observacoes')}
-                rows={3}
-                style={{ ...inputStyle, resize: 'vertical', width: '100%', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                placeholder="Informações adicionais…"
-              />
-            </div>
-
-            {erro && <p style={{ fontSize: '13px', color: '#dc2626', marginTop: '8px' }}>{erro}</p>}
-
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '1.25rem', borderTop: '1px solid #e5e3dc', paddingTop: '1rem' }}>
-              <button type="button" onClick={onClose} style={btnSecondary}>Cancelar</button>
-              <button type="submit" disabled={salvando} style={{ ...btnPrimary, opacity: salvando ? 0.7 : 1 }}>
-                {salvando ? 'Salvando…' : mode === 'create' ? 'Criar oportunidade' : 'Salvar alterações'}
-              </button>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

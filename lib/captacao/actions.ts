@@ -467,3 +467,61 @@ export async function executarRadar() {
     return { error: String(e) }
   }
 }
+
+// ── Contatos e Propostas ──────────────────────────────────────────────────────
+
+export interface DadosContato {
+  data: string
+  canal: string
+  responsavel_id: string
+  descricao: string
+  proximo_passo: string
+}
+
+export async function registrarContato(
+  oportunidadeId: string,
+  dados: DadosContato
+): Promise<{ error?: string }> {
+  try {
+    const { supabase, usuarioId } = await getCtx()
+    const { error } = await supabase.from('oportunidade_logs').insert({
+      oportunidade_id: oportunidadeId,
+      usuario_id:      usuarioId,
+      acao:            'contato',
+      descricao:       JSON.stringify(dados),
+    })
+    if (error) return { error: traduzirErro(error.message) }
+    revalidatePath('/captacao')
+    return {}
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+export interface DadosProposta {
+  data_envio:       string
+  valor_solicitado: string
+  status_proposta:  string
+  documento_url:    string
+  observacoes:      string
+}
+
+export async function registrarProposta(
+  oportunidadeId: string,
+  dados: DadosProposta
+): Promise<{ error?: string }> {
+  try {
+    const { supabase, usuarioId } = await getCtx()
+    const { error } = await supabase.from('oportunidade_logs').insert({
+      oportunidade_id: oportunidadeId,
+      usuario_id:      usuarioId,
+      acao:            'proposta',
+      descricao:       JSON.stringify(dados),
+    })
+    if (error) return { error: traduzirErro(error.message) }
+    revalidatePath('/captacao')
+    return {}
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
