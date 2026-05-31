@@ -367,17 +367,27 @@ export async function executarRadar() {
   try {
     const { supabase, orgId } = await getCtx()
 
+    // ── 1. Verifica API key ────────────────────────────────────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    console.log('[Radar] ANTHROPIC_API_KEY:', apiKey
+      ? `definida (${apiKey.length} chars, prefixo: ${apiKey.slice(0, 14)}...)`
+      : 'INDEFINIDA ⚠️ — varredura vai falhar')
+
     const [{ data: perfil }, { data: fontes }] = await Promise.all([
       supabase.from('perfil_captacao').select('*').eq('organizacao_id', orgId).maybeSingle(),
       supabase.from('radar_fontes').select('*').eq('organizacao_id', orgId).eq('ativo', true),
     ])
 
+    console.log('[Radar] Fontes ativas encontradas:', fontes?.length ?? 0)
     if (!fontes?.length) return { error: 'Nenhuma fonte ativa cadastrada' }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const agora = new Date().toISOString()
+    const client = new Anthropic({ apiKey })
+    const agora  = new Date().toISOString()
+    const errosPorFonte: string[] = []
 
     for (const fonte of fontes) {
+      console.log(`[Radar] ── Fonte: "${fonte.nome}" | ${fonte.url}`)
+
       // Limpa resultados antigos não adicionados ao pipeline
       await supabase
         .from('radar_resultados')
@@ -385,34 +395,62 @@ export async function executarRadar() {
         .eq('fonte_id', fonte.id)
         .eq('adicionado_ao_pipeline', false)
 
-      // Busca conteúdo da URL
+      // ── 2. Fetch da URL ──────────────────────────────────────────────────────
       let texto = ''
       try {
         const resp = await fetch(fonte.url, {
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NextCoop/1.0)' },
           signal: AbortSignal.timeout(15000),
         })
+        console.log(`[Radar] Fetch → HTTP ${resp.status} ${resp.statusText}`)
         const html = await resp.text()
+        console.log(`[Radar] HTML recebido: ${html.length} chars`)
         texto = stripHtml(html).slice(0, 6000)
-      } catch {
+        console.log(`[Radar] Texto após strip: ${texto.length} chars | início: "${texto.slice(0, 150).replace(/\n/g, ' ')}"`)
+      } catch (fetchErr) {
+        const msg = `[${fonte.nome}] Fetch falhou: ${fetchErr}`
+        console.error('[Radar]', msg)
+        errosPorFonte.push(msg)
         continue
       }
 
-      if (!texto.trim()) continue
+      if (!texto.trim()) {
+        const msg = `[${fonte.nome}] Texto vazio após strip do HTML`
+        console.warn('[Radar]', msg)
+        errosPorFonte.push(msg)
+        continue
+      }
 
-      // Chama Claude para análise
+      // ── 3. Claude ────────────────────────────────────────────────────────────
       let editais: ParsedEdital[] = []
       try {
+        console.log(`[Radar] Enviando ${texto.length} chars para Claude (claude-sonnet-4-6)...`)
         const msg = await client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 4096,
           messages: [{ role: 'user', content: buildPrompt(perfil as PerfilCaptacao | null, fonte.nome, texto) }],
         })
+
         const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+        console.log(`[Radar] Resposta bruta do Claude (${raw.length} chars):`, raw.slice(0, 500))
+
         const clean = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
-        const parsed = JSON.parse(clean)
+        let parsed: { editais?: ParsedEdital[] }
+        try {
+          parsed = JSON.parse(clean)
+        } catch (parseErr) {
+          const msg = `[${fonte.nome}] JSON.parse falhou: ${parseErr} | texto recebido: ${clean.slice(0, 200)}`
+          console.error('[Radar]', msg)
+          errosPorFonte.push(msg)
+          continue
+        }
+
         editais = parsed.editais ?? []
-      } catch {
+        console.log(`[Radar] Editais extraídos para "${fonte.nome}": ${editais.length}`)
+      } catch (claudeErr) {
+        const msg = `[${fonte.nome}] Chamada ao Claude falhou: ${claudeErr}`
+        console.error('[Radar]', msg)
+        errosPorFonte.push(msg)
         continue
       }
 
@@ -438,6 +476,7 @@ export async function executarRadar() {
 
       // Atualiza ultima_varredura da fonte
       await supabase.from('radar_fontes').update({ ultima_varredura: agora }).eq('id', fonte.id)
+      console.log(`[Radar] "${fonte.nome}" concluída — ${editais.length} editais salvos`)
     }
 
     // Retorna todos os resultados atuais ordenados por score
@@ -447,9 +486,16 @@ export async function executarRadar() {
       .eq('organizacao_id', orgId)
       .order('score', { ascending: false })
 
+    console.log('[Radar] Varredura concluída. Total de resultados:', allResults?.length ?? 0)
+    if (errosPorFonte.length) console.warn('[Radar] Erros por fonte:', errosPorFonte)
+
     revalidatePath('/captacao')
-    return { data: (allResults ?? []) as RadarResultado[] }
+    return {
+      data:     (allResults ?? []) as RadarResultado[],
+      warnings: errosPorFonte.length ? errosPorFonte : undefined,
+    }
   } catch (e) {
+    console.error('[Radar] Erro geral não capturado:', e)
     return { error: String(e) }
   }
 }

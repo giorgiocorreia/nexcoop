@@ -48,7 +48,8 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   const [fontes, setFontes]       = useState<RadarFonte[]>(fontesIniciais)
   const [resultados, setResultados] = useState<RadarResultado[]>(resultadosIniciais)
   const [executando, setExecutando] = useState(false)
-  const [erroRadar, setErroRadar]   = useState('')
+  const [erroRadar,    setErroRadar]    = useState('')
+  const [warningsRadar, setWarningsRadar] = useState<string[]>([])
   const [showForm, setShowForm]     = useState(false)
   const [form, setForm]             = useState({ nome: '', url: '', tipo: 'nacional' })
   const [salvandoFonte, setSalvandoFonte] = useState(false)
@@ -83,14 +84,15 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   async function handleExecutar() {
     setExecutando(true)
     setErroRadar('')
+    setWarningsRadar([])
     const res = await executarRadar()
     if (res.error) {
       setErroRadar(res.error)
     } else if (res.data) {
       setResultados(res.data)
-      // Atualiza ultima_varredura nas fontes locais
       const agora = new Date().toISOString()
       setFontes(prev => prev.map(f => f.ativo ? { ...f, ultima_varredura: agora } : f))
+      if (res.warnings?.length) setWarningsRadar(res.warnings)
     }
     setExecutando(false)
   }
@@ -249,6 +251,13 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
           {erroRadar && (
             <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#991b1b', marginBottom: '1rem' }}>
               {erroRadar}
+            </div>
+          )}
+
+          {warningsRadar.length > 0 && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#92400e', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Erros em algumas fontes:</div>
+              {warningsRadar.map((w, i) => <div key={i} style={{ marginTop: '2px' }}>• {w}</div>)}
             </div>
           )}
 
