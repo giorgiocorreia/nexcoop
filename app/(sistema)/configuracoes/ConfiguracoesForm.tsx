@@ -142,6 +142,22 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
   const [erroPerfil, setErroPerfil]         = useState('')
   const [sucessoPerfil, setSucessoPerfil]   = useState('')
 
+  const [municipiosRaw, setMunicipiosRaw]       = useState(perfilCaptacao?.municipios?.join(', ') ?? '')
+  const [outroAreaInput, setOutroAreaInput]     = useState('')
+  const [outroAreaAberto, setOutroAreaAberto]   = useState(false)
+  const [outroPubInput, setOutroPubInput]       = useState('')
+  const [outroPubAberto, setOutroPubAberto]     = useState(false)
+
+  function addCustom(campo: 'areas_tematicas' | 'publicos_alvo', valor: string) {
+    const v = valor.trim()
+    if (!v) return
+    setPerfil(prev => {
+      const arr = prev[campo] as string[]
+      if (arr.includes(v)) return prev
+      return { ...prev, [campo]: [...arr, v] }
+    })
+  }
+
   function toggleArray(campo: 'areas_tematicas' | 'publicos_alvo' | 'abrangencia' | 'idiomas', valor: string) {
     setPerfil(prev => {
       const arr = prev[campo] as string[]
@@ -161,7 +177,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
       areas_tematicas: perfil.areas_tematicas,
       publicos_alvo:   perfil.publicos_alvo,
       abrangencia:     perfil.abrangencia,
-      municipios:      perfil.municipios,
+      municipios:      municipiosRaw.split(',').map(v => v.trim()).filter(Boolean),
       idiomas:         perfil.idiomas,
       porte_min:       perfil.porte_min ? parseFloat(perfil.porte_min) : null,
       porte_max:       perfil.porte_max ? parseFloat(perfil.porte_max) : null,
@@ -401,7 +417,7 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
         <div style={{ marginBottom: '1.25rem' }}>
           <Label>Áreas temáticas</Label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-            {AREAS_CAPTACAO.map(area => {
+            {AREAS_CAPTACAO.filter(a => a !== 'outro').map(area => {
               const sel = perfil.areas_tematicas.includes(area)
               return (
                 <button
@@ -419,14 +435,65 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
                 </button>
               )
             })}
+            {perfil.areas_tematicas.filter(a => !AREAS_CAPTACAO.includes(a)).map(area => (
+              <span key={area} style={{
+                fontSize: '12px', padding: '4px 10px', borderRadius: '12px',
+                border: '1px dashed #1D9E75', background: '#f0fdf9',
+                color: TEAL, display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '500',
+              }}>
+                {area}
+                <button
+                  type="button"
+                  onClick={() => setPerfil(p => ({ ...p, areas_tematicas: p.areas_tematicas.filter(v => v !== area) }))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: TEAL, fontSize: '13px', padding: 0, lineHeight: 1 }}
+                >×</button>
+              </span>
+            ))}
+            <button
+              type="button"
+              onClick={() => setOutroAreaAberto(v => !v)}
+              style={{
+                fontSize: '12px', padding: '4px 10px', borderRadius: '12px',
+                border: `1px dashed ${outroAreaAberto ? TEAL : '#d5d3cc'}`,
+                background: outroAreaAberto ? '#E6F7F1' : '#fff',
+                color: outroAreaAberto ? TEAL : '#888',
+                cursor: 'pointer',
+              }}
+            >
+              + outro
+            </button>
           </div>
+          {outroAreaAberto && (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+              <input
+                type="text"
+                placeholder="Digite a área e pressione Enter"
+                value={outroAreaInput}
+                onChange={e => setOutroAreaInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addCustom('areas_tematicas', outroAreaInput)
+                    setOutroAreaInput('')
+                  }
+                }}
+                style={{ ...inputStyle, flex: 1 }}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => { addCustom('areas_tematicas', outroAreaInput); setOutroAreaInput('') }}
+                style={{ padding: '9px 12px', background: TEAL, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '16px' }}
+              >+</button>
+            </div>
+          )}
         </div>
 
         {/* Público-alvo */}
         <div style={{ marginBottom: '1.25rem' }}>
           <Label>Público-alvo</Label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-            {PUBLICOS_ALVO.map(pub => {
+            {PUBLICOS_ALVO.filter(p => p !== 'outro').map(pub => {
               const sel = perfil.publicos_alvo.includes(pub)
               return (
                 <button
@@ -444,7 +511,58 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
                 </button>
               )
             })}
+            {perfil.publicos_alvo.filter(p => !PUBLICOS_ALVO.includes(p)).map(pub => (
+              <span key={pub} style={{
+                fontSize: '12px', padding: '4px 10px', borderRadius: '12px',
+                border: '1px dashed #1D9E75', background: '#f0fdf9',
+                color: TEAL, display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '500',
+              }}>
+                {pub}
+                <button
+                  type="button"
+                  onClick={() => setPerfil(p => ({ ...p, publicos_alvo: p.publicos_alvo.filter(v => v !== pub) }))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: TEAL, fontSize: '13px', padding: 0, lineHeight: 1 }}
+                >×</button>
+              </span>
+            ))}
+            <button
+              type="button"
+              onClick={() => setOutroPubAberto(v => !v)}
+              style={{
+                fontSize: '12px', padding: '4px 10px', borderRadius: '12px',
+                border: `1px dashed ${outroPubAberto ? TEAL : '#d5d3cc'}`,
+                background: outroPubAberto ? '#E6F7F1' : '#fff',
+                color: outroPubAberto ? TEAL : '#888',
+                cursor: 'pointer',
+              }}
+            >
+              + outro
+            </button>
           </div>
+          {outroPubAberto && (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+              <input
+                type="text"
+                placeholder="Digite o público e pressione Enter"
+                value={outroPubInput}
+                onChange={e => setOutroPubInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addCustom('publicos_alvo', outroPubInput)
+                    setOutroPubInput('')
+                  }
+                }}
+                style={{ ...inputStyle, flex: 1 }}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => { addCustom('publicos_alvo', outroPubInput); setOutroPubInput('') }}
+                style={{ padding: '9px 12px', background: TEAL, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '16px' }}
+              >+</button>
+            </div>
+          )}
         </div>
 
         {/* Abrangência geográfica */}
@@ -469,8 +587,8 @@ export default function ConfiguracoesForm({ org: orgInicial, isSuperAdmin, perfi
         <div style={{ marginBottom: '1.25rem' }}>
           <Label>Municípios de atuação</Label>
           <textarea
-            value={perfil.municipios.join(', ')}
-            onChange={e => setPerfil(p => ({ ...p, municipios: e.target.value.split(',').map(v => v.trim()).filter(Boolean) }))}
+            value={municipiosRaw}
+            onChange={e => setMunicipiosRaw(e.target.value)}
             rows={2}
             placeholder="ex: Ibirataia, Jequié, Amargosa"
             style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}

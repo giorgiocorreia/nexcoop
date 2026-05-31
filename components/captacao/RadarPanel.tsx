@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import type { RadarFonte, RadarResultado } from '@/types/database'
 import {
-  salvarFonte, removerFonte, toggleFonteAtivo,
+  salvarFonte, atualizarFonte, removerFonte, toggleFonteAtivo,
   executarRadar, adicionarAoPipeline,
 } from '@/lib/captacao/actions'
 
@@ -53,6 +53,9 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   const [showForm, setShowForm]     = useState(false)
   const [form, setForm]             = useState({ nome: '', url: '', tipo: 'nacional' })
   const [salvandoFonte, setSalvandoFonte] = useState(false)
+  const [editandoId, setEditandoId]       = useState<string | null>(null)
+  const [editForm, setEditForm]           = useState({ nome: '', url: '', tipo: 'nacional' })
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false)
 
   const ultimaVarredura = resultados.length > 0
     ? resultados.reduce<string | null>((max, r) => (!max || r.varredura_em > max ? r.varredura_em : max), null)
@@ -107,6 +110,23 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   function sugerirCAR() {
     setForm({ nome: 'CAR/Bahia', url: 'https://www.ba.gov.br/car/editais', tipo: 'nacional' })
     setShowForm(true)
+  }
+
+  function handleIniciarEditar(fonte: RadarFonte) {
+    setEditandoId(fonte.id)
+    setEditForm({ nome: fonte.nome, url: fonte.url, tipo: fonte.tipo })
+    setShowForm(false)
+  }
+
+  async function handleSalvarEdicao() {
+    if (!editandoId || !editForm.nome.trim() || !editForm.url.trim()) return
+    setSalvandoEdicao(true)
+    const res = await atualizarFonte(editandoId, editForm)
+    if (res.data) {
+      setFontes(prev => prev.map(f => f.id === editandoId ? res.data! : f))
+      setEditandoId(null)
+    }
+    setSalvandoEdicao(false)
   }
 
   return (
@@ -182,16 +202,58 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
                     {fonte.url}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleRemover(fonte.id)}
-                  title="Remover"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '14px', padding: '0 2px', flexShrink: 0 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
-                >
-                  ×
-                </button>
+                <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleIniciarEditar(fonte)}
+                    title="Editar"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '13px', padding: '0 2px' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = TEAL)}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+                  >
+                    ✏
+                  </button>
+                  <button
+                    onClick={() => handleRemover(fonte.id)}
+                    title="Remover"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '14px', padding: '0 2px' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
+
+              {editandoId === fonte.id && (
+                <div style={{ background: '#f8f7f4', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
+                  <input
+                    placeholder="Nome"
+                    value={editForm.nome}
+                    onChange={e => setEditForm(p => ({ ...p, nome: e.target.value }))}
+                    style={inputSm}
+                  />
+                  <input
+                    placeholder="URL"
+                    value={editForm.url}
+                    onChange={e => setEditForm(p => ({ ...p, url: e.target.value }))}
+                    style={{ ...inputSm, marginTop: '6px' }}
+                  />
+                  <select
+                    value={editForm.tipo}
+                    onChange={e => setEditForm(p => ({ ...p, tipo: e.target.value }))}
+                    style={{ ...inputSm, marginTop: '6px', cursor: 'pointer' }}
+                  >
+                    <option value="nacional">Nacional</option>
+                    <option value="internacional">Internacional</option>
+                  </select>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                    <button onClick={handleSalvarEdicao} disabled={salvandoEdicao} style={btnSmPrimary}>
+                      {salvandoEdicao ? 'Salvando…' : 'Salvar'}
+                    </button>
+                    <button onClick={() => setEditandoId(null)} style={btnSmSecondary}>Cancelar</button>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <TipoBadge tipo={fonte.tipo} />

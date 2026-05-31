@@ -242,6 +242,23 @@ export async function toggleFonteAtivo(id: string, ativo: boolean) {
   }
 }
 
+export async function atualizarFonte(id: string, dados: { nome: string; url: string; tipo: string }) {
+  try {
+    const { supabase } = await getCtx()
+    const { data, error } = await supabase
+      .from('radar_fontes')
+      .update({ nome: dados.nome, url: dados.url, tipo: dados.tipo })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) return { error: traduzirErro(error.message) }
+    revalidatePath('/captacao')
+    return { data: data as RadarFonte }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
 // ── Radar: Pipeline ───────────────────────────────────────────────────────────
 
 export async function adicionarAoPipeline(resultadoId: string) {

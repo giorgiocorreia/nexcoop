@@ -138,7 +138,7 @@ export default function Sidebar({ usuario }: Props) {
         onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
       >
         <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
-        <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444', flex: 1 }}>
+        <span style={{ fontSize: item.em_breve ? '11px' : '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444', flex: 1 }}>
           {item.label}
         </span>
         {item.em_breve && (
@@ -151,6 +151,7 @@ export default function Sidebar({ usuario }: Props) {
   }
 
   function renderGrupo(label: string, itens: NavItem[]) {
+    const sorted = [...itens.filter(i => !i.em_breve), ...itens.filter(i => i.em_breve)]
     return (
       <div key={label} style={{ marginBottom: '0.5rem' }}>
         <div style={{
@@ -160,7 +161,7 @@ export default function Sidebar({ usuario }: Props) {
         }}>
           {label}
         </div>
-        {itens.map(renderItem)}
+        {sorted.map(renderItem)}
       </div>
     )
   }
