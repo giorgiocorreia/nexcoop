@@ -1,21 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
+import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import BalancoClient from './BalancoClient'
 
 export const metadata = { title: 'Balanço Patrimonial — NexCoop' }
 
 export default async function BalancoPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabaseAuth = await createClient()
+  const { data: { user } } = await supabaseAuth.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('organizacao_id')
-    .eq('id', user.id)
-    .single()
+  const ctx = await getOrgContext()
+  if (!ctx) redirect('/login')
 
-  const orgId = usuario?.organizacao_id ?? ''
-
-  return <BalancoClient orgId={orgId} />
+  return <BalancoClient orgId={ctx.orgId} />
 }

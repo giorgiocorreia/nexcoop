@@ -1,7 +1,7 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getOrgContext } from '@/lib/supabase/impersonation'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
 import { traduzirErro } from '@/lib/utils/erros'
@@ -12,16 +12,9 @@ export type OportunidadeLogComUsuario = OportunidadeLog & {
 }
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Não autenticado')
-  const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('id, organizacao_id')
-    .eq('id', user.id)
-    .single()
-  if (!usuario?.organizacao_id) throw new Error('Usuário sem organização')
-  return { supabase, usuarioId: user.id, orgId: usuario.organizacao_id as string }
+  const ctx = await getOrgContext()
+  if (!ctx) throw new Error('Não autenticado')
+  return { supabase: ctx.supabase, usuarioId: ctx.usuarioId, orgId: ctx.orgId }
 }
 
 export async function listarOportunidades(filtro?: { status?: string; fonte?: string }) {
