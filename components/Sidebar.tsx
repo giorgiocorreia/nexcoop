@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { temAlgumaFuncao } from '@/lib/permissoes'
+import { temAlgumaFuncao, isContador } from '@/lib/permissoes'
 import type { Usuario, Organizacao } from '@/types/database'
 
 interface NavItem {
@@ -67,6 +67,16 @@ const NAV: NavGrupo[] = [
       { label: 'Projetos',      href: '/projetos',  icone: '🎯', em_breve: true },
       { label: 'Impacto & ESG', href: '/impacto',   icone: '🌿', em_breve: true },
       { label: 'Captação',      href: '/captacao',  icone: '🎯', funcoes_requeridas: ['admin', 'captador'] },
+    ],
+  },
+  {
+    grupo: 'Contábil',
+    funcoes_requeridas: ['admin', 'contador', 'contador_aux'],
+    itens: [
+      { label: 'Plano de Contas', href: '/contabil/plano-de-contas', icone: '📋' },
+      { label: 'Escrituração',    href: '/contabil/escrituracao',    icone: '✏️' },
+      { label: 'Balancete',       href: '/contabil/balancete',       icone: '⚖️' },
+      { label: 'DRE',             href: '/contabil/dre',             icone: '📈' },
     ],
   },
 ]

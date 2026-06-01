@@ -23,3 +23,11 @@ export function isAdmin(usuario: UsuarioPermissao): boolean {
 export function isSuperAdmin(usuario: UsuarioPermissao): boolean {
   return usuario.role === 'super_admin'
 }
+
+export function isContador(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['contador', 'contador_aux'])
+}
+
+export function isContadorAtivo(usuario: UsuarioPermissao, orgId: string): boolean {
+  return isContador(usuario) && (usuario as any).org_id === orgId
+}
