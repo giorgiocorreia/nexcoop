@@ -328,3 +328,258 @@ export async function toggleContador(id: string, ativo: boolean) {
   if (error) throw new Error(error.message)
   revalidatePath('/configuracoes')
 }
+
+// ── ESCRITÓRIO CONTÁBIL ──────────────────────────────────────────────────────
+
+export async function getEscritorioDoContador(usuarioId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('contador_org')
+    .select('escritorio_id, escritorios_contabeis(*)')
+    .eq('usuario_id', usuarioId)
+    .not('escritorio_id', 'is', null)
+    .limit(1)
+    .single()
+  if (error) return null
+  return (data as any)?.escritorios_contabeis || null
+}
+
+export async function criarOuAtualizarEscritorio(data: {
+  usuario_id: string
+  razao_social: string
+  cnpj?: string
+  crc_responsavel?: string
+  email_contato: string
+  telefone?: string
+}) {
+  const supabase = createAdminClient()
+
+  const { data: existing } = await supabase
+    .from('contador_org')
+    .select('escritorio_id')
+    .eq('usuario_id', data.usuario_id)
+    .not('escritorio_id', 'is', null)
+    .limit(1)
+    .single()
+
+  let escritorioId: string
+
+  if (existing?.escritorio_id) {
+    const { error } = await supabase
+      .from('escritorios_contabeis')
+      .update({
+        razao_social: data.razao_social,
+        cnpj: data.cnpj,
+        crc_responsavel: data.crc_responsavel,
+        email_contato: data.email_contato,
+        telefone: data.telefone,
+      })
+      .eq('id', existing.escritorio_id)
+    if (error) throw new Error(error.message)
+    escritorioId = existing.escritorio_id
+  } else {
+    const { data: novo, error } = await supabase
+      .from('escritorios_contabeis')
+      .insert({
+        razao_social: data.razao_social,
+        cnpj: data.cnpj,
+        crc_responsavel: data.crc_responsavel,
+        email_contato: data.email_contato,
+        telefone: data.telefone,
+      })
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    escritorioId = novo.id
+
+    await supabase
+      .from('contador_org')
+      .update({ escritorio_id: escritorioId })
+      .eq('usuario_id', data.usuario_id)
+  }
+
+  revalidatePath('/escritorio')
+  return escritorioId
+}
+
+// ── PLANO DE CONTAS EXTERNO (DO ESCRITÓRIO) ──────────────────────────────────
+
+export async function getPlanoContasExterno(escritorioId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('plano_contas_externo')
+    .select('*')
+    .eq('escritorio_id', escritorioId)
+    .eq('ativo', true)
+    .order('codigo')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function criarContaExterna(data: {
+  escritorio_id: string
+  codigo: string
+  nome: string
+  tipo: string
+}) {
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('plano_contas_externo').insert(data)
+  if (error) throw new Error(error.message)
+  revalidatePath('/escritorio/plano-de-contas')
+}
+
+export async function importarPlanoExternoParaOrg(
+  escritorioId: string,
+  orgId: string,
+  contadorOrgId: string
+) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('plano_contas_externo')
+    .select('id')
+    .eq('escritorio_id', escritorioId)
+    .eq('ativo', true)
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Nenhuma conta cadastrada no escritório. Cadastre o plano de contas antes de importar.')
+  return data.length
+}
+
+// ── DE/PARA ──────────────────────────────────────────────────────────────────
+
+export async function getDePara(orgId: string, contadorOrgId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('de_para_contas')
+    .select(`
+      *,
+      conta_interna:conta_interna_id(codigo, nome),
+      conta_externa:conta_externa_id(codigo, nome)
+    `)
+    .eq('org_id', orgId)
+    .eq('contador_org_id', contadorOrgId)
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function salvarDePara(data: {
+  org_id: string
+  contador_org_id: string
+  conta_interna_id: string
+  conta_externa_id: string
+}) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('de_para_contas')
+    .upsert(data, { onConflict: 'org_id,contador_org_id,conta_interna_id' })
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/depara')
+}
+
+export async function removerDePara(id: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('de_para_contas').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/depara')
+}
+
+// ── NF-E ─────────────────────────────────────────────────────────────────────
+
+export async function getNFesImportadas(orgId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('nfe_importadas')
+    .select('*, itens:nfe_itens(*)')
+    .eq('org_id', orgId)
+    .order('data_emissao', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function importarXMLNFe(orgId: string, xmlString: string, importadoPor: string) {
+  const { XMLParser } = await import('fast-xml-parser')
+  const parser = new XMLParser({ ignoreAttributes: false })
+  const json = parser.parse(xmlString)
+
+  const nfeProc = json.nfeProc || json
+  const nfe = nfeProc?.NFe?.infNFe
+  if (!nfe) throw new Error('XML inválido ou formato não reconhecido.')
+
+  const ide = nfe.ide
+  const emit = nfe.emit
+  const dest = nfe.dest
+  const total = nfe.total?.ICMSTot
+  const dets = Array.isArray(nfe.det) ? nfe.det : [nfe.det].filter(Boolean)
+  const chaveAcesso = nfeProc?.protNFe?.infProt?.chNFe
+    || String(nfe['@_Id'] || '').replace('NFe', '')
+    || ''
+
+  const tipo = String(ide?.tpNF) === '0' ? 'entrada' : 'saida'
+
+  const supabase = createAdminClient()
+
+  const { data: nfeData, error: nfeError } = await supabase
+    .from('nfe_importadas')
+    .insert({
+      org_id: orgId,
+      chave_acesso: chaveAcesso,
+      tipo,
+      numero: String(ide?.nNF || ''),
+      serie: String(ide?.serie || ''),
+      data_emissao: String(ide?.dhEmi || ide?.dEmi || '').split('T')[0],
+      cnpj_emitente: String(emit?.CNPJ || ''),
+      nome_emitente: String(emit?.xNome || ''),
+      cnpj_destinatario: String(dest?.CNPJ || dest?.CPF || ''),
+      nome_destinatario: String(dest?.xNome || ''),
+      valor_total: Number(total?.vNF || 0),
+      valor_icms: Number(total?.vICMS || 0),
+      valor_pis: Number(total?.vPIS || 0),
+      valor_cofins: Number(total?.vCOFINS || 0),
+      xml_original: xmlString,
+      status: 'importada',
+      importado_por: importadoPor,
+    })
+    .select()
+    .single()
+
+  if (nfeError) throw new Error(nfeError.message)
+
+  if (dets.length > 0) {
+    const itens = dets.map((det: any, idx: number) => ({
+      nfe_id: nfeData.id,
+      numero_item: idx + 1,
+      codigo_produto: String(det.prod?.cProd || ''),
+      descricao: String(det.prod?.xProd || ''),
+      ncm: String(det.prod?.NCM || ''),
+      cfop: String(det.prod?.CFOP || ''),
+      unidade: String(det.prod?.uCom || ''),
+      quantidade: Number(det.prod?.qCom || 0),
+      valor_unitario: Number(det.prod?.vUnCom || 0),
+      valor_total: Number(det.prod?.vProd || 0),
+    }))
+    const { error: itensError } = await supabase.from('nfe_itens').insert(itens)
+    if (itensError) throw new Error(itensError.message)
+  }
+
+  revalidatePath('/contabil/nfe')
+  return nfeData
+}
+
+export async function vincularNFeALancamento(nfeId: string, lancamentoId: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('nfe_importadas')
+    .update({ lancamento_id: lancamentoId, status: 'vinculada' })
+    .eq('id', nfeId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/nfe')
+}
+
+export async function ignorarNFe(nfeId: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('nfe_importadas')
+    .update({ status: 'ignorada' })
+    .eq('id', nfeId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/nfe')
+}

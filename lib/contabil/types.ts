@@ -75,3 +75,73 @@ export interface ItemDRE {
   valor: number
   tipo: 'receita' | 'despesa' | 'resultado'
 }
+
+export interface EscritorioContabil {
+  id: string
+  razao_social: string
+  cnpj: string | null
+  crc_responsavel: string | null
+  email_contato: string
+  telefone: string | null
+  ativo: boolean
+  created_at: string
+}
+
+export interface ContaExterna {
+  id: string
+  escritorio_id: string
+  codigo: string
+  nome: string
+  tipo: TipoConta
+  ativo: boolean
+  created_at: string
+}
+
+export interface DePara {
+  id: string
+  org_id: string
+  contador_org_id: string
+  conta_interna_id: string
+  conta_externa_id: string
+  created_at: string
+  conta_interna?: { codigo: string; nome: string }
+  conta_externa?: { codigo: string; nome: string }
+}
+
+export interface NFeImportada {
+  id: string
+  org_id: string
+  chave_acesso: string
+  tipo: 'entrada' | 'saida'
+  numero: string | null
+  serie: string | null
+  data_emissao: string
+  cnpj_emitente: string | null
+  nome_emitente: string | null
+  cnpj_destinatario: string | null
+  nome_destinatario: string | null
+  valor_total: number
+  valor_icms: number
+  valor_pis: number
+  valor_cofins: number
+  xml_original: string | null
+  lancamento_id: string | null
+  status: 'importada' | 'vinculada' | 'ignorada'
+  importado_por: string | null
+  created_at: string
+  itens?: NFeItem[]
+}
+
+export interface NFeItem {
+  id: string
+  nfe_id: string
+  numero_item: number
+  codigo_produto: string | null
+  descricao: string
+  ncm: string | null
+  cfop: string | null
+  unidade: string | null
+  quantidade: number | null
+  valor_unitario: number | null
+  valor_total: number
+}

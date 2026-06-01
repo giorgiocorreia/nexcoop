@@ -77,6 +77,16 @@ const NAV: NavGrupo[] = [
       { label: 'Escrituração',    href: '/contabil/escrituracao',    icone: '✏️' },
       { label: 'Balancete',       href: '/contabil/balancete',       icone: '⚖️' },
       { label: 'DRE',             href: '/contabil/dre',             icone: '📈' },
+      { label: 'De/Para Contas',  href: '/contabil/depara',          icone: '🔀', funcoes_requeridas: ['admin', 'contador', 'contador_aux'] },
+      { label: 'NF-e',            href: '/contabil/nfe',             icone: '🧾' },
+    ],
+  },
+  {
+    grupo: 'Escritório',
+    funcoes_requeridas: ['contador', 'contador_aux'],
+    itens: [
+      { label: 'Meu Escritório',  href: '/escritorio',               icone: '🏦' },
+      { label: 'Plano de Contas', href: '/escritorio/plano-de-contas', icone: '📋' },
     ],
   },
 ]
