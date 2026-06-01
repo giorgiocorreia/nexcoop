@@ -1,8 +1,9 @@
-﻿'use client'
+'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Organizacao, PlanoOrganizacao, TipoOrganizacao } from '@/types/database'
+import { entrarComoOrg } from '@/app/actions/impersonation'
 
 const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
@@ -34,6 +35,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
   const router = useRouter()
   const [busca, setBusca] = useState('')
   const [hovered, setHovered] = useState<string | null>(null)
+  const [entrando, setEntrando] = useState<string | null>(null)
 
   const contagemPorOrg = useMemo(() => {
     const mapa: Record<string, number> = {}
@@ -62,6 +64,12 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
   }, [organizacoes, busca])
 
   const totalAtivas = organizacoes.filter(o => o.ativo).length
+
+  async function handleEntrar(e: React.MouseEvent, orgId: string) {
+    e.stopPropagation()
+    setEntrando(orgId)
+    await entrarComoOrg(orgId)
+  }
 
   return (
     <div style={{ maxWidth: '1200px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -170,7 +178,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                {['Organização', 'Tipo', 'Cidade / UF', 'Plano', 'Filiados', 'Criado em', 'Status'].map(col => (
+                {['Organização', 'Tipo', 'Cidade / UF', 'Plano', 'Filiados', 'Criado em', 'Status', ''].map(col => (
                   <th key={col} style={{
                     padding: '10px 16px', textAlign: 'left',
                     fontSize: '11px', fontWeight: '600', color: '#888',
@@ -185,6 +193,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
               {filtradas.map((org, i) => {
                 const plano = PLANO_CONFIG[org.plano]
                 const isHov = hovered === org.id
+                const isEntrando = entrando === org.id
                 return (
                   <tr
                     key={org.id}
@@ -245,6 +254,23 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
                       }}>
                         {org.ativo ? 'Ativa' : 'Inativa'}
                       </span>
+                    </td>
+                    <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={e => handleEntrar(e, org.id)}
+                        disabled={isEntrando}
+                        style={{
+                          fontSize: '11px', fontWeight: '600',
+                          color: '#635BFF', background: '#EEF0FF',
+                          border: '1px solid #635BFF33',
+                          borderRadius: '6px', padding: '4px 10px',
+                          cursor: isEntrando ? 'default' : 'pointer',
+                          whiteSpace: 'nowrap',
+                          opacity: isEntrando ? 0.6 : 1,
+                        }}
+                      >
+                        {isEntrando ? '...' : '👁 Entrar'}
+                      </button>
                     </td>
                   </tr>
                 )

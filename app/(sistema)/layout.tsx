@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
+import { sairDaOrg } from '@/app/actions/impersonation'
+import type { RoleUsuario } from '@/types/database'
 
 function assinaturaAtiva(org: { subscription_status: string | null; trial_ends_at: string | null } | null): boolean {
   if (!org) return true
@@ -30,8 +33,28 @@ export default async function SistemaLayout({
     .eq('id', user.id)
     .single()
 
+  const isSuperAdmin = usuario?.role === 'super_admin'
+
+  // Lê cookie de impersonation
+  const cookieStore = await cookies()
+  const impersonatingOrgId = isSuperAdmin
+    ? (cookieStore.get('impersonating_org')?.value ?? null)
+    : null
+
   let organizacao = null
-  if (usuario?.organizacao_id) {
+  let impersonandoOrg = null
+
+  if (impersonatingOrgId) {
+    // Modo impersonation: carrega a org sendo visualizada
+    const { data: impOrg } = await supabase
+      .from('organizacoes')
+      .select('*')
+      .eq('id', impersonatingOrgId)
+      .single()
+    impersonandoOrg = impOrg
+    organizacao = impOrg
+  } else if (usuario?.organizacao_id) {
+    // Modo normal: org do próprio usuário
     const { data: org } = await supabase
       .from('organizacoes')
       .select('*')
@@ -40,31 +63,69 @@ export default async function SistemaLayout({
     organizacao = org
   }
 
-  const isSuperAdmin = usuario?.role === 'super_admin'
-
-  // Verifica onboarding
-  if (!isSuperAdmin && organizacao && !organizacao.onboarding_concluido) {
-    redirect('/onboarding')
+  // Verificações de onboarding/assinatura apenas no modo normal
+  if (!isSuperAdmin && !impersonatingOrgId) {
+    if (organizacao && !organizacao.onboarding_concluido) redirect('/onboarding')
+    if (!assinaturaAtiva(organizacao)) redirect('/assinar')
   }
 
-  if (!isSuperAdmin && !assinaturaAtiva(organizacao)) {
-    redirect('/assinar')
-  }
-
-  const usuarioComOrg = usuario ? { ...usuario, organizacao } : null
+  // Durante impersonation, faz o super admin aparecer como admin da org visualizada
+  const usuarioComOrg = impersonandoOrg && usuario
+    ? { ...usuario, role: 'membro' as RoleUsuario, funcoes: ['admin'], organizacao_id: impersonandoOrg.id, organizacao: impersonandoOrg } as any
+    : usuario
+      ? { ...usuario, organizacao }
+      : null
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7f4' }}>
       <Sidebar usuario={usuarioComOrg} />
-      <main style={{
-        flex: 1,
-        marginLeft: '240px',
-        padding: '2rem',
-        minHeight: '100vh',
-        overflowY: 'auto',
-      }}>
-        {children}
-      </main>
+      <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+
+        {/* Banner de impersonation */}
+        {impersonandoOrg && (
+          <div style={{
+            background: '#fef3c7',
+            borderBottom: '1px solid #f59e0b',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#78350f' }}>
+              👁 Visualizando como administrador:{' '}
+              <strong>{impersonandoOrg.nome}</strong>
+            </span>
+            <form action={sairDaOrg}>
+              <button
+                type="submit"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#78350f',
+                  background: 'transparent',
+                  border: '1px solid #f59e0b',
+                  borderRadius: 6,
+                  padding: '4px 14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Encerrar visita
+              </button>
+            </form>
+          </div>
+        )}
+
+        <main style={{
+          flex: 1,
+          padding: '2rem',
+          overflowY: 'auto',
+        }}>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
