@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { temAlgumaFuncao, isContador } from '@/lib/permissoes'
 import type { Usuario, Organizacao } from '@/types/database'
 
 interface NavItem {
@@ -11,13 +10,10 @@ interface NavItem {
   icone: string
   em_breve?: boolean
   exact?: boolean
-  funcoes_requeridas?: string[]
-  modulo?: string
 }
 
 interface NavGrupo {
   grupo: string
-  funcoes_requeridas?: string[]
   itens: NavItem[]
 }
 
@@ -39,60 +35,95 @@ const NAV_ADMIN: NavGrupo[] = [
   },
 ]
 
-const NAV: NavGrupo[] = [
-  {
-    grupo: 'Principal',
-    itens: [
-      { label: 'Dashboard',     href: '/dashboard',     icone: '📊' },
-      { label: 'Cooperados',    href: '/cooperados',    icone: '👥' },
-      { label: 'Mensalidades',  href: '/mensalidades',  icone: '💳' },
-      { label: 'Financeiro',    href: '/financeiro',    icone: '💰' },
-      { label: 'Assembleias',   href: '/assembleias',   icone: '🏛️' },
-      { label: 'Documentos',    href: '/documentos',    icone: '📁' },
-    ],
-  },
-  {
-    grupo: 'Agro',
-    funcoes_requeridas: ['admin', 'tecnico'],
-    itens: [
+const CONTABIL_ITENS: NavItem[] = [
+  { label: 'Plano de Contas',     href: '/contabil/plano-de-contas', icone: '📋' },
+  { label: 'Escrituração',        href: '/contabil/escrituracao',    icone: '✏️' },
+  { label: 'Balancete',           href: '/contabil/balancete',       icone: '⚖️' },
+  { label: 'DRE',                 href: '/contabil/dre',             icone: '📈' },
+  { label: 'Balanço Patrimonial', href: '/contabil/balanco',         icone: '🏦' },
+  { label: 'Livro Razão',         href: '/contabil/razao',           icone: '📖' },
+  { label: 'Sobras & REFAC',      href: '/contabil/sobras',          icone: '💰' },
+  { label: 'De/Para Contas',      href: '/contabil/depara',          icone: '🔀' },
+  { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
+]
+
+function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null): NavGrupo[] {
+  const funcoes = (usuario?.funcoes ?? []) as string[]
+  const isAdmin         = funcoes.includes('admin')
+  const isContador      = funcoes.includes('contador') || funcoes.includes('contador_aux')
+  const isFinanceiro    = funcoes.includes('financeiro')
+  const isTecnico       = funcoes.includes('tecnico')
+  const isCaptador      = funcoes.includes('captador')
+  const isConselhoFiscal = funcoes.includes('conselho_fiscal')
+
+  const grupos: NavGrupo[] = []
+
+  // ── PRINCIPAL ─────────────────────────────────────────────────────────────
+  const principalItens: NavItem[] = []
+  if (isAdmin || isFinanceiro || isTecnico || isConselhoFiscal)
+    principalItens.push({ label: 'Dashboard',    href: '/dashboard',    icone: '📊' })
+  if (isAdmin || isTecnico)
+    principalItens.push({ label: 'Cooperados',   href: '/cooperados',   icone: '👥' })
+  if (isAdmin || isFinanceiro)
+    principalItens.push({ label: 'Mensalidades', href: '/mensalidades', icone: '💳' })
+  if (isAdmin || isFinanceiro || isConselhoFiscal)
+    principalItens.push({ label: 'Financeiro',   href: '/financeiro',   icone: '💰' })
+  if (isAdmin || isConselhoFiscal)
+    principalItens.push({ label: 'Assembleias',  href: '/assembleias',  icone: '🏛️' })
+  if (isAdmin || isTecnico)
+    principalItens.push({ label: 'Documentos',   href: '/documentos',   icone: '📁' })
+  if (principalItens.length > 0)
+    grupos.push({ grupo: 'Principal', itens: principalItens })
+
+  // ── AGRO ──────────────────────────────────────────────────────────────────
+  const agroItens: NavItem[] = []
+  if (isAdmin || isTecnico) {
+    agroItens.push(
       { label: 'Produção',        href: '/producao',        icone: '🌱', em_breve: true },
       { label: 'Comercialização', href: '/comercializacao', icone: '🤝', em_breve: true },
-      { label: 'Loja',            href: '/loja',            icone: '🏪' },
-    ],
-  },
-  {
-    grupo: 'Projetos',
-    funcoes_requeridas: ['admin', 'captador'],
-    itens: [
-      { label: 'Projetos',      href: '/projetos',  icone: '🎯', em_breve: true },
-      { label: 'Impacto & ESG', href: '/impacto',   icone: '🌿', em_breve: true },
-      { label: 'Captação',      href: '/captacao',  icone: '🎯', funcoes_requeridas: ['admin', 'captador'] },
-    ],
-  },
-  {
-    grupo: 'Contábil',
-    funcoes_requeridas: ['admin', 'contador', 'contador_aux'],
-    itens: [
-      { label: 'Plano de Contas',     href: '/contabil/plano-de-contas', icone: '📋' },
-      { label: 'Escrituração',        href: '/contabil/escrituracao',    icone: '✏️' },
-      { label: 'Balancete',           href: '/contabil/balancete',       icone: '⚖️' },
-      { label: 'DRE',                 href: '/contabil/dre',             icone: '📈' },
-      { label: 'Balanço Patrimonial', href: '/contabil/balanco',         icone: '🏦' },
-      { label: 'Livro Razão',         href: '/contabil/razao',           icone: '📖' },
-      { label: 'Sobras & REFAC',      href: '/contabil/sobras',          icone: '💰' },
-      { label: 'De/Para Contas',      href: '/contabil/depara',          icone: '🔀', funcoes_requeridas: ['admin', 'contador', 'contador_aux'] },
-      { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
-    ],
-  },
-  {
-    grupo: 'Escritório',
-    funcoes_requeridas: ['contador', 'contador_aux'],
-    itens: [
-      { label: 'Meu Escritório',  href: '/escritorio',               icone: '🏦' },
-      { label: 'Plano de Contas', href: '/escritorio/plano-de-contas', icone: '📋' },
-    ],
-  },
-]
+    )
+  }
+  if (isAdmin)
+    agroItens.push({ label: 'Loja', href: '/loja', icone: '🏪', em_breve: true })
+  if (agroItens.length > 0)
+    grupos.push({ grupo: 'Agro', itens: agroItens })
+
+  // ── PROJETOS ──────────────────────────────────────────────────────────────
+  const projetosItens: NavItem[] = []
+  if (isAdmin || isCaptador)
+    projetosItens.push({ label: 'Captação', href: '/captacao', icone: '🎯' })
+  if (isAdmin) {
+    projetosItens.push(
+      { label: 'Projetos',      href: '/projetos', icone: '🎯', em_breve: true },
+      { label: 'Impacto & ESG', href: '/impacto',  icone: '🌿', em_breve: true },
+    )
+  }
+  if (projetosItens.length > 0)
+    grupos.push({ grupo: 'Projetos', itens: projetosItens })
+
+  // ── CONTÁBIL ──────────────────────────────────────────────────────────────
+  if (isAdmin || isContador)
+    grupos.push({ grupo: 'Contábil', itens: CONTABIL_ITENS })
+
+  // ── ESCRITÓRIO (somente contador) ─────────────────────────────────────────
+  if (isContador)
+    grupos.push({
+      grupo: 'Escritório',
+      itens: [
+        { label: 'Meu Escritório',  href: '/escritorio',                 icone: '🏦' },
+        { label: 'Plano de Contas', href: '/escritorio/plano-de-contas', icone: '📋' },
+      ],
+    })
+
+  // ── CONTA (Configurações somente admin — Sair fica no footer) ─────────────
+  if (isAdmin)
+    grupos.push({
+      grupo: 'Conta',
+      itens: [{ label: 'Configurações', href: '/configuracoes', icone: '⚙️' }],
+    })
+
+  return grupos
+}
 
 const FUNCAO_LABEL: Record<string, string> = {
   admin:           'Administrador',
@@ -100,6 +131,8 @@ const FUNCAO_LABEL: Record<string, string> = {
   tecnico:         'Técnico',
   conselho_fiscal: 'Conselho Fiscal',
   captador:        'Captador',
+  contador:        'Contador',
+  contador_aux:    'Contador Auxiliar',
 }
 
 interface Props {
@@ -126,23 +159,6 @@ export default function Sidebar({ usuario }: Props) {
 
   const isSuperAdmin = usuario?.role === 'super_admin'
   const org = usuario?.organizacao
-
-  // Proxy para módulo captação enquanto não existe campo modulos_ativos no banco
-  const moduloCaptacaoAtivo = ['agro', 'impacto', 'enterprise', 'profissional'].includes(org?.plano || '')
-
-  function podeVerGrupo(grupo: NavGrupo): boolean {
-    if (!grupo.funcoes_requeridas) return true
-    if (!usuario) return false
-    return temAlgumaFuncao(usuario, grupo.funcoes_requeridas)
-  }
-
-  function podeVerItem(item: NavItem): boolean {
-    if (item.funcoes_requeridas && usuario) {
-      if (!temAlgumaFuncao(usuario, item.funcoes_requeridas)) return false
-    }
-    if (item.modulo === 'captacao') return moduloCaptacaoAtivo
-    return true
-  }
 
   function renderItem(item: NavItem) {
     const ativo = item.exact
@@ -190,20 +206,9 @@ export default function Sidebar({ usuario }: Props) {
   }
 
   function renderNav() {
-    if (isSuperAdmin) {
-      return NAV_ADMIN.map(grupo => renderGrupo(grupo.grupo, grupo.itens))
-    }
-
-    return (
-      <>
-        {NAV.filter(podeVerGrupo).map(grupo => {
-          const itens = grupo.itens.filter(podeVerItem)
-          if (itens.length === 0) return null
-          return renderGrupo(grupo.grupo, itens)
-        })}
-        {renderGrupo('Conta', [{ label: 'Configurações', href: '/configuracoes', icone: '⚙️' }])}
-      </>
-    )
+    if (isSuperAdmin)
+      return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
+    return buildNav(usuario).map(g => renderGrupo(g.grupo, g.itens))
   }
 
   const orgNome = isSuperAdmin
