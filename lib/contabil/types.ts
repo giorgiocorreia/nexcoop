@@ -193,3 +193,28 @@ export interface ItemLivroRazao {
   saldo_progressivo: number
   historico: string | null
 }
+
+export interface ItemLivroDiario {
+  id: string
+  org_id: string
+  exercicio_id: string
+  numero_lancamento: number
+  data_lancamento: string
+  historico: string
+  partida_id: string | null
+  valor: number
+  created_at: string
+}
+
+export interface DistribuicaoSobras {
+  id: string
+  org_id: string
+  fechamento_id: string
+  cooperado_id: string
+  valor_operacoes: number
+  percentual: number
+  valor_sobras: number
+  status: 'calculado' | 'pago' | 'retido'
+  created_at: string
+  cooperado?: { nome: string; cpf: string }
+}

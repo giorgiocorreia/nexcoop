@@ -699,6 +699,12 @@ export type Database = {
       configuracoes_contabeis:   TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fechamentos_exercicio:     TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      livro_diario:              TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      distribuicao_sobras:       TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exportacoes_contabeis:     TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

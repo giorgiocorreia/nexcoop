@@ -7,6 +7,9 @@ import {
   getExercicioAtivo,
   getFechamento,
   fecharExercicio,
+  calcularDistribuicaoSobras,
+  getDistribuicaoSobras,
+  atualizarStatusDistribuicao,
 } from '@/lib/contabil/actions'
 
 const COR = '#0F766E'
@@ -47,6 +50,9 @@ export default function SobrasClient({
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
 
+  const [distribuicao, setDistribuicao] = useState<any[]>([])
+  const [calculando, setCalculando] = useState(false)
+
   const isAdmin = funcoes.includes('admin')
   const podeFechar = isContador || isAdmin
 
@@ -64,7 +70,12 @@ export default function SobrasClient({
         setPercFates(String(s.config.percentual_fates))
         setCriterio(s.config.criterio_distribuicao)
       }
-      if (ex) getFechamento(orgId, ex.id).then(setFechamento)
+      if (ex) {
+        getFechamento(orgId, ex.id).then(fech => {
+          setFechamento(fech)
+          if (fech) getDistribuicaoSobras(fech.id).then(setDistribuicao)
+        })
+      }
     }).finally(() => setLoading(false))
   }, [ano, orgId])
 
@@ -113,6 +124,24 @@ export default function SobrasClient({
     finally { setFechando(false) }
   }
 
+  async function handleCalcularDistribuicao() {
+    if (!fechamento) return
+    setCalculando(true); setErro('')
+    try {
+      await calcularDistribuicaoSobras(orgId, fechamento.id)
+      const dist = await getDistribuicaoSobras(fechamento.id)
+      setDistribuicao(dist)
+      setSucesso('Distribuição calculada!')
+      setTimeout(() => setSucesso(''), 3000)
+    } catch (e: any) { setErro(e.message) }
+    finally { setCalculando(false) }
+  }
+
+  async function handleStatusDist(id: string, status: 'pago' | 'retido') {
+    await atualizarStatusDistribuicao(id, status)
+    setDistribuicao(d => d.map((x: any) => x.id === id ? { ...x, status } : x))
+  }
+
   return (
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -144,6 +173,7 @@ export default function SobrasClient({
 
       {loading ? <p style={{ color: '#6b7280' }}>Calculando...</p> : !dados ? null : (
         <>
+          {/* Apuração */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', overflow: 'hidden', marginBottom: 20 }}>
             <div style={{ background: '#1a1a2e', padding: '12px 16px' }}>
               <span style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>APURAÇÃO DO RESULTADO — {ano}</span>
@@ -191,6 +221,7 @@ export default function SobrasClient({
             )}
           </div>
 
+          {/* Configurações */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20, marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Configurações de Destinação</h2>
@@ -251,8 +282,9 @@ export default function SobrasClient({
             )}
           </div>
 
+          {/* Botão de fechamento */}
           {podeFechar && exercicio?.status === 'ABERTO' && (
-            <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 12, padding: 20 }}>
+            <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: '#92400e' }}>Fechamento do Exercício {ano}</h2>
               <p style={{ fontSize: 13, color: '#92400e', marginBottom: 16 }}>
                 O fechamento é irreversível. Gera um hash SHA-256 de auditoria com os valores apurados, assinado por{' '}
@@ -266,8 +298,9 @@ export default function SobrasClient({
             </div>
           )}
 
+          {/* Resumo do fechamento */}
           {fechamento && (
-            <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 12, padding: 20, marginTop: 16 }}>
+            <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#166534' }}>✓ Exercício Encerrado</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {[
@@ -284,9 +317,88 @@ export default function SobrasClient({
               </div>
             </div>
           )}
+
+          {/* Distribuição de sobras por cooperado */}
+          {fechamento && dados?.sobrasDistribuiveis > 0 && (
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Distribuição de Sobras por Cooperado</h2>
+                {distribuicao.length === 0 && (
+                  <button onClick={handleCalcularDistribuicao} disabled={calculando}
+                    style={{ padding: '7px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {calculando ? 'Calculando...' : 'Calcular Distribuição'}
+                  </button>
+                )}
+              </div>
+
+              {distribuicao.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                  Clique em "Calcular Distribuição" para apurar o valor por cooperado.
+                </p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8f7f4' }}>
+                        {['Cooperado', 'CPF', '% Participação', 'Valor a Receber', 'Status', 'Ação'].map(h => (
+                          <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#374151', borderBottom: '1px solid #e5e3dc' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {distribuicao.map((d: any, i: number) => (
+                        <tr key={d.id} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#f8f7f4' }}>
+                          <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 600 }}>{d.cooperado?.nome || '—'}</td>
+                          <td style={{ padding: '9px 14px', fontSize: 12, color: '#6b7280' }}>{d.cooperado?.cpf || '—'}</td>
+                          <td style={{ padding: '9px 14px', fontSize: 13 }}>{Number(d.percentual).toFixed(4)}%</td>
+                          <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: COR }}>
+                            {Number(d.valor_sobras).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </td>
+                          <td style={{ padding: '9px 14px' }}>
+                            <span style={{
+                              fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
+                              background: d.status === 'pago' ? '#dcfce7' : d.status === 'retido' ? '#fef2f2' : '#fef9c3',
+                              color: d.status === 'pago' ? '#166534' : d.status === 'retido' ? '#dc2626' : '#854d0e',
+                            }}>
+                              {d.status === 'pago' ? 'Pago' : d.status === 'retido' ? 'Retido' : 'Calculado'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '9px 14px' }}>
+                            {d.status !== 'pago' && (
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button onClick={() => handleStatusDist(d.id, 'pago')}
+                                  style={{ background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                                  Pago
+                                </button>
+                                <button onClick={() => handleStatusDist(d.id, 'retido')}
+                                  style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                                  Reter
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#f0fdf9', fontWeight: 700 }}>
+                        <td colSpan={3} style={{ padding: '10px 14px', fontSize: 13 }}>Total distribuído</td>
+                        <td style={{ padding: '10px 14px', fontSize: 14, color: COR }}>
+                          {distribuicao.reduce((s: number, d: any) => s + Number(d.valor_sobras), 0)
+                            .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
+      {/* Modal de confirmação de fechamento */}
       {modalFechamento && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 480, maxWidth: '95vw' }}>

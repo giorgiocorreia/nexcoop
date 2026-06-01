@@ -862,3 +862,193 @@ export async function fecharExercicio(data: {
   revalidatePath('/contabil/balancete')
   return hash
 }
+
+// ── LIVRO DIÁRIO ─────────────────────────────────────────────────────────────
+
+export async function getLivroDiario(orgId: string, exercicioId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('partidas')
+    .select(`
+      *,
+      lancamentos(data, descricao),
+      conta_debito:conta_debito_id(codigo, nome),
+      conta_credito:conta_credito_id(codigo, nome)
+    `)
+    .eq('org_id', orgId)
+    .eq('exercicio_id', exercicioId)
+    .order('classificado_em')
+  if (error) throw new Error(error.message)
+  return (data || []).map((p: any, idx: number) => ({
+    numero: idx + 1,
+    data: p.lancamentos?.data || '',
+    historico: p.historico || p.lancamentos?.descricao || '',
+    conta_debito_codigo: p.conta_debito?.codigo || '',
+    conta_debito_nome: p.conta_debito?.nome || '',
+    conta_credito_codigo: p.conta_credito?.codigo || '',
+    conta_credito_nome: p.conta_credito?.nome || '',
+    valor: Number(p.valor),
+  }))
+}
+
+// ── DISTRIBUIÇÃO DE SOBRAS ───────────────────────────────────────────────────
+
+export async function calcularDistribuicaoSobras(orgId: string, fechamentoId: string) {
+  const supabase = createAdminClient()
+
+  const { data: fechamento } = await supabase
+    .from('fechamentos_exercicio')
+    .select('*')
+    .eq('id', fechamentoId)
+    .single()
+  if (!fechamento) throw new Error('Fechamento não encontrado.')
+
+  const sobrasDistribuiveis = Number(fechamento.sobras_distribuiveis)
+  if (sobrasDistribuiveis <= 0) throw new Error('Não há sobras distribuíveis neste exercício.')
+
+  const config = await getConfiguracaoContabil(orgId)
+  const criterio = config?.criterio_distribuicao || 'igualitario'
+
+  const { data: cooperados } = await supabase
+    .from('cooperados')
+    .select('id, nome, cpf')
+    .eq('organizacao_id', orgId)
+    .eq('status', 'ativo')
+  if (!cooperados || cooperados.length === 0) throw new Error('Nenhum cooperado ativo.')
+
+  const total = cooperados.length
+  const distribuicoes = cooperados.map((c: any) => {
+    const percentual = (1 / total) * 100
+    const valorSobras = (sobrasDistribuiveis * percentual) / 100
+    return {
+      org_id: orgId,
+      fechamento_id: fechamentoId,
+      cooperado_id: c.id,
+      valor_operacoes: 0,
+      percentual,
+      valor_sobras: valorSobras,
+      status: 'calculado',
+    }
+  })
+
+  const { error } = await supabase
+    .from('distribuicao_sobras')
+    .upsert(distribuicoes, { onConflict: 'fechamento_id,cooperado_id' })
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/contabil/sobras')
+  return distribuicoes
+}
+
+export async function getDistribuicaoSobras(fechamentoId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('distribuicao_sobras')
+    .select('*, cooperado:cooperado_id(nome, cpf)')
+    .eq('fechamento_id', fechamentoId)
+    .order('valor_sobras', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function atualizarStatusDistribuicao(id: string, status: 'pago' | 'retido') {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('distribuicao_sobras')
+    .update({ status })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/sobras')
+}
+
+// ── EXPORTAÇÃO SPED ECD ──────────────────────────────────────────────────────
+
+export async function gerarSpedECD(orgId: string, ano: number): Promise<string> {
+  const supabase = createAdminClient()
+
+  const { data: org } = await supabase
+    .from('organizacoes')
+    .select('*')
+    .eq('id', orgId)
+    .single()
+  if (!org) throw new Error('Organização não encontrada.')
+
+  const { data: contas } = await supabase
+    .from('plano_contas')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('ativo', true)
+    .order('codigo')
+
+  const { data: partidas } = await supabase
+    .from('partidas')
+    .select('*, lancamentos(data, descricao)')
+    .eq('org_id', orgId)
+
+  const partidasAno = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d.startsWith(String(ano))
+  })
+
+  const linhas: string[] = []
+  const dtIni = `0101${ano}`
+  const dtFin = `3112${ano}`
+
+  // Registro 0000 — Abertura
+  linhas.push(`|0000|LECD|${dtIni}|${dtFin}|${org.nome || ''}|${(org.cnpj || '').replace(/\D/g, '')}|||||N|`)
+  linhas.push(`|0001|0|`)
+  linhas.push(`|0007|PLANO DE CONTAS NEXCOOP|`)
+
+  // Bloco I
+  linhas.push(`|I001|0|`)
+  linhas.push(`|I010|G|${dtIni}|${dtFin}|${org.nome || ''}|${(org.cnpj || '').replace(/\D/g, '')}|||||`)
+
+  // I050 — Plano de contas
+  for (const conta of (contas || [])) {
+    const tipo = conta.tipo === 'ATIVO' ? 'A'
+               : conta.tipo === 'PASSIVO' ? 'P'
+               : conta.tipo === 'PATRIMONIO_LIQUIDO' ? 'P'
+               : conta.tipo === 'RECEITA' ? 'R' : 'D'
+    const nat = conta.natureza === 'DEVEDORA' ? 'D' : 'C'
+    linhas.push(`|I050|${conta.codigo}|${conta.parent_id ? '1' : '0'}|${conta.nome}|${tipo}|${nat}|${conta.aceita_lancamento ? 'S' : 'N'}|`)
+  }
+
+  // I200 — Lançamentos
+  for (const partida of partidasAno) {
+    const data = (partida.lancamentos?.data || '').replace(/-/g, '')
+    const hist = (partida.historico || partida.lancamentos?.descricao || '').slice(0, 200)
+    linhas.push(`|I200|${data}|${hist}|${Number(partida.valor).toFixed(2)}|D|`)
+  }
+
+  const blocoICount = linhas.filter(l => l.startsWith('|I')).length
+  linhas.push(`|I990|${blocoICount + 1}|`)
+
+  // Bloco 9
+  linhas.push(`|9001|0|`)
+  linhas.push(`|9900|0000|1|`)
+  linhas.push(`|9900|I001|1|`)
+  linhas.push(`|9900|I990|1|`)
+  linhas.push(`|9900|9001|1|`)
+  linhas.push(`|9900|9990|1|`)
+  linhas.push(`|9900|9999|1|`)
+  const bloco9Count = linhas.filter(l => l.startsWith('|9')).length
+  linhas.push(`|9990|${bloco9Count + 1}|`)
+  linhas.push(`|9999|${linhas.length + 1}|`)
+
+  return linhas.join('\n')
+}
+
+// ── DADOS PARA RELATÓRIOS PDF ─────────────────────────────────────────────────
+
+export async function getDadosRelatorioPDF(orgId: string, tipo: string, ano: number, mes?: number) {
+  switch (tipo) {
+    case 'balancete':
+      return getBalancete(orgId, mes || new Date().getMonth() + 1, ano)
+    case 'dre':
+      return getDRE(orgId, ano)
+    case 'balanco':
+      return getBalancoPatrimonial(orgId, ano)
+    default:
+      throw new Error('Tipo de relatório não suportado.')
+  }
+}

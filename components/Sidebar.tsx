@@ -42,9 +42,11 @@ const CONTABIL_ITENS: NavItem[] = [
   { label: 'DRE',                 href: '/contabil/dre',             icone: '📈' },
   { label: 'Balanço Patrimonial', href: '/contabil/balanco',         icone: '🏦' },
   { label: 'Livro Razão',         href: '/contabil/razao',           icone: '📖' },
+  { label: 'Livro Diário',        href: '/contabil/diario',          icone: '📒' },
   { label: 'Sobras & REFAC',      href: '/contabil/sobras',          icone: '💰' },
   { label: 'De/Para Contas',      href: '/contabil/depara',          icone: '🔀' },
   { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
+  { label: 'Exportações',         href: '/contabil/exportacoes',     icone: '📤' },
 ]
 
 function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null): NavGrupo[] {
