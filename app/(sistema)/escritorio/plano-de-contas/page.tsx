@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { getEscritorioDoContador, getPlanoContasExterno, criarContaExterna } from '@/lib/contabil/actions'
+import type { TipoConta } from '@/lib/contabil/types'
 
 const COR = '#0F766E'
-const TIPOS = ['ATIVO','PASSIVO','PATRIMONIO_LIQUIDO','RECEITA','DESPESA']
+const TIPOS: TipoConta[] = ['ATIVO','PASSIVO','PATRIMONIO_LIQUIDO','RECEITA','DESPESA']
 const TIPO_LABEL: Record<string, string> = {
   ATIVO: 'Ativo', PASSIVO: 'Passivo', PATRIMONIO_LIQUIDO: 'Patrimônio Líquido',
   RECEITA: 'Receita', DESPESA: 'Despesa',
@@ -16,7 +17,7 @@ export default function PlanoContasExternoPage() {
   const [loading, setLoading] = useState(true)
   const [codigo, setCodigo] = useState('')
   const [nome, setNome] = useState('')
-  const [tipo, setTipo] = useState('ATIVO')
+  const [tipo, setTipo] = useState<TipoConta>('ATIVO')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
@@ -70,7 +71,7 @@ export default function PlanoContasExternoPage() {
             style={{ flex: 1, minWidth: 160, padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }} />
           <input value={nome} onChange={e => setNome(e.target.value)} placeholder='Nome da conta'
             style={{ flex: 2, minWidth: 200, padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }} />
-          <select value={tipo} onChange={e => setTipo(e.target.value)}
+          <select value={tipo} onChange={e => setTipo(e.target.value as TipoConta)}
             style={{ flex: 1, minWidth: 160, padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
             {TIPOS.map(t => <option key={t} value={t}>{TIPO_LABEL[t]}</option>)}
           </select>

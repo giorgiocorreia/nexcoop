@@ -495,6 +495,145 @@ export interface LojaPedidoItem {
   subtotal:       number
 }
 
+// ── Módulo Contábil ───────────────────────────────────────────────────────────
+
+export type TipoContabil        = 'ATIVO' | 'PASSIVO' | 'PATRIMONIO_LIQUIDO' | 'RECEITA' | 'DESPESA'
+export type NaturezaContabil    = 'DEVEDORA' | 'CREDORA'
+export type StatusExercicio     = 'ABERTO' | 'ENCERRADO'
+export type NivelContador       = 'contador' | 'contador_aux'
+export type StatusNFe           = 'importada' | 'vinculada' | 'ignorada'
+export type TipoNFe             = 'entrada' | 'saida'
+
+export interface PlanoContas {
+  id:                string
+  org_id:            string
+  codigo:            string
+  nome:              string
+  tipo:              TipoContabil
+  natureza:          NaturezaContabil
+  parent_id:         string | null
+  nivel:             number
+  aceita_lancamento: boolean
+  ativo:             boolean
+  created_at:        string
+}
+
+export interface Partida {
+  id:               string
+  org_id:           string
+  lancamento_id:    string
+  conta_debito_id:  string
+  conta_credito_id: string
+  valor:            number
+  historico:        string | null
+  classificado_por: string | null
+  classificado_em:  string
+  exercicio_id:     string | null
+  created_at:       string
+}
+
+export interface ExercicioContabil {
+  id:                string
+  org_id:            string
+  ano:               number
+  data_abertura:     string
+  data_encerramento: string | null
+  status:            StatusExercicio
+  encerrado_por:     string | null
+  encerrado_em:      string | null
+  hash_fechamento:   string | null
+  created_at:        string
+}
+
+export interface ComentarioContabil {
+  id:            string
+  org_id:        string
+  lancamento_id: string
+  autor_id:      string
+  texto:         string
+  resolvido:     boolean
+  created_at:    string
+}
+
+export interface EscritorioContabil {
+  id:               string
+  razao_social:     string
+  cnpj:             string | null
+  crc_responsavel:  string | null
+  email_contato:    string
+  telefone:         string | null
+  ativo:            boolean
+  created_at:       string
+}
+
+export interface ContadorOrg {
+  id:            string
+  org_id:        string
+  usuario_id:    string
+  escritorio_id: string | null
+  nivel:         NivelContador
+  ativo:         boolean
+  convidado_em:  string
+  aceito_em:     string | null
+}
+
+export interface PlanoContasExterno {
+  id:            string
+  escritorio_id: string
+  codigo:        string
+  nome:          string
+  tipo:          TipoContabil
+  ativo:         boolean
+  created_at:    string
+}
+
+export interface DeParaContas {
+  id:               string
+  org_id:           string
+  contador_org_id:  string
+  conta_interna_id: string
+  conta_externa_id: string
+  created_at:       string
+}
+
+export interface NFeImportada {
+  id:                 string
+  org_id:             string
+  chave_acesso:       string
+  tipo:               TipoNFe
+  numero:             string | null
+  serie:              string | null
+  data_emissao:       string
+  cnpj_emitente:      string | null
+  nome_emitente:      string | null
+  cnpj_destinatario:  string | null
+  nome_destinatario:  string | null
+  valor_total:        number
+  valor_icms:         number
+  valor_pis:          number
+  valor_cofins:       number
+  xml_original:       string | null
+  lancamento_id:      string | null
+  status:             StatusNFe
+  importado_por:      string | null
+  created_at:         string
+}
+
+export interface NFeItem {
+  id:              string
+  nfe_id:          string
+  numero_item:     number
+  codigo_produto:  string | null
+  descricao:       string
+  ncm:             string | null
+  cfop:            string | null
+  unidade:         string | null
+  quantidade:      number | null
+  valor_unitario:  number | null
+  valor_total:     number
+  created_at:      string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -536,6 +675,26 @@ export type Database = {
       loja_estoque_movimentos:   TableDef<LojaEstoqueMovimento>
       loja_pedidos_online:       TableDef<LojaPedidoOnline>
       loja_pedido_itens:         TableDef<LojaPedidoItem>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      plano_contas:              TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      partidas:                  TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exercicios_contabeis:      TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      comentarios_contabeis:     TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      escritorios_contabeis:     TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      contador_org:              TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      plano_contas_externo:      TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      de_para_contas:            TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      nfe_importadas:            TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      nfe_itens:                 TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

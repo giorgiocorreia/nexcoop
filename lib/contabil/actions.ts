@@ -1,14 +1,13 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { ContaContabil, ItemBalancete, ItemDRE } from './types'
+import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta } from './types'
 
 // ── PLANO DE CONTAS ──────────────────────────────────────────────────────────
 
 export async function getPlanoContas(orgId: string): Promise<ContaContabil[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('plano_contas')
     .select('*')
@@ -37,8 +36,8 @@ export async function criarConta(data: {
   org_id: string
   codigo: string
   nome: string
-  tipo: string
-  natureza: string
+  tipo: TipoConta
+  natureza: NaturezaConta
   parent_id?: string
   nivel: number
   aceita_lancamento: boolean
@@ -57,9 +56,11 @@ export async function seedPlanoContasCooperativa(orgId: string) {
   revalidatePath('/contabil/plano-de-contas')
 }
 
-function gerarPlanoContasPadrao(orgId: string) {
+function gerarPlanoContasPadrao(orgId: string): Array<{
+  org_id: string; codigo: string; nome: string; tipo: TipoConta; natureza: NaturezaConta; nivel: number; aceita_lancamento: boolean
+}> {
   return [
-    { org_id: orgId, codigo: '1', nome: 'ATIVO', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1', nome: 'ATIVO', tipo: 'ATIVO' as TipoConta, natureza: 'DEVEDORA' as NaturezaConta, nivel: 1, aceita_lancamento: false },
     { org_id: orgId, codigo: '1.1', nome: 'Ativo Circulante', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
     { org_id: orgId, codigo: '1.1.1', nome: 'Disponibilidades', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: false },
     { org_id: orgId, codigo: '1.1.1.01', nome: 'Caixa', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
@@ -104,7 +105,7 @@ function gerarPlanoContasPadrao(orgId: string) {
 // ── ESCRITURAÇÃO ─────────────────────────────────────────────────────────────
 
 export async function getLancamentosPendentes(orgId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data: todos, error } = await supabase
     .from('lancamentos')
     .select('*')
@@ -145,7 +146,7 @@ export async function classificarLancamento(data: {
 // ── BALANCETE ────────────────────────────────────────────────────────────────
 
 export async function getBalancete(orgId: string, mes: number, ano: number): Promise<ItemBalancete[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const inicioMes = new Date(ano, mes - 1, 1).toISOString().split('T')[0]
   const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0]
   const inicioAno = new Date(ano, 0, 1).toISOString().split('T')[0]
@@ -215,7 +216,7 @@ function calcularSaldo(conta: any, partidas: any[]): number {
 // ── DRE ──────────────────────────────────────────────────────────────────────
 
 export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const inicioAno = `${ano}-01-01`
   const fimAno = `${ano}-12-31`
 
@@ -272,7 +273,7 @@ export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
 // ── EXERCÍCIOS ───────────────────────────────────────────────────────────────
 
 export async function getExercicioAtivo(orgId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const ano = new Date().getFullYear()
   const { data } = await supabase
     .from('exercicios_contabeis')
@@ -298,7 +299,7 @@ export async function abrirExercicio(orgId: string, ano: number) {
 // ── CONTADORES ───────────────────────────────────────────────────────────────
 
 export async function getContadoresDaOrg(orgId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('contador_org')
     .select('*, usuarios:usuario_id(nome, email)')
@@ -309,11 +310,15 @@ export async function getContadoresDaOrg(orgId: string) {
 
 export async function convidarContador(orgId: string, email: string, nivel: 'contador' | 'contador_aux') {
   const supabase = createAdminClient()
-  const { data: user } = await supabase.auth.admin.getUserByEmail(email)
-  if (!user?.user) throw new Error('Usuário não encontrado. O contador precisa ter uma conta no NexCoop.')
+  const { data: usuario } = await supabase
+    .from('usuarios')
+    .select('id')
+    .eq('email', email)
+    .single()
+  if (!usuario) throw new Error('Usuário não encontrado. O contador precisa ter uma conta no NexCoop.')
   const { error } = await supabase.from('contador_org').insert({
     org_id: orgId,
-    usuario_id: user.user.id,
+    usuario_id: usuario.id,
     nivel,
     ativo: true,
     convidado_em: new Date().toISOString(),
@@ -332,7 +337,7 @@ export async function toggleContador(id: string, ativo: boolean) {
 // ── ESCRITÓRIO CONTÁBIL ──────────────────────────────────────────────────────
 
 export async function getEscritorioDoContador(usuarioId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('contador_org')
     .select('escritorio_id, escritorios_contabeis(*)')
@@ -405,7 +410,7 @@ export async function criarOuAtualizarEscritorio(data: {
 // ── PLANO DE CONTAS EXTERNO (DO ESCRITÓRIO) ──────────────────────────────────
 
 export async function getPlanoContasExterno(escritorioId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('plano_contas_externo')
     .select('*')
@@ -420,7 +425,7 @@ export async function criarContaExterna(data: {
   escritorio_id: string
   codigo: string
   nome: string
-  tipo: string
+  tipo: TipoConta
 }) {
   const supabase = createAdminClient()
   const { error } = await supabase.from('plano_contas_externo').insert(data)
@@ -433,7 +438,7 @@ export async function importarPlanoExternoParaOrg(
   orgId: string,
   contadorOrgId: string
 ) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('plano_contas_externo')
     .select('id')
@@ -447,7 +452,7 @@ export async function importarPlanoExternoParaOrg(
 // ── DE/PARA ──────────────────────────────────────────────────────────────────
 
 export async function getDePara(orgId: string, contadorOrgId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('de_para_contas')
     .select(`
@@ -485,7 +490,7 @@ export async function removerDePara(id: string) {
 // ── NF-E ─────────────────────────────────────────────────────────────────────
 
 export async function getNFesImportadas(orgId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('nfe_importadas')
     .select('*, itens:nfe_itens(*)')
