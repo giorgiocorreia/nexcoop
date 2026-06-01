@@ -4,7 +4,7 @@ import { temAlgumaFuncao } from '@/lib/permissoes'
 import type { Oportunidade, Usuario, RadarFonte, RadarResultado } from '@/types/database'
 import KanbanBoard from '@/components/captacao/KanbanBoard'
 
-export const metadata = { title: 'Captação de Recursos — NextCoop' }
+export const metadata = { title: 'Captação de Recursos — NexCoop' }
 
 export default async function CaptacaoPage() {
   const supabase = await createClient()

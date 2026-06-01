@@ -224,7 +224,7 @@ export default function LoginPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1rem', fontSize: '28px',
           }}><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
-          <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>NextCoop</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>NexCoop</h1>
           <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Plataforma cooperativista</p>
         </div>
 
@@ -237,7 +237,7 @@ export default function LoginPage() {
         </Suspense>
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#999', marginTop: '1.5rem' }}>
-          NextCoop © 2026 — Gestão que fortalece quem produz juntos
+          NexCoop © 2026 — Gestão que fortalece quem produz juntos
         </p>
       </div>
     </div>

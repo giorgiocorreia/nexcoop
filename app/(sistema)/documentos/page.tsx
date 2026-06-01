@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DocumentosLista from './DocumentosLista'
 
-export const metadata = { title: 'Documentos — NextCoop' }
+export const metadata = { title: 'Documentos — NexCoop' }
 
 export default async function DocumentosPage() {
   const supabase = await createClient()

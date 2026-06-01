@@ -60,7 +60,7 @@ export default function AssinaturaSuccessPage() {
         </h1>
 
         <p style={{ fontSize: 15, color: '#555', lineHeight: 1.65, marginBottom: 36 }}>
-          Sua assinatura do NextCoop está ativa. Você já pode usar todos os recursos do seu plano.
+          Sua assinatura do NexCoop está ativa. Você já pode usar todos os recursos do seu plano.
         </p>
 
         <Link

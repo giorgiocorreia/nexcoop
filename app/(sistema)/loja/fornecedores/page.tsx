@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import FornecedoresLista from './FornecedoresLista'
 import type { LojaFornecedor } from '@/types/database'
 
-export const metadata = { title: 'Fornecedores — Loja | NextCoop' }
+export const metadata = { title: 'Fornecedores — Loja | NexCoop' }
 
 export default async function FornecedoresPage() {
   const supabase = await createClient()

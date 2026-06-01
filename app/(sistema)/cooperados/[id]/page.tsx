@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props) {
     .select('nome_completo')
     .eq('id', id)
     .single()
-  return { title: data ? `${data.nome_completo} — NextCoop` : 'Cooperado — NextCoop' }
+  return { title: data ? `${data.nome_completo} — NexCoop` : 'Cooperado — NexCoop' }
 }
 
 export default async function CooperadoPage({ params }: Props) {

@@ -113,7 +113,7 @@ export default async function AssinarPage() {
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
             <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>
-            <span style={{ fontWeight: 700, fontSize: 20, color: GREEN_DARK }}>NextCoop</span>
+            <span style={{ fontWeight: 700, fontSize: 20, color: GREEN_DARK }}>NexCoop</span>
           </div>
 
           <div style={{

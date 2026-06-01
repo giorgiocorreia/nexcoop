@@ -184,8 +184,8 @@ export default function Sidebar({ usuario }: Props) {
   }
 
   const orgNome = isSuperAdmin
-    ? 'NextCoop'
-    : (org?.nome_curto || org?.nome || 'NextCoop')
+    ? 'NexCoop'
+    : (org?.nome_curto || org?.nome || 'NexCoop')
 
   const orgTipo = isSuperAdmin
     ? 'Plataforma'

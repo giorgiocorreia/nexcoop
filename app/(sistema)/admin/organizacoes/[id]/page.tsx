@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import OrgDetalhe from './OrgDetalhe'
 
 export async function generateMetadata() {
-  return { title: 'Organização — Admin — NextCoop' }
+  return { title: 'Organização — Admin — NexCoop' }
 }
 
 export default async function OrgDetalhePage({ params }: { params: Promise<{ id: string }> }) {

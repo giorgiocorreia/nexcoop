@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AdminDashboard from './AdminDashboard'
 
-export const metadata = { title: 'Admin — NextCoop' }
+export const metadata = { title: 'Admin — NexCoop' }
 
 export default async function AdminPage() {
   const supabase = await createClient()

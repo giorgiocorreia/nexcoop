@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import MensalidadesLista from './MensalidadesLista'
 import type { Cooperado, Mensalidade } from '@/types/database'
 
-export const metadata = { title: 'Mensalidades — NextCoop' }
+export const metadata = { title: 'Mensalidades — NexCoop' }
 
 export type CooperadoResumo = Pick<Cooperado, 'id' | 'nome_completo' | 'cpf' | 'quota_parte' | 'status'>
 

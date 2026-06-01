@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: Props) {
     .single()
   return {
     title: data
-      ? `${data.descricao} — Financeiro — NextCoop`
-      : 'Lançamento — NextCoop',
+      ? `${data.descricao} — Financeiro — NexCoop`
+      : 'Lançamento — NexCoop',
   }
 }
 

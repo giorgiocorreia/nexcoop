@@ -205,7 +205,7 @@ export default function OnboardingPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#999', marginTop: '1.5rem' }}>
-          NextCoop © 2026
+          NexCoop © 2026
         </p>
       </div>
     </div>

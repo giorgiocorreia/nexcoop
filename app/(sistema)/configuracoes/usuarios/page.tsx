@@ -4,7 +4,7 @@ import { isAdmin, isSuperAdmin } from '@/lib/permissoes'
 import type { FuncaoDisponivel, Usuario } from '@/types/database'
 import UsuariosGestao from './UsuariosGestao'
 
-export const metadata = { title: 'Usuários — NextCoop' }
+export const metadata = { title: 'Usuários — NexCoop' }
 
 export default async function UsuariosPage() {
   const supabase = await createClient()

@@ -4,7 +4,7 @@ import ProdutosLista from './ProdutosLista'
 import type { LojaFornecedor } from '@/types/database'
 import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
 
-export const metadata = { title: 'Produtos — Loja | NextCoop' }
+export const metadata = { title: 'Produtos — Loja | NexCoop' }
 
 export default async function ProdutosPage() {
   const supabase = await createClient()

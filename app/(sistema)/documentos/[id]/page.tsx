@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: Props) {
   const { data } = await supabase
     .from('documentos').select('nome, categoria').eq('id', id).single()
   return {
-    title: data ? `${data.nome} — Documentos — NextCoop` : 'Documento — NextCoop',
+    title: data ? `${data.nome} — Documentos — NexCoop` : 'Documento — NexCoop',
   }
 }
 

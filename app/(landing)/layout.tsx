@@ -18,7 +18,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'NextCoop — Gestão para cooperativas e associações',
+  title: 'NexCoop — Gestão para cooperativas e associações',
   description:
     'Plataforma de gestão para cooperativas e associações brasileiras. Controle filiados, finanças, assembleias e documentos em um só lugar.',
 }

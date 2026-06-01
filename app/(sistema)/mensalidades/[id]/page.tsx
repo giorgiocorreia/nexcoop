@@ -10,9 +10,9 @@ export async function generateMetadata({ params }: Props) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('mensalidades').select('mes_referencia').eq('id', id).single()
-  if (!data) return { title: 'Mensalidade — NextCoop' }
+  if (!data) return { title: 'Mensalidade — NexCoop' }
   const mes = new Date(data.mes_referencia + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-  return { title: `Mensalidade ${mes} — NextCoop` }
+  return { title: `Mensalidade ${mes} — NexCoop` }
 }
 
 export type CooperadoDetalhe = Pick<Cooperado, 'id' | 'nome_completo' | 'cpf' | 'status' | 'quota_parte' | 'numero_matricula'>

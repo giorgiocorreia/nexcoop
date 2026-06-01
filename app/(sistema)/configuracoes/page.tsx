@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/permissoes'
 import ConfiguracoesForm from './ConfiguracoesForm'
 import type { Organizacao, PerfilCaptacao, Usuario, FuncaoDisponivel } from '@/types/database'
 
-export const metadata = { title: 'Configurações — NextCoop' }
+export const metadata = { title: 'Configurações — NexCoop' }
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()

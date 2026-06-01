@@ -339,7 +339,7 @@ function Clientes({ orgs }: { orgs: OrgCliente[] }) {
     <section style={{ padding: '3rem 2rem', background: '#fff', borderBottom: '1px solid #E2EAF4' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
-          Organizações que confiam na NextCoop
+          Organizações que confiam na NexCoop
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '3rem' }}>
           {lista.map(org => {
@@ -401,7 +401,7 @@ function PorQueNextCoop() {
         <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '2.5rem', backdropFilter: 'blur(10px)' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 72, color: '#06B6D4', lineHeight: 0.8, marginBottom: '0.5rem', opacity: 0.6 }}>"</div>
           <p style={{ fontSize: 18, fontWeight: 500, color: '#fff', lineHeight: 1.7, fontFamily: "'Sora',sans-serif", marginBottom: '1.5rem' }}>
-            &ldquo;A NextCoop trouxe organização e clareza para a gestão da nossa cooperativa. Hoje temos controle real dos filiados, das finanças e das assembleias — tudo em um lugar só.&rdquo;
+            &ldquo;A NexCoop trouxe organização e clareza para a gestão da nossa cooperativa. Hoje temos controle real dos filiados, das finanças e das assembleias — tudo em um lugar só.&rdquo;
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>CA</div>
@@ -415,7 +415,7 @@ function PorQueNextCoop() {
         <div>
           <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '2rem', lineHeight: 1.2 }}>
             Por que escolher a{' '}
-            <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NextCoop?</em>
+            <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NexCoop?</em>
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {DIFERENCIAIS.map(d => (
@@ -637,7 +637,7 @@ function CTAFinal() {
           Pronto para transformar a gestão da sua cooperativa ou associação?
         </h2>
         <p style={{ fontSize: 16, color: '#64748B', marginBottom: '2rem', lineHeight: 1.6 }}>
-          Explore o sistema gratuitamente e descubra como a NextCoop pode organizar, digitalizar e fortalecer sua cooperativa ou associação.
+          Explore o sistema gratuitamente e descubra como a NexCoop pode organizar, digitalizar e fortalecer sua cooperativa ou associação.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <a href="#demo" style={{ padding: '14px 32px', borderRadius: 10, fontSize: 16, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none' }}>
@@ -682,7 +682,7 @@ function Rodape() {
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>© 2026 NextCoop. Todos os direitos reservados.</p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>© 2026 NexCoop. Todos os direitos reservados.</p>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
             {[['#', 'Privacidade'], ['#', 'Termos'], ['#', 'LGPD']].map(([href, label]) => (
               <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>{label}</a>
