@@ -57,7 +57,7 @@ const NAV: NavGrupo[] = [
     itens: [
       { label: 'Produção',        href: '/producao',        icone: '🌱', em_breve: true },
       { label: 'Comercialização', href: '/comercializacao', icone: '🤝', em_breve: true },
-      { label: 'Loja',            href: '/loja',            icone: '🏪', em_breve: true },
+      { label: 'Loja',            href: '/loja',            icone: '🏪' },
     ],
   },
   {

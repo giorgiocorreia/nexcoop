@@ -66,7 +66,7 @@ export default function OnboardingPage() {
       return
     }
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('organizacoes')
       .update({
         tipo: form.tipo,
@@ -77,6 +77,7 @@ export default function OnboardingPage() {
         onboarding_concluido: true,
       })
       .eq('id', usuario.organizacao_id)
+      .select('id')
 
     if (error) {
       setErro('Erro ao salvar. Tente novamente.')
@@ -84,8 +85,17 @@ export default function OnboardingPage() {
       return
     }
 
-    router.push('/dashboard')
-    router.refresh()
+    // Sem .select() o Supabase retorna error:null mesmo quando RLS bloca (0 rows)
+    if (!updated || updated.length === 0) {
+      setErro('Não foi possível salvar. Verifique suas permissões ou recarregue a página.')
+      setSalvando(false)
+      return
+    }
+
+    // Hard navigation: garante que o layout server-side leia onboarding_concluido=true
+    // do banco sem nenhum cache RSC. router.push()+router.refresh() pode abortar
+    // a navegação em andamento, deixando o botão travado em "Salvando...".
+    window.location.href = '/dashboard'
   }
 
   return (

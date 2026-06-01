@@ -339,6 +339,162 @@ export interface Notificacao {
   criado_em: string
 }
 
+// ── Loja Agropecuária ─────────────────────────────────────────────────────────
+
+export type LojaUnidade       = 'kg' | 'litro' | 'unidade' | 'saco' | 'caixa'
+export type LojaStatusCaixa   = 'aberto' | 'fechado'
+export type LojaTipoCliente   = 'cooperado' | 'externo'
+export type LojaCanal         = 'presencial' | 'online'
+export type LojaStatusVenda   = 'concluida' | 'cancelada' | 'aguardando_retirada' | 'retirada'
+export type LojaTipoMovimento = 'entrada' | 'saida_venda' | 'saida_manual' | 'inventario'
+export type LojaStatusPedido  = 'pendente' | 'confirmado' | 'pronto' | 'retirado' | 'cancelado'
+
+export interface LojaFornecedor {
+  id:        string
+  org_id:    string
+  nome:      string
+  cnpj:      string | null
+  telefone:  string | null
+  email:     string | null
+  ativo:     boolean
+  criado_em: string
+}
+
+export interface LojaProduto {
+  id:              string
+  org_id:          string
+  nome:            string
+  categoria:       string | null
+  unidade:         LojaUnidade
+  preco_normal:    number
+  preco_cooperado: number
+  estoque_atual:   number
+  estoque_minimo:  number | null
+  fornecedor_id:   string | null
+  ativo:           boolean
+  criado_em:       string
+  atualizado_em:   string
+}
+
+export interface LojaCliente {
+  id:           string
+  org_id:       string
+  nome:         string
+  cpf:          string | null
+  telefone:     string | null
+  email:        string | null
+  cooperado_id: string | null
+  ativo:        boolean
+  criado_em:    string
+}
+
+export interface LojaLote {
+  id:                 string
+  org_id:             string
+  produto_id:         string
+  numero_lote:        string | null
+  data_validade:      string | null
+  quantidade_entrada: number
+  quantidade_atual:   number
+  preco_custo:        number
+  criado_em:          string
+}
+
+export interface LojaCaixa {
+  id:               string
+  org_id:           string
+  usuario_id:       string
+  valor_abertura:   number
+  valor_fechamento: number | null
+  total_especie:    number
+  total_cartao:     number
+  total_pix:        number
+  status:           LojaStatusCaixa
+  aberto_em:        string
+  fechado_em:       string | null
+}
+
+export interface LojaVenda {
+  id:           string
+  org_id:       string
+  caixa_id:     string
+  cliente_id:   string | null
+  cooperado_id: string | null
+  tipo_cliente: LojaTipoCliente
+  canal:        LojaCanal
+  status:       LojaStatusVenda
+  total:        number
+  pago_especie: number
+  pago_cartao:  number
+  pago_pix:     number
+  criado_em:    string
+}
+
+export interface LojaVendaItem {
+  id:             string
+  venda_id:       string
+  produto_id:     string
+  lote_id:        string | null
+  quantidade:     number
+  preco_unitario: number
+  subtotal:       number
+}
+
+export interface LojaCompra {
+  id:            string
+  org_id:        string
+  fornecedor_id: string
+  usuario_id:    string
+  numero_nota:   string | null
+  total:         number
+  criado_em:     string
+}
+
+export interface LojaCompraItem {
+  id:            string
+  compra_id:     string
+  produto_id:    string
+  numero_lote:   string | null
+  data_validade: string | null
+  quantidade:    number
+  preco_custo:   number
+  subtotal:      number
+}
+
+export interface LojaEstoqueMovimento {
+  id:            string
+  org_id:        string
+  produto_id:    string
+  lote_id:       string | null
+  tipo:          LojaTipoMovimento
+  quantidade:    number
+  motivo:        string | null
+  referencia_id: string | null
+  criado_em:     string
+}
+
+export interface LojaPedidoOnline {
+  id:                       string
+  org_id:                   string
+  cliente_id:               string | null
+  cooperado_id:             string | null
+  status:                   LojaStatusPedido
+  data_retirada_solicitada: string | null
+  total:                    number
+  observacao:               string | null
+  criado_em:                string
+  atualizado_em:            string
+}
+
+export interface LojaPedidoItem {
+  id:             string
+  pedido_id:      string
+  produto_id:     string
+  quantidade:     number
+  preco_unitario: number
+  subtotal:       number
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -364,10 +520,22 @@ export type Database = {
       oportunidades:       TableDef<Oportunidade>
       oportunidade_logs:   TableDef<OportunidadeLog>
       perfil_captacao:     TableDef<PerfilCaptacao>
-      radar_fontes:         TableDef<RadarFonte>
-      radar_resultados:     TableDef<RadarResultado>
-      cotas_cooperado:      TableDef<CotaCooperado>
-      cotas_integralizacao: TableDef<CotaIntegralizacao>
+      radar_fontes:              TableDef<RadarFonte>
+      radar_resultados:          TableDef<RadarResultado>
+      cotas_cooperado:           TableDef<CotaCooperado>
+      cotas_integralizacao:      TableDef<CotaIntegralizacao>
+      loja_fornecedores:         TableDef<LojaFornecedor>
+      loja_clientes:             TableDef<LojaCliente>
+      loja_produtos:             TableDef<LojaProduto>
+      loja_lotes:                TableDef<LojaLote>
+      loja_caixas:               TableDef<LojaCaixa>
+      loja_vendas:               TableDef<LojaVenda>
+      loja_venda_itens:          TableDef<LojaVendaItem>
+      loja_compras:              TableDef<LojaCompra>
+      loja_compra_itens:         TableDef<LojaCompraItem>
+      loja_estoque_movimentos:   TableDef<LojaEstoqueMovimento>
+      loja_pedidos_online:       TableDef<LojaPedidoOnline>
+      loja_pedido_itens:         TableDef<LojaPedidoItem>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
