@@ -82,7 +82,7 @@ export default function AssinaturaCanceladaPage() {
 
         <p style={{ fontSize: 12, color: '#aaa', marginTop: 24 }}>
           Precisa de ajuda?{' '}
-          <a href="mailto:contato@nextcoop.com.br" style={{ color: GREEN, textDecoration: 'none' }}>
+          <a href="mailto:contato@nexcoop.com.br" style={{ color: GREEN, textDecoration: 'none' }}>
             Entre em contato
           </a>
         </p>

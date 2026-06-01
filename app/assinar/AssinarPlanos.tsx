@@ -172,7 +172,7 @@ function PlanoCard({
 
       {enterprise ? (
         <a
-          href="mailto:contato@nextcoop.com.br"
+          href="mailto:contato@nexcoop.com.br"
           style={{
             display: 'block',
             textAlign: 'center',

@@ -91,7 +91,7 @@ const PLANOS = [
     recursos: ['Tudo do Gratuito', 'Assembleias digitais', 'Relatórios financeiros', 'Suporte prioritário', '3 usuários'],
     destaque: true,
     cta: 'Assinar agora',
-    href: 'mailto:suporte@nextcoop.com.br',
+    href: 'mailto:suporte@nexcoop.com.br',
   },
   {
     nome: 'Profissional',
@@ -101,7 +101,7 @@ const PLANOS = [
     recursos: ['Tudo do Essencial', 'Relatórios avançados', 'API e integrações', 'Usuários ilimitados', 'Onboarding dedicado'],
     destaque: false,
     cta: 'Assinar agora',
-    href: 'mailto:suporte@nextcoop.com.br',
+    href: 'mailto:suporte@nexcoop.com.br',
   },
   {
     nome: 'Agro',
@@ -111,7 +111,7 @@ const PLANOS = [
     recursos: ['Tudo do Profissional', 'Módulo de produção', 'Módulo de projetos', 'Comercialização', 'Suporte personalizado'],
     destaque: false,
     cta: 'Assinar agora',
-    href: 'mailto:suporte@nextcoop.com.br',
+    href: 'mailto:suporte@nexcoop.com.br',
   },
 ]
 
@@ -182,7 +182,7 @@ function Navbar() {
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <LogoMarca />
         <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          {[['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos'], ['#demo', 'Demo'], ['mailto:suporte@nextcoop.com.br', 'Contato']].map(([href, label]) => (
+          {[['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos'], ['#demo', 'Demo'], ['mailto:suporte@nexcoop.com.br', 'Contato']].map(([href, label]) => (
             <a key={href} href={href} style={{ fontSize: 14, fontWeight: 500, color: '#64748B', textDecoration: 'none' }}>{label}</a>
           ))}
         </nav>
@@ -612,7 +612,7 @@ function Planos() {
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: '#0D2B5E' }}>Sob consulta</div>
               <div style={{ fontSize: 12, color: '#94A3B8' }}>Proposta personalizada</div>
             </div>
-            <a href="mailto:suporte@nextcoop.com.br" style={{ padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <a href="mailto:suporte@nexcoop.com.br" style={{ padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
               Falar com consultor →
             </a>
           </div>
@@ -620,7 +620,7 @@ function Planos() {
 
         <p style={{ textAlign: 'center', fontSize: 13, color: '#94A3B8', marginTop: '1.5rem' }}>
           Cooperativa com isenção fiscal?{' '}
-          <a href="mailto:suporte@nextcoop.com.br" style={{ color: '#1565C0', textDecoration: 'none', fontWeight: 500 }}>Consulte condições especiais →</a>
+          <a href="mailto:suporte@nexcoop.com.br" style={{ color: '#1565C0', textDecoration: 'none', fontWeight: 500 }}>Consulte condições especiais →</a>
         </p>
       </div>
     </section>
@@ -669,7 +669,7 @@ function Rodape() {
           {[
             { titulo: 'Produto', links: [['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos e preços'], ['#', 'Novidades'], ['#', 'Roadmap']] },
             { titulo: 'Empresa', links: [['#', 'Sobre nós'], ['#', 'Blog'], ['#', 'Política de Privacidade'], ['#', 'Termos de Uso']] },
-            { titulo: 'Contato', links: [['mailto:suporte@nextcoop.com.br', '📧 suporte@nextcoop.com.br'], ['#', '🇧🇷 Brasil']] },
+            { titulo: 'Contato', links: [['mailto:suporte@nexcoop.com.br', '📧 suporte@nexcoop.com.br'], ['#', '🇧🇷 Brasil']] },
           ].map(col => (
             <div key={col.titulo}>
               <h4 style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{col.titulo}</h4>
