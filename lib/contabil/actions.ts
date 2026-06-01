@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta } from './types'
+import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta, ItemBalancoPatrimonial, ItemLivroRazao } from './types'
 
 // ── PLANO DE CONTAS ──────────────────────────────────────────────────────────
 
@@ -587,4 +587,278 @@ export async function ignorarNFe(nfeId: string) {
     .eq('id', nfeId)
   if (error) throw new Error(error.message)
   revalidatePath('/contabil/nfe')
+}
+
+// ── CONFIGURAÇÕES CONTÁBEIS ──────────────────────────────────────────────────
+
+export async function getConfiguracaoContabil(orgId: string) {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('configuracoes_contabeis')
+    .select('*')
+    .eq('org_id', orgId)
+    .single()
+  return data
+}
+
+export async function salvarConfiguracaoContabil(data: {
+  org_id: string
+  percentual_fundo_reserva: number
+  percentual_refac: number
+  percentual_fates: number
+  criterio_distribuicao: string
+  observacoes?: string
+}) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('configuracoes_contabeis')
+    .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: 'org_id' })
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/sobras')
+}
+
+// ── BALANÇO PATRIMONIAL ──────────────────────────────────────────────────────
+
+export async function getBalancoPatrimonial(orgId: string, ano: number): Promise<{
+  ativos: ItemBalancoPatrimonial[]
+  passivos: ItemBalancoPatrimonial[]
+  patrimonio: ItemBalancoPatrimonial[]
+  totalAtivo: number
+  totalPassivoMaisPatrimonio: number
+  equilibrado: boolean
+}> {
+  const supabase = createAdminClient()
+  const fimAno = `${ano}-12-31`
+  const inicioAno = `${ano}-01-01`
+
+  const { data: contas } = await supabase
+    .from('plano_contas')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('aceita_lancamento', true)
+    .eq('ativo', true)
+    .order('codigo')
+
+  const { data: partidas } = await supabase
+    .from('partidas')
+    .select('*, lancamentos(data)')
+    .eq('org_id', orgId)
+
+  const partidasAno = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d >= inicioAno && d <= fimAno
+  })
+
+  const ativos: ItemBalancoPatrimonial[] = []
+  const passivos: ItemBalancoPatrimonial[] = []
+  const patrimonio: ItemBalancoPatrimonial[] = []
+
+  for (const conta of (contas || [])) {
+    if (!['ATIVO', 'PASSIVO', 'PATRIMONIO_LIQUIDO'].includes(conta.tipo)) continue
+    const saldo = calcularSaldoConta(conta, partidasAno)
+    if (saldo === 0) continue
+    const item: ItemBalancoPatrimonial = {
+      grupo: conta.tipo,
+      tipo: conta.tipo as any,
+      conta_id: conta.id,
+      codigo: conta.codigo,
+      nome: conta.nome,
+      nivel: conta.nivel,
+      saldo: Math.abs(saldo),
+    }
+    if (conta.tipo === 'ATIVO') ativos.push(item)
+    else if (conta.tipo === 'PASSIVO') passivos.push(item)
+    else patrimonio.push(item)
+  }
+
+  const totalAtivo = ativos.reduce((s, i) => s + i.saldo, 0)
+  const totalPassivo = passivos.reduce((s, i) => s + i.saldo, 0)
+  const totalPatrimonio = patrimonio.reduce((s, i) => s + i.saldo, 0)
+  const totalPassivoMaisPatrimonio = totalPassivo + totalPatrimonio
+  const equilibrado = Math.abs(totalAtivo - totalPassivoMaisPatrimonio) < 0.01
+
+  return { ativos, passivos, patrimonio, totalAtivo, totalPassivoMaisPatrimonio, equilibrado }
+}
+
+function calcularSaldoConta(conta: any, partidas: any[]): number {
+  const deb = partidas
+    .filter((p: any) => p.conta_debito_id === conta.id)
+    .reduce((s: number, p: any) => s + Number(p.valor), 0)
+  const cred = partidas
+    .filter((p: any) => p.conta_credito_id === conta.id)
+    .reduce((s: number, p: any) => s + Number(p.valor), 0)
+  return conta.natureza === 'DEVEDORA' ? deb - cred : cred - deb
+}
+
+// ── LIVRO RAZÃO ──────────────────────────────────────────────────────────────
+
+export async function getLivroRazao(
+  orgId: string,
+  contaId: string,
+  dataInicio: string,
+  dataFim: string
+): Promise<ItemLivroRazao[]> {
+  const supabase = createAdminClient()
+
+  const { data: conta } = await supabase
+    .from('plano_contas')
+    .select('*')
+    .eq('id', contaId)
+    .single()
+  if (!conta) throw new Error('Conta não encontrada.')
+
+  const { data: partidas } = await supabase
+    .from('partidas')
+    .select('*, lancamentos(data, descricao)')
+    .eq('org_id', orgId)
+    .or(`conta_debito_id.eq.${contaId},conta_credito_id.eq.${contaId}`)
+    .order('classificado_em')
+
+  const filtradas = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d >= dataInicio && d <= dataFim
+  })
+
+  let saldo = 0
+  const itens: ItemLivroRazao[] = filtradas.map((p: any) => {
+    const isDebito = p.conta_debito_id === contaId
+    const debito = isDebito ? Number(p.valor) : 0
+    const credito = !isDebito ? Number(p.valor) : 0
+    if (conta.natureza === 'DEVEDORA') saldo += debito - credito
+    else saldo += credito - debito
+    return {
+      data: p.lancamentos?.data || '',
+      lancamento_id: p.lancamento_id,
+      descricao: p.lancamentos?.descricao || '',
+      debito,
+      credito,
+      saldo_progressivo: saldo,
+      historico: p.historico,
+    }
+  })
+
+  return itens
+}
+
+// ── SOBRAS / REFAC ───────────────────────────────────────────────────────────
+
+export async function calcularSobras(orgId: string, ano: number) {
+  const supabase = createAdminClient()
+  const inicioAno = `${ano}-01-01`
+  const fimAno = `${ano}-12-31`
+
+  const config = await getConfiguracaoContabil(orgId)
+  const percFundoReserva = Number(config?.percentual_fundo_reserva || 10)
+  const percRefac = Number(config?.percentual_refac || 5)
+  const percFates = Number(config?.percentual_fates || 0)
+
+  const { data: contas } = await supabase
+    .from('plano_contas')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('ativo', true)
+    .in('tipo', ['RECEITA', 'DESPESA'])
+
+  const { data: partidas } = await supabase
+    .from('partidas')
+    .select('*, lancamentos(data)')
+    .eq('org_id', orgId)
+
+  const partidasAno = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d >= inicioAno && d <= fimAno
+  })
+
+  let totalReceitas = 0
+  let totalDespesas = 0
+
+  for (const conta of (contas || [])) {
+    const saldo = calcularSaldoConta(conta, partidasAno)
+    if (conta.tipo === 'RECEITA') totalReceitas += Math.max(saldo, 0)
+    else totalDespesas += Math.max(saldo, 0)
+  }
+
+  const sobrasBrutas = totalReceitas - totalDespesas
+  const fundoReserva = sobrasBrutas > 0 ? (sobrasBrutas * percFundoReserva) / 100 : 0
+  const refac = sobrasBrutas > 0 ? (sobrasBrutas * percRefac) / 100 : 0
+  const fates = sobrasBrutas > 0 ? (sobrasBrutas * percFates) / 100 : 0
+  const sobrasDistribuiveis = sobrasBrutas - fundoReserva - refac - fates
+
+  return {
+    totalReceitas,
+    totalDespesas,
+    sobrasBrutas,
+    percFundoReserva,
+    fundoReserva,
+    percRefac,
+    refac,
+    percFates,
+    fates,
+    sobrasDistribuiveis,
+    config,
+  }
+}
+
+// ── FECHAMENTO DE EXERCÍCIO ──────────────────────────────────────────────────
+
+export async function getFechamento(orgId: string, exercicioId: string) {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('fechamentos_exercicio')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('exercicio_id', exercicioId)
+    .single()
+  return data
+}
+
+export async function fecharExercicio(data: {
+  org_id: string
+  exercicio_id: string
+  sobras_brutas: number
+  fundo_reserva: number
+  refac: number
+  fates: number
+  sobras_distribuiveis: number
+  fechado_por: string
+  fechado_por_perfil: 'contador' | 'admin'
+  crc_contador?: string
+  observacoes?: string
+}) {
+  const supabase = createAdminClient()
+  const crypto = await import('crypto')
+
+  const conteudo = JSON.stringify({
+    org_id: data.org_id,
+    exercicio_id: data.exercicio_id,
+    sobras_brutas: data.sobras_brutas,
+    fundo_reserva: data.fundo_reserva,
+    refac: data.refac,
+    sobras_distribuiveis: data.sobras_distribuiveis,
+    fechado_por: data.fechado_por,
+    timestamp: new Date().toISOString(),
+  })
+  const hash = crypto.createHash('sha256').update(conteudo).digest('hex')
+
+  const { error: fechError } = await supabase.from('fechamentos_exercicio').insert({
+    ...data,
+    hash_fechamento: hash,
+  })
+  if (fechError) throw new Error(fechError.message)
+
+  const { error: exError } = await supabase
+    .from('exercicios_contabeis')
+    .update({
+      status: 'ENCERRADO',
+      data_encerramento: new Date().toISOString().split('T')[0],
+      encerrado_por: data.fechado_por,
+      encerrado_em: new Date().toISOString(),
+      hash_fechamento: hash,
+    })
+    .eq('id', data.exercicio_id)
+  if (exError) throw new Error(exError.message)
+
+  revalidatePath('/contabil/sobras')
+  revalidatePath('/contabil/balancete')
+  return hash
 }

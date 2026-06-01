@@ -145,3 +145,51 @@ export interface NFeItem {
   valor_unitario: number | null
   valor_total: number
 }
+
+export interface ConfiguracaoContabil {
+  id: string
+  org_id: string
+  percentual_fundo_reserva: number
+  percentual_refac: number
+  percentual_fates: number
+  criterio_distribuicao: 'proporcional_operacoes' | 'proporcional_cotas' | 'igualitario'
+  observacoes: string | null
+  updated_at: string
+}
+
+export interface FechamentoExercicio {
+  id: string
+  org_id: string
+  exercicio_id: string
+  sobras_brutas: number
+  fundo_reserva: number
+  refac: number
+  fates: number
+  sobras_distribuiveis: number
+  fechado_por: string
+  fechado_por_perfil: 'contador' | 'admin'
+  crc_contador: string | null
+  hash_fechamento: string
+  observacoes: string | null
+  created_at: string
+}
+
+export interface ItemBalancoPatrimonial {
+  grupo: string
+  tipo: 'ATIVO' | 'PASSIVO' | 'PATRIMONIO_LIQUIDO'
+  conta_id: string
+  codigo: string
+  nome: string
+  nivel: number
+  saldo: number
+}
+
+export interface ItemLivroRazao {
+  data: string
+  lancamento_id: string
+  descricao: string
+  debito: number
+  credito: number
+  saldo_progressivo: number
+  historico: string | null
+}

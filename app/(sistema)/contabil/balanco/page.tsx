@@ -1,0 +1,21 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import BalancoClient from './BalancoClient'
+
+export const metadata = { title: 'Balanço Patrimonial — NexCoop' }
+
+export default async function BalancoPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: usuario } = await supabase
+    .from('usuarios')
+    .select('organizacao_id')
+    .eq('id', user.id)
+    .single()
+
+  const orgId = usuario?.organizacao_id ?? ''
+
+  return <BalancoClient orgId={orgId} />
+}
