@@ -160,7 +160,7 @@ export default async function LandingPage() {
         <Hero />
         <Clientes orgs={clientes} />
         <Funcionalidades />
-        <PorQueNextCoop />
+        <PorQueNexCoop />
         <Demo />
         <Planos />
         <CTAFinal />
@@ -215,7 +215,7 @@ function LogoMarca({ size = 38 }: { size?: number }) {
         <text x="7" y="27" fontFamily="Arial Black,sans-serif" fontSize="22" fontWeight="900" fill="white">N</text>
       </svg>
       <span style={{ fontFamily: "'Sora',system-ui,sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>
-        <span style={{ color: '#0D2B5E' }}>Next</span>
+        <span style={{ color: '#0D2B5E' }}>Nex</span>
         <span style={{ color: '#06B6D4' }}>Coop</span>
       </span>
     </div>
@@ -288,7 +288,7 @@ function MockupDashboard() {
       </div>
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>Next<span style={{ color: '#06B6D4' }}>Coop</span></span>
+          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>Nex<span style={{ color: '#06B6D4' }}>Coop</span></span>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff' }}>GC</div>
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
@@ -392,8 +392,8 @@ function Funcionalidades() {
   )
 }
 
-// ─── Por que NextCoop ──────────────────────────────────────────────────────
-function PorQueNextCoop() {
+// ─── Por que NexCoop ───────────────────────────────────────────────────────
+function PorQueNexCoop() {
   return (
     <section style={{ padding: '6rem 2rem', background: 'linear-gradient(135deg,#0D2B5E 0%,#1565C0 60%,#06B6D4 100%)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
@@ -660,7 +660,7 @@ function Rodape() {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
           <div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: '0.75rem' }}>
-              <span style={{ color: '#fff' }}>Next</span><span style={{ color: '#06B6D4' }}>Coop</span>
+              <span style={{ color: '#fff' }}>Nex</span><span style={{ color: '#06B6D4' }}>Coop</span>
             </div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: 260 }}>
               Gestão tecnológica para cooperativas e associações que buscam crescer com eficiência, inovação e sustentabilidade.

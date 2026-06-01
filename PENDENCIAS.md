@@ -1,4 +1,4 @@
-# Pendências — NextCoop
+# Pendências — NexCoop
 
 Lista de tarefas pendentes. Marque com `[x]` ao concluir.
 

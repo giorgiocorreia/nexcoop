@@ -1,4 +1,4 @@
-Implemente o módulo Admin do NextCoop.
+Implemente o módulo Admin do NexCoop.
 
 ## Contexto
 - Stack: Next.js 14 + TypeScript + Supabase + inline styles (sem Tailwind classes)
