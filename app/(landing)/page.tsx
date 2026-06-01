@@ -6,6 +6,7 @@
 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import InviteDetector from './InviteDetector'
 
 // ─── Tipagem ───────────────────────────────────────────────────────────────
 interface OrgCliente {
@@ -155,6 +156,7 @@ export default async function LandingPage() {
 
   return (
     <div style={{ fontFamily: "system-ui,-apple-system,'Segoe UI',sans-serif", color: '#0D2B5E', background: '#fff', minHeight: '100vh' }}>
+      <InviteDetector />
       <Navbar />
       <main>
         <Hero />
