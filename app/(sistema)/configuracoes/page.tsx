@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import { isAdmin } from '@/lib/permissoes'
 import ConfiguracoesForm from './ConfiguracoesForm'
@@ -23,30 +24,36 @@ export default async function ConfiguracoesPage() {
   const superAdmin = usuario.role === 'super_admin'
   if (!usuario.organizacao_id && !superAdmin) redirect('/dashboard')
 
+  // Resolve org_id: impersonation cookie tem prioridade sobre organizacao_id do usuário
+  const ctx = await getOrgContext()
+  const orgId = ctx?.orgId ?? null
+
   let org: Organizacao | null = null
   let perfilCaptacao: PerfilCaptacao | null = null
   let usuarios: Usuario[] = []
   let funcoes: FuncaoDisponivel[] = []
 
-  if (usuario.organizacao_id) {
+  if (orgId) {
+    const db = ctx!.supabase
+
     const [orgRes, perfilRes] = await Promise.all([
-      supabase.from('organizacoes').select('*').eq('id', usuario.organizacao_id).single(),
-      supabase.from('perfil_captacao').select('*').eq('organizacao_id', usuario.organizacao_id).maybeSingle(),
+      db.from('organizacoes').select('*').eq('id', orgId).single(),
+      db.from('perfil_captacao').select('*').eq('organizacao_id', orgId).maybeSingle(),
     ])
     org = orgRes.data ?? null
     perfilCaptacao = perfilRes.data ?? null
 
-    if (isAdmin(usuario)) {
+    if (isAdmin(usuario) || superAdmin) {
       const [usersRes, funcoesRes] = await Promise.all([
-        supabase
+        db
           .from('usuarios')
           .select('*')
-          .eq('organizacao_id', usuario.organizacao_id)
+          .eq('organizacao_id', orgId)
           .order('nome_completo'),
-        supabase
+        db
           .from('funcoes_disponiveis')
           .select('*')
-          .or(`organizacao_id.is.null,organizacao_id.eq.${usuario.organizacao_id}`)
+          .or(`organizacao_id.is.null,organizacao_id.eq.${orgId}`)
           .order('nome'),
       ])
       usuarios = (usersRes.data ?? []) as Usuario[]

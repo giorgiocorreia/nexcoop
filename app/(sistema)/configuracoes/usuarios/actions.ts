@@ -1,5 +1,6 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { isAdmin, isSuperAdmin } from '@/lib/permissoes'
@@ -24,7 +25,14 @@ export async function convidarUsuario(input: {
   const ctx = await getCtx()
   if (!ctx) return { error: 'Sem permissão.' }
   const { usuarioAtual, admin } = ctx
-  if (!usuarioAtual.organizacao_id) return { error: 'Organização não encontrada.' }
+
+  // Resolve orgId: cookie de impersonation tem prioridade sobre organizacao_id do usuário
+  let orgId: string | null = usuarioAtual.organizacao_id
+  if (!orgId && isSuperAdmin(usuarioAtual)) {
+    const cookieStore = await cookies()
+    orgId = cookieStore.get('impersonating_org')?.value ?? null
+  }
+  if (!orgId) return { error: 'Organização não encontrada.' }
 
   const { data, error } = await admin.auth.admin.inviteUserByEmail(input.email.trim(), {
     data: { nome_completo: input.nome.trim() },
@@ -38,7 +46,7 @@ export async function convidarUsuario(input: {
   const { error: updateError } = await admin
     .from('usuarios')
     .update({
-      organizacao_id: usuarioAtual.organizacao_id,
+      organizacao_id: orgId,
       nome_completo: input.nome.trim(),
       vinculo: (input.vinculo || null) as VinculoUsuario | null,
       funcoes: input.funcoes,

@@ -1,5 +1,6 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { isAdmin, isSuperAdmin } from '@/lib/permissoes'
@@ -32,7 +33,14 @@ export async function salvarOrganizacao(input: SalvarOrgInput): Promise<{ error?
   const { data: usuarioAtual } = await supabase.from('usuarios').select('*').eq('id', user.id).single()
   if (!usuarioAtual) return { error: 'Usuário não encontrado.' }
   if (!isAdmin(usuarioAtual) && !isSuperAdmin(usuarioAtual)) return { error: 'Sem permissão.' }
-  if (!usuarioAtual.organizacao_id) return { error: 'Organização não encontrada.' }
+
+  // Resolve orgId: cookie de impersonation tem prioridade sobre organizacao_id do usuário
+  let orgId: string | null = usuarioAtual.organizacao_id
+  if (!orgId && isSuperAdmin(usuarioAtual)) {
+    const cookieStore = await cookies()
+    orgId = cookieStore.get('impersonating_org')?.value ?? null
+  }
+  if (!orgId) return { error: 'Organização não encontrada.' }
 
   const n = (s: string) => s.trim() || null
 
@@ -64,7 +72,7 @@ export async function salvarOrganizacao(input: SalvarOrgInput): Promise<{ error?
   const { error } = await admin
     .from('organizacoes')
     .update(payload)
-    .eq('id', usuarioAtual.organizacao_id)
+    .eq('id', orgId)
 
   if (error) return { error: error.message }
   return {}
