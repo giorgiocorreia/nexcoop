@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getPlanoContas, seedPlanoContasCooperativa } from '@/lib/contabil/actions'
-import { ContaContabil } from '@/lib/contabil/types'
+import { getPlanoContas, seedPlanoContasOrg } from '@/lib/contabil/actions'
+import { ContaContabil, TipoOrg } from '@/lib/contabil/types'
 
 const COR = '#0F766E'
 const TIPOS_LABEL: Record<string, string> = {
@@ -39,9 +39,9 @@ function ContaRow({ conta, depth = 0 }: { conta: ContaContabil; depth?: number }
   )
 }
 
-interface Props { orgId: string }
+interface Props { orgId: string; tipoOrg: TipoOrg }
 
-export default function PlanoContasClient({ orgId }: Props) {
+export default function PlanoContasClient({ orgId, tipoOrg }: Props) {
   const [contas, setContas] = useState<ContaContabil[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
@@ -55,7 +55,7 @@ export default function PlanoContasClient({ orgId }: Props) {
   async function handleSeed() {
     setSeeding(true); setErro('')
     try {
-      await seedPlanoContasCooperativa(orgId)
+      await seedPlanoContasOrg(orgId, tipoOrg)
       const novo = await getPlanoContas(orgId)
       setContas(novo)
       setSucesso('Plano de contas padrão carregado com sucesso!')
@@ -75,7 +75,7 @@ export default function PlanoContasClient({ orgId }: Props) {
           {contas.length === 0 && (
             <button onClick={handleSeed} disabled={seeding}
               style={{ background: COR, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              {seeding ? 'Carregando...' : '+ Carregar Plano Padrão Cooperativa'}
+              {seeding ? 'Carregando...' : tipoOrg === 'cooperativa' ? '+ Carregar Plano Padrão Cooperativa' : '+ Carregar Plano Padrão Associação'}
             </button>
           )}
           <button style={{ background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -92,7 +92,7 @@ export default function PlanoContasClient({ orgId }: Props) {
       ) : contas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc' }}>
           <p style={{ fontSize: 15, color: '#6b7280', marginBottom: 8 }}>Nenhuma conta cadastrada.</p>
-          <p style={{ fontSize: 13, color: '#9ca3af' }}>Clique em "Carregar Plano Padrão Cooperativa" para começar.</p>
+          <p style={{ fontSize: 13, color: '#9ca3af' }}>Clique em "Carregar Plano Padrão {tipoOrg === 'cooperativa' ? 'Cooperativa' : 'Associação'}" para começar.</p>
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', overflow: 'hidden' }}>

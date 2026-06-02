@@ -11,6 +11,7 @@ import {
   getDistribuicaoSobras,
   atualizarStatusDistribuicao,
 } from '@/lib/contabil/actions'
+import type { TipoOrg } from '@/lib/contabil/types'
 
 const COR = '#0F766E'
 
@@ -22,13 +23,14 @@ function fmtPerc(v: number) {
 }
 
 export default function SobrasClient({
-  orgId, userId, funcoes, crcContador, isContador
+  orgId, userId, funcoes, crcContador, isContador, tipoOrg,
 }: {
   orgId: string
   userId: string
   funcoes: string[]
   crcContador: string | null
   isContador: boolean
+  tipoOrg: TipoOrg
 }) {
   const anoAtual = new Date().getFullYear()
   const [ano, setAno] = useState(anoAtual)
@@ -55,6 +57,16 @@ export default function SobrasClient({
 
   const isAdmin = funcoes.includes('admin')
   const podeFechar = isContador || isAdmin
+
+  // Terminologia derivada dos dados (fallback para tipoOrg prop)
+  const term = dados?.terminologia ?? (tipoOrg === 'cooperativa'
+    ? { resultadoPositivo: 'Sobras Brutas do Exercício', resultadoNegativo: 'Perdas do Exercício', distribuiResultado: true, fundoObrigatorio: true, refacObrigatorio: true }
+    : { resultadoPositivo: 'Superávit do Exercício', resultadoNegativo: 'Déficit do Exercício', distribuiResultado: false, fundoObrigatorio: false, refacObrigatorio: false })
+
+  const tituloSobras = tipoOrg === 'cooperativa' ? 'Sobras e REFAC' : 'Superávit e Destinações'
+  const descSobras = tipoOrg === 'cooperativa'
+    ? 'Apuração do resultado do exercício e destinações obrigatórias (Lei 5.764/71)'
+    : 'Apuração do resultado do exercício conforme estatuto da organização'
 
   useEffect(() => {
     setLoading(true)
@@ -146,8 +158,8 @@ export default function SobrasClient({
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Sobras e REFAC</h1>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Apuração do resultado do exercício e destinações obrigatórias</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{tituloSobras}</h1>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>{descSobras}</p>
         </div>
         <select value={ano} onChange={e => setAno(Number(e.target.value))}
           style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
@@ -191,7 +203,7 @@ export default function SobrasClient({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: dados.sobrasBrutas >= 0 ? '#f0fdf9' : '#fef2f2', borderBottom: '2px solid #e5e3dc' }}>
               <span style={{ fontSize: 14, fontWeight: 700 }}>
-                {dados.sobrasBrutas >= 0 ? 'Sobras Brutas do Exercício' : 'Perdas do Exercício'}
+                {dados.sobrasBrutas >= 0 ? term.resultadoPositivo : term.resultadoNegativo}
               </span>
               <span style={{ fontSize: 16, fontWeight: 700, color: dados.sobrasBrutas >= 0 ? COR : '#dc2626' }}>
                 {fmt(Math.abs(dados.sobrasBrutas))}
@@ -201,8 +213,8 @@ export default function SobrasClient({
             {dados.sobrasBrutas > 0 && (
               <>
                 {[
-                  { label: `Fundo de Reserva (${fmtPerc(dados.percFundoReserva)})`, valor: dados.fundoReserva, nota: 'Lei 5.764/71 — mínimo 10%' },
-                  { label: `REFAC (${fmtPerc(dados.percRefac)})`, valor: dados.refac, nota: 'Reserva de Assist. Técnica, Educacional e Social' },
+                  ...(dados.fundoReserva > 0 ? [{ label: `Fundo de Reserva (${fmtPerc(dados.percFundoReserva)})`, valor: dados.fundoReserva, nota: term.fundoObrigatorio ? 'Lei 5.764/71 — mínimo 10%' : 'Conforme estatuto' }] : []),
+                  ...(dados.refac > 0 ? [{ label: `REFAC (${fmtPerc(dados.percRefac)})`, valor: dados.refac, nota: 'Reserva de Assist. Técnica, Educacional e Social' }] : []),
                   ...(dados.fates > 0 ? [{ label: `FATES (${fmtPerc(dados.percFates)})`, valor: dados.fates, nota: 'Fundo de Assistência Técnica e Social' }] : []),
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f3f4f6' }}>
@@ -213,10 +225,17 @@ export default function SobrasClient({
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#dc2626' }}>- {fmt(item.valor)}</span>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf9' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: COR }}>Sobras Distribuíveis aos Cooperados</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: COR }}>{fmt(dados.sobrasDistribuiveis)}</span>
-                </div>
+                {term.distribuiResultado ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf9' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COR }}>Sobras Distribuíveis aos Cooperados</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: COR }}>{fmt(dados.sobrasDistribuiveis)}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf9' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COR }}>Resultado do Exercício</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: COR }}>{fmt(dados.sobrasBrutas - dados.fundoReserva - dados.refac - dados.fates)}</span>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -232,10 +251,17 @@ export default function SobrasClient({
                 </button>
               )}
             </div>
+
+            {!term.fundoObrigatorio && (
+              <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#92400e' }}>
+                Para associações, o Fundo de Reserva e o REFAC não são obrigatórios por lei, mas podem ser configurados pelo estatuto da organização.
+              </div>
+            )}
+
             {editandoConfig ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
-                  ['% Fundo de Reserva (mín. 10%)', percFR, setPercFR],
+                  [term.fundoObrigatorio ? '% Fundo de Reserva (mín. 10%)' : '% Fundo de Reserva', percFR, setPercFR],
                   ['% REFAC', percRefac, setPercRefac],
                   ['% FATES', percFates, setPercFates],
                 ].map(([label, val, setter]: any) => (
@@ -246,15 +272,17 @@ export default function SobrasClient({
                     <span style={{ fontSize: 13, color: '#6b7280' }}>%</span>
                   </div>
                 ))}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <label style={{ fontSize: 13, flex: 1 }}>Critério de distribuição</label>
-                  <select value={criterio} onChange={e => setCriterio(e.target.value)}
-                    style={{ padding: '7px 10px', border: '1px solid #e5e3dc', borderRadius: 6, fontSize: 13 }}>
-                    <option value='proporcional_operacoes'>Proporcional às operações</option>
-                    <option value='proporcional_cotas'>Proporcional às cotas</option>
-                    <option value='igualitario'>Igualitário</option>
-                  </select>
-                </div>
+                {term.distribuiResultado && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <label style={{ fontSize: 13, flex: 1 }}>Critério de distribuição</label>
+                    <select value={criterio} onChange={e => setCriterio(e.target.value)}
+                      style={{ padding: '7px 10px', border: '1px solid #e5e3dc', borderRadius: 6, fontSize: 13 }}>
+                      <option value='proporcional_operacoes'>Proporcional às operações</option>
+                      <option value='proporcional_cotas'>Proporcional às cotas</option>
+                      <option value='igualitario'>Igualitário</option>
+                    </select>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                   <button onClick={() => setEditandoConfig(false)}
                     style={{ padding: '7px 16px', border: '1px solid #e5e3dc', borderRadius: 6, fontSize: 12, background: '#fff', cursor: 'pointer' }}>
@@ -318,8 +346,8 @@ export default function SobrasClient({
             </div>
           )}
 
-          {/* Distribuição de sobras por cooperado */}
-          {fechamento && dados?.sobrasDistribuiveis > 0 && (
+          {/* Distribuição de sobras — apenas para cooperativas */}
+          {term.distribuiResultado && fechamento && dados?.sobrasDistribuiveis > 0 && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Distribuição de Sobras por Cooperado</h2>
@@ -409,10 +437,10 @@ export default function SobrasClient({
             {dados && (
               <div style={{ background: '#f8f7f4', borderRadius: 8, padding: 14, marginBottom: 20 }}>
                 {[
-                  ['Sobras Brutas', fmt(dados.sobrasBrutas)],
+                  [term.resultadoPositivo, fmt(dados.sobrasBrutas)],
                   ['Fundo de Reserva', fmt(dados.fundoReserva)],
                   ['REFAC', fmt(dados.refac)],
-                  ['Sobras Distribuíveis', fmt(dados.sobrasDistribuiveis)],
+                  [term.distribuiResultado ? 'Sobras Distribuíveis' : 'Resultado do Exercício', fmt(dados.sobrasDistribuiveis || (dados.sobrasBrutas - dados.fundoReserva - dados.refac - dados.fates))],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
                     <span style={{ color: '#6b7280' }}>{k}</span>

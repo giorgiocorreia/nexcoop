@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { getDRE } from '@/lib/contabil/actions'
-import { ItemDRE } from '@/lib/contabil/types'
+import { ItemDRE, TipoOrg, getTerminologia } from '@/lib/contabil/types'
 
 const COR = '#0F766E'
 function fmt(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
 
-interface Props { orgId: string }
+interface Props { orgId: string; tipoOrg: TipoOrg }
 
-export default function DREClient({ orgId }: Props) {
+export default function DREClient({ orgId, tipoOrg }: Props) {
+  const term = getTerminologia(tipoOrg)
   const anoAtual = new Date().getFullYear()
   const [ano, setAno] = useState(anoAtual)
   const [dados, setDados] = useState<ItemDRE[]>([])
@@ -29,7 +30,9 @@ export default function DREClient({ orgId }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>DRE — Demonstrativo de Resultado</h1>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Receitas, despesas e sobras do exercício</p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
+            Receitas, despesas e {tipoOrg === 'cooperativa' ? 'sobras' : 'resultado'} do exercício · {term.legislacao}
+          </p>
         </div>
         <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
           {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
@@ -66,7 +69,7 @@ export default function DREClient({ orgId }: Props) {
           </div>
           {resultado && (
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', fontSize: 15, fontWeight: 700, background: resultado.valor >= 0 ? '#f0fdf9' : '#fef2f2', color: resultado.valor >= 0 ? COR : '#dc2626' }}>
-              <span>{resultado.valor >= 0 ? 'Sobras do Exercício' : 'Perdas do Exercício'}</span>
+              <span>{resultado.valor >= 0 ? term.resultadoPositivo : term.resultadoNegativo}</span>
               <span>{fmt(Math.abs(resultado.valor))}</span>
             </div>
           )}

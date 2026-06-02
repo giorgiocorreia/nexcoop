@@ -2,7 +2,17 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta, ItemBalancoPatrimonial, ItemLivroRazao } from './types'
+import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta, ItemBalancoPatrimonial, ItemLivroRazao, TipoOrg, getTerminologia } from './types'
+
+export async function getTipoOrg(orgId: string): Promise<TipoOrg> {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('organizacoes')
+    .select('tipo')
+    .eq('id', orgId)
+    .single()
+  return (data?.tipo as TipoOrg) || 'cooperativa'
+}
 
 // ── PLANO DE CONTAS ──────────────────────────────────────────────────────────
 
@@ -56,6 +66,16 @@ export async function seedPlanoContasCooperativa(orgId: string) {
   revalidatePath('/contabil/plano-de-contas')
 }
 
+export async function seedPlanoContasOrg(orgId: string, tipoOrg: TipoOrg = 'cooperativa') {
+  const supabase = createAdminClient()
+  const contas = tipoOrg === 'cooperativa'
+    ? gerarPlanoContasPadrao(orgId)
+    : gerarPlanoContasAssociacao(orgId)
+  const { error } = await supabase.from('plano_contas').insert(contas)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/plano-de-contas')
+}
+
 function gerarPlanoContasPadrao(orgId: string): Array<{
   org_id: string; codigo: string; nome: string; tipo: TipoConta; natureza: NaturezaConta; nivel: number; aceita_lancamento: boolean
 }> {
@@ -99,6 +119,52 @@ function gerarPlanoContasPadrao(orgId: string): Array<{
     { org_id: orgId, codigo: '5.1.2', nome: 'Despesas com Insumos', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
     { org_id: orgId, codigo: '5.2', nome: 'Despesas Administrativas', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
     { org_id: orgId, codigo: '5.2.1', nome: 'Despesas Gerais e Administrativas', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
+  ]
+}
+
+function gerarPlanoContasAssociacao(orgId: string): Array<{
+  org_id: string; codigo: string; nome: string; tipo: TipoConta; natureza: NaturezaConta; nivel: number; aceita_lancamento: boolean
+}> {
+  return [
+    { org_id: orgId, codigo: '1', nome: 'ATIVO', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.1', nome: 'Ativo Circulante', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.1.1', nome: 'Disponibilidades', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.1.1.01', nome: 'Caixa', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '1.1.1.02', nome: 'Banco Conta Movimento', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '1.1.2', nome: 'Créditos a Receber', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.1.2.01', nome: 'Mensalidades a Receber', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '1.1.2.02', nome: 'Contribuições a Receber', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '1.2', nome: 'Ativo Não Circulante', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.2.1', nome: 'Imobilizado', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: false },
+    { org_id: orgId, codigo: '1.2.1.01', nome: 'Móveis e Utensílios', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '1.2.1.02', nome: 'Equipamentos de Informática', tipo: 'ATIVO', natureza: 'DEVEDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '2', nome: 'PASSIVO', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '2.1', nome: 'Passivo Circulante', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '2.1.1', nome: 'Fornecedores', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 3, aceita_lancamento: false },
+    { org_id: orgId, codigo: '2.1.1.01', nome: 'Fornecedores a Pagar', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '2.1.2', nome: 'Obrigações Sociais', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 3, aceita_lancamento: false },
+    { org_id: orgId, codigo: '2.1.2.01', nome: 'INSS a Recolher', tipo: 'PASSIVO', natureza: 'CREDORA', nivel: 4, aceita_lancamento: true },
+    { org_id: orgId, codigo: '3', nome: 'PATRIMÔNIO SOCIAL', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '3.1', nome: 'Patrimônio Social', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '3.1.1', nome: 'Fundo Social', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '3.2', nome: 'Reservas', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '3.2.1', nome: 'Reserva Estatutária', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '3.3', nome: 'Superávit ou Déficit Acumulado', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '3.3.1', nome: 'Superávit do Exercício', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '3.3.2', nome: 'Déficit do Exercício', tipo: 'PATRIMONIO_LIQUIDO', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '4', nome: 'RECEITAS', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '4.1', nome: 'Receitas de Contribuições', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '4.1.1', nome: 'Mensalidades de Associados', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '4.1.2', nome: 'Doações e Subvenções', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '4.2', nome: 'Outras Receitas', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '4.2.1', nome: 'Receitas de Projetos', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '4.2.2', nome: 'Rendimentos Financeiros', tipo: 'RECEITA', natureza: 'CREDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '5', nome: 'DESPESAS', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 1, aceita_lancamento: false },
+    { org_id: orgId, codigo: '5.1', nome: 'Despesas Administrativas', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '5.1.1', nome: 'Despesas com Pessoal', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '5.1.2', nome: 'Despesas Gerais', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
+    { org_id: orgId, codigo: '5.2', nome: 'Despesas com Projetos', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 2, aceita_lancamento: false },
+    { org_id: orgId, codigo: '5.2.1', nome: 'Execução de Projetos', tipo: 'DESPESA', natureza: 'DEVEDORA', nivel: 3, aceita_lancamento: true },
   ]
 }
 
@@ -217,6 +283,8 @@ function calcularSaldo(conta: any, partidas: any[]): number {
 
 export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
   const supabase = createAdminClient()
+  const tipoOrg = await getTipoOrg(orgId)
+  const terminologia = getTerminologia(tipoOrg)
   const inicioAno = `${ano}-01-01`
   const fimAno = `${ano}-12-31`
 
@@ -261,10 +329,11 @@ export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
     }
   }
 
+  const resultado = totalReceitas - totalDespesas
   itens.push({
     grupo: 'RESULTADO',
-    descricao: 'Sobras (Perdas) do Exercício',
-    valor: totalReceitas - totalDespesas,
+    descricao: resultado >= 0 ? terminologia.resultadoPositivo : terminologia.resultadoNegativo,
+    valor: resultado,
     tipo: 'resultado',
   })
   return itens
@@ -744,12 +813,19 @@ export async function getLivroRazao(
 
 export async function calcularSobras(orgId: string, ano: number) {
   const supabase = createAdminClient()
+  const tipoOrg = await getTipoOrg(orgId)
+  const terminologia = getTerminologia(tipoOrg)
   const inicioAno = `${ano}-01-01`
   const fimAno = `${ano}-12-31`
 
   const config = await getConfiguracaoContabil(orgId)
-  const percFundoReserva = Number(config?.percentual_fundo_reserva || 10)
-  const percRefac = Number(config?.percentual_refac || 5)
+
+  const percFundoReserva = terminologia.fundoObrigatorio
+    ? Math.max(Number(config?.percentual_fundo_reserva || 10), 10)
+    : Number(config?.percentual_fundo_reserva || 0)
+  const percRefac = terminologia.refacObrigatorio
+    ? Number(config?.percentual_refac || 5)
+    : Number(config?.percentual_refac || 0)
   const percFates = Number(config?.percentual_fates || 0)
 
   const { data: contas } = await supabase
@@ -782,7 +858,9 @@ export async function calcularSobras(orgId: string, ano: number) {
   const fundoReserva = sobrasBrutas > 0 ? (sobrasBrutas * percFundoReserva) / 100 : 0
   const refac = sobrasBrutas > 0 ? (sobrasBrutas * percRefac) / 100 : 0
   const fates = sobrasBrutas > 0 ? (sobrasBrutas * percFates) / 100 : 0
-  const sobrasDistribuiveis = sobrasBrutas - fundoReserva - refac - fates
+  const sobrasDistribuiveis = terminologia.distribuiResultado
+    ? sobrasBrutas - fundoReserva - refac - fates
+    : 0
 
   return {
     totalReceitas,
@@ -796,6 +874,8 @@ export async function calcularSobras(orgId: string, ano: number) {
     fates,
     sobrasDistribuiveis,
     config,
+    tipoOrg,
+    terminologia,
   }
 }
 

@@ -218,3 +218,35 @@ export interface DistribuicaoSobras {
   created_at: string
   cooperado?: { nome: string; cpf: string }
 }
+
+export type TipoOrg = 'cooperativa' | 'associacao'
+
+export interface TerminologiaContabil {
+  resultadoPositivo: string
+  resultadoNegativo: string
+  fundoObrigatorio: boolean
+  refacObrigatorio: boolean
+  distribuiResultado: boolean
+  legislacao: string
+}
+
+export function getTerminologia(tipoOrg: TipoOrg): TerminologiaContabil {
+  if (tipoOrg === 'cooperativa') {
+    return {
+      resultadoPositivo: 'Sobras do Exercício',
+      resultadoNegativo: 'Perdas do Exercício',
+      fundoObrigatorio: true,
+      refacObrigatorio: true,
+      distribuiResultado: true,
+      legislacao: 'Lei 5.764/71',
+    }
+  }
+  return {
+    resultadoPositivo: 'Superávit do Exercício',
+    resultadoNegativo: 'Déficit do Exercício',
+    fundoObrigatorio: false,
+    refacObrigatorio: false,
+    distribuiResultado: false,
+    legislacao: 'Lei 9.790/99 / Código Civil',
+  }
+}
