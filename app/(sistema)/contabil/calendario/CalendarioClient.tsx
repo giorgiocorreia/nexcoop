@@ -8,7 +8,7 @@ import {
 import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
-const MESES = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 export default function CalendarioClient({ orgId }: { orgId: string }) {
   const hoje = new Date()
@@ -46,7 +46,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
       await seedObrigacoesCooperativa(orgId)
       const [oc, ob] = await Promise.all([getOcorrenciasMes(orgId, mes, ano), getObrigacoes(orgId)])
       setOcorrencias(oc); setObrigacoes(ob)
-      setSucesso('Obrigacoes padrao carregadas!')
+      setSucesso('Obrigações padrão carregadas!')
       setTimeout(() => setSucesso(''), 3000)
     } catch (e: any) { setErro(e.message) }
     finally { setSeeding(false) }
@@ -57,7 +57,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
       await marcarObrigacaoEntregue(orgId, ob.obrigacao.id, ob.data_vencimento)
       const oc = await getOcorrenciasMes(orgId, mes, ano)
       setOcorrencias(oc)
-      setSucesso('Obrigacao marcada como entregue!')
+      setSucesso('Obrigação marcada como entregue!')
       setTimeout(() => setSucesso(''), 3000)
     } catch (e: any) { setErro(e.message) }
   }
@@ -69,7 +69,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
       await criarObrigacao({ org_id: orgId, nome, descricao, periodicidade, dia_vencimento: Number(diaVenc), responsavel })
       const [oc, ob] = await Promise.all([getOcorrenciasMes(orgId, mes, ano), getObrigacoes(orgId)])
       setOcorrencias(oc); setObrigacoes(ob)
-      setSucesso('Obrigacao criada!')
+      setSucesso('Obrigação criada!')
       setTimeout(() => setSucesso(''), 3000)
       setNovaModal(false); setNome(''); setDescricao(''); setResponsavel('')
     } catch (e: any) { setErro(e.message) }
@@ -85,11 +85,11 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Calendario de Obrigacoes</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Calendário de Obrigações</h1>
             <BotaoAjuda chave="manual_contabil_url" />
           </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Controle de vencimentos de obrigacoes acessorias
+            Controle de vencimentos de obrigações acessórias
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -108,7 +108,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
           {obrigacoes.length === 0 && (
             <button onClick={handleSeed} disabled={seeding}
               style={{ padding: '8px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              {seeding ? 'Carregando...' : 'Carregar Padrao'}
+              {seeding ? 'Carregando...' : 'Carregar Padrão'}
             </button>
           )}
         </div>
@@ -135,15 +135,15 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
         <p style={{ color: '#6b7280' }}>Carregando...</p>
       ) : ocorrencias.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', color: '#6b7280' }}>
-          <p style={{ fontSize: 14, marginBottom: 8 }}>Nenhuma obrigacao cadastrada.</p>
-          <p style={{ fontSize: 12 }}>Clique em "Carregar Padrao" para adicionar obrigacoes comuns para cooperativas.</p>
+          <p style={{ fontSize: 14, marginBottom: 8 }}>Nenhuma obrigação cadastrada.</p>
+          <p style={{ fontSize: 12 }}>Clique em "Carregar Padrão" para adicionar obrigações comuns para cooperativas.</p>
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#1a1a2e' }}>
-                {['Vencimento', 'Obrigacao', 'Responsavel', 'Periodicidade', 'Status', 'Acao'].map(h => (
+                {['Vencimento', 'Obrigação', 'Responsável', 'Periodicidade', 'Status', 'Ação'].map(h => (
                   <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, color: '#fff', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
@@ -187,15 +187,15 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
         </div>
       )}
 
-      {/* Modal nova obrigacao */}
+      {/* Modal nova obrigação */}
       {novaModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 480, maxWidth: '95vw' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Nova Obrigacao</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Nova Obrigação</h2>
             {([
               ['Nome *', nome, setNome, 'Ex: SPED ECD'],
-              ['Descricao', descricao, setDescricao, 'Descricao opcional'],
-              ['Responsavel', responsavel, setResponsavel, 'Ex: Contador'],
+              ['Descrição', descricao, setDescricao, 'Descrição opcional'],
+              ['Responsável', responsavel, setResponsavel, 'Ex: Contador'],
             ] as [string, string, (v: string) => void, string][]).map(([label, val, setter, ph]) => (
               <div key={label} style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>{label}</label>
@@ -227,7 +227,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
               </button>
               <button onClick={handleCriar} disabled={salvando}
                 style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                {salvando ? 'Salvando...' : 'Criar Obrigacao'}
+                {salvando ? 'Salvando...' : 'Criar Obrigação'}
               </button>
             </div>
           </div>
