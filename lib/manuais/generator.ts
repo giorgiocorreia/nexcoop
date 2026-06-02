@@ -1,5 +1,7 @@
 'use server'
 
+export const runtime = 'nodejs'
+
 import PDFDocument from 'pdfkit'
 import { createAdminClient } from '@/lib/supabase/admin'
 

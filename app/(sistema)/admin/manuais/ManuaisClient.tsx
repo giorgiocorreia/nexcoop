@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { gerarManualContabil, gerarManualFinanceiro, gerarTodosManuais } from '@/lib/manuais/generator'
 
 const COR = '#635BFF'
 
@@ -15,7 +14,6 @@ const MANUAIS = [
     chave: 'manual_contabil_url',
     icon: '📊',
     cor: '#0F766E',
-    fn: gerarManualContabil,
   },
   {
     id: 'financeiro',
@@ -24,7 +22,6 @@ const MANUAIS = [
     chave: 'manual_financeiro_url',
     icon: '💰',
     cor: '#635BFF',
-    fn: gerarManualFinanceiro,
   },
 ] as const
 
@@ -59,8 +56,14 @@ export default function ManuaisClient() {
   async function handleGerar(manual: typeof MANUAIS[number]) {
     setGerando(manual.id); setErro('')
     try {
-      const url = await manual.fn()
-      setUrls(u => ({ ...u, [manual.id]: url }))
+      const res = await fetch('/api/gerar-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: manual.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erro ao gerar manual')
+      setUrls(u => ({ ...u, [manual.id]: data.url }))
       setSucesso(`Manual "${manual.titulo}" gerado e publicado!`)
       setTimeout(() => setSucesso(''), 4000)
     } catch (e: any) {
@@ -73,8 +76,14 @@ export default function ManuaisClient() {
   async function handleGerarTodos() {
     setGerando('todos'); setErro('')
     try {
-      const result = await gerarTodosManuais()
-      setUrls(u => ({ ...u, contabil: result.contabil, financeiro: result.financeiro }))
+      const res = await fetch('/api/gerar-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'todos' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erro ao gerar manuais')
+      setUrls(u => ({ ...u, contabil: data.url.contabil, financeiro: data.url.financeiro }))
       setSucesso('Todos os manuais gerados e publicados!')
       setTimeout(() => setSucesso(''), 4000)
     } catch (e: any) {
