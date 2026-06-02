@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getBalancete } from '@/lib/contabil/actions'
 import { ItemBalancete } from '@/lib/contabil/types'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -31,7 +32,10 @@ export default function BalanceteClient({ orgId }: Props) {
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balancete</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balancete</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Saldos por conta contábil no período</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>

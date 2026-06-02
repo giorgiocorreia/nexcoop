@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Assembleia, TipoAssembleia, StatusAssembleia } from '@/types/database'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 // ─── Configurações ───────────────────────────────────────────────────────────
 
@@ -86,7 +87,10 @@ export default function AssembleiaLista({ assembleias }: Props) {
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Assembleias</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Assembleias</h1>
+            <BotaoAjuda chave="manual_assembleia_url" />
+          </div>
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
             {assembleias.length} registro{assembleias.length !== 1 ? 's' : ''} no total
           </p>

@@ -12,6 +12,7 @@ import {
   atualizarStatusDistribuicao,
 } from '@/lib/contabil/actions'
 import type { TipoOrg } from '@/lib/contabil/types'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
@@ -158,7 +159,10 @@ export default function SobrasClient({
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{tituloSobras}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{tituloSobras}</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>{descSobras}</p>
         </div>
         <select value={ano} onChange={e => setAno(Number(e.target.value))}

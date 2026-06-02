@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Lancamento, TipoLancamento, StatusLancamento } from '@/types/database'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 // ─── Configurações de cores ───────────────────────────────────────────────────
 
@@ -94,9 +95,12 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Financeiro
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
+              Financeiro
+            </h1>
+            <BotaoAjuda chave="manual_financeiro_url" />
+          </div>
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
             {lancamentos.length} lançamento{lancamentos.length !== 1 ? 's' : ''} no total
           </p>

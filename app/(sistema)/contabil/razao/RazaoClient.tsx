@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getPlanoContas, getLivroRazao } from '@/lib/contabil/actions'
 import { ItemLivroRazao, ContaContabil } from '@/lib/contabil/types'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
@@ -48,7 +49,10 @@ export default function RazaoClient({ orgId }: { orgId: string }) {
 
   return (
     <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>Livro Razão</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Livro Razão</h1>
+        <BotaoAjuda chave="manual_contabil_url" />
+      </div>
       <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Movimentações detalhadas por conta contábil</p>
 
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20, marginBottom: 24 }}>

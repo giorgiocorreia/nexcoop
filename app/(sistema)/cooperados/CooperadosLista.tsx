@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Cooperado, StatusCooperado } from '@/types/database'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const STATUS_CONFIG: Record<
   StatusCooperado,
@@ -72,9 +73,12 @@ export default function CooperadosLista({ cooperados }: Props) {
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Filiados
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
+              Filiados
+            </h1>
+            <BotaoAjuda chave="manual_cooperados_url" />
+          </div>
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
             {cooperados.length} filiado{cooperados.length !== 1 ? 's' : ''} cadastrado{cooperados.length !== 1 ? 's' : ''}
           </p>

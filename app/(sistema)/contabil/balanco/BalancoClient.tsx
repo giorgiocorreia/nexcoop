@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getBalancoPatrimonial } from '@/lib/contabil/actions'
 import { ItemBalancoPatrimonial } from '@/lib/contabil/types'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
@@ -65,7 +66,10 @@ export default function BalancoClient({ orgId }: { orgId: string }) {
     <div style={{ padding: 32, maxWidth: 880, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balanço Patrimonial</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balanço Patrimonial</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Posição patrimonial da cooperativa no exercício</p>
         </div>
         <select value={ano} onChange={e => setAno(Number(e.target.value))}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Documento, CategoriaDocumento } from '@/types/database'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 // ─── Configurações ────────────────────────────────────────────────────────────
 
@@ -101,7 +102,10 @@ export default function DocumentosLista({ documentos }: Props) {
       {/* Cabeçalho */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Documentos</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Documentos</h1>
+            <BotaoAjuda chave="manual_documentos_url" />
+          </div>
           <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>Gestão documental da cooperativa</p>
         </div>
         <button onClick={() => router.push('/documentos/novo')}

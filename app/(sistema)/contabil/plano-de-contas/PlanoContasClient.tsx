@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getPlanoContas, seedPlanoContasOrg } from '@/lib/contabil/actions'
 import { ContaContabil, TipoOrg } from '@/lib/contabil/types'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 const TIPOS_LABEL: Record<string, string> = {
@@ -68,7 +69,10 @@ export default function PlanoContasClient({ orgId, tipoOrg }: Props) {
     <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Plano de Contas</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Plano de Contas</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Estrutura contábil hierárquica da organização</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>

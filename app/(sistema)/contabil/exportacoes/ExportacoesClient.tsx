@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { gerarSpedECD } from '@/lib/contabil/actions'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
@@ -106,7 +107,10 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
     <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Exportações Contábeis</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Exportações Contábeis</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
             Gere arquivos e relatórios para entrega ao escritório de contabilidade ou à Receita Federal
           </p>

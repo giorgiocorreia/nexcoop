@@ -705,6 +705,7 @@ export type Database = {
       distribuicao_sobras:       TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       exportacoes_contabeis:     TableDef<any>
+      configuracoes_sistema:     TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

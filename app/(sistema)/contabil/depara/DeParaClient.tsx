@@ -5,6 +5,7 @@ import {
   getPlanoContas, getContadoresDaOrg, getPlanoContasExterno,
   getDePara, salvarDePara, removerDePara, getEscritorioDoContador,
 } from '@/lib/contabil/actions'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
@@ -71,7 +72,10 @@ export default function DeParaClient({ orgId, userId }: Props) {
 
   return (
     <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>De/Para — Plano de Contas</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>De/Para — Plano de Contas</h1>
+        <BotaoAjuda chave="manual_contabil_url" />
+      </div>
       <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Mapeie as contas do NexCoop para as contas do escritório de contabilidade.</p>
 
       {contadores.length > 1 && (

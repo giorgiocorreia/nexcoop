@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { getNFesImportadas, importarXMLNFe, ignorarNFe } from '@/lib/contabil/actions'
+import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 function fmt(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
@@ -51,7 +52,10 @@ export default function NFeClient({ orgId, userId }: Props) {
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>NF-e — Notas Fiscais</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>NF-e — Notas Fiscais</h1>
+            <BotaoAjuda chave="manual_contabil_url" />
+          </div>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Importe XMLs para registrar entradas e saídas automaticamente</p>
         </div>
         <div>
