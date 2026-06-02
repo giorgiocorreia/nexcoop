@@ -1,7 +1,3 @@
-'use server'
-
-export const runtime = 'nodejs'
-
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib'
 import { createAdminClient } from '@/lib/supabase/admin'
 
