@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
 import { sairDaOrg } from '@/app/actions/impersonation'
+import { isParceiro } from '@/lib/parceiros/actions'
 import type { RoleUsuario } from '@/types/database'
 
 function assinaturaAtiva(org: { subscription_status: string | null; trial_ends_at: string | null } | null): boolean {
@@ -76,9 +77,11 @@ export default async function SistemaLayout({
       ? { ...usuario, organizacao }
       : null
 
+  const parceiroStatus = user && !impersonatingOrgId ? await isParceiro(user.id) : false
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7f4' }}>
-      <Sidebar usuario={usuarioComOrg} />
+      <Sidebar usuario={usuarioComOrg} isParceiro={parceiroStatus} />
       <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* Banner de impersonation */}

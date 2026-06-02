@@ -710,6 +710,10 @@ export type Database = {
       extrato_itens:             TableDef<any>
       obrigacoes_acessorias:     TableDef<any>
       obrigacoes_ocorrencias:    TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      empresas_parceiras:        TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      profissionais_parceiros:   TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

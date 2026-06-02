@@ -52,7 +52,7 @@ const CONTABIL_ITENS: NavItem[] = [
   { label: 'Exportações',         href: '/contabil/exportacoes',     icone: '📤' },
 ]
 
-function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null): NavGrupo[] {
+function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null, isParceiro?: boolean): NavGrupo[] {
   const funcoes = (usuario?.funcoes ?? []) as string[]
   const isAdmin         = funcoes.includes('admin')
   const isContador      = funcoes.includes('contador') || funcoes.includes('contador_aux')
@@ -110,13 +110,14 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin || isContador)
     grupos.push({ grupo: 'Contábil', itens: CONTABIL_ITENS })
 
-  // ── ESCRITÓRIO (somente contador) ─────────────────────────────────────────
-  if (isContador)
+  // ── ESCRITÓRIO (parceiros e contadores) ──────────────────────────────────
+  if (isParceiro || isContador)
     grupos.push({
       grupo: 'Escritório',
       itens: [
-        { label: 'Meu Escritório',  href: '/escritorio',                 icone: '🏦' },
-        { label: 'Plano de Contas', href: '/escritorio/plano-de-contas', icone: '📋' },
+        { label: 'Painel', href: '/escritorio',        icone: '🏦' },
+        { label: 'Equipe', href: '/escritorio/equipe', icone: '👥' },
+        { label: 'Dados',  href: '/escritorio/perfil', icone: '⚙️' },
       ],
     })
 
@@ -142,6 +143,7 @@ const FUNCAO_LABEL: Record<string, string> = {
 
 interface Props {
   usuario: (Usuario & { organizacao: Organizacao | null }) | null
+  isParceiro?: boolean
 }
 
 function labelUsuario(usuario: { role: string; funcoes: string[] } | null | undefined): string {
@@ -151,7 +153,7 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
   return FUNCAO_LABEL[usuario.funcoes[0]] || usuario.funcoes[0]
 }
 
-export default function Sidebar({ usuario }: Props) {
+export default function Sidebar({ usuario, isParceiro }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -213,7 +215,7 @@ export default function Sidebar({ usuario }: Props) {
   function renderNav() {
     if (isSuperAdmin)
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
-    return buildNav(usuario).map(g => renderGrupo(g.grupo, g.itens))
+    return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 
   const orgNome = isSuperAdmin

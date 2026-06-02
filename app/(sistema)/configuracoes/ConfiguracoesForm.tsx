@@ -7,6 +7,7 @@ import { salvarOrganizacao } from './actions'
 import { salvarPerfilCaptacao } from '@/lib/captacao/actions'
 import PerfilUsuario from './PerfilUsuario'
 import UsuariosGestao from './usuarios/UsuariosGestao'
+import ParceirosClient from './parceiros/ParceirosClient'
 
 // ── Cores ─────────────────────────────────────────────────────────────────────
 const TEAL        = '#1D9E75'
@@ -52,7 +53,7 @@ const UFS = [
 ]
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-type Aba = 'perfil' | 'organizacao' | 'captacao' | 'usuarios' | 'seguranca'
+type Aba = 'perfil' | 'organizacao' | 'captacao' | 'usuarios' | 'parceiros' | 'seguranca'
 
 interface Props {
   org: Organizacao | null
@@ -85,6 +86,7 @@ export default function ConfiguracoesForm(props: Props) {
     { id: 'organizacao', label: '🏢 Organização', adminOnly: true },
     { id: 'captacao',    label: '🎯 Captação',    adminOnly: true },
     { id: 'usuarios',    label: '👥 Usuários',    adminOnly: true },
+    { id: 'parceiros',   label: '🤝 Parceiros',   adminOnly: true },
     { id: 'seguranca',   label: '🔒 Segurança',   disabled: true },
   ]
 
@@ -153,6 +155,9 @@ export default function ConfiguracoesForm(props: Props) {
           isSuperAdmin={props.isSuperAdmin}
           embeddedMode
         />
+      )}
+      {abaEfetiva === 'parceiros' && showAdminTabs && props.org && (
+        <ParceirosClient orgId={props.org.id} />
       )}
       {abaEfetiva === 'seguranca' && (
         <div style={{
