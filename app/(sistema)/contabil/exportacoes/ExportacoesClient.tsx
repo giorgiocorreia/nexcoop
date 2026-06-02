@@ -34,6 +34,33 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
     window.open(`/contabil/${rota}?print=1&ano=${ano}`, '_blank')
   }
 
+  function handleExportarPDF(tipo: string, titulo: string) {
+    const orgNome = document.title.split('—')[0]?.trim() || 'Organizacao'
+    const dataAtual = new Date().toLocaleDateString('pt-BR')
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
+      <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui,sans-serif;color:#1a1a2e;background:white}
+        .header{background:#0F766E;color:white;padding:20px 32px}
+        .header h1{font-size:20px;font-weight:700;margin-top:4px}
+        .header .logo{font-size:18px;font-weight:700}
+        .header .meta{font-size:11px;opacity:.8;margin-top:4px}
+        .content{padding:32px}
+        .footer{border-top:1px solid #e5e3dc;padding:12px 32px;font-size:11px;color:#9ca3af;display:flex;justify-content:space-between;margin-top:40px}
+        .btn-print{position:fixed;bottom:20px;right:20px;background:#0F766E;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+        @media print{.btn-print{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      </style></head><body>
+      <div class="header"><div class="logo">NexCoop</div><h1>${titulo}</h1><div class="meta">${orgNome} · ${dataAtual}</div></div>
+      <div class="content"><p style="color:#6b7280;font-size:14px">Redirecionando para o relatorio...</p></div>
+      <div class="footer"><span>NexCoop · nexcoop.com.br</span><span>${titulo} · ${dataAtual}</span></div>
+      <button class="btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+    </body></html>`)
+    win.document.close()
+    setTimeout(() => { win.location.href = `/contabil/${tipo}?print=1&ano=${ano}` }, 500)
+  }
+
   const exportacoes = [
     {
       id: 'sped',
@@ -100,6 +127,28 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('razao'),
       btnLabel: 'Exportar Livro Razão',
+    },
+    {
+      id: 'conciliacao',
+      titulo: 'Relatório de Conciliação',
+      desc: 'Status dos itens do extrato bancário conciliados com lançamentos.',
+      icon: '🏦',
+      badge: 'PDF / Impressão',
+      badgeCor: COR,
+      badgeBg: '#dcfce7',
+      acao: () => handleExportarPDF('conciliacao', 'Relatorio de Conciliacao'),
+      btnLabel: 'Exportar Conciliação',
+    },
+    {
+      id: 'calendario',
+      titulo: 'Calendário de Obrigações',
+      desc: 'Relatório de vencimentos e status das obrigações acessórias.',
+      icon: '📅',
+      badge: 'PDF / Impressão',
+      badgeCor: COR,
+      badgeBg: '#dcfce7',
+      acao: () => handleExportarPDF('calendario', 'Calendario de Obrigacoes'),
+      btnLabel: 'Exportar Calendário',
     },
   ]
 

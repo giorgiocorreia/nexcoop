@@ -706,6 +706,10 @@ export type Database = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       exportacoes_contabeis:     TableDef<any>
       configuracoes_sistema:     TableDef<any>
+      extratos_bancarios:        TableDef<any>
+      extrato_itens:             TableDef<any>
+      obrigacoes_acessorias:     TableDef<any>
+      obrigacoes_ocorrencias:    TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

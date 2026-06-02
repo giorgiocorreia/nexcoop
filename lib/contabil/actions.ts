@@ -1132,3 +1132,231 @@ export async function getDadosRelatorioPDF(orgId: string, tipo: string, ano: num
       throw new Error('Tipo de relatório não suportado.')
   }
 }
+
+// ── CONCILIAÇÃO BANCÁRIA ──────────────────────────────────────────────────────
+
+export async function getExtratos(orgId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('extratos_bancarios')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('data_inicio', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function importarExtratoCSV(
+  orgId: string,
+  csvText: string,
+  banco: string,
+  userId: string
+) {
+  const supabase = createAdminClient()
+  const linhas = csvText.split('\n').filter(l => l.trim())
+  const itens: any[] = []
+  let dataInicio: string | null = null
+  let dataFim: string | null = null
+  let totalCreditos = 0
+  let totalDebitos = 0
+
+  for (const linha of linhas.slice(1)) {
+    const cols = linha.split(',').map(c => c.trim().replace(/"/g, ''))
+    if (cols.length < 3) continue
+    const dataRaw = cols[0]
+    const descricao = cols[1]
+    let valor = 0
+    let tipo: 'credito' | 'debito' = 'credito'
+
+    if (cols.length >= 4) {
+      const debito  = parseFloat(cols[2].replace(',', '.') || '0')
+      const credito = parseFloat(cols[3].replace(',', '.') || '0')
+      if (debito > 0) { valor = debito; tipo = 'debito' }
+      else { valor = credito; tipo = 'credito' }
+    } else {
+      const v = parseFloat(cols[2].replace(',', '.') || '0')
+      valor = Math.abs(v)
+      tipo = v < 0 ? 'debito' : 'credito'
+    }
+    if (valor === 0) continue
+
+    let dataISO = dataRaw
+    if (dataRaw.includes('/')) {
+      const [d, m, y] = dataRaw.split('/')
+      dataISO = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+    }
+    if (!dataInicio || dataISO < dataInicio) dataInicio = dataISO
+    if (!dataFim    || dataISO > dataFim)    dataFim    = dataISO
+    if (tipo === 'credito') totalCreditos += valor
+    else totalDebitos += valor
+    itens.push({ data: dataISO, descricao, valor, tipo, status: 'pendente' })
+  }
+
+  if (itens.length === 0) throw new Error('Nenhum item válido encontrado no arquivo CSV.')
+
+  const { data: extrato, error } = await supabase
+    .from('extratos_bancarios')
+    .insert({ org_id: orgId, banco, data_inicio: dataInicio, data_fim: dataFim, total_creditos: totalCreditos, total_debitos: totalDebitos, status: 'importado', importado_por: userId })
+    .select().single()
+  if (error) throw new Error(error.message)
+
+  const { error: itensError } = await supabase
+    .from('extrato_itens')
+    .insert(itens.map(i => ({ ...i, extrato_id: extrato.id })))
+  if (itensError) throw new Error(itensError.message)
+
+  revalidatePath('/contabil/conciliacao')
+  return extrato
+}
+
+export async function getItensConciliacao(extratoId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('extrato_itens')
+    .select('*, lancamento:lancamento_id(descricao, valor, data_competencia)')
+    .eq('extrato_id', extratoId)
+    .order('data')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function conciliarItem(itemId: string, lancamentoId: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('extrato_itens')
+    .update({ lancamento_id: lancamentoId, status: 'conciliado' })
+    .eq('id', itemId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/conciliacao')
+}
+
+export async function ignorarItemExtrato(itemId: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('extrato_itens')
+    .update({ status: 'ignorado' })
+    .eq('id', itemId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/conciliacao')
+}
+
+export async function getLancamentosParaConciliar(orgId: string, dataInicio: string, dataFim: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('lancamentos')
+    .select('*')
+    .eq('organizacao_id', orgId)
+    .gte('data_competencia', dataInicio)
+    .lte('data_competencia', dataFim)
+    .order('data_competencia')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+// ── CALENDÁRIO DE OBRIGAÇÕES ──────────────────────────────────────────────────
+
+export async function getObrigacoes(orgId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('obrigacoes_acessorias')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('ativo', true)
+    .order('dia_vencimento')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function criarObrigacao(data: {
+  org_id: string
+  nome: string
+  descricao?: string
+  periodicidade: string
+  dia_vencimento: number
+  responsavel?: string
+}) {
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('obrigacoes_acessorias').insert(data)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/calendario')
+}
+
+export async function seedObrigacoesCooperativa(orgId: string) {
+  const supabase = createAdminClient()
+  const obrigacoes = [
+    { org_id: orgId, nome: 'SPED ECD', descricao: 'Escrituracao Contabil Digital', periodicidade: 'anual', dia_vencimento: 31, responsavel: 'Contador' },
+    { org_id: orgId, nome: 'ECF', descricao: 'Escrituracao Contabil Fiscal', periodicidade: 'anual', dia_vencimento: 31, responsavel: 'Contador' },
+    { org_id: orgId, nome: 'EFD-Reinf', descricao: 'Escrituracao Fiscal Digital de Retencoes', periodicidade: 'mensal', dia_vencimento: 15, responsavel: 'Contador' },
+    { org_id: orgId, nome: 'DCTF', descricao: 'Declaracao de Debitos e Creditos Tributarios Federais', periodicidade: 'mensal', dia_vencimento: 15, responsavel: 'Contador' },
+    { org_id: orgId, nome: 'Folha de Pagamento', descricao: 'Fechamento e processamento da folha', periodicidade: 'mensal', dia_vencimento: 5, responsavel: 'RH/Contador' },
+    { org_id: orgId, nome: 'INSS/FGTS', descricao: 'Recolhimento de encargos trabalhistas', periodicidade: 'mensal', dia_vencimento: 20, responsavel: 'Contador' },
+    { org_id: orgId, nome: 'Assembleia Geral Ordinaria', descricao: 'AGO anual obrigatoria', periodicidade: 'anual', dia_vencimento: 120, responsavel: 'Diretoria' },
+  ]
+  const { error } = await supabase.from('obrigacoes_acessorias').insert(obrigacoes)
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/calendario')
+}
+
+export async function getOcorrenciasMes(orgId: string, mes: number, ano: number) {
+  const supabase = createAdminClient()
+  const { data: obrigacoes } = await supabase
+    .from('obrigacoes_acessorias')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('ativo', true)
+
+  const hoje = new Date().toISOString().split('T')[0]
+  const ocorrencias: any[] = []
+
+  for (const ob of (obrigacoes || [])) {
+    const deveAparecerNoMes =
+      ob.periodicidade === 'mensal' ||
+      (ob.periodicidade === 'trimestral' && [1, 4, 7, 10].includes(mes)) ||
+      (ob.periodicidade === 'semestral'  && [1, 7].includes(mes)) ||
+      (ob.periodicidade === 'anual'      && mes === 1)
+
+    if (!deveAparecerNoMes) continue
+
+    const diasNoMes = new Date(ano, mes, 0).getDate()
+    const dia = Math.min(ob.dia_vencimento, diasNoMes)
+    const dataVenc = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+
+    const { data: existente } = await supabase
+      .from('obrigacoes_ocorrencias')
+      .select('*')
+      .eq('org_id', orgId)
+      .eq('obrigacao_id', ob.id)
+      .eq('data_vencimento', dataVenc)
+      .single()
+
+    ocorrencias.push({
+      obrigacao: ob,
+      ocorrencia: existente || null,
+      data_vencimento: dataVenc,
+      atrasada: !existente && dataVenc < hoje,
+    })
+  }
+
+  return ocorrencias.sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento))
+}
+
+export async function marcarObrigacaoEntregue(
+  orgId: string,
+  obrigacaoId: string,
+  dataVencimento: string,
+  observacao?: string
+) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('obrigacoes_ocorrencias')
+    .upsert({
+      org_id: orgId,
+      obrigacao_id: obrigacaoId,
+      data_vencimento: dataVencimento,
+      status: 'entregue',
+      entregue_em: new Date().toISOString(),
+      observacao,
+    }, { onConflict: 'org_id,obrigacao_id,data_vencimento' })
+  if (error) throw new Error(error.message)
+  revalidatePath('/contabil/calendario')
+}

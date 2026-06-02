@@ -45,6 +45,8 @@ const CONTABIL_ITENS: NavItem[] = [
   { label: 'Livro Razão',         href: '/contabil/razao',           icone: '📖' },
   { label: 'Livro Diário',        href: '/contabil/diario',          icone: '📒' },
   { label: 'Resultado & Destinações', href: '/contabil/sobras',       icone: '💰' },
+  { label: 'Conciliação Bancária', href: '/contabil/conciliacao',    icone: '🏦' },
+  { label: 'Calendário',           href: '/contabil/calendario',     icone: '📅' },
   { label: 'De/Para Contas',      href: '/contabil/depara',          icone: '🔀' },
   { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
   { label: 'Exportações',         href: '/contabil/exportacoes',     icone: '📤' },
