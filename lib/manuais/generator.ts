@@ -2,121 +2,189 @@
 
 export const runtime = 'nodejs'
 
-import PDFDocument from 'pdfkit'
+import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const COR_CONTABIL = '#0F766E'
 const COR_PRIMARY  = '#635BFF'
-const COR_DARK     = '#1a1a2e'
-const COR_GRAY     = '#6b7280'
 
-function rgbFromHex(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return [r, g, b]
+const A4_W   = 595
+const A4_H   = 842
+const MARGIN = 50
+const CONTENT_W = A4_W - MARGIN * 2
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [
+    parseInt(hex.slice(1, 3), 16) / 255,
+    parseInt(hex.slice(3, 5), 16) / 255,
+    parseInt(hex.slice(5, 7), 16) / 255,
+  ]
+}
+
+function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word
+    if (font.widthOfTextAtSize(test, size) > maxWidth && current) {
+      lines.push(current)
+      current = word
+    } else {
+      current = test
+    }
+  }
+  if (current) lines.push(current)
+  return lines.length ? lines : ['']
 }
 
 async function gerarPDFBuffer(
   titulo: string,
   subtitulo: string,
   secoes: { titulo: string; conteudo: string[] }[],
-  corPrimaria: string = COR_PRIMARY,
+  corHex: string = COR_PRIMARY,
   versao: string = '1.0',
   ano: number = new Date().getFullYear()
 ): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    const doc = new PDFDocument({ size: 'A4', margin: 50 })
+  const pdfDoc  = await PDFDocument.create()
+  const font     = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk))
-    doc.on('end',  () => resolve(Buffer.concat(chunks)))
-    doc.on('error', reject)
+  const [rP, gP, bP] = hexToRgb(corHex)
+  const corPrimaria   = rgb(rP, gP, bP)
+  const corDark       = rgb(0.102, 0.102, 0.180)  // #1a1a2e
+  const corGray       = rgb(0.420, 0.447, 0.502)  // #6b7280
+  const corSep        = rgb(0.898, 0.890, 0.863)  // #e5e3dc
+  const corWhite      = rgb(1, 1, 1)
+  const corAlertBg    = rgb(1.0,  0.984, 0.922)   // #fffbeb
+  const corAlertBar   = rgb(0.961, 0.620, 0.043)  // #f59e0b
+  const corAlertText  = rgb(0.573, 0.251, 0.055)  // #92400e
 
-    const pageWidth  = doc.page.width
-    const pageHeight = doc.page.height
-    const margin     = 50
+  const newPage = (): PDFPage => pdfDoc.addPage([A4_W, A4_H])
 
-    const addHeaderFooter = (pageNum: number) => {
-      doc.save()
-      doc.rect(0, 0, pageWidth, 36).fill(corPrimaria)
-      doc.fillColor('white').fontSize(9).font('Helvetica-Bold')
-        .text(`NexCoop — ${titulo}`, margin, 13, { width: pageWidth - margin * 2 - 100, align: 'left' })
-      doc.fillColor('white').fontSize(8).font('Helvetica')
-        .text(`v${versao} · ${ano}`, pageWidth - margin - 100, 14, { width: 100, align: 'right' })
-      doc.moveTo(margin, pageHeight - 30).lineTo(pageWidth - margin, pageHeight - 30)
-        .strokeColor('#e5e3dc').lineWidth(0.5).stroke()
-      doc.fillColor(COR_GRAY).fontSize(7.5).font('Helvetica')
-        .text('NexCoop · nexcoop.com.br', margin, pageHeight - 20, { align: 'left' })
-        .text(`Pág. ${pageNum}`, margin, pageHeight - 20, { width: pageWidth - margin * 2, align: 'right' })
-      doc.restore()
+  const drawHeaderFooter = (page: PDFPage, pageNum: number) => {
+    // Header bar
+    page.drawRectangle({ x: 0, y: A4_H - 36, width: A4_W, height: 36, color: corPrimaria })
+    page.drawText(`NexCoop — ${titulo}`, {
+      x: MARGIN, y: A4_H - 36 + 13, size: 9, font: fontBold, color: corWhite,
+    })
+    page.drawText(`v${versao} · ${ano}`, {
+      x: A4_W - MARGIN - 80, y: A4_H - 36 + 14, size: 8, font, color: corWhite,
+    })
+    // Footer line
+    page.drawLine({
+      start: { x: MARGIN, y: 30 }, end: { x: A4_W - MARGIN, y: 30 },
+      thickness: 0.5, color: corSep,
+    })
+    page.drawText('NexCoop · nexcoop.com.br', {
+      x: MARGIN, y: 18, size: 7.5, font, color: corGray,
+    })
+    page.drawText(`Pág. ${pageNum}`, {
+      x: A4_W - MARGIN - 50, y: 18, size: 7.5, font, color: corGray,
+    })
+  }
+
+  // ── CAPA ──────────────────────────────────────────────────────────────────
+  const capa = newPage()
+  capa.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: corPrimaria })
+  capa.drawText('NexCoop', { x: MARGIN, y: A4_H - 120, size: 36, font: fontBold, color: corWhite })
+  capa.drawText(titulo, { x: MARGIN, y: A4_H - 170, size: 18, font, color: rgb(0.85, 0.88, 0.92) })
+  capa.drawText(subtitulo, { x: MARGIN, y: A4_H - 200, size: 13, font, color: rgb(0.70, 0.73, 0.78) })
+  capa.drawText(`Versão ${versao} · ${ano} · nexcoop.com.br`, {
+    x: MARGIN, y: 80, size: 10, font, color: rgb(0.60, 0.63, 0.68),
+  })
+
+  // ── SEÇÕES ────────────────────────────────────────────────────────────────
+  let pageNum = 1
+
+  const ensurePage = (page: PDFPage, y: number): [PDFPage, number] => {
+    if (A4_H - y < 80) {
+      const p = newPage(); pageNum++; drawHeaderFooter(p, pageNum); return [p, 55]
     }
+    return [page, y]
+  }
 
-    let pageNum = 1
+  for (const secao of secoes) {
+    let page = newPage()
+    pageNum++
+    drawHeaderFooter(page, pageNum)
+    let y = 55
 
-    // ── CAPA ──────────────────────────────────────────────────────────────────
-    doc.rect(0, 0, pageWidth, pageHeight).fill(corPrimaria)
-    doc.fillColor('white').fontSize(36).font('Helvetica-Bold').text('NexCoop', margin, 120)
-    doc.fillColor('white').opacity(0.85).fontSize(18).font('Helvetica').text(titulo, margin, 170)
-    doc.fillColor('white').opacity(0.65).fontSize(13).font('Helvetica').text(subtitulo, margin, 200)
-    doc.fillColor('white').opacity(0.5).fontSize(10).font('Helvetica')
-      .text(`Versão ${versao} · ${ano} · nexcoop.com.br`, margin, pageHeight - 80)
-    doc.opacity(1)
+    // Section title bar
+    page.drawRectangle({ x: MARGIN, y: A4_H - y - 32, width: CONTENT_W, height: 32, color: corDark })
+    page.drawText(secao.titulo, {
+      x: MARGIN + 12, y: A4_H - y - 32 + 9, size: 12, font: fontBold, color: corWhite,
+      maxWidth: CONTENT_W - 24,
+    })
+    y += 44
 
-    // ── SEÇÕES ────────────────────────────────────────────────────────────────
-    for (const secao of secoes) {
-      doc.addPage()
-      pageNum++
-      addHeaderFooter(pageNum)
-      let y = 55
+    for (const paragrafo of secoes[0] === secao ? secao.conteudo : secao.conteudo) {
+      ;[page, y] = ensurePage(page, y)
 
-      doc.rect(margin, y, pageWidth - margin * 2, 32).fill(COR_DARK)
-      doc.fillColor('white').fontSize(13).font('Helvetica-Bold')
-        .text(secao.titulo, margin + 12, y + 9, { width: pageWidth - margin * 2 - 24 })
-      y += 44
+      if (paragrafo.startsWith('##')) {
+        // Subtítulo
+        y += 8
+        ;[page, y] = ensurePage(page, y)
+        const sub = paragrafo.replace('## ', '')
+        page.drawText(sub, {
+          x: MARGIN, y: A4_H - y - 11, size: 11, font: fontBold, color: corPrimaria,
+          maxWidth: CONTENT_W,
+        })
+        y += 18
+        page.drawLine({ start: { x: MARGIN, y: A4_H - y }, end: { x: A4_W - MARGIN, y: A4_H - y }, thickness: 0.5, color: corSep })
+        y += 8
 
-      for (const paragrafo of secao.conteudo) {
-        if (y > pageHeight - 80) {
-          doc.addPage(); pageNum++; addHeaderFooter(pageNum); y = 55
+      } else if (paragrafo.startsWith('•')) {
+        // Bullet
+        const bulletText = paragrafo.replace('• ', '')
+        const lines = wrapText(bulletText, font, 10, CONTENT_W - 20)
+        page.drawText('•', { x: MARGIN + 8, y: A4_H - y - 10, size: 10, font: fontBold, color: corPrimaria })
+        for (let i = 0; i < lines.length; i++) {
+          ;[page, y] = ensurePage(page, y)
+          page.drawText(lines[i], { x: MARGIN + 20, y: A4_H - y - 10, size: 10, font, color: corDark })
+          y += 14
         }
+        y += 3
 
-        if (paragrafo.startsWith('##')) {
-          y += 8
-          doc.fillColor(corPrimaria).fontSize(11).font('Helvetica-Bold')
-            .text(paragrafo.replace('## ', ''), margin, y, { width: pageWidth - margin * 2 })
-          y += doc.currentLineHeight() + 6
-          doc.moveTo(margin, y).lineTo(pageWidth - margin, y)
-            .strokeColor('#e5e3dc').lineWidth(0.5).stroke()
-          y += 6
-        } else if (paragrafo.startsWith('•')) {
-          doc.fillColor(corPrimaria).fontSize(10).font('Helvetica-Bold').text('•', margin + 8, y)
-          doc.fillColor(COR_DARK).fontSize(10).font('Helvetica')
-            .text(paragrafo.replace('• ', ''), margin + 20, y, { width: pageWidth - margin * 2 - 20 })
-          y += doc.currentLineHeight() + 4
-        } else if (paragrafo.startsWith('⚠')) {
-          y += 4
-          const boxHeight = 40
-          doc.rect(margin, y, pageWidth - margin * 2, boxHeight).fill('#fffbeb')
-          doc.rect(margin, y, 3, boxHeight).fill('#f59e0b')
-          doc.fillColor('#92400e').fontSize(9).font('Helvetica')
-            .text(paragrafo, margin + 12, y + 8, { width: pageWidth - margin * 2 - 20 })
-          y += boxHeight + 8
-        } else if (paragrafo === '---') {
-          y += 6
-          doc.moveTo(margin, y).lineTo(pageWidth - margin, y)
-            .strokeColor('#e5e3dc').lineWidth(0.5).stroke()
-          y += 10
-        } else if (paragrafo.trim() !== '') {
-          doc.fillColor(COR_DARK).fontSize(10).font('Helvetica')
-            .text(paragrafo, margin, y, { width: pageWidth - margin * 2, align: 'justify' })
-          y += doc.currentLineHeight() + 6
+      } else if (paragrafo.startsWith('⚠')) {
+        // Alerta
+        y += 4
+        const alertLines = wrapText(paragrafo, font, 9, CONTENT_W - 20)
+        const alertH = Math.max(36, alertLines.length * 13 + 16)
+        ;[page, y] = ensurePage(page, y)
+        page.drawRectangle({ x: MARGIN, y: A4_H - y - alertH, width: CONTENT_W, height: alertH, color: corAlertBg })
+        page.drawRectangle({ x: MARGIN, y: A4_H - y - alertH, width: 3, height: alertH, color: corAlertBar })
+        let ay = y + 8
+        for (const line of alertLines) {
+          page.drawText(line, { x: MARGIN + 12, y: A4_H - ay - 9, size: 9, font, color: corAlertText })
+          ay += 13
         }
+        y += alertH + 8
+
+      } else if (paragrafo === '---') {
+        // Separador
+        y += 6
+        page.drawLine({ start: { x: MARGIN, y: A4_H - y }, end: { x: A4_W - MARGIN, y: A4_H - y }, thickness: 0.5, color: corSep })
+        y += 10
+
+      } else if (paragrafo.trim() !== '') {
+        // Parágrafo normal com quebra de linha
+        const lines = wrapText(paragrafo, font, 10, CONTENT_W)
+        for (const line of lines) {
+          ;[page, y] = ensurePage(page, y)
+          page.drawText(line, { x: MARGIN, y: A4_H - y - 10, size: 10, font, color: corDark })
+          y += 14
+        }
+        y += 6
       }
     }
+  }
 
-    doc.end()
-  })
+  const pdfBytes = await pdfDoc.save()
+  return Buffer.from(pdfBytes)
 }
+
+// ── UPLOAD + PERSISTÊNCIA ─────────────────────────────────────────────────────
 
 async function uploadManual(buffer: Buffer, nomeArquivo: string): Promise<string> {
   const supabase = createAdminClient()
@@ -137,7 +205,7 @@ async function salvarUrlManual(chave: string, url: string) {
   if (error) throw new Error(error.message)
 }
 
-// ── MANUAL CONTÁBIL ──────────────────────────────────────────────────────────
+// ── MANUAL CONTÁBIL ───────────────────────────────────────────────────────────
 
 export async function gerarManualContabil(): Promise<string> {
   const secoes = [
@@ -306,7 +374,7 @@ export async function gerarManualContabil(): Promise<string> {
   return url
 }
 
-// ── MANUAL FINANCEIRO ────────────────────────────────────────────────────────
+// ── MANUAL FINANCEIRO ─────────────────────────────────────────────────────────
 
 export async function gerarManualFinanceiro(): Promise<string> {
   const secoes = [
@@ -374,11 +442,11 @@ export async function gerarManualFinanceiro(): Promise<string> {
   return url
 }
 
-// ── TODOS OS MANUAIS ─────────────────────────────────────────────────────────
+// ── TODOS OS MANUAIS ──────────────────────────────────────────────────────────
 
 export async function gerarTodosManuais(): Promise<Record<string, string>> {
   const urls: Record<string, string> = {}
-  urls.contabil  = await gerarManualContabil()
+  urls.contabil   = await gerarManualContabil()
   urls.financeiro = await gerarManualFinanceiro()
   return urls
 }
