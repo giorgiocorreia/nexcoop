@@ -135,16 +135,6 @@ async function salvarUrlManual(chave: string, url: string) {
   if (error) throw new Error(error.message)
 }
 
-export async function getUrlManual(chave: string): Promise<string | null> {
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('configuracoes_sistema')
-    .select('valor')
-    .eq('chave', chave)
-    .single()
-  return data?.valor || null
-}
-
 // ── MANUAL CONTÁBIL ──────────────────────────────────────────────────────────
 
 export async function gerarManualContabil(): Promise<string> {

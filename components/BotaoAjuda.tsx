@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getUrlManual } from '@/lib/manuais/generator'
 
 export default function BotaoAjuda({ chave }: { chave: string }) {
   const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    getUrlManual(chave).then(setUrl)
+    fetch(`/api/manuais?chave=${chave}`)
+      .then(r => r.json())
+      .then(d => setUrl(d.url))
   }, [chave])
 
   if (!url) return null

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { gerarManualContabil, gerarManualFinanceiro, gerarTodosManuais, getUrlManual } from '@/lib/manuais/generator'
+import { gerarManualContabil, gerarManualFinanceiro, gerarTodosManuais } from '@/lib/manuais/generator'
 
 const COR = '#635BFF'
 
@@ -34,7 +34,11 @@ export default function ManuaisClient() {
 
   useEffect(() => {
     Promise.all(
-      MANUAIS.map(m => getUrlManual(m.chave).then(url => ({ [m.id]: url })))
+      MANUAIS.map(m =>
+        fetch(`/api/manuais?chave=${m.chave}`)
+          .then(r => r.json())
+          .then(d => ({ [m.id]: d.url }))
+      )
     ).then(results => setUrls(Object.assign({}, ...results)))
   }, [])
 
