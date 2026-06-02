@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { gerarManualContabil, gerarManualFinanceiro, gerarTodosManuais } from '@/lib/manuais/generator'
 
 const COR = '#635BFF'
@@ -27,10 +29,22 @@ const MANUAIS = [
 ] as const
 
 export default function ManuaisClient() {
+  const router = useRouter()
   const [urls, setUrls]       = useState<Record<string, string | null>>({})
   const [gerando, setGerando] = useState<string>('')
   const [erro, setErro]       = useState('')
   const [sucesso, setSucesso] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { router.push('/login'); return }
+      supabase.from('usuarios').select('role').eq('id', user.id).single()
+        .then(({ data }) => {
+          if (!data || data.role !== 'super_admin') router.push('/dashboard')
+        })
+    })
+  }, [router])
 
   useEffect(() => {
     Promise.all(
