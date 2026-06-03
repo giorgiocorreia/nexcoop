@@ -79,8 +79,31 @@ export async function reenviarConviteParceira(empresaId: string, email: string) 
 
 export async function removerParceira(id: string) {
   const supabase = createAdminClient()
+
+  // Busca usuários vinculados antes de deletar
+  const { data: profissionais } = await supabase
+    .from('profissionais_parceiros')
+    .select('usuario_id')
+    .eq('empresa_id', id)
+
   await supabase.from('profissionais_parceiros').delete().eq('empresa_id', id)
   await supabase.from('empresas_parceiras').delete().eq('id', id)
+
+  // Deleta usuários do Auth que não têm organização própria
+  for (const prof of (profissionais || [])) {
+    if (prof.usuario_id) {
+      const { data: usuario } = await supabase
+        .from('usuarios')
+        .select('organizacao_id')
+        .eq('id', prof.usuario_id)
+        .maybeSingle()
+
+      if (!usuario?.organizacao_id) {
+        await supabase.auth.admin.deleteUser(prof.usuario_id)
+      }
+    }
+  }
+
   revalidatePath('/configuracoes')
 }
 

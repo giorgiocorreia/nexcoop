@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { vincularUsuarioAoProfissional } from '@/lib/parceiros/actions'
 
 const PURPLE = '#635BFF'
 
@@ -16,13 +15,8 @@ export default function AceitarConvitePage() {
   const [senha, setSenha] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
-  const profissionalIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    // Lê o profissional ID do query param (ex: /aceitar-convite?profissional=<id>#access_token=...)
-    const searchParams = new URLSearchParams(window.location.search)
-    profissionalIdRef.current = searchParams.get('profissional')
-
     const hash = window.location.hash.slice(1)
     const params = new URLSearchParams(hash)
     const accessToken = params.get('access_token')
@@ -67,14 +61,29 @@ export default function AceitarConvitePage() {
       return
     }
 
-    // Se veio de convite de profissional parceiro, vincula e redireciona para /escritorio
-    if (profissionalIdRef.current) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await vincularUsuarioAoProfissional(profissionalIdRef.current, user.id)
+    // Verifica pelo e-mail se é profissional parceiro — vincula e redireciona para /escritorio
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: prof } = await supabase
+        .from('profissionais_parceiros')
+        .select('id, empresa_id')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      if (prof) {
+        await supabase
+          .from('profissionais_parceiros')
+          .update({ usuario_id: user.id, aceito_em: new Date().toISOString() })
+          .eq('id', prof.id)
+
+        await supabase
+          .from('empresas_parceiras')
+          .update({ status: 'ativo', aceito_em: new Date().toISOString() })
+          .eq('id', prof.empresa_id)
+
+        router.push('/escritorio')
+        return
       }
-      window.location.href = '/escritorio'
-      return
     }
 
     router.push('/dashboard')
