@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getProfissionais, convidarProfissional, toggleProfissional, reenviarConviteParceira } from '@/lib/parceiros/actions'
+import { getProfissionais, convidarProfissional, toggleProfissional, reenviarConviteParceira, atualizarEmailParceira } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, NIVEL_LABEL, NivelProfissional } from '@/lib/parceiros/types'
 import type { EmpresaParceira } from '@/lib/parceiros/types'
 
@@ -30,6 +30,11 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
   const [erro, setErro]     = useState('')
   const [sucesso, setSucesso] = useState('')
 
+  // Edição de e-mail inline
+  const [editandoEmail, setEditandoEmail]   = useState(false)
+  const [novoEmail, setNovoEmail]           = useState(parceira.email_contato)
+  const [salvandoEmail, setSalvandoEmail]   = useState(false)
+
   useEffect(() => {
     getProfissionais(parceira.id).then(setProfissionais)
   }, [parceira.id])
@@ -50,6 +55,18 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
   async function handleToggle(id: string, ativo: boolean) {
     await toggleProfissional(id, !ativo)
     setProfissionais(p => p.map(x => x.id === id ? { ...x, ativo: !ativo } : x))
+  }
+
+  async function handleSalvarEmail() {
+    if (!novoEmail) return
+    setSalvandoEmail(true)
+    try {
+      await atualizarEmailParceira(parceira.id, novoEmail)
+      setEditandoEmail(false)
+      setSucesso('E-mail atualizado!')
+      setTimeout(() => setSucesso(''), 3000)
+    } catch (e: any) { setErro(e.message) }
+    finally { setSalvandoEmail(false) }
   }
 
   async function handleReenviarProf(email: string) {
@@ -82,10 +99,37 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
               {st.label}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
-            {TIPO_PARCERIA_LABEL[parceira.tipo]} · {parceira.email_contato}
-            {parceira.cnpj && ` · CNPJ: ${parceira.cnpj}`}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <span style={{ fontSize: 13, color: '#6b7280' }}>{TIPO_PARCERIA_LABEL[parceira.tipo]}</span>
+            <span style={{ color: '#d1d5db' }}>·</span>
+            {editandoEmail ? (
+              <>
+                <input
+                  type="email" value={novoEmail}
+                  onChange={e => setNovoEmail(e.target.value)}
+                  style={{ fontSize: 13, padding: '3px 8px', border: '1px solid #e5e3dc', borderRadius: 6, width: 220 }}
+                  autoFocus
+                />
+                <button onClick={handleSalvarEmail} disabled={salvandoEmail}
+                  style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', background: COR, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+                  {salvandoEmail ? '...' : 'Salvar'}
+                </button>
+                <button onClick={() => { setEditandoEmail(false); setNovoEmail(parceira.email_contato) }}
+                  style={{ fontSize: 12, padding: '3px 8px', background: 'transparent', border: '1px solid #e5e3dc', borderRadius: 6, cursor: 'pointer', color: '#6b7280' }}>
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>{novoEmail}</span>
+                <button onClick={() => setEditandoEmail(true)}
+                  style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', background: '#f8f7f4', border: '1px solid #e5e3dc', borderRadius: 5, cursor: 'pointer', color: '#6b7280' }}>
+                  Editar
+                </button>
+              </>
+            )}
+            {parceira.cnpj && <span style={{ fontSize: 13, color: '#6b7280' }}>· CNPJ: {parceira.cnpj}</span>}
+          </div>
         </div>
       </div>
 

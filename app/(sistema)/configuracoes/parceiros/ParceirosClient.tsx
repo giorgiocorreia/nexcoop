@@ -229,7 +229,7 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                         padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
                         textDecoration: 'none', cursor: 'pointer',
                         background: p.status === 'pendente' ? '#f8f7f4' : COR,
-                        color: p.status === 'pendente' ? '#374151' : '#fff',
+                        color: p.status === 'pendente' ? '#6b7280' : '#fff',
                         border: p.status === 'pendente' ? '1px solid #e5e3dc' : 'none',
                       }}>
                       Gerenciar

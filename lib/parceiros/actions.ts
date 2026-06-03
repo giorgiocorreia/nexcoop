@@ -107,6 +107,16 @@ export async function removerParceira(id: string) {
   revalidatePath('/configuracoes')
 }
 
+export async function atualizarEmailParceira(id: string, email: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('empresas_parceiras')
+    .update({ email_contato: email })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/configuracoes')
+}
+
 export async function atualizarModulosAcesso(id: string, modulos: string[]) {
   const supabase = createAdminClient()
   const { error } = await supabase
