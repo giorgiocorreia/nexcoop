@@ -119,7 +119,6 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
       itens: [
         { label: 'Painel', href: '/escritorio',        icone: '🏦' },
         { label: 'Equipe', href: '/escritorio/equipe', icone: '👥' },
-        { label: 'Perfil', href: '/escritorio/perfil', icone: '⚙️' },
       ],
     })
 
@@ -281,7 +280,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
 
         {/* Empresa parceira — link para /escritorio/perfil */}
         {isParceiro && orgNomeProp && (
-          <Link href="/escritorio/perfil" style={{ display: 'block', marginTop: '10px', textDecoration: 'none' }}>
+          <Link href="/escritorio/empresa" style={{ display: 'block', marginTop: '10px', textDecoration: 'none' }}>
             <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {orgNomeProp}
             </div>
@@ -312,7 +311,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             {isParceiro ? (
-              <Link href="/escritorio/perfil" style={{ textDecoration: 'none' }}>
+              <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
                 <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {nomeDisplay || 'Usuário'}
                 </div>
