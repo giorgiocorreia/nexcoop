@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
 
     await supabase
       .from('profissionais_parceiros')
-      .update({ nome, cargo: cargo || null, crc: crc || null })
+      .update({ nome, cargo, crc })
       .eq('usuario_id', userId)
 
     await supabase

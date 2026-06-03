@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Sidebar from '@/components/Sidebar'
 import { sairDaOrg } from '@/app/actions/impersonation'
 import { isParceiro } from '@/lib/parceiros/actions'
@@ -67,6 +68,18 @@ export default async function SistemaLayout({
   // Verifica se é parceiro antes dos redirects para não bloquear acesso ao /escritorio
   const parceiroStatus = user && !isSuperAdmin && !impersonatingOrgId ? await isParceiro(user.id) : false
 
+  let nomeEmpresaParceira = ''
+  if (parceiroStatus && user) {
+    const adminSupabase = createAdminClient()
+    const { data: empresaData } = await adminSupabase
+      .from('profissionais_parceiros')
+      .select('empresa:empresa_id(razao_social)')
+      .eq('usuario_id', user.id)
+      .eq('ativo', true)
+      .single()
+    nomeEmpresaParceira = (empresaData?.empresa as any)?.razao_social || ''
+  }
+
   // Verificações de onboarding/assinatura apenas no modo normal (parceiros pulam)
   if (!isSuperAdmin && !impersonatingOrgId && !parceiroStatus) {
     if (organizacao && !organizacao.onboarding_concluido) redirect('/onboarding')
@@ -82,7 +95,7 @@ export default async function SistemaLayout({
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7f4' }}>
-      <Sidebar usuario={usuarioComOrg} isParceiro={parceiroStatus} />
+      <Sidebar usuario={usuarioComOrg} isParceiro={parceiroStatus} orgNome={parceiroStatus ? nomeEmpresaParceira : undefined} />
       <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* Banner de impersonation */}

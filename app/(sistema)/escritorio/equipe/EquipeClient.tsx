@@ -6,6 +6,11 @@ import { NIVEL_LABEL, NivelProfissional } from '@/lib/parceiros/types'
 
 const COR = '#0F766E'
 
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', border: '1px solid #d5d3cc',
+  borderRadius: 6, fontSize: 12, boxSizing: 'border-box',
+}
+
 export default function EquipeClient({ userId }: { userId: string }) {
   const [empresaId, setEmpresaId] = useState('')
   const [profissionais, setProfissionais] = useState<any[]>([])
@@ -18,6 +23,14 @@ export default function EquipeClient({ userId }: { userId: string }) {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+
+  // Edição inline
+  const [editandoId, setEditandoId] = useState<string | null>(null)
+  const [editNome, setEditNome] = useState('')
+  const [editCargo, setEditCargo] = useState('')
+  const [editCrc, setEditCrc] = useState('')
+  const [editNivel, setEditNivel] = useState<NivelProfissional>('operador')
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false)
 
   useEffect(() => {
     getEmpresasDoUsuario(userId).then(empresas => {
@@ -48,6 +61,35 @@ export default function EquipeClient({ userId }: { userId: string }) {
     setProfissionais(p => p.map(x => x.id === id ? { ...x, ativo: !ativo } : x))
   }
 
+  function handleEditar(p: any) {
+    setEditandoId(p.id)
+    setEditNome(p.nome || '')
+    setEditCargo(p.cargo || '')
+    setEditCrc(p.crc || '')
+    setEditNivel(p.nivel || 'operador')
+  }
+
+  function handleCancelarEdicao() {
+    setEditandoId(null)
+  }
+
+  async function handleSalvarEdicao(profId: string) {
+    setSalvandoEdicao(true)
+    try {
+      await fetch('/api/parceiros/profissional', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profissionalId: profId, nome: editNome, cargo: editCargo, crc: editCrc, nivel: editNivel }),
+      })
+      const novos = await getProfissionais(empresaId)
+      setProfissionais(novos)
+      setEditandoId(null)
+      setSucesso('Profissional atualizado!')
+      setTimeout(() => setSucesso(''), 3000)
+    } catch (e: any) { console.error(e) }
+    finally { setSalvandoEdicao(false) }
+  }
+
   return (
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -71,29 +113,70 @@ export default function EquipeClient({ userId }: { userId: string }) {
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', overflow: 'hidden' }}>
           {profissionais.map((p: any, i: number) => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px',
-              borderBottom: i < profissionais.length - 1 ? '1px solid #f3f4f6' : 'none',
-              background: i % 2 === 0 ? '#fff' : '#f8f7f4' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 13 }}>{p.nome}</p>
-                <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
-                  {p.email} · {NIVEL_LABEL[p.nivel as NivelProfissional]}
-                  {p.crc && ` · CRC: ${p.crc}`}
-                  {!p.aceito_em && ' · Convite pendente'}
-                </p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                  background: p.ativo ? '#dcfce7' : '#f3f4f6', color: p.ativo ? '#166534' : '#6b7280' }}>
-                  {p.ativo ? 'Ativo' : 'Inativo'}
-                </span>
-                <button onClick={() => handleToggle(p.id, p.ativo)}
-                  style={{ padding: '6px 12px', border: `1px solid ${p.ativo ? '#fca5a5' : '#86efac'}`,
-                    borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: '#fff',
-                    color: p.ativo ? '#dc2626' : '#166534' }}>
-                  {p.ativo ? 'Inativar' : 'Reativar'}
-                </button>
-              </div>
+            <div key={p.id} style={{ padding: '16px 20px', borderBottom: i < profissionais.length - 1 ? '1px solid #f3f4f6' : 'none', background: i % 2 === 0 ? '#fff' : '#f8f7f4' }}>
+              {editandoId === p.id ? (
+                // Modo edição inline
+                <div>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 160px' }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 3 }}>Nome</label>
+                      <input value={editNome} onChange={e => setEditNome(e.target.value)} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: '1 1 120px' }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 3 }}>Cargo</label>
+                      <input value={editCargo} onChange={e => setEditCargo(e.target.value)} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: '0 1 120px' }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 3 }}>CRC</label>
+                      <input value={editCrc} onChange={e => setEditCrc(e.target.value)} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: '1 1 180px' }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 3 }}>Nível</label>
+                      <select value={editNivel} onChange={e => setEditNivel(e.target.value as NivelProfissional)}
+                        style={{ ...inputStyle, background: '#fff' }}>
+                        <option value='responsavel'>Responsável</option>
+                        <option value='operador'>Operador</option>
+                        <option value='consultor'>Consultor</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => handleSalvarEdicao(p.id)} disabled={salvandoEdicao}
+                      style={{ padding: '6px 14px', background: COR, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      {salvandoEdicao ? 'Salvando…' : 'Salvar'}
+                    </button>
+                    <button onClick={handleCancelarEdicao}
+                      style={{ padding: '6px 14px', background: '#fff', color: '#6b7280', border: '1px solid #e5e3dc', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Modo visualização
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: 13 }}>{p.nome}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+                      {p.email} · {NIVEL_LABEL[p.nivel as NivelProfissional]}
+                      {p.crc && ` · CRC: ${p.crc}`}
+                      {!p.aceito_em && ' · Convite pendente'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: p.ativo ? '#dcfce7' : '#f3f4f6', color: p.ativo ? '#166534' : '#6b7280' }}>
+                      {p.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                    <button onClick={() => handleEditar(p)}
+                      style={{ padding: '6px 12px', border: '1px solid #d5d3cc', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#374151' }}>
+                      Editar
+                    </button>
+                    <button onClick={() => handleToggle(p.id, p.ativo)}
+                      style={{ padding: '6px 12px', border: `1px solid ${p.ativo ? '#fca5a5' : '#86efac'}`, borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: '#fff', color: p.ativo ? '#dc2626' : '#166534' }}>
+                      {p.ativo ? 'Inativar' : 'Reativar'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

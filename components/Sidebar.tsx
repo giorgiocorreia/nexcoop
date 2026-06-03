@@ -117,7 +117,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
       itens: [
         { label: 'Painel', href: '/escritorio',        icone: '🏦' },
         { label: 'Equipe', href: '/escritorio/equipe', icone: '👥' },
-        { label: 'Dados',  href: '/escritorio/perfil', icone: '⚙️' },
+        { label: 'Perfil', href: '/escritorio/perfil', icone: '⚙️' },
       ],
     })
 
@@ -144,6 +144,7 @@ const FUNCAO_LABEL: Record<string, string> = {
 interface Props {
   usuario: (Usuario & { organizacao: Organizacao | null }) | null
   isParceiro?: boolean
+  orgNome?: string
 }
 
 function labelUsuario(usuario: { role: string; funcoes: string[] } | null | undefined): string {
@@ -153,7 +154,7 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
   return FUNCAO_LABEL[usuario.funcoes[0]] || usuario.funcoes[0]
 }
 
-export default function Sidebar({ usuario, isParceiro }: Props) {
+export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -218,11 +219,15 @@ export default function Sidebar({ usuario, isParceiro }: Props) {
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 
-  const orgNome = isSuperAdmin
+  const orgNome = orgNomeProp
+    ? orgNomeProp
+    : isSuperAdmin
     ? 'NexCoop'
     : (org?.nome_curto || org?.nome || 'NexCoop')
 
-  const orgTipo = isSuperAdmin
+  const orgTipo = isParceiro
+    ? 'Escritório Parceiro'
+    : isSuperAdmin
     ? 'Plataforma'
     : org?.tipo === 'cooperativa' ? 'Cooperativa'
     : org?.tipo === 'associacao'  ? 'Associação'
