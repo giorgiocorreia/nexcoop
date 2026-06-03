@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Usuario, Organizacao } from '@/types/database'
 
@@ -159,6 +161,20 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
   const router = useRouter()
   const supabase = createClient()
 
+  const [nomeDisplay, setNomeDisplay] = useState(usuario?.nome_completo || '')
+
+  useEffect(() => {
+    if (isParceiro && !nomeDisplay) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          supabase.from('usuarios').select('nome_completo').eq('id', user.id).maybeSingle()
+            .then(({ data }) => { if (data?.nome_completo) setNomeDisplay(data.nome_completo) })
+        }
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isParceiro])
+
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
@@ -219,15 +235,14 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 
-  const orgNome = orgNomeProp
-    ? orgNomeProp
+  // Para parceiros: topo sempre "NexCoop"; empresa fica no link abaixo
+  const orgNome = isParceiro
+    ? 'NexCoop'
     : isSuperAdmin
     ? 'NexCoop'
     : (org?.nome_curto || org?.nome || 'NexCoop')
 
-  const orgTipo = isParceiro
-    ? 'Escritório Parceiro'
-    : isSuperAdmin
+  const orgTipo = isSuperAdmin
     ? 'Plataforma'
     : org?.tipo === 'cooperativa' ? 'Cooperativa'
     : org?.tipo === 'associacao'  ? 'Associação'
@@ -250,17 +265,31 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '18px', flexShrink: 0,
           }}>
-            {isSuperAdmin ? '⚡' : <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>}
+            {isSuperAdmin ? '⚡' : <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="white"/><rect x="22" y="3" width="7" height="26" rx="3" fill="white"/><path d="M10 3L22 29" stroke="white" strokeWidth="4.5" strokeLinecap="round"/></svg>}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {orgNome}
             </div>
-            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
-              {orgTipo}
-            </div>
+            {!isParceiro && (
+              <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
+                {orgTipo}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Empresa parceira — link para /escritorio/perfil */}
+        {isParceiro && orgNomeProp && (
+          <Link href="/escritorio/perfil" style={{ display: 'block', marginTop: '10px', textDecoration: 'none' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {orgNomeProp}
+            </div>
+            <div style={{ fontSize: '11px', color: '#0F766E', marginTop: '1px' }}>
+              Escritório Parceiro
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Navegação */}
@@ -279,15 +308,28 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
             color: isSuperAdmin ? '#fff' : '#4840CC',
             flexShrink: 0,
           }}>
-            {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
+            {(isParceiro ? nomeDisplay : usuario?.nome_completo)?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {usuario?.nome_completo || 'Usuário'}
-            </div>
-            <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
-              {labelUsuario(usuario)}
-            </div>
+            {isParceiro ? (
+              <Link href="/escritorio/perfil" style={{ textDecoration: 'none' }}>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {nomeDisplay || 'Usuário'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#0F766E' }}>
+                  Parceiro
+                </div>
+              </Link>
+            ) : (
+              <>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {usuario?.nome_completo || 'Usuário'}
+                </div>
+                <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
+                  {labelUsuario(usuario)}
+                </div>
+              </>
+            )}
           </div>
         </div>
         <button onClick={handleLogout} style={{
