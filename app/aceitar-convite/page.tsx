@@ -61,33 +61,21 @@ export default function AceitarConvitePage() {
       return
     }
 
-    // Verifica pelo e-mail se é profissional parceiro — vincula e redireciona para /escritorio
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: prof } = await supabase
-        .from('profissionais_parceiros')
-        .select('id, empresa_id')
-        .eq('email', user.email)
-        .maybeSingle()
-
-      if (prof) {
-        await supabase
-          .from('profissionais_parceiros')
-          .update({ usuario_id: user.id, aceito_em: new Date().toISOString() })
-          .eq('id', prof.id)
-
-        await supabase
-          .from('empresas_parceiras')
-          .update({ status: 'ativo', aceito_em: new Date().toISOString() })
-          .eq('id', prof.empresa_id)
-
+      const res = await fetch('/api/aceitar-parceiro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email }),
+      })
+      const data = await res.json()
+      if (data.isParceiro) {
         router.push('/escritorio')
         return
       }
     }
 
     router.push('/dashboard')
-    router.refresh()
   }
 
   const inputStyle: React.CSSProperties = {
