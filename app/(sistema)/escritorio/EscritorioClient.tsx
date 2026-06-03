@@ -40,6 +40,17 @@ export default function EscritorioClient({ userId }: { userId: string }) {
     }
   }, [empresas])
 
+  async function handleAcessarContabil(orgId: string) {
+    const res = await fetch('/api/parceiros/acessar-org', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId }),
+    })
+    if (res.ok) {
+      window.location.href = '/contabil/plano-de-contas'
+    }
+  }
+
   async function handleAceitar(empresaId: string) {
     await aceitarVinculo(empresaId)
     const novas = await getEmpresasDoUsuario(userId)
@@ -109,10 +120,10 @@ export default function EscritorioClient({ userId }: { userId: string }) {
                         Aceitar Vínculo
                       </button>
                     ) : (
-                      <a href={`/contabil/plano-de-contas`}
-                        style={{ padding: '9px 18px', background: COR, color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>
+                      <button onClick={() => handleAcessarContabil(empresa.org_id)}
+                        style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                         Acessar Módulo Contábil
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>

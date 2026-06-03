@@ -146,6 +146,7 @@ interface Props {
   usuario: (Usuario & { organizacao: Organizacao | null }) | null
   isParceiro?: boolean
   orgNome?: string
+  isParceiroAcessandoOrg?: boolean
 }
 
 function labelUsuario(usuario: { role: string; funcoes: string[] } | null | undefined): string {
@@ -155,7 +156,7 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
   return FUNCAO_LABEL[usuario.funcoes[0]] || usuario.funcoes[0]
 }
 
-export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: Props) {
+export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -231,6 +232,8 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp }: P
   function renderNav() {
     if (isSuperAdmin)
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
+    if (isParceiroAcessandoOrg)
+      return [renderGrupo('Contábil', CONTABIL_ITENS)]
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 
