@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getParceiras, criarParceira, atualizarStatusParceira } from '@/lib/parceiros/actions'
+import { getParceiras, criarParceira, atualizarStatusParceira, reenviarConviteParceira, removerParceira } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, TipoParceria } from '@/lib/parceiros/types'
 
 const COR = '#635BFF'
@@ -140,6 +140,19 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
     setParceiras(novas)
   }
 
+  async function handleReenviar(empresaId: string, email: string) {
+    await reenviarConviteParceira(empresaId, email)
+    setSucesso('Convite reenviado para ' + email)
+    setTimeout(() => setSucesso(''), 4000)
+  }
+
+  async function handleRemover(id: string, razaoSocial: string) {
+    if (!confirm(`Remover "${razaoSocial}"? Esta ação não pode ser desfeita.`)) return
+    await removerParceira(id)
+    const novas = await getParceiras(orgId)
+    setParceiras(novas)
+  }
+
   const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
     ativo:    { bg: '#dcfce7', color: '#166534', label: 'Ativo' },
     inativo:  { bg: '#f3f4f6', color: '#6b7280', label: 'Inativo' },
@@ -197,20 +210,39 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <a href={`/parceiros/${p.tipo}/${p.id}`}
-                      style={{ padding: '7px 14px', background: '#f8f7f4', color: '#374151', border: '1px solid #e5e3dc', borderRadius: 7, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                      Gerenciar
-                    </a>
-                    <button onClick={() => handleToggle(p.id, p.status)}
-                      style={{
-                        padding: '7px 14px',
-                        background: p.status === 'ativo' ? '#fef2f2' : '#f0fdf9',
-                        color: p.status === 'ativo' ? '#dc2626' : '#166534',
-                        border: `1px solid ${p.status === 'ativo' ? '#fca5a5' : '#86efac'}`,
-                        borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      }}>
-                      {p.status === 'ativo' ? 'Inativar' : 'Reativar'}
-                    </button>
+                    {p.status === 'pendente' ? (
+                      <>
+                        <button onClick={() => handleReenviar(p.id, p.email_contato)}
+                          style={{ padding: '7px 14px', background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Reenviar Convite
+                        </button>
+                        <button onClick={() => handleRemover(p.id, p.razao_social)}
+                          style={{ padding: '7px 14px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Remover
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <a href={`/parceiros/${p.tipo}/${p.id}`}
+                          style={{ padding: '7px 14px', background: '#f8f7f4', color: '#374151', border: '1px solid #e5e3dc', borderRadius: 7, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+                          Gerenciar
+                        </a>
+                        <button onClick={() => handleToggle(p.id, p.status)}
+                          style={{
+                            padding: '7px 14px',
+                            background: p.status === 'ativo' ? '#fef2f2' : '#f0fdf9',
+                            color: p.status === 'ativo' ? '#dc2626' : '#166534',
+                            border: `1px solid ${p.status === 'ativo' ? '#fca5a5' : '#86efac'}`,
+                            borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                          }}>
+                          {p.status === 'ativo' ? 'Inativar' : 'Reativar'}
+                        </button>
+                        <button onClick={() => handleRemover(p.id, p.razao_social)}
+                          style={{ padding: '7px 14px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Remover
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

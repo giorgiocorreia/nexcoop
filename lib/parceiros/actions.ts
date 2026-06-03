@@ -68,6 +68,22 @@ export async function atualizarStatusParceira(id: string, status: 'ativo' | 'ina
   revalidatePath('/escritorio')
 }
 
+export async function reenviarConviteParceira(empresaId: string, email: string) {
+  const supabase = createAdminClient()
+  await supabase.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/parceiros/contabilidade/aceitar?empresa=${empresaId}`,
+    data: { tipo_parceria: 'contabilidade', empresa_id: empresaId },
+  })
+  revalidatePath('/configuracoes')
+}
+
+export async function removerParceira(id: string) {
+  const supabase = createAdminClient()
+  await supabase.from('profissionais_parceiros').delete().eq('empresa_id', id)
+  await supabase.from('empresas_parceiras').delete().eq('id', id)
+  revalidatePath('/configuracoes')
+}
+
 export async function atualizarModulosAcesso(id: string, modulos: string[]) {
   const supabase = createAdminClient()
   const { error } = await supabase
