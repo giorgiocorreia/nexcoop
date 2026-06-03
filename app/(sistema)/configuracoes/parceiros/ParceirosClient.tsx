@@ -75,9 +75,13 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
   const [obs, setObs]                 = useState('')
 
   // Estados da busca CNPJ
+  // Estados da busca CNPJ
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false)
   const [erroCNPJ, setErroCNPJ]         = useState('')
   const [avisoCNPJ, setAvisoCNPJ]       = useState('')
+
+  // Modal de confirmação de remoção
+  const [modalRemover, setModalRemover] = useState<any>(null)
 
   useEffect(() => {
     getParceiras(orgId).then(setParceiras)
@@ -146,11 +150,20 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
     setTimeout(() => setSucesso(''), 4000)
   }
 
-  async function handleRemover(id: string, razaoSocial: string) {
-    if (!confirm(`Remover "${razaoSocial}"? Esta ação não pode ser desfeita.`)) return
-    await removerParceira(id)
-    const novas = await getParceiras(orgId)
-    setParceiras(novas)
+  async function handleRemover(parceira: any) {
+    setModalRemover(parceira)
+  }
+
+  async function confirmarRemover() {
+    if (!modalRemover) return
+    try {
+      await removerParceira(modalRemover.id)
+      const novas = await getParceiras(orgId)
+      setParceiras(novas)
+      setSucesso('Empresa removida.')
+      setTimeout(() => setSucesso(''), 3000)
+    } catch (e: any) { setErro(e.message) }
+    finally { setModalRemover(null) }
   }
 
   const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -216,7 +229,7 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                           style={{ padding: '7px 14px', background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Reenviar Convite
                         </button>
-                        <button onClick={() => handleRemover(p.id, p.razao_social)}
+                        <button onClick={() => handleRemover(p)}
                           style={{ padding: '7px 14px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Remover
                         </button>
@@ -237,7 +250,7 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                           }}>
                           {p.status === 'ativo' ? 'Inativar' : 'Reativar'}
                         </button>
-                        <button onClick={() => handleRemover(p.id, p.razao_social)}
+                        <button onClick={() => handleRemover(p)}
                           style={{ padding: '7px 14px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Remover
                         </button>
@@ -409,6 +422,29 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmação de remoção */}
+      {modalRemover && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 420, maxWidth: '95vw' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#dc2626' }}>Remover Empresa Vinculada</h2>
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>
+              Tem certeza que deseja remover <strong>{modalRemover.razao_social}</strong>?
+              Esta ação removerá o vínculo e todos os profissionais cadastrados. Não pode ser desfeita.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setModalRemover(null)}
+                style={{ padding: '9px 18px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarRemover}
+                style={{ padding: '9px 18px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Sim, remover
+              </button>
+            </div>
           </div>
         </div>
       )}
