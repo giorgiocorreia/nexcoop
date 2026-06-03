@@ -67,12 +67,12 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Empresas Parceiras</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Empresas Vinculadas</h2>
           <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>Gerencie empresas prestadoras de serviço com acesso ao sistema</p>
         </div>
         <button onClick={() => setModal(true)}
           style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          + Nova Parceira
+          + Nova Empresa
         </button>
       </div>
 
@@ -80,7 +80,7 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
 
       {parceiras.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 48, background: '#f8f7f4', borderRadius: 12, border: '1px solid #e5e3dc', color: '#6b7280' }}>
-          <p style={{ fontSize: 14, marginBottom: 8 }}>Nenhuma empresa parceira cadastrada.</p>
+          <p style={{ fontSize: 14, marginBottom: 8 }}>Nenhuma empresa vinculada cadastrada.</p>
           <p style={{ fontSize: 12 }}>Cadastre um escritório de contabilidade, fornecedor ou outro prestador de serviço.</p>
         </div>
       ) : (
@@ -128,7 +128,7 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
       {modal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 560, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Nova Empresa Parceira</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Nova Empresa Vinculada</h2>
 
             {!tipoSel ? (
               <>

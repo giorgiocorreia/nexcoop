@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,6 +22,23 @@ export default function OnboardingPage() {
   const router = useRouter()
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+
+  // Parceiros não precisam de onboarding — redirecionam para /escritorio
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase
+        .from('profissionais_parceiros')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('ativo', true)
+        .limit(1)
+        .maybeSingle()
+      if (data) window.location.href = '/escritorio'
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
  const [form, setForm] = useState<{
     tipo: 'cooperativa' | 'associacao' | 'central'

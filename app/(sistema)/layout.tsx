@@ -64,8 +64,11 @@ export default async function SistemaLayout({
     organizacao = org
   }
 
-  // Verificações de onboarding/assinatura apenas no modo normal
-  if (!isSuperAdmin && !impersonatingOrgId) {
+  // Verifica se é parceiro antes dos redirects para não bloquear acesso ao /escritorio
+  const parceiroStatus = user && !isSuperAdmin && !impersonatingOrgId ? await isParceiro(user.id) : false
+
+  // Verificações de onboarding/assinatura apenas no modo normal (parceiros pulam)
+  if (!isSuperAdmin && !impersonatingOrgId && !parceiroStatus) {
     if (organizacao && !organizacao.onboarding_concluido) redirect('/onboarding')
     if (!assinaturaAtiva(organizacao)) redirect('/assinar')
   }
@@ -76,8 +79,6 @@ export default async function SistemaLayout({
     : usuario
       ? { ...usuario, organizacao }
       : null
-
-  const parceiroStatus = user && !impersonatingOrgId ? await isParceiro(user.id) : false
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7f4' }}>

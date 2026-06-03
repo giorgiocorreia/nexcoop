@@ -86,7 +86,7 @@ export default function ConfiguracoesForm(props: Props) {
     { id: 'organizacao', label: '🏢 Organização', adminOnly: true },
     { id: 'captacao',    label: '🎯 Captação',    adminOnly: true },
     { id: 'usuarios',    label: '👥 Usuários',    adminOnly: true },
-    { id: 'parceiros',   label: '🤝 Parceiros',   adminOnly: true },
+    { id: 'parceiros',   label: '🤝 Empresas Vinculadas', adminOnly: true },
     { id: 'seguranca',   label: '🔒 Segurança',   disabled: true },
   ]
 
