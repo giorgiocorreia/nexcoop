@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -8,7 +8,7 @@ const PURPLE = '#635BFF'
 
 export default function AceitarConvitePage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
 
   const [fase, setFase] = useState<'carregando' | 'formulario' | 'salvando' | 'erro'>('carregando')
   const [erroMsg, setErroMsg] = useState('')
