@@ -74,20 +74,26 @@ export default async function SistemaLayout({
 
   let nomeEmpresaParceira = ''
   let isParceiroAcessandoOrg = false
+  let modulosAcessoParceiro: string[] = []
 
   if (parceiroStatus && user) {
     const adminSupabase = createAdminClient()
 
     if (parceiroOrgId) {
-      // Parceiro acessando org cliente — carrega a org do cookie
-      const { data: parceiroOrg } = await adminSupabase
-        .from('organizacoes')
-        .select('*')
-        .eq('id', parceiroOrgId)
-        .single()
-      if (parceiroOrg) {
-        organizacao = parceiroOrg
+      // Parceiro acessando org cliente — carrega org e modulos em paralelo
+      const [orgRes, vinculoRes] = await Promise.all([
+        adminSupabase.from('organizacoes').select('*').eq('id', parceiroOrgId).single(),
+        adminSupabase
+          .from('profissionais_parceiros')
+          .select('empresa:empresa_id(org_id, modulos_acesso)')
+          .eq('usuario_id', user.id)
+          .eq('ativo', true),
+      ])
+      if (orgRes.data) {
+        organizacao = orgRes.data
         isParceiroAcessandoOrg = true
+        const vinculo = (vinculoRes.data ?? []).find((v: any) => v.empresa?.org_id === parceiroOrgId)
+        modulosAcessoParceiro = (vinculo?.empresa as any)?.modulos_acesso ?? []
       }
     } else {
       // Modo escritório normal — busca nome da empresa parceira
@@ -121,6 +127,7 @@ export default async function SistemaLayout({
         isParceiro={parceiroStatus && !isParceiroAcessandoOrg}
         orgNome={parceiroStatus && !isParceiroAcessandoOrg ? nomeEmpresaParceira : undefined}
         isParceiroAcessandoOrg={isParceiroAcessandoOrg}
+        modulosAcesso={modulosAcessoParceiro}
       />
       <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 

@@ -34,10 +34,17 @@ export default async function FinanceiroPage() {
     nomeCooperado[c.id] = c.nome_completo
   }
 
+  const { data: usuario } = await supabaseAuth
+    .from('usuarios')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
   return (
     <FinanceiroLista
       lancamentos={lancamentos ?? []}
       nomeCooperado={nomeCooperado}
+      isParceiro={usuario?.role === 'parceiro'}
     />
   )
 }

@@ -34,6 +34,17 @@ export async function getOrgContext(): Promise<OrgContext | null> {
     }
   }
 
+  // Parceiro acessando org cliente via cookie
+  const parceiroOrgId = cookieStore.get('parceiro_org_id')?.value ?? null
+  if (parceiroOrgId) {
+    return {
+      supabase: createAdminClient(),
+      orgId: parceiroOrgId,
+      usuarioId: user.id,
+      isImpersonating: false,
+    }
+  }
+
   const { data: usuario } = await supabaseAuth
     .from('usuarios')
     .select('organizacao_id')

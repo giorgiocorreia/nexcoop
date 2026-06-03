@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getProfissionais, convidarProfissional, toggleProfissional, reenviarConviteParceira, atualizarEmailParceira } from '@/lib/parceiros/actions'
+import { getProfissionais, convidarProfissional, toggleProfissional, reenviarConviteParceira, atualizarEmailParceira, atualizarModulosAcesso } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, NIVEL_LABEL, NivelProfissional } from '@/lib/parceiros/types'
 import type { EmpresaParceira } from '@/lib/parceiros/types'
 
@@ -29,6 +29,24 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]     = useState('')
   const [sucesso, setSucesso] = useState('')
+
+  // Módulos de acesso
+  const [modulos, setModulos] = useState<string[]>(parceira.modulos_acesso ?? [])
+  const [salvandoModulos, setSalvandoModulos] = useState(false)
+
+  async function handleSalvarModulos() {
+    setSalvandoModulos(true)
+    try {
+      await atualizarModulosAcesso(parceira.id, modulos)
+      setSucesso('Módulos de acesso atualizados!')
+      setTimeout(() => setSucesso(''), 3000)
+    } catch (e: any) { setErro(e.message) }
+    finally { setSalvandoModulos(false) }
+  }
+
+  function toggleModulo(modulo: string) {
+    setModulos(prev => prev.includes(modulo) ? prev.filter(m => m !== modulo) : [...prev, modulo])
+  }
 
   // Edição de e-mail inline
   const [editandoEmail, setEditandoEmail]   = useState(false)
@@ -165,6 +183,33 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
             <p style={{ margin: '3px 0 0', fontSize: 13, color: '#1a1a2e' }}>{parceira.observacoes}</p>
           </div>
         )}
+      </div>
+
+      {/* Módulos de acesso */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 24, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: '0 0 16px' }}>Módulos de acesso</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          {([
+            ['contabil',           'Módulo Contábil'],
+            ['financeiro_leitura', 'Financeiro — somente leitura'],
+          ] as [string, string][]).map(([key, label]) => (
+            <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1a1a1a', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={modulos.includes(key)}
+                onChange={() => toggleModulo(key)}
+                style={{ width: 16, height: 16, accentColor: COR, cursor: 'pointer' }}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <button
+          onClick={handleSalvarModulos}
+          disabled={salvandoModulos}
+          style={{ padding: '8px 18px', background: salvandoModulos ? '#9CA3AF' : COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoModulos ? 'not-allowed' : 'pointer' }}>
+          {salvandoModulos ? 'Salvando…' : 'Salvar módulos'}
+        </button>
       </div>
 
       {/* Profissionais */}

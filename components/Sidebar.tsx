@@ -147,6 +147,7 @@ interface Props {
   isParceiro?: boolean
   orgNome?: string
   isParceiroAcessandoOrg?: boolean
+  modulosAcesso?: string[]
 }
 
 function labelUsuario(usuario: { role: string; funcoes: string[] } | null | undefined): string {
@@ -156,7 +157,7 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
   return FUNCAO_LABEL[usuario.funcoes[0]] || usuario.funcoes[0]
 }
 
-export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg }: Props) {
+export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg, modulosAcesso }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -232,8 +233,13 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   function renderNav() {
     if (isSuperAdmin)
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
-    if (isParceiroAcessandoOrg)
-      return [renderGrupo('Contábil', CONTABIL_ITENS)]
+    if (isParceiroAcessandoOrg) {
+      const grupos = []
+      if (modulosAcesso?.includes('financeiro_leitura'))
+        grupos.push(renderGrupo('Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
+      grupos.push(renderGrupo('Contábil', CONTABIL_ITENS))
+      return grupos
+    }
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 

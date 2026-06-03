@@ -42,11 +42,12 @@ function mesAnoLabel(d: Date) {
 interface Props {
   lancamentos: Lancamento[]
   nomeCooperado: Record<string, string>
+  isParceiro?: boolean
 }
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 
-export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
+export default function FinanceiroLista({ lancamentos, nomeCooperado, isParceiro }: Props) {
   const router = useRouter()
 
   // Filtros
@@ -92,6 +93,17 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
   return (
     <div style={{ maxWidth: '1100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
+      {/* ── Banner leitura (parceiro) ──────────────────────────────────────── */}
+      {isParceiro && (
+        <div style={{
+          background: '#E6F7F1', border: '1px solid #0F766E44', borderRadius: '10px',
+          padding: '10px 16px', marginBottom: '1rem',
+          fontSize: '13px', color: '#065f46', display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+          👁 Você está visualizando o financeiro em modo leitura.
+        </div>
+      )}
+
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
@@ -105,19 +117,21 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
             {lancamentos.length} lançamento{lancamentos.length !== 1 ? 's' : ''} no total
           </p>
         </div>
-        <button
-          onClick={() => router.push('/financeiro/novo')}
-          style={{
-            padding: '9px 18px', background: '#635BFF', color: '#fff',
-            border: 'none', borderRadius: '8px', fontSize: '13px',
-            fontWeight: '600', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', gap: '6px',
-          }}
-          onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-          onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
-        >
-          <span style={{ fontSize: '16px' }}>+</span> Novo lançamento
-        </button>
+        {!isParceiro && (
+          <button
+            onClick={() => router.push('/financeiro/novo')}
+            style={{
+              padding: '9px 18px', background: '#635BFF', color: '#fff',
+              border: 'none', borderRadius: '8px', fontSize: '13px',
+              fontWeight: '600', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', gap: '6px',
+            }}
+            onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
+            onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
+          >
+            <span style={{ fontSize: '16px' }}>+</span> Novo lançamento
+          </button>
+        )}
       </div>
 
       {/* ── Cards de resumo (calculados sobre dados filtrados) ─────────────── */}
@@ -258,12 +272,12 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado }: Props) {
                 return (
                   <tr
                     key={l.id}
-                    onClick={() => router.push(`/financeiro/${l.id}`)}
-                    onMouseEnter={() => setHovered(l.id)}
+                    onClick={() => !isParceiro && router.push(`/financeiro/${l.id}`)}
+                    onMouseEnter={() => !isParceiro && setHovered(l.id)}
                     onMouseLeave={() => setHovered(null)}
                     style={{
                       borderTop: i > 0 ? '1px solid #f0eeea' : 'none',
-                      cursor: 'pointer',
+                      cursor: isParceiro ? 'default' : 'pointer',
                       background: isHov ? '#fafaf8' : 'transparent',
                     }}
                   >

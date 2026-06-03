@@ -18,7 +18,7 @@ export const NIVEL_LABEL: Record<NivelProfissional, string> = {
 }
 
 export const MODULOS_POR_TIPO: Record<TipoParceria, string[]> = {
-  contabilidade: ['contabil', 'financeiro_leitura', 'cooperados_leitura'],
+  contabilidade: ['contabil', 'financeiro_leitura'],
   fornecedor: ['estoque_fornecedor'],
   transportadora: ['pedidos_leitura'],
   assistencia_tecnica: ['cooperados_leitura', 'documentos_leitura'],
