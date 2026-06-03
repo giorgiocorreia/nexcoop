@@ -62,8 +62,12 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId, nome, cargo, crc } = await request.json()
     const supabase = createAdminClient()
+    const { nome, cargo, crc, userId } = await request.json()
+
+    if (!userId || !nome) {
+      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    }
 
     await supabase
       .from('profissionais_parceiros')
