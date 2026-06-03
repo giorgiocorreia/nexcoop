@@ -47,9 +47,20 @@ export async function criarParceira(data: {
     .single()
   if (error) throw new Error(error.message)
 
+  // Criar profissional responsável automaticamente
+  await supabase.from('profissionais_parceiros').insert({
+    empresa_id: nova.id,
+    nome: data.razao_social,
+    email: data.email_contato,
+    cargo: 'Responsável',
+    nivel: 'responsavel',
+    ativo: true,
+    convidado_em: new Date().toISOString(),
+  })
+
   // Envia convite por e-mail
   await supabase.auth.admin.inviteUserByEmail(data.email_contato, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/parceiros/${data.tipo}/aceitar?empresa=${nova.id}`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/aceitar-convite`,
     data: { tipo_parceria: data.tipo, empresa_id: nova.id },
   })
 
