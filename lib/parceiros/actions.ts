@@ -82,8 +82,8 @@ export async function atualizarStatusParceira(id: string, status: 'ativo' | 'ina
 export async function reenviarConviteParceira(empresaId: string, email: string) {
   const supabase = createAdminClient()
   await supabase.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/parceiros/contabilidade/aceitar?empresa=${empresaId}`,
-    data: { tipo_parceria: 'contabilidade', empresa_id: empresaId },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/aceitar-convite`,
+    data: { empresa_id: empresaId },
   })
   revalidatePath('/configuracoes')
 }
