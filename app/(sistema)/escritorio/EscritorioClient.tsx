@@ -9,10 +9,17 @@ export default function EscritorioClient({ userId }: { userId: string }) {
   const [empresas, setEmpresas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [sucesso, setSucesso] = useState('')
+  const [nomeUsuario, setNomeUsuario] = useState('')
 
   useEffect(() => {
     getEmpresasDoUsuario(userId).then(setEmpresas).finally(() => setLoading(false))
   }, [userId])
+
+  useEffect(() => {
+    if (empresas.length > 0) {
+      setNomeUsuario(empresas[0].nome || '')
+    }
+  }, [empresas])
 
   async function handleAceitar(empresaId: string) {
     await aceitarVinculo(empresaId)
@@ -26,7 +33,9 @@ export default function EscritorioClient({ userId }: { userId: string }) {
 
   return (
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>Meu Painel</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>
+        {nomeUsuario ? `Olá, ${nomeUsuario}` : 'Meu Painel'}
+      </h1>
       <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Organizações clientes vinculadas à sua empresa</p>
 
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
