@@ -59,3 +59,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { userId, nome, cargo, crc } = await request.json()
+    const supabase = createAdminClient()
+
+    await supabase
+      .from('profissionais_parceiros')
+      .update({ nome, cargo: cargo || null, crc: crc || null })
+      .eq('usuario_id', userId)
+
+    await supabase
+      .from('usuarios')
+      .update({ nome_completo: nome })
+      .eq('id', userId)
+
+    return NextResponse.json({ ok: true })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
