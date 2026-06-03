@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         id: userId,
         email: email,
         nome_completo: profData?.nome || email,
-        role: 'membro',
+        role: 'parceiro',
         ativo: true,
       })
     } else {
