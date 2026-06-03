@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha')
-  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar')
+  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado')
   const isOnboarding = pathname.startsWith('/onboarding')
   const isRSC = request.headers.get('rsc') === '1'
 
