@@ -223,7 +223,20 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {p.status === 'pendente' ? (
+                    {/* Gerenciar — sempre visível */}
+                    <a href={`/parceiros/${p.tipo}/${p.id}`}
+                      style={{
+                        padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+                        textDecoration: 'none', cursor: 'pointer',
+                        background: p.status === 'pendente' ? '#f8f7f4' : COR,
+                        color: p.status === 'pendente' ? '#374151' : '#fff',
+                        border: p.status === 'pendente' ? '1px solid #e5e3dc' : 'none',
+                      }}>
+                      Gerenciar
+                    </a>
+
+                    {/* Ações por status */}
+                    {p.status === 'pendente' && (
                       <>
                         <button onClick={() => handleReenviar(p.id, p.email_contato)}
                           style={{ padding: '7px 14px', background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
@@ -234,27 +247,18 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                           Remover
                         </button>
                       </>
-                    ) : (
-                      <>
-                        <a href={`/parceiros/${p.tipo}/${p.id}`}
-                          style={{ padding: '7px 14px', background: '#f8f7f4', color: '#374151', border: '1px solid #e5e3dc', borderRadius: 7, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                          Gerenciar
-                        </a>
-                        <button onClick={() => handleToggle(p.id, p.status)}
-                          style={{
-                            padding: '7px 14px',
-                            background: p.status === 'ativo' ? '#fef2f2' : '#f0fdf9',
-                            color: p.status === 'ativo' ? '#dc2626' : '#166534',
-                            border: `1px solid ${p.status === 'ativo' ? '#fca5a5' : '#86efac'}`,
-                            borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                          }}>
-                          {p.status === 'ativo' ? 'Inativar' : 'Reativar'}
-                        </button>
-                        <button onClick={() => handleRemover(p)}
-                          style={{ padding: '7px 14px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                          Remover
-                        </button>
-                      </>
+                    )}
+                    {p.status !== 'pendente' && (
+                      <button onClick={() => handleToggle(p.id, p.status)}
+                        style={{
+                          padding: '7px 14px',
+                          background: p.status === 'ativo' ? '#fef2f2' : '#f0fdf9',
+                          color: p.status === 'ativo' ? '#dc2626' : '#166534',
+                          border: `1px solid ${p.status === 'ativo' ? '#fca5a5' : '#86efac'}`,
+                          borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                        {p.status === 'ativo' ? 'Inativar' : 'Reativar'}
+                      </button>
                     )}
                   </div>
                 </div>
