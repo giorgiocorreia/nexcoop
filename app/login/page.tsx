@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,6 +10,13 @@ function AuthForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/dashboard'
+
+  useEffect(() => {
+    if (redirect !== '/dashboard' && window.location.hash.includes('access_token')) {
+      router.replace(redirect + window.location.hash)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [aba, setAba] = useState<'login' | 'cadastro'>('login')
   const [email, setEmail] = useState('')
