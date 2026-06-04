@@ -277,7 +277,9 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {orgNome}
+              {!isParceiro && !isSuperAdmin ? (
+                <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>{orgNome}</a>
+              ) : orgNome}
             </div>
             {!isParceiro && (
               <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
@@ -330,9 +332,11 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
               </Link>
             ) : (
               <>
-                <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {usuario?.nome_completo || 'Usuário'}
-                </div>
+                <a href="/perfil" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {usuario?.nome_completo || 'Usuário'}
+                  </div>
+                </a>
                 <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
                   {labelUsuario(usuario)}
                 </div>

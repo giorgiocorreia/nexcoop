@@ -5,7 +5,6 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { Organizacao, PerfilCaptacao, TipoOrganizacao, Usuario, FuncaoDisponivel } from '@/types/database'
 import { salvarOrganizacao } from './actions'
 import { salvarPerfilCaptacao } from '@/lib/captacao/actions'
-import PerfilUsuario from './PerfilUsuario'
 import UsuariosGestao from './usuarios/UsuariosGestao'
 import ParceirosClient from './parceiros/ParceirosClient'
 
@@ -53,7 +52,7 @@ const UFS = [
 ]
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-type Aba = 'perfil' | 'organizacao' | 'captacao' | 'usuarios' | 'parceiros' | 'seguranca'
+type Aba = 'captacao' | 'usuarios' | 'parceiros' | 'seguranca'
 
 interface Props {
   org: Organizacao | null
@@ -73,7 +72,7 @@ export default function ConfiguracoesForm(props: Props) {
   const isOrgAdmin    = props.isSuperAdmin || (props.usuario.funcoes ?? []).includes('admin')
   const showAdminTabs = isOrgAdmin && props.org !== null
 
-  const abaAtual = (searchParams.get('aba') ?? 'perfil') as Aba
+  const abaAtual = (searchParams.get('aba') ?? 'captacao') as Aba
 
   function setAba(aba: Aba) {
     const params = new URLSearchParams(searchParams.toString())
@@ -82,8 +81,6 @@ export default function ConfiguracoesForm(props: Props) {
   }
 
   const tabs: { id: Aba; label: string; adminOnly?: boolean; disabled?: boolean }[] = [
-    { id: 'perfil',      label: '👤 Meu perfil' },
-    { id: 'organizacao', label: '🏢 Organização', adminOnly: true },
     { id: 'captacao',    label: '🎯 Captação',    adminOnly: true },
     { id: 'usuarios',    label: '👥 Usuários',    adminOnly: true },
     { id: 'parceiros',   label: '🤝 Empresas Vinculadas', adminOnly: true },
@@ -93,7 +90,8 @@ export default function ConfiguracoesForm(props: Props) {
   const visiveis = tabs.filter(t => !t.adminOnly || showAdminTabs)
 
   const abaValida = visiveis.find(t => t.id === abaAtual && !t.disabled)
-  const abaEfetiva: Aba = abaValida ? abaAtual : 'perfil'
+  const abaDefault = (visiveis.find(t => !t.disabled)?.id ?? 'captacao') as Aba
+  const abaEfetiva: Aba = abaValida ? abaAtual : abaDefault
 
   return (
     <div style={{ maxWidth: '820px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -138,12 +136,6 @@ export default function ConfiguracoesForm(props: Props) {
       </div>
 
       {/* Conteúdo da aba */}
-      {abaEfetiva === 'perfil' && (
-        <PerfilUsuario usuario={props.usuario} />
-      )}
-      {abaEfetiva === 'organizacao' && showAdminTabs && (
-        <AbaOrganizacao org={props.org!} isSuperAdmin={props.isSuperAdmin} />
-      )}
       {abaEfetiva === 'captacao' && showAdminTabs && (
         <AbaCaptacao perfilCaptacao={props.perfilCaptacao} />
       )}
