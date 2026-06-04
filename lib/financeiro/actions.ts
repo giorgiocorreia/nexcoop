@@ -3,11 +3,12 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { registrarLog } from '@/lib/audit/logger'
+import type { TipoLancamento, StatusLancamento } from '@/types/database'
 
 export async function criarLancamento(data: {
   organizacao_id: string
-  tipo: string
-  status: string
+  tipo: TipoLancamento
+  status: StatusLancamento
   descricao: string
   valor: number
   data_competencia: string
@@ -45,7 +46,7 @@ export async function editarLancamento(
   id: string,
   orgId: string,
   usuarioId: string,
-  dados: Partial<{ status: string; descricao: string; valor: number; observacoes: string }>
+  dados: Partial<{ status: StatusLancamento; descricao: string; valor: number; observacoes: string }>
 ) {
   const supabase = createAdminClient()
 
