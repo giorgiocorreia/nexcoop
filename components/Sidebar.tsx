@@ -273,14 +273,20 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       {/* Cabeçalho */}
       <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '10px',
-            background: isSuperAdmin ? '#1a1a1a' : '#635BFF',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', flexShrink: 0,
-          }}>
-            {isSuperAdmin ? '⚡' : <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="white"/><rect x="22" y="3" width="7" height="26" rx="3" fill="white"/><path d="M10 3L22 29" stroke="white" strokeWidth="4.5" strokeLinecap="round"/></svg>}
-          </div>
+          {isSuperAdmin ? (
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px',
+              background: '#1a1a1a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '18px', flexShrink: 0,
+            }}>⚡</div>
+          ) : (
+            <img
+              src="/images/logo-nexcoop-horizontal.png"
+              alt="NexCoop"
+              style={{ height: 30, width: 'auto', display: 'block' }}
+            />
+          )}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {!isParceiro && !isSuperAdmin ? (

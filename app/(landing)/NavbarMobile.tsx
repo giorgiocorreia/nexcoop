@@ -56,6 +56,11 @@ export default function NavbarMobile() {
 
       {aberto && (
         <div className="nav-mobile-menu">
+          <img
+            src="/images/logo-nexcoop-horizontal.png"
+            alt="NexCoop"
+            style={{ height: 32, width: 'auto', display: 'block' }}
+          />
           {links.map(([href, label]) => (
             <a
               key={href}

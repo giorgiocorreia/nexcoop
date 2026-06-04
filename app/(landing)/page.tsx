@@ -275,24 +275,13 @@ function Navbar() {
 }
 
 // ─── Logo ──────────────────────────────────────────────────────────────────
-function LogoMarca({ size = 38 }: { size?: number }) {
+function LogoMarca() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <svg width={size} height={size} viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1565C0" />
-            <stop offset="100%" stopColor="#06B6D4" />
-          </linearGradient>
-        </defs>
-        <rect width="38" height="38" rx="10" fill="url(#lg)" />
-        <text x="7" y="27" fontFamily="Arial Black,sans-serif" fontSize="22" fontWeight="900" fill="white">N</text>
-      </svg>
-      <span style={{ fontFamily: "'Sora',system-ui,sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>
-        <span style={{ color: '#0D2B5E' }}>Nex</span>
-        <span style={{ color: '#06B6D4' }}>Coop</span>
-      </span>
-    </div>
+    <img
+      src="/images/logo-nexcoop-horizontal.png"
+      alt="NexCoop"
+      style={{ height: 36, width: 'auto', display: 'block' }}
+    />
   )
 }
 
@@ -802,9 +791,11 @@ function Rodape() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div className="footer-grid">
           <div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: '0.75rem' }}>
-              <span style={{ color: '#fff' }}>Nex</span><span style={{ color: '#06B6D4' }}>Coop</span>
-            </div>
+            <img
+              src="/images/logo-nexcoop-horizontal.png"
+              alt="NexCoop"
+              style={{ height: 28, width: 'auto', display: 'block', marginBottom: '0.75rem', filter: 'brightness(0) invert(1)' }}
+            />
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: 260 }}>
               Gestão tecnológica para cooperativas e associações que buscam crescer com eficiência, inovação e sustentabilidade.
             </p>
