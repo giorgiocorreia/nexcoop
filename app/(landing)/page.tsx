@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import InviteDetector from './InviteDetector'
+import NavbarMobile from './NavbarMobile'
 
 interface OrgCliente {
   nome_curto: string | null
@@ -62,9 +63,8 @@ function EstilosGlobais() {
       .nav-links { display: flex; gap: 2rem; align-items: center; }
       .nav-ctas  { display: flex; gap: 0.75rem; align-items: center; }
       .nav-hamburger { display: none; cursor: pointer; background: none; border: none; padding: 6px; }
-      .nav-mobile-menu { display: none; flex-direction: column; position: absolute; top: 68px; left: 0; right: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(12px); border-bottom: 1px solid #E2EAF4; padding: 1rem 1.5rem; gap: 0.25rem; z-index: 200; }
-      #nav-toggle { display: none; }
-      #nav-toggle:checked ~ .nav-mobile-menu { display: flex; }
+      .nav-mobile-wrapper { position: relative; }
+      .nav-mobile-menu { display: flex; flex-direction: column; position: fixed; top: 68px; left: 0; right: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(12px); border-bottom: 1px solid #E2EAF4; padding: 1rem 1.5rem; gap: 0.25rem; z-index: 200; }
 
       /* ── Grids ── */
       .hero-grid       { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
@@ -198,30 +198,7 @@ function Navbar() {
           </Link>
         </div>
 
-        {/* Hamburger (mobile) — CSS checkbox trick, sem JS */}
-        <label htmlFor="nav-toggle" className="nav-hamburger" aria-label="Menu" style={{ zIndex: 201 }}>
-          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-            <rect y="5"  width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
-            <rect y="12" width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
-            <rect y="19" width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
-          </svg>
-        </label>
-      </div>
-
-      {/* Mobile menu — abre via CSS :checked */}
-      <input type="checkbox" id="nav-toggle" />
-      <div className="nav-mobile-menu">
-        {[['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos'], ['#demo', 'Demo'], ['mailto:suporte@nexcoop.com.br', 'Contato']].map(([href, label]) => (
-          <a key={href} href={href} style={{ fontSize: 15, fontWeight: 500, color: '#0D2B5E', textDecoration: 'none', padding: '0.7rem 0', borderBottom: '1px solid #F1F5F9' }}>{label}</a>
-        ))}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-          <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '10px', border: '1.5px solid #E2EAF4', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#0D2B5E', textDecoration: 'none' }}>
-            Entrar
-          </Link>
-          <Link href="/cadastro" style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none' }}>
-            Grátis
-          </Link>
-        </div>
+        <NavbarMobile />
       </div>
     </header>
   )
