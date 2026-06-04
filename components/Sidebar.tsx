@@ -282,9 +282,9 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             }}>⚡</div>
           ) : (
             <img
-              src="/images/logo-nexcoop-onlyone.png"
+              src="/images/logo-nexcoop-vertical.png"
               alt="NexCoop"
-              style={{ height: 48, width: 'auto', display: 'block', filter: 'brightness(0) invert(1)', margin: '0 auto' }}
+              style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
             />
           )}
           <div style={{ minWidth: 0 }}>
