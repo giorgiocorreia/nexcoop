@@ -2,6 +2,7 @@ export default function LinkExpiradoPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 40, maxWidth: 420, textAlign: 'center' }}>
+        <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
         <p style={{ fontSize: 32, marginBottom: 16 }}>⏱</p>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Link expirado</h1>
         <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>

@@ -111,10 +111,7 @@ export default async function AssinarPage() {
     <div style={{ fontFamily: FONT, color: TEXT, background: BG, minHeight: '100vh' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg>
-            <span style={{ fontWeight: 700, fontSize: 20, color: GREEN_DARK }}>NexCoop</span>
-          </div>
+          <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
 
           <div style={{
             display: 'inline-flex',

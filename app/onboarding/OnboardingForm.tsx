@@ -105,17 +105,7 @@ export default function OnboardingForm() {
     }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '56px', height: '56px', borderRadius: '14px', background: GREEN,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem', fontSize: '28px',
-          }}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-              <rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/>
-              <rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/>
-              <path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>
             Complete seu cadastro
           </h1>
