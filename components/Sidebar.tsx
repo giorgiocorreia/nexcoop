@@ -62,6 +62,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const isTecnico       = funcoes.includes('tecnico')
   const isCaptador      = funcoes.includes('captador')
   const isConselhoFiscal = funcoes.includes('conselho_fiscal')
+  const isCaixaCacau    = funcoes.includes('caixa_cacau')
 
   const grupos: NavGrupo[] = []
 
@@ -84,12 +85,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
 
   // ── AGRO ──────────────────────────────────────────────────────────────────
   const agroItens: NavItem[] = []
-  if (isAdmin || isTecnico) {
-    agroItens.push(
-      { label: 'Produção',        href: '/producao',        icone: '🌱', em_breve: true },
-      { label: 'Comercialização', href: '/comercializacao', icone: '🤝', em_breve: true },
-    )
-  }
+  if (isAdmin || isTecnico)
+    agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
+  if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
+    agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
   if (isAdmin)
     agroItens.push({ label: 'Loja', href: '/loja', icone: '🏪', em_breve: true })
   if (agroItens.length > 0)
