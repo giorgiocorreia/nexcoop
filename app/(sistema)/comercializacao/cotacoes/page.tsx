@@ -11,7 +11,7 @@ type Cotacao = {
   produto_id: string
   preco_externo: number
   preco_cooperado: number
-  observacoes: string
+  observacoes: string | null
   produtos: { nome: string; unidade: string }
 }
 

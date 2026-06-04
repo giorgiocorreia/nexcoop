@@ -6,7 +6,7 @@ import { listarProdutos, criarProduto, editarProduto } from '@/lib/comercializac
 type Produto = {
   id: string
   nome: string
-  categoria: string
+  categoria: string | null
   unidade: string
   ativo: boolean
 }
@@ -46,7 +46,7 @@ export default function ProdutosPage() {
     try {
       await editarProduto(editando.id, {
         nome: editando.nome,
-        categoria: editando.categoria,
+        categoria: editando.categoria ?? '',
         unidade: editando.unidade,
         ativo: editando.ativo
       })
@@ -169,7 +169,7 @@ export default function ProdutosPage() {
                 style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
               />
               <input
-                value={editando.categoria}
+                value={editando.categoria ?? ''}
                 onChange={e => setEditando(p => p && ({ ...p, categoria: e.target.value }))}
                 placeholder="Categoria"
                 style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}

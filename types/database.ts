@@ -646,6 +646,250 @@ export interface NFeItem {
   created_at:      string
 }
 
+// ── Módulo Comercialização (025 + 026) ────────────────────────────────────────
+
+export type TipoProdutoUnidade     = 'kg' | 'unidade' | 'litro' | 'caixa'
+export type TipoProdutorVinculo    = 'externo' | 'cooperado'
+export type TipoContaProdutorConta = 'corrente' | 'poupanca' | 'pix'
+export type TipoMovimentacaoConta  =
+  | 'entrega' | 'conversao' | 'saque_especie' | 'saque_pix'
+  | 'compra_loja' | 'ajuste_produto' | 'ajuste_financeiro' | 'estorno'
+export type TipoMovimentacaoEstoque =
+  | 'entrada' | 'saida_entrega' | 'ajuste_positivo' | 'ajuste_negativo'
+export type FormaPagamentoCaixa    = 'especie' | 'pix'
+export type StatusSessaoCaixa      = 'aberta' | 'fechada'
+export type StatusSolicitacaoVenda = 'pendente' | 'em_analise' | 'executada' | 'recusada'
+export type StatusSafra            = 'planejamento' | 'em_andamento' | 'encerrada'
+export type TipoComprador          = 'exportador' | 'industria' | 'trader' | 'outro'
+export type StatusLote             = 'aberto' | 'em_venda' | 'entregue'
+export type StatusVendaExterna     = 'rascunho' | 'confirmada' | 'entregue' | 'paga'
+export type StatusDistribuicao     = 'calculado' | 'pago'
+
+export interface Produto {
+  id:             string
+  organizacao_id: string
+  nome:           string
+  categoria:      string | null
+  unidade:        TipoProdutoUnidade
+  ativo:          boolean
+  created_at:     string
+}
+
+export interface Cotacao {
+  id:              string
+  organizacao_id:  string
+  produto_id:      string
+  data:            string
+  preco_externo:   number
+  preco_cooperado: number
+  registrado_por:  string | null
+  observacoes:     string | null
+  created_at:      string
+}
+
+export interface Produtor {
+  id:               string
+  organizacao_id:   string
+  nome:             string
+  cpf:              string | null
+  telefone:         string | null
+  email:            string | null
+  municipio:        string | null
+  endereco:         string | null
+  tipo:             TipoProdutorVinculo
+  cooperado_id:     string | null
+  area_total_ha:    number | null
+  area_cacau_ha:    number | null
+  tem_certificacao: boolean
+  tipo_certificacao: string | null
+  banco:            string | null
+  agencia:          string | null
+  conta_bancaria:   string | null
+  tipo_conta:       TipoContaProdutorConta | null
+  chave_pix:        string | null
+  ativo:            boolean
+  created_at:       string
+}
+
+export interface ContaProdutor {
+  id:               string
+  organizacao_id:   string
+  produtor_id:      string
+  saldo_financeiro: number
+  created_at:       string
+}
+
+export interface SaldoProduto {
+  id:         string
+  conta_id:   string
+  produto_id: string
+  quantidade: number
+}
+
+export interface EstoqueFisico {
+  id:                  string
+  organizacao_id:      string
+  produto_id:          string
+  quantidade:          number
+  ultima_atualizacao:  string
+}
+
+export interface SessaoCaixa {
+  id:                     string
+  organizacao_id:         string
+  usuario_id:             string
+  data:                   string
+  hora_abertura:          string
+  hora_fechamento:        string | null
+  saldo_inicial_especie:  number
+  saldo_final_especie:    number | null
+  total_entradas_especie: number
+  total_saidas_especie:   number
+  total_pix:              number
+  status:                 StatusSessaoCaixa
+  observacoes_fechamento: string | null
+  created_at:             string
+}
+
+export interface MovimentacaoConta {
+  id:               string
+  organizacao_id:   string
+  conta_id:         string
+  usuario_id:       string
+  sessao_caixa_id:  string | null
+  tipo:             TipoMovimentacaoConta
+  produto_id:       string | null
+  quantidade_produto: number | null
+  preco_unitario:   number | null
+  valor_financeiro: number | null
+  forma_pagamento:  FormaPagamentoCaixa | null
+  referencia_id:    string | null
+  referencia_tipo:  string | null
+  observacoes:      string | null
+  created_at:       string
+}
+
+export interface MovimentacaoEstoqueFisico {
+  id:              string
+  organizacao_id:  string
+  produto_id:      string
+  tipo:            TipoMovimentacaoEstoque
+  quantidade:      number
+  responsavel_id:  string
+  referencia_id:   string | null
+  referencia_tipo: string | null
+  numero_nf:       string | null
+  observacoes:     string | null
+  created_at:      string
+}
+
+export interface RetiradaExterna {
+  id:                   string
+  organizacao_id:       string
+  produto_id:           string
+  responsavel_id:       string
+  data_retirada:        string
+  destino:              string
+  quantidade_retirada:  number
+  quantidade_confirmada: number | null
+  numero_nf:            string | null
+  observacoes:          string | null
+  venda_externa_id:     string | null
+  safra_id:             string | null
+  created_at:           string
+}
+
+export interface SolicitacaoVenda {
+  id:                  string
+  organizacao_id:      string
+  conta_id:            string
+  produtor_id:         string
+  cotacao_id:          string
+  produto_id:          string
+  quantidade_kg:       number
+  valor_estimado:      number
+  forma_pagamento:     FormaPagamentoCaixa
+  chave_pix:           string | null
+  status:              StatusSolicitacaoVenda
+  justificativa_recusa: string | null
+  executada_por:       string | null
+  executada_em:        string | null
+  movimentacao_id:     string | null
+  created_at:          string
+}
+
+export interface Safra {
+  id:                    string
+  organizacao_id:        string
+  ano:                   number
+  descricao:             string | null
+  estimativa_kg:         number | null
+  taxa_comercializacao:  number
+  status:                StatusSafra
+  created_at:            string
+}
+
+export interface Comprador {
+  id:             string
+  organizacao_id: string
+  nome:           string
+  tipo:           TipoComprador | null
+  cnpj:           string | null
+  contato:        string | null
+  email:          string | null
+  telefone:       string | null
+  ativo:          boolean
+  created_at:     string
+}
+
+export interface Lote {
+  id:             string
+  organizacao_id: string
+  safra_id:       string
+  produto_id:     string
+  codigo:         string
+  peso_total_kg:  number
+  status:         StatusLote
+  observacoes:    string | null
+  created_at:     string
+}
+
+export interface VendaExterna {
+  id:                       string
+  organizacao_id:           string
+  safra_id:                 string
+  lote_id:                  string
+  comprador_id:             string
+  data_venda:               string
+  quantidade_kg:            number
+  preco_kg:                 number
+  valor_bruto:              number
+  taxa_comercializacao_pct: number
+  valor_taxa:               number | null
+  custos_logistica:         number
+  valor_liquido:            number | null
+  status:                   StatusVendaExterna
+  lancamento_id:            string | null
+  observacoes:              string | null
+  created_at:               string
+}
+
+export interface DistribuicaoResultado {
+  id:               string
+  organizacao_id:   string
+  venda_externa_id: string
+  produtor_id:      string
+  conta_id:         string
+  quantidade_kg:    number
+  percentual:       number
+  valor_bruto:      number
+  valor_liquido:    number
+  status:           StatusDistribuicao
+  data_pagamento:   string | null
+  movimentacao_id:  string | null
+  created_at:       string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -730,6 +974,24 @@ export type Database = {
       plano_contas_escritorio:   TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       audit_logs:                TableDef<any>
+      // ── Comercialização (025) ──────────────────────────────────────────────
+      produtos:                    TableDef<Produto>
+      cotacoes:                    TableDef<Cotacao>
+      produtores:                  TableDef<Produtor>
+      contas_produtor:             TableDef<ContaProdutor>
+      saldos_produto:              TableDef<SaldoProduto>
+      estoque_fisico:              TableDef<EstoqueFisico>
+      sessoes_caixa:               TableDef<SessaoCaixa>
+      movimentacoes_conta:         TableDef<MovimentacaoConta>
+      movimentacoes_estoque_fisico: TableDef<MovimentacaoEstoqueFisico>
+      retiradas_externas:          TableDef<RetiradaExterna>
+      solicitacoes_venda:          TableDef<SolicitacaoVenda>
+      // ── Comercialização (026) ──────────────────────────────────────────────
+      safras:                      TableDef<Safra>
+      compradores:                 TableDef<Comprador>
+      lotes:                       TableDef<Lote>
+      vendas_externas:             TableDef<VendaExterna>
+      distribuicao_resultado:      TableDef<DistribuicaoResultado>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
