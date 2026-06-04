@@ -117,8 +117,9 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     grupos.push({
       grupo: 'Escritório',
       itens: [
-        { label: 'Painel', href: '/escritorio',        icone: '🏦' },
-        { label: 'Equipe', href: '/escritorio/equipe', icone: '👥' },
+        { label: 'Painel',          href: '/escritorio',                     icone: '🏦' },
+        { label: 'Equipe',          href: '/escritorio/equipe',               icone: '👥' },
+        { label: 'Plano de Contas', href: '/escritorio/plano-de-contas',      icone: '📋' },
       ],
     })
 

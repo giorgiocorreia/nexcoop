@@ -577,6 +577,18 @@ export interface ContadorOrg {
   aceito_em:     string | null
 }
 
+export interface PlanoContasEscritorio {
+  id:                string
+  empresa_id:        string
+  codigo:            string
+  nome:              string
+  tipo:              string
+  nivel:             number
+  aceita_lancamento: boolean
+  ativo:             boolean
+  created_at:        string
+}
+
 export interface PlanoContasExterno {
   id:            string
   escritorio_id: string

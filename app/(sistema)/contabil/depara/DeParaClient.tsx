@@ -9,9 +9,14 @@ import BotaoAjuda from '@/components/BotaoAjuda'
 
 const COR = '#0F766E'
 
-interface Props { orgId: string; userId: string }
+interface Props {
+  orgId: string
+  userId: string
+  isParceiro?: boolean
+  planoEscritorio?: any[]
+}
 
-export default function DeParaClient({ orgId, userId }: Props) {
+export default function DeParaClient({ orgId, userId, isParceiro, planoEscritorio }: Props) {
   const [contadores, setContadores] = useState<any[]>([])
   const [contadorSel, setContadorSel] = useState<any>(null)
   const [contasInternas, setContasInternas] = useState<any[]>([])
@@ -25,11 +30,16 @@ export default function DeParaClient({ orgId, userId }: Props) {
   const [sucesso, setSucesso] = useState('')
 
   useEffect(() => {
-    getContadoresDaOrg(orgId).then(data => {
-      const ativos = data.filter((c: any) => c.ativo)
-      setContadores(ativos)
-      if (ativos.length > 0) setContadorSel(ativos[0])
-    })
+    // Para parceiros: usa o planoEscritorio diretamente como contas externas
+    if (isParceiro && planoEscritorio && planoEscritorio.length > 0) {
+      setContasExternas(planoEscritorio)
+    } else if (!isParceiro) {
+      getContadoresDaOrg(orgId).then(data => {
+        const ativos = data.filter((c: any) => c.ativo)
+        setContadores(ativos)
+        if (ativos.length > 0) setContadorSel(ativos[0])
+      })
+    }
     getPlanoContas(orgId).then(tree => {
       const flat: any[] = []
       function flatten(contas: any[]) {
@@ -38,10 +48,10 @@ export default function DeParaClient({ orgId, userId }: Props) {
       flatten(tree)
       setContasInternas(flat)
     })
-  }, [orgId])
+  }, [orgId, isParceiro, planoEscritorio])
 
   useEffect(() => {
-    if (!contadorSel) return
+    if (!contadorSel || isParceiro) return
     setLoading(true)
     getEscritorioDoContador(contadorSel.usuario_id).then(async esc => {
       if (!esc) { setContasExternas([]); return }
@@ -49,15 +59,18 @@ export default function DeParaClient({ orgId, userId }: Props) {
       setContasExternas(ext)
     })
     getDePara(orgId, contadorSel.id).then(setDepara).finally(() => setLoading(false))
-  }, [contadorSel, orgId])
+  }, [contadorSel, orgId, isParceiro])
 
   async function handleSalvarDePara() {
     if (!internaId || !externaId) { setErro('Selecione as duas contas.'); return }
+    if (!contadorSel && !isParceiro) { setErro('Selecione um contador.'); return }
     setSalvandoDP(true); setErro('')
     try {
-      await salvarDePara({ org_id: orgId, contador_org_id: contadorSel.id, conta_interna_id: internaId, conta_externa_id: externaId })
-      const dp = await getDePara(orgId, contadorSel.id)
-      setDepara(dp)
+      await salvarDePara({ org_id: orgId, contador_org_id: contadorSel?.id ?? '', conta_interna_id: internaId, conta_externa_id: externaId })
+      if (contadorSel) {
+        const dp = await getDePara(orgId, contadorSel.id)
+        setDepara(dp)
+      }
       setSucesso('Mapeamento salvo!')
       setTimeout(() => setSucesso(''), 3000)
       setInternaId(''); setExternaId('')
@@ -78,7 +91,7 @@ export default function DeParaClient({ orgId, userId }: Props) {
       </div>
       <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Mapeie as contas do NexCoop para as contas do escritório de contabilidade.</p>
 
-      {contadores.length > 1 && (
+      {!isParceiro && contadores.length > 1 && (
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Contador</label>
           <select onChange={e => setContadorSel(contadores.find((c: any) => c.id === e.target.value))}
@@ -90,12 +103,14 @@ export default function DeParaClient({ orgId, userId }: Props) {
 
       {contasExternas.length === 0 && !loading && (
         <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400e' }}>
-          ⚠️ O contador vinculado ainda não cadastrou o plano de contas do escritório.
+          {isParceiro
+            ? '⚠️ Cadastre seu Plano de Contas em Escritório → Plano de Contas antes de criar mapeamentos.'
+            : '⚠️ O contador vinculado ainda não cadastrou o plano de contas do escritório.'}
         </div>
       )}
 
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
-      {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
+      {erro    && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626',  fontSize: 13 }}>{erro}</div>}
 
       {contasExternas.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20, marginBottom: 28 }}>
@@ -104,7 +119,7 @@ export default function DeParaClient({ orgId, userId }: Props) {
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>CONTA NEXCOOP (DE)</label>
               <select value={internaId} onChange={e => setInternaId(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-                <option value=''>Selecione...</option>
+                <option value="">Selecione...</option>
                 {contasInternas.map((c: any) => <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>)}
               </select>
             </div>
@@ -112,7 +127,7 @@ export default function DeParaClient({ orgId, userId }: Props) {
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>CONTA DO ESCRITÓRIO (PARA)</label>
               <select value={externaId} onChange={e => setExternaId(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-                <option value=''>Selecione...</option>
+                <option value="">Selecione...</option>
                 {contasExternas.map((c: any) => <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>)}
               </select>
             </div>
