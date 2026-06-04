@@ -1,119 +1,32 @@
 ﻿// app/(landing)/page.tsx
-// Substitui o arquivo atual integralmente.
-// Busca de clientes via Supabase Server Component (sem useEffect, sem JS no cliente).
-// Requer campo `exibir_na_landing boolean default false` na tabela `organizacoes`.
-// Migration: ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS exibir_na_landing boolean NOT NULL DEFAULT false;
 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import InviteDetector from './InviteDetector'
 
-// ─── Tipagem ───────────────────────────────────────────────────────────────
 interface OrgCliente {
   nome_curto: string | null
   nome: string
   logo_url: string | null
 }
 
-// ─── Dados estáticos ────────────────────────────────────────────────────────
 const FUNCIONALIDADES = [
-  {
-    icon: '👥',
-    title: 'Gestão de Filiados',
-    desc: 'Cadastro completo com histórico, CAF/DAP, controle de admissão e desligamento.',
-    live: true,
-  },
-  {
-    icon: '💰',
-    title: 'Gestão Financeira',
-    desc: 'Lançamentos de receitas e despesas, contas a pagar/receber e relatórios completos.',
-    live: true,
-  },
-  {
-    icon: '🏛️',
-    title: 'Assembleias',
-    desc: 'Convocação digital, controle de quórum e geração automática de atas estatutárias.',
-    live: true,
-  },
-  {
-    icon: '📁',
-    title: 'Documentos',
-    desc: 'Repositório seguro com alertas de vencimento e acesso hierarquizado por perfil.',
-    live: true,
-  },
-  {
-    icon: '🔒',
-    title: 'Segurança & LGPD',
-    desc: 'Dados criptografados, controle de acesso por perfil e conformidade com a LGPD.',
-    live: true,
-  },
-  {
-    icon: '🌱',
-    title: 'Produção Agro',
-    desc: 'Registro de safras, visitas técnicas e relatórios de produtividade por filiado.',
-    live: false,
-  },
-  {
-    icon: '🤝',
-    title: 'Comercialização',
-    desc: 'Contratos coletivos, notas de entrega e integração com compradores e mercados.',
-    live: false,
-  },
-  {
-    icon: '🎯',
-    title: 'Projetos',
-    desc: 'Gestão de projetos financiados, metas, cronogramas e prestação de contas.',
-    live: false,
-  },
-  {
-    icon: '🌿',
-    title: 'Impacto & ESG',
-    desc: 'Indicadores sociais e ambientais para editais, financiadores e certificações.',
-    live: false,
-  },
+  { icon: '👥', title: 'Gestão de Filiados', desc: 'Cadastro completo com histórico, CAF/DAP, controle de admissão e desligamento.', live: true },
+  { icon: '💰', title: 'Gestão Financeira', desc: 'Lançamentos de receitas e despesas, contas a pagar/receber e relatórios completos.', live: true },
+  { icon: '🏛️', title: 'Assembleias', desc: 'Convocação digital, controle de quórum e geração automática de atas estatutárias.', live: true },
+  { icon: '📁', title: 'Documentos', desc: 'Repositório seguro com alertas de vencimento e acesso hierarquizado por perfil.', live: true },
+  { icon: '🔒', title: 'Segurança & LGPD', desc: 'Dados criptografados, controle de acesso por perfil e conformidade com a LGPD.', live: true },
+  { icon: '🌱', title: 'Produção Agro', desc: 'Registro de safras, visitas técnicas e relatórios de produtividade por filiado.', live: false },
+  { icon: '🤝', title: 'Comercialização', desc: 'Contratos coletivos, notas de entrega e integração com compradores e mercados.', live: false },
+  { icon: '🎯', title: 'Projetos', desc: 'Gestão de projetos financiados, metas, cronogramas e prestação de contas.', live: false },
+  { icon: '🌿', title: 'Impacto & ESG', desc: 'Indicadores sociais e ambientais para editais, financiadores e certificações.', live: false },
 ]
 
 const PLANOS = [
-  {
-    nome: 'Gratuito',
-    preco: 'R$ 0',
-    periodo: '/mês',
-    limite: 'Até 10 filiados',
-    recursos: ['Gestão de filiados', 'Financeiro básico', 'Documentos', '1 usuário gestor'],
-    destaque: false,
-    cta: 'Começar grátis',
-    href: '/cadastro',
-  },
-  {
-    nome: 'Essencial',
-    preco: 'R$ 149',
-    periodo: '/mês',
-    limite: 'Até 50 filiados',
-    recursos: ['Tudo do Gratuito', 'Assembleias digitais', 'Relatórios financeiros', 'Suporte prioritário', '3 usuários'],
-    destaque: true,
-    cta: 'Assinar agora',
-    href: 'mailto:suporte@nexcoop.com.br',
-  },
-  {
-    nome: 'Profissional',
-    preco: 'R$ 499',
-    periodo: '/mês',
-    limite: 'Até 200 filiados',
-    recursos: ['Tudo do Essencial', 'Relatórios avançados', 'API e integrações', 'Usuários ilimitados', 'Onboarding dedicado'],
-    destaque: false,
-    cta: 'Assinar agora',
-    href: 'mailto:suporte@nexcoop.com.br',
-  },
-  {
-    nome: 'Agro',
-    preco: 'R$ 1.500',
-    periodo: '/mês',
-    limite: 'Filiados ilimitados',
-    recursos: ['Tudo do Profissional', 'Módulo de produção', 'Módulo de projetos', 'Comercialização', 'Suporte personalizado'],
-    destaque: false,
-    cta: 'Assinar agora',
-    href: 'mailto:suporte@nexcoop.com.br',
-  },
+  { nome: 'Gratuito', preco: 'R$ 0', periodo: '/mês', limite: 'Até 10 filiados', recursos: ['Gestão de filiados', 'Financeiro básico', 'Documentos', '1 usuário gestor'], destaque: false, cta: 'Começar grátis', href: '/cadastro' },
+  { nome: 'Essencial', preco: 'R$ 149', periodo: '/mês', limite: 'Até 50 filiados', recursos: ['Tudo do Gratuito', 'Assembleias digitais', 'Relatórios financeiros', 'Suporte prioritário', '3 usuários'], destaque: true, cta: 'Assinar agora', href: 'mailto:suporte@nexcoop.com.br' },
+  { nome: 'Profissional', preco: 'R$ 499', periodo: '/mês', limite: 'Até 200 filiados', recursos: ['Tudo do Essencial', 'Relatórios avançados', 'API e integrações', 'Usuários ilimitados', 'Onboarding dedicado'], destaque: false, cta: 'Assinar agora', href: 'mailto:suporte@nexcoop.com.br' },
+  { nome: 'Agro', preco: 'R$ 1.500', periodo: '/mês', limite: 'Filiados ilimitados', recursos: ['Tudo do Profissional', 'Módulo de produção', 'Módulo de projetos', 'Comercialização', 'Suporte personalizado'], destaque: false, cta: 'Assinar agora', href: 'mailto:suporte@nexcoop.com.br' },
 ]
 
 const DIFERENCIAIS = [
@@ -138,9 +51,93 @@ const DEMO_FINANCEIRO = [
   { desc: 'Material de escritório', valor: '-R$ 380', status: 'Pago', positivo: false },
 ]
 
+// ─── CSS Responsivo Global ─────────────────────────────────────────────────
+function EstilosGlobais() {
+  return (
+    <style>{`
+      * { box-sizing: border-box; }
+      html, body { overflow-x: hidden; max-width: 100vw; }
+
+      /* ── Navbar ── */
+      .nav-links { display: flex; gap: 2rem; align-items: center; }
+      .nav-ctas  { display: flex; gap: 0.75rem; align-items: center; }
+      .nav-hamburger { display: none; cursor: pointer; background: none; border: none; padding: 6px; }
+      .nav-mobile-menu { display: none; flex-direction: column; position: absolute; top: 68px; left: 0; right: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(12px); border-bottom: 1px solid #E2EAF4; padding: 1rem 1.5rem; gap: 0.25rem; z-index: 200; }
+      #nav-toggle { display: none; }
+      #nav-toggle:checked ~ .nav-mobile-menu { display: flex; }
+
+      /* ── Grids ── */
+      .hero-grid       { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+      .func-grid       { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+      .porque-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+      .planos-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 3.5rem; }
+      .demo-dash-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+      .demo-fin-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+      .mockup-stats    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+      .mockup-bottom   { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .footer-grid     { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+      .enterprise-row  { display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+      .hero-badges     { display: flex; gap: 1.5rem; margin-top: 2.5rem; flex-wrap: wrap; }
+      .hero-ctas       { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+      /* ── Demo tabs ── */
+      .demo-panel { display: none; }
+      #tab-dashboard { display: block; }
+      .demo-panel:target { display: block; }
+      .demo-panel:target ~ #tab-dashboard { display: none; }
+      .dtab { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:8px 18px; font-size:13px; font-weight:600; color:rgba(255,255,255,.6); cursor:pointer; text-decoration:none; font-family:inherit; transition:all .2s; }
+      .dtab:hover { background:rgba(255,255,255,.12); color:#fff; }
+      .demo-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+
+      /* ── Mobile ── */
+      @media (max-width: 768px) {
+        /* Navbar */
+        .nav-links { display: none !important; }
+        .nav-ctas  { display: none !important; }
+        .nav-hamburger { display: flex !important; align-items: center; justify-content: center; }
+
+        /* Hero */
+        .hero-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
+        .hero-mockup-col { order: -1; }
+        .hero-badges { gap: 0.75rem; }
+
+        /* Funcionalidades */
+        .func-grid { grid-template-columns: 1fr !important; }
+
+        /* Por que NexCoop */
+        .porque-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
+
+        /* Demo */
+        .demo-dash-grid { grid-template-columns: 1fr 1fr !important; }
+        .demo-fin-grid  { grid-template-columns: 1fr !important; }
+        .demo-tabs { gap: 0.35rem; }
+        .dtab { padding: 7px 12px; font-size: 12px; }
+
+        /* Planos */
+        .planos-grid { grid-template-columns: 1fr !important; }
+
+        /* Enterprise */
+        .enterprise-row { flex-direction: column; align-items: flex-start; }
+
+        /* Mockup interno */
+        .mockup-stats { grid-template-columns: 1fr 1fr !important; }
+        .mockup-bottom { grid-template-columns: 1fr !important; }
+
+        /* Rodapé */
+        .footer-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+      }
+
+      @media (max-width: 480px) {
+        .demo-dash-grid { grid-template-columns: 1fr 1fr !important; }
+        .hero-ctas { flex-direction: column; }
+        .hero-ctas a { text-align: center; }
+      }
+    `}</style>
+  )
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 export default async function LandingPage() {
-  // Busca organizações que autorizaram aparecer na landing
   let clientes: OrgCliente[] = []
   try {
     const supabase = await createClient()
@@ -151,11 +148,12 @@ export default async function LandingPage() {
       .order('criado_em')
     clientes = data ?? []
   } catch {
-    // fallback: sem clientes (COOPAIBI hardcoded abaixo)
+    // fallback silencioso
   }
 
   return (
     <div style={{ fontFamily: "system-ui,-apple-system,'Segoe UI',sans-serif", color: '#0D2B5E', background: '#fff', minHeight: '100vh' }}>
+      <EstilosGlobais />
       <InviteDetector />
       <Navbar />
       <main>
@@ -179,21 +177,49 @@ function Navbar() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)',
       borderBottom: '1px solid #E2EAF4', height: 68,
-      display: 'flex', alignItems: 'center',
     }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '0 1.5rem', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
         <LogoMarca />
-        <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+
+        {/* Desktop nav */}
+        <nav className="nav-links">
           {[['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos'], ['#demo', 'Demo'], ['mailto:suporte@nexcoop.com.br', 'Contato']].map(([href, label]) => (
             <a key={href} href={href} style={{ fontSize: 14, fontWeight: 500, color: '#64748B', textDecoration: 'none' }}>{label}</a>
           ))}
         </nav>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+
+        {/* Desktop CTAs */}
+        <div className="nav-ctas">
           <Link href="/login" style={{ padding: '8px 20px', border: '1.5px solid #E2EAF4', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#0D2B5E', textDecoration: 'none' }}>
             Entrar
           </Link>
           <Link href="/cadastro" style={{ padding: '9px 22px', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Começar grátis
+          </Link>
+        </div>
+
+        {/* Hamburger (mobile) — CSS checkbox trick, sem JS */}
+        <label htmlFor="nav-toggle" className="nav-hamburger" aria-label="Menu" style={{ zIndex: 201 }}>
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <rect y="5"  width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
+            <rect y="12" width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
+            <rect y="19" width="26" height="2.5" rx="1.25" fill="#0D2B5E"/>
+          </svg>
+        </label>
+      </div>
+
+      {/* Mobile menu — abre via CSS :checked */}
+      <input type="checkbox" id="nav-toggle" />
+      <div className="nav-mobile-menu">
+        {[['#funcionalidades', 'Funcionalidades'], ['#planos', 'Planos'], ['#demo', 'Demo'], ['mailto:suporte@nexcoop.com.br', 'Contato']].map(([href, label]) => (
+          <a key={href} href={href} style={{ fontSize: 15, fontWeight: 500, color: '#0D2B5E', textDecoration: 'none', padding: '0.7rem 0', borderBottom: '1px solid #F1F5F9' }}>{label}</a>
+        ))}
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+          <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '10px', border: '1.5px solid #E2EAF4', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#0D2B5E', textDecoration: 'none' }}>
+            Entrar
+          </Link>
+          <Link href="/cadastro" style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none' }}>
+            Grátis
           </Link>
         </div>
       </div>
@@ -202,10 +228,9 @@ function Navbar() {
 }
 
 // ─── Logo ──────────────────────────────────────────────────────────────────
-// ⚠️ Substituir o SVG abaixo por <img src="/logo.png" ... /> quando o PNG estiver disponível
 function LogoMarca({ size = 38 }: { size?: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <svg width={size} height={size} viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -233,42 +258,46 @@ function Hero() {
       display: 'flex', alignItems: 'center',
       paddingTop: 68, position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '5rem 2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-        {/* Texto */}
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.3)', borderRadius: 100, padding: '6px 16px', fontSize: 13, fontWeight: 500, color: '#06B6D4', marginBottom: '1.5rem' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#06B6D4', display: 'inline-block' }} />
-            Plataforma 100% em nuvem
+      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '4rem 1.5rem', position: 'relative', zIndex: 1 }}>
+        <div className="hero-grid">
+          {/* Texto */}
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.3)', borderRadius: 100, padding: '6px 16px', fontSize: 13, fontWeight: 500, color: '#06B6D4', marginBottom: '1.5rem' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#06B6D4', display: 'inline-block' }} />
+              Plataforma 100% em nuvem
+            </div>
+            <h1 style={{ fontSize: 'clamp(2rem,5vw,3.2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: -1, marginBottom: '1.5rem', fontFamily: "'Sora',system-ui,sans-serif" }}>
+              Gestão que{' '}
+              <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                fortalece
+              </em>
+              {' '}cooperativas e associações
+            </h1>
+            <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, marginBottom: '2rem', maxWidth: 480 }}>
+              Controle filiados, finanças, assembleias e documentos em uma plataforma simples, segura e feita para cooperativas e associações brasileiras.
+            </p>
+            <div className="hero-ctas">
+              <a href="#demo" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#0D2B5E', background: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                ▶ Explorar demonstração
+              </a>
+              <a href="#funcionalidades" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', textDecoration: 'none' }}>
+                Conhecer o sistema
+              </a>
+            </div>
+            <div className="hero-badges">
+              {['Dados seguros (LGPD)', 'Suporte dedicado', 'Plano gratuito disponível'].map(item => (
+                <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
+                  ✓ {item}
+                </span>
+              ))}
+            </div>
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem,4vw,3.2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: -1, marginBottom: '1.5rem', fontFamily: "'Sora',system-ui,sans-serif" }}>
-            Gestão que{' '}
-            <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              fortalece
-            </em>
-            {' '}cooperativas e associações
-          </h1>
-          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, marginBottom: '2rem', maxWidth: 480 }}>
-            Controle filiados, finanças, assembleias e documentos em uma plataforma simples, segura e feita para cooperativas e associações brasileiras.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <a href="#demo" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#0D2B5E', background: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              ▶ Explorar demonstração
-            </a>
-            <a href="#funcionalidades" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.3)', textDecoration: 'none' }}>
-              Conhecer o sistema
-            </a>
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem', flexWrap: 'wrap' }}>
-            {['Dados seguros (LGPD)', 'Suporte dedicado', 'Plano gratuito disponível'].map(item => (
-              <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
-                ✓ {item}
-              </span>
-            ))}
+
+          {/* Mockup */}
+          <div className="hero-mockup-col">
+            <MockupDashboard />
           </div>
         </div>
-
-        {/* Mockup */}
-        <MockupDashboard />
       </div>
     </section>
   )
@@ -297,7 +326,7 @@ function MockupDashboard() {
           <strong style={{ color: '#fff', fontSize: 15, display: 'block', marginBottom: 2 }}>Painel de controle</strong>
           Resumo da sua cooperativa hoje
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <div className="mockup-stats">
           {[['Filiados', '47', '+12% este mês'], ['Receitas', 'R$18k', '+8% vs anterior'], ['Documentos', '23', '2 vencem em 30d']].map(([label, val, trend]) => (
             <div key={label} style={statStyle}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{label}</div>
@@ -314,7 +343,7 @@ function MockupDashboard() {
             ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div className="mockup-bottom">
           {[['🏛️', 'Próxima assembleia', '15 Jun'], ['💰', 'A pagar', 'R$3.200']].map(([icon, label, val]) => (
             <div key={label} style={{ ...statStyle, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(6,182,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</div>
@@ -335,19 +364,18 @@ function MockupDashboard() {
 
 // ─── Clientes ──────────────────────────────────────────────────────────────
 function Clientes({ orgs }: { orgs: OrgCliente[] }) {
-  // Fallback: se não houver organizações via Supabase, mostra COOPAIBI
   const lista = orgs.length > 0 ? orgs : [{ nome_curto: 'COOPAIBI', nome: 'COOPAIBI', logo_url: null }]
   return (
-    <section style={{ padding: '3rem 2rem', background: '#fff', borderBottom: '1px solid #E2EAF4' }}>
+    <section style={{ padding: '3rem 1.5rem', background: '#fff', borderBottom: '1px solid #E2EAF4' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '2rem' }}>
           Organizações que confiam na NexCoop
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '2rem' }}>
           {lista.map(org => {
             const nome = org.nome_curto || org.nome
             return (
-              <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0.6, filter: 'grayscale(1)', transition: 'all .3s' }}>
+              <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0.6, filter: 'grayscale(1)' }}>
                 {org.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={org.logo_url} alt={nome} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain' }} />
@@ -367,7 +395,7 @@ function Clientes({ orgs }: { orgs: OrgCliente[] }) {
 // ─── Funcionalidades ───────────────────────────────────────────────────────
 function Funcionalidades() {
   return (
-    <section id="funcionalidades" style={{ padding: '6rem 2rem', background: '#F4F8FF' }}>
+    <section id="funcionalidades" style={{ padding: '6rem 1.5rem', background: '#F4F8FF' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <RotuloSecao>Funcionalidades</RotuloSecao>
         <h2 style={estiloTituloSecao}>
@@ -375,7 +403,7 @@ function Funcionalidades() {
           <em style={estiloDestaque}>um só lugar</em>
         </h2>
         <p style={estiloDescSecao}>Plataforma integrada que conecta pessoas, processos e dados para uma gestão mais eficiente, transparente e estratégica.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.5rem' }}>
+        <div className="func-grid">
           {FUNCIONALIDADES.map(f => (
             <div key={f.title} style={{ background: '#fff', borderRadius: 16, padding: '2rem', border: '1px solid #E2EAF4', opacity: f.live ? 1 : 0.65, position: 'relative', overflow: 'hidden' }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,rgba(21,101,192,0.1),rgba(6,182,212,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: '1.25rem' }}>
@@ -397,40 +425,42 @@ function Funcionalidades() {
 // ─── Por que NexCoop ───────────────────────────────────────────────────────
 function PorQueNexCoop() {
   return (
-    <section style={{ padding: '6rem 2rem', background: 'linear-gradient(135deg,#0D2B5E 0%,#1565C0 60%,#06B6D4 100%)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-        {/* Depoimento */}
-        <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '2.5rem', backdropFilter: 'blur(10px)' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 72, color: '#06B6D4', lineHeight: 0.8, marginBottom: '0.5rem', opacity: 0.6 }}>"</div>
-          <p style={{ fontSize: 18, fontWeight: 500, color: '#fff', lineHeight: 1.7, fontFamily: "'Sora',sans-serif", marginBottom: '1.5rem' }}>
-            &ldquo;A NexCoop trouxe organização e clareza para a gestão da nossa cooperativa. Hoje temos controle real dos filiados, das finanças e das assembleias — tudo em um lugar só.&rdquo;
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>CA</div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Gestão COOPAIBI</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>Cooperativa Mista Agropecuária de Ibirataia</div>
+    <section style={{ padding: '6rem 1.5rem', background: 'linear-gradient(135deg,#0D2B5E 0%,#1565C0 60%,#06B6D4 100%)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div className="porque-grid">
+          {/* Depoimento */}
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '2.5rem', backdropFilter: 'blur(10px)' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 72, color: '#06B6D4', lineHeight: 0.8, marginBottom: '0.5rem', opacity: 0.6 }}>"</div>
+            <p style={{ fontSize: 18, fontWeight: 500, color: '#fff', lineHeight: 1.7, fontFamily: "'Sora',sans-serif", marginBottom: '1.5rem' }}>
+              &ldquo;A NexCoop trouxe organização e clareza para a gestão da nossa cooperativa. Hoje temos controle real dos filiados, das finanças e das assembleias — tudo em um lugar só.&rdquo;
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>CA</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Gestão COOPAIBI</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>Cooperativa Mista Agropecuária de Ibirataia</div>
+              </div>
             </div>
           </div>
-        </div>
-        {/* Diferenciais */}
-        <div>
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '2rem', lineHeight: 1.2 }}>
-            Por que escolher a{' '}
-            <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NexCoop?</em>
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {DIFERENCIAIS.map(d => (
-              <div key={d.titulo} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(6,182,212,0.2)', border: '1.5px solid rgba(6,182,212,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                  <span style={{ color: '#06B6D4', fontSize: 13, fontWeight: 700 }}>✓</span>
+          {/* Diferenciais */}
+          <div>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '2rem', lineHeight: 1.2 }}>
+              Por que escolher a{' '}
+              <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NexCoop?</em>
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {DIFERENCIAIS.map(d => (
+                <div key={d.titulo} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(6,182,212,0.2)', border: '1.5px solid rgba(6,182,212,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                    <span style={{ color: '#06B6D4', fontSize: 13, fontWeight: 700 }}>✓</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 3 }}>{d.titulo}</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{d.desc}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 3 }}>{d.titulo}</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{d.desc}</div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -438,12 +468,10 @@ function PorQueNexCoop() {
   )
 }
 
-// ─── Demo interativa ───────────────────────────────────────────────────────
-// 'use client' não pode ser misturado no Server Component, então a lógica
-// de tabs é feita com CSS :target — sem JS, sem hidratação extra.
+// ─── Demo ──────────────────────────────────────────────────────────────────
 function Demo() {
   return (
-    <section id="demo" style={{ padding: '6rem 2rem', background: '#0D2B5E' }}>
+    <section id="demo" style={{ padding: '6rem 1.5rem', background: '#0D2B5E' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <RotuloSecao cor="#06B6D4">Experimente agora</RotuloSecao>
         <h2 style={{ ...estiloTituloSecao, color: '#fff', marginBottom: '0.75rem' }}>
@@ -453,18 +481,7 @@ function Demo() {
           Explore o painel com dados de demonstração — sem criar conta, sem compromisso.
         </p>
 
-        {/* Tabs via CSS :target */}
-        <style>{`
-          .demo-panel { display: none; }
-          .demo-panel:target,
-          .demo-panel#tab-dashboard:not(:target-within) { display: block; }
-          #tab-dashboard { display: block; }
-          .demo-panel:target ~ #tab-dashboard { display: none; }
-          .dtab { background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;text-decoration:none;font-family:inherit;transition:all .2s; }
-          .dtab:hover { background:rgba(255,255,255,.12);color:#fff; }
-        `}</style>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <div className="demo-tabs">
           <a href="#tab-dashboard" className="dtab">📊 Dashboard</a>
           <a href="#tab-filiados" className="dtab">👥 Filiados</a>
           <a href="#tab-financeiro" className="dtab">💰 Financeiro</a>
@@ -474,7 +491,7 @@ function Demo() {
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '1.5rem', backdropFilter: 'blur(10px)' }}>
           {/* Dashboard */}
           <div id="tab-dashboard" className="demo-panel">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div className="demo-dash-grid">
               {[['47', 'Filiados ativos', '#fff'], ['R$18k', 'Receitas do mês', '#4ADE80'], ['3', 'Docs vencendo', '#FBBF24'], ['15 Jun', 'Próx. assembleia', '#06B6D4']].map(([val, label, cor]) => (
                 <div key={label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '0.875rem', textAlign: 'center' }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: cor }}>{val}</div>
@@ -494,15 +511,15 @@ function Demo() {
 
           {/* Filiados */}
           <div id="tab-filiados" className="demo-panel">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>47 filiados cadastrados</span>
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Dados de demonstração</span>
             </div>
             {DEMO_FILIADOS.map(f => (
-              <div key={f.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13 }}>
-                <span style={{ color: '#fff', fontWeight: 500 }}>{f.nome}</span>
+              <div key={f.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13, gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ color: '#fff', fontWeight: 500, flex: 1, minWidth: 120 }}>{f.nome}</span>
                 <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{f.cpf}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: `${f.cor}22`, color: f.cor }}>{f.status}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: `${f.cor}22`, color: f.cor, whiteSpace: 'nowrap' }}>{f.status}</span>
               </div>
             ))}
             <div style={{ textAlign: 'center', padding: '0.75rem', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>+ 43 filiados na lista completa</div>
@@ -510,7 +527,7 @@ function Demo() {
 
           {/* Financeiro */}
           <div id="tab-financeiro" className="demo-panel">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="demo-fin-grid">
               <div style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 10, padding: '1rem' }}>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>A receber</div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#4ADE80' }}>R$ 12.400</div>
@@ -521,10 +538,10 @@ function Demo() {
               </div>
             </div>
             {DEMO_FINANCEIRO.map(f => (
-              <div key={f.desc} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13 }}>
-                <span style={{ color: '#fff' }}>{f.desc}</span>
-                <span style={{ fontWeight: 600, color: f.positivo ? '#4ADE80' : '#F87171' }}>{f.valor}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: f.positivo ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)', color: f.positivo ? '#4ADE80' : '#FBBF24' }}>{f.status}</span>
+              <div key={f.desc} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13, gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ color: '#fff', flex: 1, minWidth: 120 }}>{f.desc}</span>
+                <span style={{ fontWeight: 600, color: f.positivo ? '#4ADE80' : '#F87171', whiteSpace: 'nowrap' }}>{f.valor}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: f.positivo ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)', color: f.positivo ? '#4ADE80' : '#FBBF24', whiteSpace: 'nowrap' }}>{f.status}</span>
               </div>
             ))}
           </div>
@@ -532,18 +549,18 @@ function Demo() {
           {/* Assembleia */}
           <div id="tab-assembleia" className="demo-panel">
             <div style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)', borderRadius: 12, padding: '1.25rem', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Assembleia Geral Ordinária</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>15 de Junho de 2026 · 14h · Sede da cooperativa</div>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>Agendada</span>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: 'rgba(251,191,36,0.15)', color: '#FBBF24', whiteSpace: 'nowrap' }}>Agendada</span>
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Quórum mínimo: 24 filiados (50%) · Convocação enviada: ✓</div>
             </div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Pauta</div>
             {[['1. Aprovação do balanço 2025', 'Deliberação'], ['2. Eleição da diretoria', 'Votação'], ['3. Planejamento 2026', 'Informativo']].map(([item, tipo]) => (
-              <div key={item} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13 }}>
+              <div key={item} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '0.5rem', background: 'rgba(255,255,255,0.04)', fontSize: 13, flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span style={{ color: '#fff' }}>{item}</span>
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{tipo}</span>
               </div>
@@ -565,7 +582,7 @@ function Demo() {
 // ─── Planos ────────────────────────────────────────────────────────────────
 function Planos() {
   return (
-    <section id="planos" style={{ padding: '6rem 2rem', background: '#fff' }}>
+    <section id="planos" style={{ padding: '6rem 1.5rem', background: '#fff' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <RotuloSecao>Planos e preços</RotuloSecao>
         <h2 style={estiloTituloSecao}>
@@ -573,7 +590,7 @@ function Planos() {
         </h2>
         <p style={estiloDescSecao}>Escolha o plano ideal para o tamanho e necessidades da sua organização.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1.25rem', marginTop: '3.5rem' }}>
+        <div className="planos-grid">
           {PLANOS.map(p => (
             <div key={p.nome} style={{ borderRadius: 16, padding: '2rem 1.5rem', border: p.destaque ? '2px solid #06B6D4' : '1px solid #E2EAF4', background: p.destaque ? 'linear-gradient(180deg,rgba(6,182,212,0.04) 0%,#fff 100%)' : '#fff', position: 'relative', display: 'flex', flexDirection: 'column' }}>
               {p.destaque && (
@@ -601,22 +618,24 @@ function Planos() {
         </div>
 
         {/* Enterprise */}
-        <div style={{ marginTop: '1.25rem', border: '1px solid #E2EAF4', borderRadius: 16, padding: '2rem 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🏢</div>
-            <div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#0D2B5E' }}>Enterprise</div>
-              <div style={{ fontSize: 14, color: '#64748B', marginTop: 3, maxWidth: 480 }}>Para grandes redes cooperativistas, federações e centrais. Infraestrutura dedicada, SLA garantido, múltiplas organizações e integrações customizadas.</div>
+        <div style={{ marginTop: '1.25rem', border: '1px solid #E2EAF4', borderRadius: 16, padding: '2rem 2rem' }}>
+          <div className="enterprise-row">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🏢</div>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#0D2B5E' }}>Enterprise</div>
+                <div style={{ fontSize: 14, color: '#64748B', marginTop: 3, maxWidth: 480 }}>Para grandes redes cooperativistas, federações e centrais. Infraestrutura dedicada, SLA garantido, múltiplas organizações e integrações customizadas.</div>
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: '#0D2B5E' }}>Sob consulta</div>
-              <div style={{ fontSize: 12, color: '#94A3B8' }}>Proposta personalizada</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: '#0D2B5E' }}>Sob consulta</div>
+                <div style={{ fontSize: 12, color: '#94A3B8' }}>Proposta personalizada</div>
+              </div>
+              <a href="mailto:suporte@nexcoop.com.br" style={{ padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                Falar com consultor →
+              </a>
             </div>
-            <a href="mailto:suporte@nexcoop.com.br" style={{ padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-              Falar com consultor →
-            </a>
           </div>
         </div>
 
@@ -632,7 +651,7 @@ function Planos() {
 // ─── CTA Final ─────────────────────────────────────────────────────────────
 function CTAFinal() {
   return (
-    <section style={{ padding: '5rem 2rem', background: '#F4F8FF', borderTop: '1px solid #E2EAF4' }}>
+    <section style={{ padding: '5rem 1.5rem', background: '#F4F8FF', borderTop: '1px solid #E2EAF4' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 1.5rem' }}>🚀</div>
         <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(1.6rem,3vw,2.5rem)', fontWeight: 800, color: '#0D2B5E', lineHeight: 1.2, letterSpacing: -0.5, marginBottom: '1rem' }}>
@@ -657,9 +676,9 @@ function CTAFinal() {
 // ─── Rodapé ────────────────────────────────────────────────────────────────
 function Rodape() {
   return (
-    <footer style={{ background: '#0D2B5E', padding: '4rem 2rem 2rem' }}>
+    <footer style={{ background: '#0D2B5E', padding: '4rem 1.5rem 2rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
+        <div className="footer-grid">
           <div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: '0.75rem' }}>
               <span style={{ color: '#fff' }}>Nex</span><span style={{ color: '#06B6D4' }}>Coop</span>
@@ -696,7 +715,7 @@ function Rodape() {
   )
 }
 
-// ─── Helpers de estilo ─────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────
 function RotuloSecao({ children, cor = '#06B6D4' }: { children: React.ReactNode; cor?: string }) {
   return (
     <div style={{ fontSize: 12, fontWeight: 600, color: cor, letterSpacing: '0.12em', textTransform: 'uppercase', textAlign: 'center', marginBottom: '0.75rem' }}>
