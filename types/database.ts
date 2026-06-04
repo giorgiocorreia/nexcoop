@@ -726,6 +726,8 @@ export type Database = {
       empresas_parceiras:        TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       profissionais_parceiros:   TableDef<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      plano_contas_escritorio:   TableDef<any>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
