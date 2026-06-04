@@ -305,6 +305,12 @@ function Hero() {
       display: 'flex', alignItems: 'center',
       paddingTop: 68, position: 'relative', overflow: 'hidden',
     }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=1400&q=60')",
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        opacity: 0.12,
+      }} />
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '4rem 1.5rem', position: 'relative', zIndex: 1 }}>
         <div className="hero-grid">
           {/* Texto */}
@@ -441,8 +447,14 @@ function Clientes({ orgs }: { orgs: OrgCliente[] }) {
 // ─── Funcionalidades ───────────────────────────────────────────────────────
 function Funcionalidades() {
   return (
-    <section id="funcionalidades" style={{ padding: '6rem 1.5rem', background: '#F4F8FF' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <section id="funcionalidades" style={{ padding: '6rem 1.5rem', background: '#F4F8FF', position: 'relative', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1400&q=50')",
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        opacity: 0.05,
+      }} />
+      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <RotuloSecao>Funcionalidades</RotuloSecao>
         <h2 style={estiloTituloSecao}>
           Tudo que sua organização precisa em{' '}
@@ -755,8 +767,14 @@ function Planos() {
 // ─── CTA Final ─────────────────────────────────────────────────────────────
 function CTAFinal() {
   return (
-    <section style={{ padding: '5rem 1.5rem', background: '#F4F8FF', borderTop: '1px solid #E2EAF4' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+    <section style={{ padding: '5rem 1.5rem', background: '#F4F8FF', borderTop: '1px solid #E2EAF4', position: 'relative', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1560493676-04071c5f467b?w=1400&q=50')",
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        opacity: 0.07,
+      }} />
+      <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 1.5rem' }}>🚀</div>
         <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(1.6rem,3vw,2.5rem)', fontWeight: 800, color: '#0D2B5E', lineHeight: 1.2, letterSpacing: -0.5, marginBottom: '1rem' }}>
           Pronto para transformar a gestão da sua cooperativa ou associação?
