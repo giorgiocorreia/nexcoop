@@ -23,7 +23,20 @@ export async function criarLancamento(data: {
   const supabase = createAdminClient()
   const { data: novo, error } = await supabase
     .from('lancamentos')
-    .insert(data)
+    .insert({
+      organizacao_id:   data.organizacao_id,
+      tipo:             data.tipo as TipoLancamento,
+      status:           data.status as StatusLancamento,
+      descricao:        data.descricao,
+      valor:            data.valor,
+      data_competencia: data.data_competencia,
+      data_vencimento:  data.data_vencimento ?? null,
+      data_pagamento:   data.data_pagamento ?? null,
+      numero_documento: data.numero_documento ?? null,
+      cooperado_id:     data.cooperado_id ?? null,
+      observacoes:      data.observacoes ?? null,
+      usuario_id:       data.usuario_id,
+    })
     .select()
     .single()
   if (error) throw new Error(error.message)
@@ -58,7 +71,13 @@ export async function editarLancamento(
 
   const { error } = await supabase
     .from('lancamentos')
-    .update({ ...dados, atualizado_em: new Date().toISOString() })
+    .update({
+      ...(dados.status    ? { status:    dados.status as StatusLancamento } : {}),
+      ...(dados.descricao ? { descricao: dados.descricao }                  : {}),
+      ...(dados.valor     !== undefined ? { valor: dados.valor }            : {}),
+      ...(dados.observacoes !== undefined ? { observacoes: dados.observacoes } : {}),
+      atualizado_em: new Date().toISOString(),
+    })
     .eq('id', id)
   if (error) throw new Error(error.message)
 
