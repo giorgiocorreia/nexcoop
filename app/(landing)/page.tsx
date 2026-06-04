@@ -12,15 +12,78 @@ interface OrgCliente {
 }
 
 const FUNCIONALIDADES = [
-  { icon: '👥', title: 'Gestão de Filiados', desc: 'Cadastro completo com histórico, CAF/DAP, controle de admissão e desligamento.', live: true },
-  { icon: '💰', title: 'Gestão Financeira', desc: 'Lançamentos de receitas e despesas, contas a pagar/receber e relatórios completos.', live: true },
-  { icon: '🏛️', title: 'Assembleias', desc: 'Convocação digital, controle de quórum e geração automática de atas estatutárias.', live: true },
-  { icon: '📁', title: 'Documentos', desc: 'Repositório seguro com alertas de vencimento e acesso hierarquizado por perfil.', live: true },
-  { icon: '🔒', title: 'Segurança & LGPD', desc: 'Dados criptografados, controle de acesso por perfil e conformidade com a LGPD.', live: true },
-  { icon: '🌱', title: 'Produção Agro', desc: 'Registro de safras, visitas técnicas e relatórios de produtividade por filiado.', live: false },
-  { icon: '🤝', title: 'Comercialização', desc: 'Contratos coletivos, notas de entrega e integração com compradores e mercados.', live: false },
-  { icon: '🎯', title: 'Projetos', desc: 'Gestão de projetos financiados, metas, cronogramas e prestação de contas.', live: false },
-  { icon: '🌿', title: 'Impacto & ESG', desc: 'Indicadores sociais e ambientais para editais, financiadores e certificações.', live: false },
+  {
+    icon: '🎯',
+    title: 'Captação + Radar',
+    desc: 'CRM Kanban com varredura automática de editais por perfil da organização. Identifique oportunidades antes da concorrência.',
+    live: true,
+    novo: true,
+    cor: '#1D9E75',
+  },
+  {
+    icon: '👥',
+    title: 'Gestão de Filiados',
+    desc: 'Cadastro completo com histórico, CAF/DAP, controle de admissão e desligamento.',
+    live: true,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '💰',
+    title: 'Gestão Financeira',
+    desc: 'Lançamentos de receitas e despesas, contas a pagar/receber e relatórios completos.',
+    live: true,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '🏛️',
+    title: 'Assembleias',
+    desc: 'Convocação digital, controle de quórum e geração automática de atas estatutárias.',
+    live: true,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '📅',
+    title: 'Mensalidades',
+    desc: 'Controle de contribuições, inadimplência e isenções por filiado.',
+    live: true,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '📁',
+    title: 'Documentos',
+    desc: 'Repositório seguro com alertas de vencimento e acesso hierarquizado por perfil.',
+    live: true,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '🤝',
+    title: 'Comercialização',
+    desc: 'Cotações, lotes, safras e gestão de vendas coletivas de cacau e outros produtos.',
+    live: false,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '🛒',
+    title: 'Loja Agropecuária',
+    desc: 'Vendas, estoque e NF-e integrados para a loja da cooperativa.',
+    live: false,
+    novo: false,
+    cor: null,
+  },
+  {
+    icon: '🌿',
+    title: 'Projetos & ESG',
+    desc: 'Indicadores sociais e ambientais para editais, financiadores e certificações.',
+    live: false,
+    novo: false,
+    cor: null,
+  },
 ]
 
 const PLANOS = [
@@ -131,6 +194,13 @@ function EstilosGlobais() {
         .demo-dash-grid { grid-template-columns: 1fr 1fr !important; }
         .hero-ctas { flex-direction: column; }
         .hero-ctas a { text-align: center; }
+      }
+
+      .diferenciais-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+      .contabil-pills { grid-template-columns: repeat(3,1fr); }
+      @media (max-width: 768px) {
+        .diferenciais-grid { grid-template-columns: 1fr !important; }
+        .contabil-pills { grid-template-columns: 1fr 1fr !important; }
       }
     `}</style>
   )
@@ -341,7 +411,7 @@ function MockupDashboard() {
 
 // ─── Clientes ──────────────────────────────────────────────────────────────
 function Clientes({ orgs }: { orgs: OrgCliente[] }) {
-  const lista = orgs.length > 0 ? orgs : [{ nome_curto: 'COOPAIBI', nome: 'COOPAIBI', logo_url: null }]
+  const lista = orgs.length > 0 ? orgs : [{ nome_curto: 'COOPAIBI', nome: 'COOPAIBI', logo_url: '/images/coopaibi-logo.jpg' }]
   return (
     <section style={{ padding: '3rem 1.5rem', background: '#fff', borderBottom: '1px solid #E2EAF4' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -352,12 +422,11 @@ function Clientes({ orgs }: { orgs: OrgCliente[] }) {
           {lista.map(org => {
             const nome = org.nome_curto || org.nome
             return (
-              <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0.6, filter: 'grayscale(1)' }}>
+              <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0.75, filter: 'grayscale(0.3)' }}>
                 {org.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={org.logo_url} alt={nome} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain' }} />
+                  <img src={org.logo_url} alt={nome} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🌱</div>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🌱</div>
                 )}
                 <span style={{ fontFamily: "'Sora',system-ui,sans-serif", fontSize: 18, fontWeight: 700, color: '#0D2B5E' }}>{nome}</span>
               </div>
@@ -380,17 +449,54 @@ function Funcionalidades() {
           <em style={estiloDestaque}>um só lugar</em>
         </h2>
         <p style={estiloDescSecao}>Plataforma integrada que conecta pessoas, processos e dados para uma gestão mais eficiente, transparente e estratégica.</p>
+
+        {/* Card destaque — Módulo Contábil */}
+        <div style={{ background: 'linear-gradient(135deg, #0F766E 0%, #0D6B63 100%)', borderRadius: 16, padding: '2rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', position: 'relative', zIndex: 1, flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: '12px', fontSize: 28, flexShrink: 0 }}>🏦</div>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>Módulo Contábil Completo</span>
+                <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100 }}>Disponível</span>
+                <span style={{ background: '#FCD34D', color: '#78350F', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100 }}>Exclusivo</span>
+              </div>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: '1rem', lineHeight: 1.6 }}>
+                Contabilidade completa feita para cooperativas e associações brasileiras — sem precisar de outro sistema.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }} className="contabil-pills">
+                {[
+                  ['📊', 'Plano de contas'],
+                  ['📄', 'DRE e Balanço'],
+                  ['📤', 'Exportação SPED'],
+                  ['🔒', 'Fechamento SHA-256'],
+                  ['🏦', 'Conciliação bancária'],
+                  ['💼', 'Portal do contador'],
+                ].map(([icon, label]) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{icon}</span>{label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid de módulos */}
         <div className="func-grid">
           {FUNCIONALIDADES.map(f => (
-            <div key={f.title} style={{ background: '#fff', borderRadius: 16, padding: '2rem', border: '1px solid #E2EAF4', opacity: f.live ? 1 : 0.65, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,rgba(21,101,192,0.1),rgba(6,182,212,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: '1.25rem' }}>
+            <div key={f.title} style={{ background: '#fff', borderRadius: 16, padding: '1.5rem', border: f.novo ? `2px solid ${f.cor}` : '1px solid #E2EAF4', opacity: f.live ? 1 : 0.65, position: 'relative' }}>
+              {f.novo && (
+                <div style={{ position: 'absolute', top: -11, right: 14, background: f.cor!, color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100 }}>Novo</div>
+              )}
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,rgba(21,101,192,0.1),rgba(6,182,212,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: '1rem' }}>
                 {f.icon}
               </div>
-              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, marginBottom: '0.75rem', background: f.live ? '#E1F5EE' : '#E6F1FB', color: f.live ? '#085041' : '#0C447C' }}>
+              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, marginBottom: '0.6rem', background: f.live ? '#E1F5EE' : '#E6F1FB', color: f.live ? '#085041' : '#0C447C' }}>
                 {f.live ? 'Disponível' : 'Em breve'}
               </span>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0D2B5E', marginBottom: '0.6rem' }}>{f.title}</h3>
-              <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6 }}>{f.desc}</p>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0D2B5E', marginBottom: '0.5rem' }}>{f.title}</h3>
+              <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -412,32 +518,53 @@ function PorQueNexCoop() {
               &ldquo;A NexCoop trouxe organização e clareza para a gestão da nossa cooperativa. Hoje temos controle real dos filiados, das finanças e das assembleias — tudo em um lugar só.&rdquo;
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>CA</div>
+              <img
+                src="/images/coopaibi-logo.jpg"
+                alt="COOPAIBI"
+                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+              />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Gestão COOPAIBI</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>Cooperativa Mista Agropecuária de Ibirataia</div>
               </div>
             </div>
           </div>
-          {/* Diferenciais */}
-          <div>
-            <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '2rem', lineHeight: 1.2 }}>
-              Por que escolher a{' '}
-              <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NexCoop?</em>
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {DIFERENCIAIS.map(d => (
-                <div key={d.titulo} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(6,182,212,0.2)', border: '1.5px solid rgba(6,182,212,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <span style={{ color: '#06B6D4', fontSize: 13, fontWeight: 700 }}>✓</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 3 }}>{d.titulo}</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{d.desc}</div>
-                  </div>
-                </div>
-              ))}
+
+          {/* Foto fachada */}
+          <div style={{ borderRadius: 20, overflow: 'hidden', minHeight: 320, position: 'relative' }}>
+            <img
+              src="/images/coopaibi-fachada.jpg"
+              alt="Sede da COOPAIBI"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: 320 }}
+            />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,43,94,0.25)' }} />
+            <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
+              <div style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '0.75rem 1rem' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>COOPAIBI — Ibirataia, BA</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Loja Agropecuária · Compra de Cacau</div>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Diferenciais abaixo do grid */}
+        <div style={{ marginTop: '4rem' }}>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '2rem', lineHeight: 1.2, textAlign: 'center' }}>
+            Por que escolher a{' '}
+            <em style={{ fontStyle: 'normal', background: 'linear-gradient(90deg,#00D4B1,#0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>NexCoop?</em>
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.5rem' }} className="diferenciais-grid">
+            {DIFERENCIAIS.map(d => (
+              <div key={d.titulo} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '1.25rem' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(6,182,212,0.2)', border: '1.5px solid rgba(6,182,212,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                  <span style={{ color: '#06B6D4', fontSize: 13, fontWeight: 700 }}>✓</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{d.titulo}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{d.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
