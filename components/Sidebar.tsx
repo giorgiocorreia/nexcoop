@@ -49,7 +49,6 @@ const CONTABIL_ITENS: NavItem[] = [
   { label: 'Resultado & Destinações', href: '/contabil/sobras',       icone: '💰' },
   { label: 'Conciliação Bancária', href: '/contabil/conciliacao',    icone: '🏦' },
   { label: 'Calendário',           href: '/contabil/calendario',     icone: '📅' },
-  { label: 'De/Para Contas',      href: '/contabil/depara',          icone: '🔀' },
   { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
   { label: 'Exportações',         href: '/contabil/exportacoes',     icone: '📤' },
 ]
@@ -238,7 +237,10 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       const grupos = []
       if (modulosAcesso?.includes('financeiro_leitura'))
         grupos.push(renderGrupo('Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
-      grupos.push(renderGrupo('Contábil', CONTABIL_ITENS))
+      grupos.push(renderGrupo('Contábil', [
+        ...CONTABIL_ITENS,
+        { label: 'De/Para Contas', href: '/contabil/depara', icone: '🔀' },
+      ]))
       return grupos
     }
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
