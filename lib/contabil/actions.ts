@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { registrarLog } from '@/lib/audit/logger'
 import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta, ItemBalancoPatrimonial, ItemLivroRazao, TipoOrg, getTerminologia } from './types'
 
 export async function getTipoOrg(orgId: string): Promise<TipoOrg> {
@@ -206,6 +207,16 @@ export async function classificarLancamento(data: {
     classificado_em: new Date().toISOString(),
   })
   if (error) throw new Error(error.message)
+
+  registrarLog({
+    org_id: data.org_id,
+    usuario_id: data.classificado_por,
+    acao: 'criar',
+    modulo: 'contabil',
+    descricao: `Lançamento classificado: ${data.historico ?? ''} — R$ ${data.valor}`,
+    dados_depois: { conta_debito_id: data.conta_debito_id, conta_credito_id: data.conta_credito_id, valor: data.valor, historico: data.historico },
+  }).catch(e => console.error('[audit]', e))
+
   revalidatePath('/contabil/escrituracao')
 }
 
@@ -938,6 +949,15 @@ export async function fecharExercicio(data: {
     .eq('id', data.exercicio_id)
   if (exError) throw new Error(exError.message)
 
+  registrarLog({
+    org_id: data.org_id,
+    usuario_id: data.fechado_por,
+    acao: 'fechar_exercicio',
+    modulo: 'contabil',
+    descricao: `Exercício fechado`,
+    dados_depois: { exercicio_id: data.exercicio_id, hash_sha256: hash, fechado_por: data.fechado_por },
+  }).catch(e => console.error('[audit]', e))
+
   revalidatePath('/contabil/sobras')
   revalidatePath('/contabil/balancete')
   return hash
@@ -1115,7 +1135,17 @@ export async function gerarSpedECD(orgId: string, ano: number): Promise<string> 
   linhas.push(`|9990|${bloco9Count + 1}|`)
   linhas.push(`|9999|${linhas.length + 1}|`)
 
-  return linhas.join('\n')
+  const resultado = linhas.join('\n')
+
+  registrarLog({
+    org_id: orgId,
+    acao: 'exportar',
+    modulo: 'contabil',
+    descricao: `SPED ECD exportado — período ${ano}`,
+    dados_depois: { ano, linhas: linhas.length },
+  }).catch(e => console.error('[audit]', e))
+
+  return resultado
 }
 
 // ── DADOS PARA RELATÓRIOS PDF ─────────────────────────────────────────────────

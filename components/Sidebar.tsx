@@ -34,6 +34,7 @@ const NAV_ADMIN: NavGrupo[] = [
       { label: 'Módulos',      href: '/admin/modulos',  icone: '🧩', em_breve: true },
       { label: 'Planos',       href: '/admin/planos',   icone: '💳', em_breve: true },
       { label: 'Manuais',      href: '/admin/manuais',  icone: '📚' },
+      { label: 'Logs',         href: '/admin/logs',     icone: '📋' },
     ],
   },
 ]
@@ -126,7 +127,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin)
     grupos.push({
       grupo: 'Conta',
-      itens: [{ label: 'Configurações', href: '/configuracoes', icone: '⚙️' }],
+      itens: [
+        { label: 'Configurações', href: '/configuracoes',      icone: '⚙️' },
+        { label: 'Logs',          href: '/configuracoes/logs', icone: '📋' },
+      ],
     })
 
   return grupos

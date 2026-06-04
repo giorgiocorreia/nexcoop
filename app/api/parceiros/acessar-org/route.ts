@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { registrarLog } from '@/lib/audit/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,16 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 8,
       path: '/',
     })
+
+    const { data: orgData } = await admin.from('organizacoes').select('nome').eq('id', orgId).single()
+    registrarLog({
+      usuario_id: user.id,
+      usuario_email: user.email,
+      org_id: orgId,
+      acao: 'acessar_org',
+      modulo: 'parceiro',
+      descricao: `Contador acessou a organização ${orgData?.nome ?? orgId}`,
+    }).catch(e => console.error('[audit]', e))
 
     return NextResponse.json({ ok: true })
   } catch (error: any) {
