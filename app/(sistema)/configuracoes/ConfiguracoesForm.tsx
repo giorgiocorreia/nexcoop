@@ -53,7 +53,7 @@ const UFS = [
 ]
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-type Aba = 'perfil' | 'captacao' | 'usuarios' | 'parceiros' | 'seguranca' | 'identidade'
+type Aba = 'perfil' | 'captacao' | 'usuarios' | 'parceiros' | 'seguranca'
 
 interface Props {
   org: Organizacao | null
@@ -84,7 +84,6 @@ export default function ConfiguracoesForm(props: Props) {
   const tabs: { id: Aba; label: string; adminOnly?: boolean; disabled?: boolean }[] = [
     { id: 'perfil',      label: '🏢 Perfil',             adminOnly: true },
     { id: 'captacao',    label: '🎯 Captação',           adminOnly: true },
-    { id: 'identidade',  label: '🎨 Identidade Visual',  adminOnly: true },
     { id: 'usuarios',    label: '👥 Usuários',           adminOnly: true },
     { id: 'parceiros',   label: '🤝 Empresas Vinculadas', adminOnly: true },
     { id: 'seguranca',   label: '🔒 Segurança',          disabled: true },
@@ -154,9 +153,6 @@ export default function ConfiguracoesForm(props: Props) {
           embeddedMode
         />
       )}
-      {abaEfetiva === 'identidade' && showAdminTabs && props.org && (
-        <AbaIdentidadeVisual org={props.org} />
-      )}
       {abaEfetiva === 'parceiros' && showAdminTabs && props.org && (
         <ParceirosClient orgId={props.org.id} />
       )}
@@ -176,9 +172,47 @@ export default function ConfiguracoesForm(props: Props) {
 
 // ── Aba Perfil ────────────────────────────────────────────────────────────────
 
-function AbaPerfil({ org }: { org: any }) {
+function AbaPerfil({ org }: { org: Organizacao }) {
+  const router   = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [preview,  setPreview]  = useState<string | null>(org.logo_url ?? null)
+  const [arquivo,  setArquivo]  = useState<File | null>(null)
+  const [erroLogo, setErroLogo] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [sucesso,  setSucesso]  = useState(false)
+
+  function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    setErroLogo(''); setSucesso(false)
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['image/png', 'image/jpeg'].includes(file.type)) { setErroLogo('Formato inválido. Use PNG ou JPG.'); return }
+    if (file.size > 2 * 1024 * 1024) { setErroLogo('Arquivo muito grande. Máximo 2MB.'); return }
+    setArquivo(file)
+    setPreview(URL.createObjectURL(file))
+  }
+
+  async function handleSalvarLogo() {
+    if (!arquivo) return
+    setSalvando(true); setErroLogo('')
+    const supabase = createClientBrowser()
+    const ext  = arquivo.type === 'image/png' ? 'png' : 'jpg'
+    const path = `${org.id}/logo.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('logos-orgs')
+      .upload(path, arquivo, { upsert: true, contentType: arquivo.type })
+    if (uploadError) { setSalvando(false); setErroLogo('Erro ao enviar arquivo: ' + uploadError.message); return }
+    const { data: { publicUrl } } = supabase.storage.from('logos-orgs').getPublicUrl(path)
+    const res = await atualizarLogoOrg(org.id, publicUrl)
+    setSalvando(false)
+    if (res.error) { setErroLogo(res.error) } else { setSucesso(true); setArquivo(null); router.refresh(); setTimeout(() => setSucesso(false), 3000) }
+  }
+
+  const inicial = (org.nome_curto || org.nome).charAt(0).toUpperCase()
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* Dados da organização */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '1.25rem' }}>Dados da organização</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -217,6 +251,7 @@ function AbaPerfil({ org }: { org: any }) {
         </div>
       </div>
 
+      {/* Endereço */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '0.5rem' }}>Endereço</h3>
         <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: '1rem' }}>Para alterações nos dados cadastrais, entre em contato com o suporte.</p>
@@ -235,6 +270,50 @@ function AbaPerfil({ org }: { org: any }) {
           </div>
         </div>
       </div>
+
+      {/* Logo */}
+      <SectionCard titulo="Logo da organização">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: '#f1f0eb', border: '1px solid #e5e3dc',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', flexShrink: 0,
+          }}>
+            {preview ? (
+              <img src={preview} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : (
+              <span style={{ fontSize: 24, fontWeight: 700, color: PURPLE }}>{inicial}</span>
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <input ref={inputRef} type="file" accept="image/png,image/jpeg" style={{ display: 'none' }} onChange={handleArquivo} />
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              style={{ padding: '8px 18px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '13px', fontWeight: '500', background: '#fafaf8', cursor: 'pointer', marginBottom: '0.75rem' }}
+            >
+              Alterar logo
+            </button>
+            <div style={{ fontSize: '12px', color: '#888', lineHeight: 1.7 }}>
+              <div>• Formatos aceitos: PNG ou JPG</div>
+              <div>• Tamanho máximo: 2MB</div>
+              <div>• Dimensões recomendadas: mínimo 200×200px, proporção 1:1</div>
+              <div>• PNG com fundo transparente recomendado</div>
+            </div>
+          </div>
+        </div>
+        {erroLogo && <Alerta tipo="erro">{erroLogo}</Alerta>}
+        {sucesso   && <Alerta tipo="ok">Logo atualizada com sucesso!</Alerta>}
+        {arquivo && !erroLogo && (
+          <div style={{ marginTop: '0.5rem' }}>
+            <BtnPrimary type="button" onClick={handleSalvarLogo} loading={salvando} success={sucesso}>
+              {salvando ? 'Enviando...' : sucesso ? '✓ Salvo' : 'Salvar logo'}
+            </BtnPrimary>
+          </div>
+        )}
+      </SectionCard>
+
     </div>
   )
 }
@@ -821,129 +900,6 @@ function MunicipiosInput({ value, onChange }: { value: string[]; onChange: (v: s
         </div>
       )}
     </div>
-  )
-}
-
-// ── Aba Identidade Visual ─────────────────────────────────────────────────────
-
-function AbaIdentidadeVisual({ org }: { org: Organizacao }) {
-  const router    = useRouter()
-  const inputRef  = useRef<HTMLInputElement>(null)
-  const [preview,  setPreview]  = useState<string | null>(org.logo_url ?? null)
-  const [arquivo,  setArquivo]  = useState<File | null>(null)
-  const [erro,     setErro]     = useState('')
-  const [salvando, setSalvando] = useState(false)
-  const [sucesso,  setSucesso]  = useState(false)
-
-  function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    setErro(''); setSucesso(false)
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      setErro('Formato inválido. Use PNG ou JPG.')
-      return
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setErro('Arquivo muito grande. Máximo 2MB.')
-      return
-    }
-    setArquivo(file)
-    setPreview(URL.createObjectURL(file))
-  }
-
-  async function handleSalvar() {
-    if (!arquivo) return
-    setSalvando(true); setErro('')
-
-    const supabase = createClientBrowser()
-    const ext  = arquivo.type === 'image/png' ? 'png' : 'jpg'
-    const path = `${org.id}/logo.${ext}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('logos-orgs')
-      .upload(path, arquivo, { upsert: true, contentType: arquivo.type })
-
-    if (uploadError) {
-      setSalvando(false)
-      setErro('Erro ao enviar arquivo: ' + uploadError.message)
-      return
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('logos-orgs')
-      .getPublicUrl(path)
-
-    const res = await atualizarLogoOrg(org.id, publicUrl)
-    setSalvando(false)
-    if (res.error) {
-      setErro(res.error)
-    } else {
-      setSucesso(true)
-      setArquivo(null)
-      router.refresh()
-      setTimeout(() => setSucesso(false), 3000)
-    }
-  }
-
-  const inicial = (org.nome_curto || org.nome).charAt(0).toUpperCase()
-
-  return (
-    <SectionCard titulo="Logo da organização">
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
-        {/* Preview circular */}
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: '#f1f0eb', border: '1px solid #e5e3dc',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          {preview ? (
-            <img src={preview} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          ) : (
-            <span style={{ fontSize: 24, fontWeight: 700, color: PURPLE }}>{inicial}</span>
-          )}
-        </div>
-
-        {/* Controles */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg"
-            style={{ display: 'none' }}
-            onChange={handleArquivo}
-          />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            style={{
-              padding: '8px 18px', border: '1px solid #d5d3cc',
-              borderRadius: '8px', fontSize: '13px', fontWeight: '500',
-              background: '#fafaf8', cursor: 'pointer', marginBottom: '0.75rem',
-            }}
-          >
-            Alterar logo
-          </button>
-          <div style={{ fontSize: '12px', color: '#888', lineHeight: 1.7 }}>
-            <div>• Formatos aceitos: PNG ou JPG</div>
-            <div>• Tamanho máximo: 2MB</div>
-            <div>• Dimensões recomendadas: mínimo 200×200px, proporção 1:1</div>
-            <div>• PNG com fundo transparente recomendado</div>
-          </div>
-        </div>
-      </div>
-
-      {erro    && <Alerta tipo="erro">{erro}</Alerta>}
-      {sucesso && <Alerta tipo="ok">Logo atualizada com sucesso!</Alerta>}
-
-      {arquivo && !erro && (
-        <div style={{ marginTop: '0.5rem' }}>
-          <BtnPrimary type="button" onClick={handleSalvar} loading={salvando} success={sucesso}>
-            {salvando ? 'Enviando...' : sucesso ? '✓ Salvo' : 'Salvar logo'}
-          </BtnPrimary>
-        </div>
-      )}
-    </SectionCard>
   )
 }
 

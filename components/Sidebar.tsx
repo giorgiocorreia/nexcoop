@@ -297,7 +297,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         </div>
       ) : (
         <Link
-          href="/configuracoes?aba=identidade"
+          href="/configuracoes"
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', borderBottom: '1px solid #e5e3dc', cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
