@@ -155,6 +155,54 @@ export async function atualizarLogoOrg(
 //   );
 // ─────────────────────────────────────────────────────────────────────────────
 
+export async function atualizarPerfilOrg(
+  orgId: string,
+  dados: {
+    nome: string
+    nome_curto: string
+    email: string
+    telefone: string
+    cidade: string
+    estado: string
+    logradouro: string
+    cep: string
+  }
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { data: usuarioAtual } = await supabase.from('usuarios').select('*').eq('id', user.id).single()
+  if (!usuarioAtual) return { error: 'Usuário não encontrado.' }
+  if (!isAdmin(usuarioAtual) && !isSuperAdmin(usuarioAtual)) return { error: 'Sem permissão.' }
+
+  const n = (s: string) => s.trim() || null
+
+  const payload: Record<string, unknown> = {
+    nome_curto: n(dados.nome_curto),
+    email:      n(dados.email),
+    telefone:   n(dados.telefone),
+    logradouro: n(dados.logradouro),
+    cep:        dados.cep.replace(/\D/g, '') || null,
+  }
+
+  if (dados.cidade.trim()) payload.cidade = dados.cidade.trim()
+  if (dados.estado)        payload.estado = dados.estado
+
+  if (isSuperAdmin(usuarioAtual)) {
+    payload.nome = dados.nome.trim()
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('organizacoes')
+    .update(payload)
+    .eq('id', orgId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function alterarEmail(
   novoEmail: string,
   senhaAtual: string

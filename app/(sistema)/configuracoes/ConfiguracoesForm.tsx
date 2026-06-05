@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { Organizacao, PerfilCaptacao, TipoOrganizacao, Usuario, FuncaoDisponivel } from '@/types/database'
-import { salvarOrganizacao, atualizarLogoOrg } from './actions'
+import { salvarOrganizacao, atualizarLogoOrg, atualizarPerfilOrg } from './actions'
 import { createClient as createClientBrowser } from '@/lib/supabase/client'
 import { salvarPerfilCaptacao } from '@/lib/captacao/actions'
 import UsuariosGestao from './usuarios/UsuariosGestao'
@@ -175,14 +175,29 @@ export default function ConfiguracoesForm(props: Props) {
 function AbaPerfil({ org }: { org: Organizacao }) {
   const router   = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [preview,  setPreview]  = useState<string | null>(org.logo_url ?? null)
-  const [arquivo,  setArquivo]  = useState<File | null>(null)
-  const [erroLogo, setErroLogo] = useState('')
+  const [preview,      setPreview]      = useState<string | null>(org.logo_url ?? null)
+  const [arquivo,      setArquivo]      = useState<File | null>(null)
+  const [erroLogo,     setErroLogo]     = useState('')
+  const [salvandoLogo, setSalvandoLogo] = useState(false)
+  const [sucessoLogo,  setSucessoLogo]  = useState(false)
+
+  const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [sucesso,  setSucesso]  = useState(false)
+  const [erro,     setErro]     = useState('')
+  const [form, setForm] = useState({
+    nome:       org.nome       ?? '',
+    nome_curto: org.nome_curto ?? '',
+    email:      org.email      ?? '',
+    telefone:   org.telefone   ?? '',
+    cidade:     org.cidade     ?? '',
+    estado:     org.estado     ?? '',
+    logradouro: org.logradouro ?? '',
+    cep:        org.cep        ?? '',
+  })
 
   function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    setErroLogo(''); setSucesso(false)
+    setErroLogo(''); setSucessoLogo(false)
     const file = e.target.files?.[0]
     if (!file) return
     if (!['image/png', 'image/jpeg'].includes(file.type)) { setErroLogo('Formato inválido. Use PNG ou JPG.'); return }
@@ -193,18 +208,38 @@ function AbaPerfil({ org }: { org: Organizacao }) {
 
   async function handleSalvarLogo() {
     if (!arquivo) return
-    setSalvando(true); setErroLogo('')
+    setSalvandoLogo(true); setErroLogo('')
     const supabase = createClientBrowser()
     const ext  = arquivo.type === 'image/png' ? 'png' : 'jpg'
     const path = `${org.id}/logo.${ext}`
     const { error: uploadError } = await supabase.storage
       .from('logos-orgs')
       .upload(path, arquivo, { upsert: true, contentType: arquivo.type })
-    if (uploadError) { setSalvando(false); setErroLogo('Erro ao enviar arquivo: ' + uploadError.message); return }
+    if (uploadError) { setSalvandoLogo(false); setErroLogo('Erro ao enviar arquivo: ' + uploadError.message); return }
     const { data: { publicUrl } } = supabase.storage.from('logos-orgs').getPublicUrl(path)
     const res = await atualizarLogoOrg(org.id, publicUrl)
-    setSalvando(false)
-    if (res.error) { setErroLogo(res.error) } else { setSucesso(true); setArquivo(null); router.refresh(); setTimeout(() => setSucesso(false), 3000) }
+    setSalvandoLogo(false)
+    if (res.error) { setErroLogo(res.error) } else { setSucessoLogo(true); setArquivo(null); router.refresh(); setTimeout(() => setSucessoLogo(false), 3000) }
+  }
+
+  async function handleSalvar() {
+    setSalvando(true)
+    setErro('')
+    try {
+      const result = await atualizarPerfilOrg(org.id, form)
+      if (result?.error) {
+        setErro('Erro ao salvar. Tente novamente.')
+      } else {
+        setSucesso(true)
+        setEditando(false)
+        setTimeout(() => setSucesso(false), 3000)
+        router.refresh()
+      }
+    } catch {
+      setErro('Erro ao salvar. Tente novamente.')
+    } finally {
+      setSalvando(false)
+    }
   }
 
   const inicial = (org.nome_curto || org.nome).charAt(0).toUpperCase()
@@ -214,15 +249,34 @@ function AbaPerfil({ org }: { org: Organizacao }) {
 
       {/* Dados da organização */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '1.25rem' }}>Dados da organização</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', margin: 0 }}>Dados da organização</h3>
+          {!editando && (
+            <button
+              type="button"
+              onClick={() => setEditando(true)}
+              style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e3dc', background: 'none', fontSize: 13, fontWeight: 600, color: '#0D2B5E', cursor: 'pointer' }}
+            >
+              Editar
+            </button>
+          )}
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Nome completo</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.nome}</div>
+            {editando ? (
+              <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.nome || '—'}</div>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Nome curto</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.nome_curto || '—'}</div>
+            {editando ? (
+              <input value={form.nome_curto} onChange={e => setForm(f => ({ ...f, nome_curto: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.nome_curto || '—'}</div>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CNPJ</label>
@@ -234,16 +288,31 @@ function AbaPerfil({ org }: { org: Organizacao }) {
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>E-mail</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.email || '—'}</div>
+            {editando ? (
+              <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.email || '—'}</div>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Telefone</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.telefone || '—'}</div>
+            {editando ? (
+              <input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.telefone || '—'}</div>
+            )}
           </div>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Cidade / UF</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{`${org.cidade} / ${org.estado}`}</div>
-          </div>
+          {editando ? (
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Cidade</label>
+              <input value={form.cidade} onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+          ) : (
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Cidade / UF</label>
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{`${form.cidade} / ${form.estado}`}</div>
+            </div>
+          )}
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Plano atual</label>
             <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8, textTransform: 'capitalize' }}>{org.plano || '—'}</div>
@@ -254,21 +323,70 @@ function AbaPerfil({ org }: { org: Organizacao }) {
       {/* Endereço */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '0.5rem' }}>Endereço</h3>
-        <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: '1rem' }}>Para alterações nos dados cadastrais, entre em contato com o suporte.</p>
+        {!editando && <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: '1rem' }}>Para alterações nos dados cadastrais, entre em contato com o suporte.</p>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Endereço</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.logradouro || '—'}</div>
+            {editando ? (
+              <input value={form.logradouro} onChange={e => setForm(f => ({ ...f, logradouro: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.logradouro || '—'}</div>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CEP</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cep || '—'}</div>
+            {editando ? (
+              <input value={form.cep} onChange={e => setForm(f => ({ ...f, cep: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.cep || '—'}</div>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Estado</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.estado || '—'}</div>
+            {editando ? (
+              <input value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            ) : (
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.estado || '—'}</div>
+            )}
           </div>
         </div>
+
+        {editando && (
+          <div style={{ marginTop: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditando(false)
+                  setErro('')
+                  setForm({
+                    nome:       org.nome       ?? '',
+                    nome_curto: org.nome_curto ?? '',
+                    email:      org.email      ?? '',
+                    telefone:   org.telefone   ?? '',
+                    cidade:     org.cidade     ?? '',
+                    estado:     org.estado     ?? '',
+                    logradouro: org.logradouro ?? '',
+                    cep:        org.cep        ?? '',
+                  })
+                }}
+                style={{ padding: '9px 18px', borderRadius: 8, border: '1.5px solid #e5e3dc', background: 'none', fontSize: 13, fontWeight: 600, color: '#64748B', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSalvar}
+                disabled={salvando}
+                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#0D2B5E', color: '#fff', fontSize: 13, fontWeight: 600, cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}
+              >
+                {salvando ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+            {erro   && <div style={{ color: '#DC2626', fontSize: 13, marginTop: '0.5rem', textAlign: 'right' }}>{erro}</div>}
+            {sucesso && <div style={{ color: '#085041', fontSize: 13, marginTop: '0.5rem', textAlign: 'right' }}>✓ Dados salvos com sucesso</div>}
+          </div>
+        )}
       </div>
 
       {/* Logo */}
@@ -303,12 +421,12 @@ function AbaPerfil({ org }: { org: Organizacao }) {
             </div>
           </div>
         </div>
-        {erroLogo && <Alerta tipo="erro">{erroLogo}</Alerta>}
-        {sucesso   && <Alerta tipo="ok">Logo atualizada com sucesso!</Alerta>}
+        {erroLogo    && <Alerta tipo="erro">{erroLogo}</Alerta>}
+        {sucessoLogo && <Alerta tipo="ok">Logo atualizada com sucesso!</Alerta>}
         {arquivo && !erroLogo && (
           <div style={{ marginTop: '0.5rem' }}>
-            <BtnPrimary type="button" onClick={handleSalvarLogo} loading={salvando} success={sucesso}>
-              {salvando ? 'Enviando...' : sucesso ? '✓ Salvo' : 'Salvar logo'}
+            <BtnPrimary type="button" onClick={handleSalvarLogo} loading={salvandoLogo} success={sucessoLogo}>
+              {salvandoLogo ? 'Enviando...' : sucessoLogo ? '✓ Salvo' : 'Salvar logo'}
             </BtnPrimary>
           </div>
         )}
