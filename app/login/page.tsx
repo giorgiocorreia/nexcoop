@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CampoSenha } from '@/components/CampoSenha'
 
 const GREEN = '#635BFF'
 
@@ -25,7 +26,6 @@ function AuthForm() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [carregando, setCarregando] = useState(false)
-  const [mostrarSenha, setMostrarSenha] = useState(false)
 
   const supabase = createClient()
 
@@ -89,7 +89,7 @@ function AuthForm() {
     if (!email) { setErro('Digite seu e-mail para recuperar a senha.'); return }
     setCarregando(true)
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/redefinir-senha`,
+      redirectTo: `${window.location.origin}/auth/callback`,
     })
     setErro('')
     setCarregando(false)
@@ -143,18 +143,7 @@ function AuthForm() {
                   Esqueci a senha
                 </button>
               </div>
-              <div style={{ position: 'relative' }}>
-                <input type={mostrarSenha ? 'text' : 'password'} value={senha}
-                  onChange={e => setSenha(e.target.value)} placeholder="••••••••" required
-                  style={{ ...inputStyle, padding: '10px 40px 10px 12px' }}
-                  onFocus={e => e.target.style.borderColor = GREEN}
-                  onBlur={e => e.target.style.borderColor = '#d5d3cc'}
-                />
-                <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: '14px', padding: '4px' }}>
-                  {mostrarSenha ? '🙈' : '👁️'}
-                </button>
-              </div>
+              <CampoSenha value={senha} onChange={setSenha} placeholder="••••••••" />
             </div>
 
             {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>{erro}</div>}
@@ -186,18 +175,7 @@ function AuthForm() {
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#444', marginBottom: '6px' }}>Senha</label>
-              <div style={{ position: 'relative' }}>
-                <input type={mostrarSenha ? 'text' : 'password'} value={senha}
-                  onChange={e => setSenha(e.target.value)} placeholder="Mínimo 6 caracteres" required minLength={6}
-                  style={{ ...inputStyle, padding: '10px 40px 10px 12px' }}
-                  onFocus={e => e.target.style.borderColor = GREEN}
-                  onBlur={e => e.target.style.borderColor = '#d5d3cc'}
-                />
-                <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: '14px', padding: '4px' }}>
-                  {mostrarSenha ? '🙈' : '👁️'}
-                </button>
-              </div>
+              <CampoSenha value={senha} onChange={setSenha} placeholder="Mínimo 6 caracteres" />
             </div>
 
             {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>{erro}</div>}

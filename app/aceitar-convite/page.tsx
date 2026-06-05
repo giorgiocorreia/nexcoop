@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CampoSenha } from '@/components/CampoSenha'
 
 const PURPLE = '#635BFF'
 
@@ -14,7 +15,6 @@ export default function AceitarConvitePage() {
   const [erroMsg, setErroMsg] = useState('')
   const [senha, setSenha] = useState('')
   const [confirmar, setConfirmar] = useState('')
-  const [mostrarSenha, setMostrarSenha] = useState(false)
 
   useEffect(() => {
     const hash = window.location.hash.slice(1)
@@ -141,42 +141,14 @@ export default function AceitarConvitePage() {
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#444', marginBottom: '6px' }}>
                     Nova senha
                   </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={mostrarSenha ? 'text' : 'password'}
-                      value={senha}
-                      onChange={e => setSenha(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      required
-                      minLength={6}
-                      style={{ ...inputStyle, padding: '10px 40px 10px 12px' }}
-                      onFocus={e => (e.target.style.borderColor = PURPLE)}
-                      onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setMostrarSenha(!mostrarSenha)}
-                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: '14px', padding: '4px' }}
-                    >
-                      {mostrarSenha ? '🙈' : '👁️'}
-                    </button>
-                  </div>
+                  <CampoSenha value={senha} onChange={setSenha} placeholder="Mínimo 6 caracteres" />
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#444', marginBottom: '6px' }}>
                     Confirmar senha
                   </label>
-                  <input
-                    type={mostrarSenha ? 'text' : 'password'}
-                    value={confirmar}
-                    onChange={e => setConfirmar(e.target.value)}
-                    placeholder="Repita a senha"
-                    required
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = PURPLE)}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
+                  <CampoSenha value={confirmar} onChange={setConfirmar} placeholder="Repita a senha" />
                 </div>
 
                 {erroMsg && (
