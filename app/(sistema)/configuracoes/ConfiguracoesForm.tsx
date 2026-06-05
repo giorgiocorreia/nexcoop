@@ -257,7 +257,7 @@ function AbaPerfil({ org }: { org: Organizacao }) {
               onClick={() => setEditando(true)}
               style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e3dc', background: 'none', fontSize: 13, fontWeight: 600, color: '#0D2B5E', cursor: 'pointer' }}
             >
-              Editar
+              ✏️ Editar
             </button>
           )}
         </div>
@@ -280,7 +280,7 @@ function AbaPerfil({ org }: { org: Organizacao }) {
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CNPJ</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cnpj || '—'}</div>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{formatarCNPJ(org.cnpj || '')}</div>
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Tipo</label>
@@ -338,7 +338,7 @@ function AbaPerfil({ org }: { org: Organizacao }) {
             {editando ? (
               <input value={form.cep} onChange={e => setForm(f => ({ ...f, cep: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
             ) : (
-              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{form.cep || '—'}</div>
+              <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{formatarCEP(form.cep || '')}</div>
             )}
           </div>
           <div>
@@ -1178,6 +1178,16 @@ const inp: React.CSSProperties = {
   width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
   borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
   color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
+}
+
+function formatarCNPJ(v: string) {
+  const n = v.replace(/\D/g, '')
+  return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') || v
+}
+
+function formatarCEP(v: string) {
+  const n = v.replace(/\D/g, '')
+  return n.replace(/^(\d{5})(\d{3})$/, '$1-$2') || v
 }
 
 const btnSmSecondary: React.CSSProperties = {
