@@ -287,38 +287,31 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             </div>
           </div>
         </div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
-          {isSuperAdmin ? (
-            <img
-              src="/images/logo-nexcoop-horizontal.png"
-              alt="NexCoop"
-              style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
-            />
-          ) : (
-            <img
-              src="/images/logo-nexcoop-vertical.png"
-              alt="NexCoop"
-              style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
-            />
-          )}
-          {!isSuperAdmin && (
-            <>
-              <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
-              {org?.logo_url ? (
-                <img
-                  src={org.logo_url}
-                  alt={org?.nome_curto || org?.nome || ''}
-                  style={{ height: 56, width: 'auto', maxWidth: 100, objectFit: 'contain', flexShrink: 0 }}
-                />
-              ) : (
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>
-                  {org?.nome_curto || org?.nome}
-                </span>
-              )}
-            </>
-          )}
+      ) : isSuperAdmin ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
+          <img
+            src="/images/logo-nexcoop-horizontal.png"
+            alt="NexCoop"
+            style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
+          />
         </div>
+      ) : (
+        <Link
+          href="/configuracoes?aba=identidade"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', borderBottom: '1px solid #e5e3dc', cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          title="Configurações da organização"
+        >
+          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+          <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
+          {org?.logo_url ? (
+            <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 100, objectFit: 'contain', flexShrink: 0 }} />
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
+          )}
+          <SettingsIconHover />
+        </Link>
       )}
 
       {/* Navegação */}
@@ -328,41 +321,50 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       {/* Rodapé usuário */}
       <div style={{ borderTop: '1px solid #e5e3dc', padding: '0.75rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '50%',
-            background: isSuperAdmin ? '#1a1a1a' : '#EEEDFE',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '13px', fontWeight: '600',
-            color: isSuperAdmin ? '#fff' : '#4840CC',
-            flexShrink: 0,
-          }}>
-            {(isParceiro ? nomeDisplay : usuario?.nome_completo)?.charAt(0).toUpperCase() || 'U'}
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            {isParceiro ? (
+        {isParceiro ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              background: '#EEEDFE',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '13px', fontWeight: '600', color: '#4840CC', flexShrink: 0,
+            }}>
+              {nomeDisplay?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
                 <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {nomeDisplay || 'Usuário'}
                 </div>
-                <div style={{ fontSize: '11px', color: '#0F766E' }}>
-                  Parceiro
-                </div>
+                <div style={{ fontSize: '11px', color: '#0F766E' }}>Parceiro</div>
               </Link>
-            ) : (
-              <>
-                <a href="/perfil" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {usuario?.nome_completo || 'Usuário'}
-                  </div>
-                </a>
-                <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', fontWeight: isSuperAdmin ? '500' : '400' }}>
-                  {labelUsuario(usuario)}
-                </div>
-              </>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <Link
+            href="/perfil"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s', margin: '0 4px 8px' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            title="Meu perfil"
+          >
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: isSuperAdmin ? '#1a1a1a' : '#635BFF',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 600, color: '#fff', flexShrink: 0,
+            }}>
+              {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {usuario?.nome_completo || 'Usuário'}
+              </div>
+              <div style={{ fontSize: 11, color: '#94A3B8' }}>{labelUsuario(usuario)}</div>
+            </div>
+            <UserEditIconHover />
+          </Link>
+        )}
         <button onClick={handleLogout} style={{
           width: '100%', padding: '7px', background: 'transparent',
           border: '1px solid #e5e3dc', borderRadius: '8px',
@@ -381,5 +383,31 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         </button>
       </div>
     </aside>
+  )
+}
+
+function SettingsIconHover() {
+  const [hover, setHover] = useState(false)
+  return (
+    <span
+      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#94A3B8', opacity: hover ? 1 : 0, transition: 'opacity 0.15s' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      ⚙️
+    </span>
+  )
+}
+
+function UserEditIconHover() {
+  const [hover, setHover] = useState(false)
+  return (
+    <span
+      style={{ fontSize: 14, color: '#94A3B8', opacity: hover ? 1 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      ✏️
+    </span>
   )
 }
