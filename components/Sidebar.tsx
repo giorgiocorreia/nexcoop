@@ -288,32 +288,25 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           </div>
         </div>
       ) : (
-        <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img
-              src="/images/logo-nexcoop-vertical.png"
-              alt="NexCoop"
-              style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
-            />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {isSuperAdmin ? (
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>NexCoop</span>
-                ) : (
-                  <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    {org?.logo_url ? (
-                      <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 40, width: 'auto', maxWidth: 140, objectFit: 'contain' }} />
-                    ) : (
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
-                    )}
-                  </a>
-                )}
-              </div>
-              <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
-                {orgTipo}
-              </div>
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
+          <img
+            src="/images/logo-nexcoop-vertical.png"
+            alt="NexCoop"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+          />
+          {!isSuperAdmin && (
+            org?.logo_url ? (
+              <img
+                src={org.logo_url}
+                alt={org?.nome_curto || org?.nome || ''}
+                style={{ height: 40, width: 'auto', maxWidth: 100, objectFit: 'contain' }}
+              />
+            ) : (
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>
+                {org?.nome_curto || org?.nome}
+              </span>
+            )
+          )}
         </div>
       )}
 
