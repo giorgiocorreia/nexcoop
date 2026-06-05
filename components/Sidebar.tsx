@@ -271,47 +271,51 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       fontFamily: 'system-ui, -apple-system, sans-serif', zIndex: 100,
     }}>
       {/* Cabeçalho */}
-      <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {isParceiro ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem', borderBottom: '1px solid #e5e3dc', marginBottom: '1rem' }}>
           <img
             src="/images/logo-nexcoop-vertical.png"
             alt="NexCoop"
-            style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
+            style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }}
           />
           <div style={{ minWidth: 0 }}>
-            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {isSuperAdmin ? (
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>NexCoop</span>
-              ) : !isParceiro ? (
-                <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  {org?.logo_url ? (
-                    <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 40, width: 'auto', maxWidth: 140, objectFit: 'contain' }} />
-                  ) : (
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
-                  )}
-                </a>
-              ) : null}
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {orgNomeProp}
             </div>
-            {!isParceiro && (
+            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>
+              Escritório Parceiro
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img
+              src="/images/logo-nexcoop-vertical.png"
+              alt="NexCoop"
+              style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {isSuperAdmin ? (
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>NexCoop</span>
+                ) : (
+                  <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    {org?.logo_url ? (
+                      <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 40, width: 'auto', maxWidth: 140, objectFit: 'contain' }} />
+                    ) : (
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
+                    )}
+                  </a>
+                )}
+              </div>
               <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
                 {orgTipo}
               </div>
-            )}
+            </div>
           </div>
         </div>
-
-        {/* Empresa parceira — link para /escritorio/perfil */}
-        {isParceiro && orgNomeProp && (
-          <Link href="/escritorio/empresa" style={{ display: 'block', marginTop: '10px', textDecoration: 'none' }}>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {orgNomeProp}
-            </div>
-            <div style={{ fontSize: '11px', color: '#0F766E', marginTop: '1px' }}>
-              Escritório Parceiro
-            </div>
-          </Link>
-        )}
-      </div>
+      )}
 
       {/* Navegação */}
       <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto' }}>
