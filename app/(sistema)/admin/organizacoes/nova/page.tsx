@@ -227,10 +227,10 @@ export default function NovaOrganizacaoPage() {
                 </InputGroup>
                 <InputGroup label="Plano inicial" required>
                   <select value={form.plano} onChange={set('plano')} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <option value="gratuito">Gratuito</option>
                     <option value="essencial">Essencial</option>
-                    <option value="cooperativa">Cooperativa</option>
+                    <option value="profissional">Profissional</option>
                     <option value="agro">Agro</option>
-                    <option value="impacto">Impacto</option>
                     <option value="enterprise">Enterprise</option>
                   </select>
                 </InputGroup>
