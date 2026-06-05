@@ -23,9 +23,9 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
   const [sucessoSenha,      setSucessoSenha]       = useState(false)
   const [erroSenha,         setErroSenha]          = useState('')
   const [senhaAlterada,     setSenhaAlterada]      = useState(false)
+  const [mostrarFormSenha,  setMostrarFormSenha]   = useState(false)
 
-  async function handleAlterarSenha(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleAlterarSenha() {
     setErroSenha(''); setSucessoSenha(false)
 
     if (!senhaAtual || !novaSenha || !confirmarNovaSenha) {
@@ -122,30 +122,57 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
           <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>🔒 Segurança</h2>
         </div>
 
-        {!senhaAlterada ? (
-          <form onSubmit={handleAlterarSenha}>
-            <SectionCard titulo="Alterar senha">
-              <Field label="Senha atual" required>
-                <CampoSenha value={senhaAtual} onChange={setSenhaAtual} placeholder="Senha atual" />
-              </Field>
-              <Field label="Nova senha" required>
-                <CampoSenha value={novaSenha} onChange={setNovaSenha} placeholder="Mínimo 8 caracteres" />
-              </Field>
-              <Field label="Confirmar nova senha" required>
-                <CampoSenha value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} placeholder="Repita a nova senha" />
-              </Field>
-              {erroSenha && <Alerta tipo="erro">{erroSenha}</Alerta>}
-            </SectionCard>
+        <SectionCard titulo="">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mostrarFormSenha ? '1.25rem' : 0 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E' }}>Senha</div>
+                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>••••••••••</div>
+              </div>
+              {!senhaAlterada && !mostrarFormSenha && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormSenha(true)}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: '1.5px solid #e5e3dc', background: 'none', fontSize: 13, fontWeight: 600, color: '#0D2B5E', cursor: 'pointer' }}
+                >
+                  Trocar senha
+                </button>
+              )}
+            </div>
 
-            <BtnPrimary type="submit" loading={alterando} success={false} cor={COR} corDark={COR_DARK} corSuc={COR_SUC}>
-              {alterando ? 'Alterando...' : 'Alterar senha'}
-            </BtnPrimary>
-          </form>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#085041', background: '#E1F5EE', borderRadius: 10, fontSize: 14, fontWeight: 500 }}>
-            ✓ Senha alterada com sucesso
+            {mostrarFormSenha && !senhaAlterada && (
+              <>
+                <CampoSenha placeholder="Senha atual" value={senhaAtual} onChange={setSenhaAtual} style={{ marginBottom: '0.75rem' }} />
+                <CampoSenha placeholder="Nova senha" value={novaSenha} onChange={setNovaSenha} style={{ marginBottom: '0.75rem' }} />
+                <CampoSenha placeholder="Confirmar nova senha" value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} style={{ marginBottom: '1rem' }} />
+                {erroSenha && <div style={{ color: '#DC2626', fontSize: 13, marginBottom: '0.75rem' }}>{erroSenha}</div>}
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setMostrarFormSenha(false); setSenhaAtual(''); setNovaSenha(''); setConfirmarNovaSenha(''); setErroSenha('') }}
+                    style={{ padding: '9px 18px', borderRadius: 8, border: '1.5px solid #e5e3dc', background: 'none', fontSize: 13, fontWeight: 600, color: '#64748B', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAlterarSenha}
+                    disabled={alterando}
+                    style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#0D2B5E', color: '#fff', fontSize: 13, fontWeight: 600, cursor: alterando ? 'not-allowed' : 'pointer', opacity: alterando ? 0.7 : 1 }}
+                  >
+                    {alterando ? 'Salvando...' : 'Salvar nova senha'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {senhaAlterada && (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#085041', background: '#E1F5EE', borderRadius: 10, fontSize: 14, fontWeight: 500, marginTop: '0.75rem' }}>
+                ✓ Senha alterada com sucesso
+              </div>
+            )}
           </div>
-        )}
+        </SectionCard>
       </div>
     </div>
   )
