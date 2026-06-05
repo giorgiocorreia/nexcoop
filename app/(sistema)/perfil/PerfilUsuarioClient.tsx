@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import type { Usuario } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
+import { CampoSenha } from '@/components/CampoSenha'
 
 const COR      = '#635BFF'
 const COR_DARK = '#4840CC'
@@ -13,6 +15,46 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
   const [salvando, setSalvando] = useState(false)
   const [sucesso,  setSucesso]  = useState(false)
   const [erro,     setErro]     = useState('')
+
+  const [senhaAtual,        setSenhaAtual]        = useState('')
+  const [novaSenha,         setNovaSenha]          = useState('')
+  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState('')
+  const [alterando,         setAlterando]          = useState(false)
+  const [sucessoSenha,      setSucessoSenha]       = useState(false)
+  const [erroSenha,         setErroSenha]          = useState('')
+
+  async function handleAlterarSenha(e: React.FormEvent) {
+    e.preventDefault()
+    setErroSenha(''); setSucessoSenha(false)
+
+    if (!senhaAtual || !novaSenha || !confirmarNovaSenha) {
+      setErroSenha('Preencha todos os campos.'); return
+    }
+    if (novaSenha.length < 8) {
+      setErroSenha('A nova senha deve ter no mínimo 8 caracteres.'); return
+    }
+    if (novaSenha !== confirmarNovaSenha) {
+      setErroSenha('A nova senha e a confirmação não coincidem.'); return
+    }
+
+    setAlterando(true)
+    const supabase = createClient()
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: senhaAtual })
+    if (signInError) {
+      setAlterando(false); setErroSenha('Senha atual incorreta.'); return
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: novaSenha })
+    setAlterando(false)
+    if (updateError) {
+      setErroSenha('Erro ao alterar senha: ' + updateError.message); return
+    }
+
+    setSucessoSenha(true)
+    setSenhaAtual(''); setNovaSenha(''); setConfirmarNovaSenha('')
+    setTimeout(() => setSucessoSenha(false), 3000)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,6 +113,33 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
           {salvando ? 'Salvando...' : sucesso ? '✓ Salvo' : 'Salvar dados'}
         </BtnPrimary>
       </form>
+
+      {/* Segurança */}
+      <div style={{ marginTop: '2rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>🔒 Segurança</h2>
+        </div>
+
+        <form onSubmit={handleAlterarSenha}>
+          <SectionCard titulo="Alterar senha">
+            <Field label="Senha atual" required>
+              <CampoSenha value={senhaAtual} onChange={setSenhaAtual} placeholder="Senha atual" />
+            </Field>
+            <Field label="Nova senha" required>
+              <CampoSenha value={novaSenha} onChange={setNovaSenha} placeholder="Mínimo 8 caracteres" />
+            </Field>
+            <Field label="Confirmar nova senha" required>
+              <CampoSenha value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} placeholder="Repita a nova senha" />
+            </Field>
+            {erroSenha   && <Alerta tipo="erro">{erroSenha}</Alerta>}
+            {sucessoSenha && <Alerta tipo="ok">Senha alterada com sucesso!</Alerta>}
+          </SectionCard>
+
+          <BtnPrimary type="submit" loading={alterando} success={sucessoSenha} cor={COR} corDark={COR_DARK} corSuc={COR_SUC}>
+            {alterando ? 'Alterando...' : sucessoSenha ? '✓ Alterada' : 'Alterar senha'}
+          </BtnPrimary>
+        </form>
+      </div>
     </div>
   )
 }
