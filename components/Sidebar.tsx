@@ -273,20 +273,11 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       {/* Cabeçalho */}
       <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #e5e3dc' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {isSuperAdmin ? (
-            <div style={{
-              width: '36px', height: '36px', borderRadius: '10px',
-              background: '#1a1a1a',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '18px', flexShrink: 0,
-            }}>⚡</div>
-          ) : (
-            <img
-              src="/images/logo-nexcoop-vertical.png"
-              alt="NexCoop"
-              style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
-            />
-          )}
+          <img
+            src="/images/logo-nexcoop-vertical.png"
+            alt="NexCoop"
+            style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
+          />
           <div style={{ minWidth: 0 }}>
             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {isSuperAdmin ? (

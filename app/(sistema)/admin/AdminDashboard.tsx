@@ -209,11 +209,13 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
                   >
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          width: '32px', height: '32px', borderRadius: '8px',
-                          background: '#EEF0FF', display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '14px', flexShrink: 0,
-                        }}><svg width="16" height="16" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="7" height="26" rx="3" fill="#635BFF"/><rect x="22" y="3" width="7" height="26" rx="3" fill="#635BFF"/><path d="M10 3L22 29" stroke="#635BFF" strokeWidth="4.5" strokeLinecap="round"/></svg></div>
+                        {org.logo_url ? (
+                          <img src={org.logo_url} alt={org.nome_curto || org.nome} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
+                        ) : (
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f1f0eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#635BFF' }}>
+                            {(org.nome_curto || org.nome).charAt(0)}
+                          </div>
+                        )}
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
                             {org.nome}
