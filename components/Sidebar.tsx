@@ -282,16 +282,24 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             }}>⚡</div>
           ) : (
             <img
-              src="/images/logo-nexcoop-vertical.png"
+              src="/images/logo-nexcoop-horizontal.png"
               alt="NexCoop"
-              style={{ height: 64, width: 'auto', display: 'block', margin: '0 auto' }}
+              style={{ height: 32, width: 'auto', display: 'block' }}
             />
           )}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {!isParceiro && !isSuperAdmin ? (
-                <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>{orgNome}</a>
-              ) : orgNome}
+            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {isSuperAdmin ? (
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>NexCoop</span>
+              ) : !isParceiro ? (
+                <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  {org?.logo_url ? (
+                    <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 32, width: 'auto', maxWidth: 120, objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
+                  )}
+                </a>
+              ) : null}
             </div>
             {!isParceiro && (
               <div style={{ fontSize: '11px', color: isSuperAdmin ? '#635BFF' : '#888', marginTop: '1px', fontWeight: isSuperAdmin ? '600' : '400' }}>
