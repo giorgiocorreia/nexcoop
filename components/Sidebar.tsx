@@ -285,7 +285,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
               ) : !isParceiro ? (
                 <a href="/organizacao" style={{ textDecoration: 'none', color: 'inherit' }}>
                   {org?.logo_url ? (
-                    <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 32, width: 'auto', maxWidth: 120, objectFit: 'contain' }} />
+                    <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 40, width: 'auto', maxWidth: 140, objectFit: 'contain' }} />
                   ) : (
                     <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
                   )}

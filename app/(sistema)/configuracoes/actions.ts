@@ -114,6 +114,47 @@ export async function salvarAvatarUrl(avatarUrl: string): Promise<{ error?: stri
   return {}
 }
 
+export async function atualizarLogoOrg(
+  organizacaoId: string,
+  logoUrl: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { data: usuarioAtual } = await supabase.from('usuarios').select('*').eq('id', user.id).single()
+  if (!usuarioAtual) return { error: 'Usuário não encontrado.' }
+  if (!isAdmin(usuarioAtual) && !isSuperAdmin(usuarioAtual)) return { error: 'Sem permissão.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('organizacoes')
+    .update({ logo_url: logoUrl })
+    .eq('id', organizacaoId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── Migração Supabase Storage ─────────────────────────────────────────────────
+// Executar no Supabase SQL Editor (uma única vez):
+//
+// insert into storage.buckets (id, name, public)
+//   values ('logos-orgs', 'logos-orgs', true)
+//   on conflict (id) do nothing;
+//
+// create policy "Admin pode fazer upload da logo da sua org"
+//   on storage.objects for insert
+//   with check (
+//     bucket_id = 'logos-orgs'
+//     and auth.uid() in (
+//       select u.id from usuarios u
+//       where u.organizacao_id = split_part(name, '/', 1)::uuid
+//         and 'admin' = any(u.funcoes)
+//     )
+//   );
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function alterarEmail(
   novoEmail: string,
   senhaAtual: string
