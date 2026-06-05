@@ -22,6 +22,7 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
   const [alterando,         setAlterando]          = useState(false)
   const [sucessoSenha,      setSucessoSenha]       = useState(false)
   const [erroSenha,         setErroSenha]          = useState('')
+  const [senhaAlterada,     setSenhaAlterada]      = useState(false)
 
   async function handleAlterarSenha(e: React.FormEvent) {
     e.preventDefault()
@@ -53,6 +54,7 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
 
     setSucessoSenha(true)
     setSenhaAtual(''); setNovaSenha(''); setConfirmarNovaSenha('')
+    setSenhaAlterada(true)
     setTimeout(() => setSucessoSenha(false), 3000)
   }
 
@@ -120,25 +122,30 @@ export default function PerfilUsuarioClient({ usuario, email }: { usuario: Usuar
           <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>🔒 Segurança</h2>
         </div>
 
-        <form onSubmit={handleAlterarSenha}>
-          <SectionCard titulo="Alterar senha">
-            <Field label="Senha atual" required>
-              <CampoSenha value={senhaAtual} onChange={setSenhaAtual} placeholder="Senha atual" />
-            </Field>
-            <Field label="Nova senha" required>
-              <CampoSenha value={novaSenha} onChange={setNovaSenha} placeholder="Mínimo 8 caracteres" />
-            </Field>
-            <Field label="Confirmar nova senha" required>
-              <CampoSenha value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} placeholder="Repita a nova senha" />
-            </Field>
-            {erroSenha   && <Alerta tipo="erro">{erroSenha}</Alerta>}
-            {sucessoSenha && <Alerta tipo="ok">Senha alterada com sucesso!</Alerta>}
-          </SectionCard>
+        {!senhaAlterada ? (
+          <form onSubmit={handleAlterarSenha}>
+            <SectionCard titulo="Alterar senha">
+              <Field label="Senha atual" required>
+                <CampoSenha value={senhaAtual} onChange={setSenhaAtual} placeholder="Senha atual" />
+              </Field>
+              <Field label="Nova senha" required>
+                <CampoSenha value={novaSenha} onChange={setNovaSenha} placeholder="Mínimo 8 caracteres" />
+              </Field>
+              <Field label="Confirmar nova senha" required>
+                <CampoSenha value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} placeholder="Repita a nova senha" />
+              </Field>
+              {erroSenha && <Alerta tipo="erro">{erroSenha}</Alerta>}
+            </SectionCard>
 
-          <BtnPrimary type="submit" loading={alterando} success={sucessoSenha} cor={COR} corDark={COR_DARK} corSuc={COR_SUC}>
-            {alterando ? 'Alterando...' : sucessoSenha ? '✓ Alterada' : 'Alterar senha'}
-          </BtnPrimary>
-        </form>
+            <BtnPrimary type="submit" loading={alterando} success={false} cor={COR} corDark={COR_DARK} corSuc={COR_SUC}>
+              {alterando ? 'Alterando...' : 'Alterar senha'}
+            </BtnPrimary>
+          </form>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#085041', background: '#E1F5EE', borderRadius: 10, fontSize: 14, fontWeight: 500 }}>
+            ✓ Senha alterada com sucesso
+          </div>
+        )}
       </div>
     </div>
   )

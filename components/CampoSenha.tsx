@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export function CampoSenha({ id, placeholder, value, onChange, style }: {
   id?: string
@@ -9,6 +9,22 @@ export function CampoSenha({ id, placeholder, value, onChange, style }: {
   style?: React.CSSProperties
 }) {
   const [visivel, setVisivel] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleToggle() {
+    if (visivel) {
+      setVisivel(false)
+      if (timerRef.current) clearTimeout(timerRef.current)
+    } else {
+      setVisivel(true)
+      timerRef.current = setTimeout(() => setVisivel(false), 2000)
+    }
+  }
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
   return (
     <div style={{ position: 'relative', ...style }}>
       <input
@@ -21,9 +37,9 @@ export function CampoSenha({ id, placeholder, value, onChange, style }: {
       />
       <button
         type="button"
-        onClick={() => setVisivel(v => !v)}
-        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#94A3B8', display: 'flex', alignItems: 'center' }}
-        aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha'}
+        onClick={handleToggle}
+        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: visivel ? '#1565C0' : '#94A3B8', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
+        aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha temporariamente'}
       >
         {visivel ? (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
