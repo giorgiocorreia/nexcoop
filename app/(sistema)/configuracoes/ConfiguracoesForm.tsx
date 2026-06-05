@@ -242,7 +242,7 @@ function AbaPerfil({ org }: { org: Organizacao }) {
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Cidade / UF</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cidade ? `${org.cidade} / ${org.estado || ''}` : '—'}</div>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{`${org.cidade} / ${org.estado}`}</div>
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Plano atual</label>
@@ -258,7 +258,7 @@ function AbaPerfil({ org }: { org: Organizacao }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Endereço</label>
-            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.endereco || '—'}</div>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.logradouro || '—'}</div>
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CEP</label>
