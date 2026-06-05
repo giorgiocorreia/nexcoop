@@ -53,7 +53,7 @@ const UFS = [
 ]
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-type Aba = 'captacao' | 'usuarios' | 'parceiros' | 'seguranca' | 'identidade'
+type Aba = 'perfil' | 'captacao' | 'usuarios' | 'parceiros' | 'seguranca' | 'identidade'
 
 interface Props {
   org: Organizacao | null
@@ -73,7 +73,7 @@ export default function ConfiguracoesForm(props: Props) {
   const isOrgAdmin    = props.isSuperAdmin || (props.usuario.funcoes ?? []).includes('admin')
   const showAdminTabs = isOrgAdmin && props.org !== null
 
-  const abaAtual = (searchParams.get('aba') ?? 'captacao') as Aba
+  const abaAtual = (searchParams.get('aba') ?? 'perfil') as Aba
 
   function setAba(aba: Aba) {
     const params = new URLSearchParams(searchParams.toString())
@@ -82,6 +82,7 @@ export default function ConfiguracoesForm(props: Props) {
   }
 
   const tabs: { id: Aba; label: string; adminOnly?: boolean; disabled?: boolean }[] = [
+    { id: 'perfil',      label: '🏢 Perfil',             adminOnly: true },
     { id: 'captacao',    label: '🎯 Captação',           adminOnly: true },
     { id: 'identidade',  label: '🎨 Identidade Visual',  adminOnly: true },
     { id: 'usuarios',    label: '👥 Usuários',           adminOnly: true },
@@ -92,7 +93,7 @@ export default function ConfiguracoesForm(props: Props) {
   const visiveis = tabs.filter(t => !t.adminOnly || showAdminTabs)
 
   const abaValida = visiveis.find(t => t.id === abaAtual && !t.disabled)
-  const abaDefault = (visiveis.find(t => !t.disabled)?.id ?? 'captacao') as Aba
+  const abaDefault = (visiveis.find(t => !t.disabled)?.id ?? 'perfil') as Aba
   const abaEfetiva: Aba = abaValida ? abaAtual : abaDefault
 
   return (
@@ -138,6 +139,9 @@ export default function ConfiguracoesForm(props: Props) {
       </div>
 
       {/* Conteúdo da aba */}
+      {abaEfetiva === 'perfil' && showAdminTabs && props.org && (
+        <AbaPerfil org={props.org} />
+      )}
       {abaEfetiva === 'captacao' && showAdminTabs && (
         <AbaCaptacao perfilCaptacao={props.perfilCaptacao} />
       )}
@@ -166,6 +170,71 @@ export default function ConfiguracoesForm(props: Props) {
           <div style={{ fontSize: '13px', color: '#888' }}>Em desenvolvimento — disponível em breve.</div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Aba Perfil ────────────────────────────────────────────────────────────────
+
+function AbaPerfil({ org }: { org: any }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '1.25rem' }}>Dados da organização</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Nome completo</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.nome}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Nome curto</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.nome_curto || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CNPJ</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cnpj || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Tipo</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8, textTransform: 'capitalize' }}>{org.tipo || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>E-mail</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.email || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Telefone</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.telefone || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Cidade / UF</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cidade ? `${org.cidade} / ${org.estado || ''}` : '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Plano atual</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8, textTransform: 'capitalize' }}>{org.plano || '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.5rem' }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0D2B5E', marginBottom: '0.5rem' }}>Endereço</h3>
+        <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: '1rem' }}>Para alterações nos dados cadastrais, entre em contato com o suporte.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Endereço</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.endereco || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>CEP</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.cep || '—'}</div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#64748B', display: 'block', marginBottom: 4 }}>Estado</label>
+            <div style={{ fontSize: 14, color: '#0D2B5E', padding: '8px 12px', background: '#f8f7f4', borderRadius: 8 }}>{org.estado || '—'}</div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
