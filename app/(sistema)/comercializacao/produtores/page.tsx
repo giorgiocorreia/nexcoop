@@ -66,9 +66,15 @@ export default function ProdutoresPage() {
   useEffect(() => { carregar() }, [])
 
   async function carregar() {
-    const [p, c] = await Promise.all([listarProdutores(), listarCooperadosSemProdutor()])
-    setProdutores(p as unknown as Produtor[])
-    setCooperados(c as unknown as Cooperado[])
+    try {
+      const [p, c] = await Promise.all([listarProdutores(), listarCooperadosSemProdutor()])
+      console.log('[carregar] listarProdutores retornou:', p)
+      console.log('[carregar] listarCooperadosSemProdutor retornou:', c)
+      setProdutores(p as unknown as Produtor[])
+      setCooperados(c as unknown as Cooperado[])
+    } catch (e: any) {
+      console.error('[carregar] ERRO:', e?.message ?? e)
+    }
   }
 
   function abrirEdicao(p: Produtor) {
