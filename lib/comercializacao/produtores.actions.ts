@@ -7,6 +7,7 @@ import type { TipoContaProdutorConta, TipoProdutorVinculo } from '@/types/databa
 export async function listarProdutores() {
   const usuario = await getUsuarioLogado()
   const orgId = usuario.organizacao_id
+  console.log('[listarProdutores] usuario.id:', usuario.id, '| organizacao_id:', orgId)
   if (!orgId) throw new Error('Usuário sem organização')
   const supabase = createAdminClient()
   const { data, error } = await supabase
@@ -14,6 +15,7 @@ export async function listarProdutores() {
     .select('*, cooperados(nome_completo)')
     .eq('organizacao_id', orgId)
     .order('nome')
+  console.log('[listarProdutores] resultado:', data?.length ?? 0, 'registros | erro:', error?.message ?? 'nenhum')
   if (error) throw new Error(error.message)
   return data as unknown as Array<{
     id: string; nome: string; cpf: string | null; telefone: string | null
