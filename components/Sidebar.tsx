@@ -288,24 +288,27 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
           <img
             src="/images/logo-nexcoop-vertical.png"
             alt="NexCoop"
-            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+            style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
           />
           {!isSuperAdmin && (
-            org?.logo_url ? (
-              <img
-                src={org.logo_url}
-                alt={org?.nome_curto || org?.nome || ''}
-                style={{ height: 40, width: 'auto', maxWidth: 100, objectFit: 'contain' }}
-              />
-            ) : (
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>
-                {org?.nome_curto || org?.nome}
-              </span>
-            )
+            <>
+              <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
+              {org?.logo_url ? (
+                <img
+                  src={org.logo_url}
+                  alt={org?.nome_curto || org?.nome || ''}
+                  style={{ height: 56, width: 'auto', maxWidth: 100, objectFit: 'contain', flexShrink: 0 }}
+                />
+              ) : (
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>
+                  {org?.nome_curto || org?.nome}
+                </span>
+              )}
+            </>
           )}
         </div>
       )}
