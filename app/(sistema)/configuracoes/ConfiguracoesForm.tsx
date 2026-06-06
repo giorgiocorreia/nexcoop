@@ -147,6 +147,7 @@ export default function ConfiguracoesForm(props: Props) {
       {abaEfetiva === 'usuarios' && showAdminTabs && (
         <UsuariosGestao
           usuarios={props.usuarios}
+          pendentes={[]}
           funcoes={props.funcoes}
           usuarioAtualId={props.usuario.id}
           isSuperAdmin={props.isSuperAdmin}
