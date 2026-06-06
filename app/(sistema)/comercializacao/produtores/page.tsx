@@ -29,19 +29,10 @@ type Produtor = {
   tipo_conta: string | null
   chave_pix: string | null
   ativo: boolean
-  nome_propriedade: string | null
-  tipo_posse: string | null
-  percentual_posse: number | null
-  ie_produtor_rural: string | null
+  cooperados: { nome_completo: string } | null
 }
 
 type Cooperado = { id: string; nome: string }
-
-const TIPO_POSSE_LABEL: Record<string, string> = {
-  proprietario: 'Proprietário',
-  meeiro: 'Meeiro',
-  arrendatario: 'Arrendatário',
-}
 
 const formVazio = {
   nome: '',
@@ -61,25 +52,40 @@ const formVazio = {
   conta_bancaria: '',
   tipo_conta: '',
   chave_pix: '',
-  nome_propriedade: '',
-  tipo_posse: '',
-  percentual_posse: '',
-  ie_produtor_rural: '',
 }
 
-function mascaraCPF(v: string) {
-  return v.replace(/\D/g, '')
-    .slice(0, 11)
+// ─── helpers de máscara ───────────────────────────────────────────────────────
+
+function mascararCPF(v: string) {
+  return v.replace(/\D/g, '').slice(0, 11)
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
 }
 
-function mascaraTelefone(v: string) {
-  const n = v.replace(/\D/g, '').slice(0, 11)
-  if (n.length <= 10) return n.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '')
-  return n.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '')
+function mascararTelefone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 10) return d.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
 }
+
+function isCPFInput(v: string) {
+  return /^[\d.\-]+$/.test(v) && v.replace(/\D/g, '').length >= 3
+}
+
+function formatarBuscaCPF(v: string) {
+  const digits = v.replace(/\D/g, '').slice(0, 11)
+  return mascararCPF(digits)
+}
+
+function exibirCPF(cpf: string | null) {
+  if (!cpf) return '—'
+  const d = cpf.replace(/\D/g, '')
+  if (d.length === 11) return mascararCPF(d)
+  return cpf
+}
+
+// ─── page ────────────────────────────────────────────────────────────────────
 
 export default function ProdutoresPage() {
   const router = useRouter()
@@ -104,6 +110,15 @@ export default function ProdutoresPage() {
     }
   }
 
+  function handleBuscaChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value
+    if (isCPFInput(v)) {
+      setBusca(formatarBuscaCPF(v))
+    } else {
+      setBusca(v)
+    }
+  }
+
   function abrirEdicao(p: Produtor) {
     setEditando(p)
     setForm({
@@ -124,10 +139,6 @@ export default function ProdutoresPage() {
       conta_bancaria: p.conta_bancaria ?? '',
       tipo_conta: p.tipo_conta ?? '',
       chave_pix: p.chave_pix ?? '',
-      nome_propriedade: p.nome_propriedade ?? '',
-      tipo_posse: p.tipo_posse ?? '',
-      percentual_posse: p.percentual_posse?.toString() ?? '',
-      ie_produtor_rural: p.ie_produtor_rural ?? '',
     })
     setAbrirForm(true)
   }
@@ -140,10 +151,9 @@ export default function ProdutoresPage() {
         ...form,
         area_total_ha: form.area_total_ha ? parseFloat(form.area_total_ha) : undefined,
         area_cacau_ha: form.area_cacau_ha ? parseFloat(form.area_cacau_ha) : undefined,
-        percentual_posse: form.percentual_posse ? parseFloat(form.percentual_posse) : undefined,
         cooperado_id: form.cooperado_id || undefined,
-        cpf: form.cpf || undefined,
-        telefone: form.telefone || undefined,
+        cpf: form.cpf ? form.cpf.replace(/\D/g, '') : undefined,
+        telefone: form.telefone ? form.telefone.replace(/\D/g, '') : undefined,
         email: form.email || undefined,
         municipio: form.municipio || undefined,
         endereco: form.endereco || undefined,
@@ -153,9 +163,6 @@ export default function ProdutoresPage() {
         conta_bancaria: form.conta_bancaria || undefined,
         tipo_conta: form.tipo_conta || undefined,
         chave_pix: form.chave_pix || undefined,
-        nome_propriedade: form.nome_propriedade || undefined,
-        tipo_posse: form.tipo_posse || undefined,
-        ie_produtor_rural: form.ie_produtor_rural || undefined,
       }
       if (editando) {
         await editarProdutor(editando.id, payload)
@@ -174,23 +181,27 @@ export default function ProdutoresPage() {
     }
   }
 
-  const produtoresFiltrados = produtores.filter(p =>
-    p.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    (p.cpf ?? '').includes(busca) ||
-    (p.municipio ?? '').toLowerCase().includes(busca.toLowerCase())
-  )
-
-  const inp = {
-    padding: '8px 12px',
-    border: '1px solid #e5e3dc',
-    borderRadius: '8px',
-    fontSize: '14px',
-    width: '100%',
-    boxSizing: 'border-box' as const,
-  }
+  // Busca filtra por nome, CPF (com ou sem máscara) e município
+  const buscaLimpa = busca.replace(/\D/g, '')
+  const produtoresFiltrados = produtores.filter(p => {
+    const cpfLimpo = (p.cpf ?? '').replace(/\D/g, '')
+    return (
+      p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      (buscaLimpa.length >= 3 && cpfLimpo.includes(buscaLimpa)) ||
+      (p.municipio ?? '').toLowerCase().includes(busca.toLowerCase())
+    )
+  })
 
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+      {/* Botão voltar */}
+      <button
+        onClick={() => router.push('/comercializacao')}
+        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', marginBottom: '20px', padding: 0 }}
+      >
+        <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
+      </button>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Produtores</h1>
         <button
@@ -205,15 +216,17 @@ export default function ProdutoresPage() {
         <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>Produtor salvo com sucesso.</div>
       )}
 
+      {/* Busca */}
       <div style={{ marginBottom: '16px' }}>
         <input
           placeholder="Buscar por nome, CPF ou município..."
           value={busca}
-          onChange={e => setBusca(e.target.value)}
+          onChange={handleBuscaChange}
           style={{ width: '100%', maxWidth: '360px', padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
         />
       </div>
 
+      {/* Tabela */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
@@ -232,14 +245,12 @@ export default function ProdutoresPage() {
             {produtoresFiltrados.map(p => (
               <tr key={p.id} style={{ borderBottom: '1px solid #f0ede8' }}>
                 <td style={{ padding: '12px 16px', fontWeight: 500 }}>
-                  <div>{p.nome}</div>
-                  {p.nome_propriedade && (
-                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
-                      {p.nome_propriedade}
-                      {p.tipo_posse && ` · ${TIPO_POSSE_LABEL[p.tipo_posse] ?? p.tipo_posse}`}
-                      {p.percentual_posse && p.tipo_posse !== 'proprietario' && ` (${p.percentual_posse}%)`}
-                    </div>
-                  )}
+                  <button
+                    onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontWeight: 500, fontSize: '14px', padding: 0, textAlign: 'left' }}
+                  >
+                    {p.nome}
+                  </button>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{
@@ -251,7 +262,9 @@ export default function ProdutoresPage() {
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{p.municipio ?? '—'}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{p.telefone ?? '—'}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
+                  {p.telefone ? mascararTelefone(p.telefone) : '—'}
+                </td>
                 <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
                   {p.area_cacau_ha ? `${p.area_cacau_ha} ha` : '—'}
                 </td>
@@ -271,22 +284,19 @@ export default function ProdutoresPage() {
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <button
-                      onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
-                      style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
-                    >
-                      Visualizar
-                    </button>
-                    <button
-                      onClick={() => abrirEdicao(p)}
-                      style={{ fontSize: '13px', color: '#6b6b6b', background: 'none', border: 'none', cursor: 'pointer' }}
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-                  </div>
+                <td style={{ padding: '12px 16px', textAlign: 'right', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
+                    style={{ fontSize: '13px', color: '#6b6b6b', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Ver ficha
+                  </button>
+                  <button
+                    onClick={() => abrirEdicao(p)}
+                    style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Editar
+                  </button>
                 </td>
               </tr>
             ))}
@@ -301,6 +311,7 @@ export default function ProdutoresPage() {
         </table>
       </div>
 
+      {/* Modal formulário */}
       {abrirForm && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
@@ -309,7 +320,7 @@ export default function ProdutoresPage() {
         }}>
           <div style={{
             background: '#fff', borderRadius: '12px', padding: '28px',
-            width: '640px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto'
+            width: '600px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto'
           }}>
             <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>
               {editando ? 'Editar produtor' : 'Novo produtor'}
@@ -317,132 +328,95 @@ export default function ProdutoresPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
 
+              {/* Nome */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome *</label>
-                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inp} />
+                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
+              {/* Tipo */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
-                <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))} style={inp}>
+                <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
                   <option value="externo">Externo</option>
                   <option value="cooperado">Cooperado</option>
                 </select>
               </div>
 
+              {/* Cooperado vinculado */}
               {form.tipo === 'cooperado' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Cooperado vinculado</label>
-                  <select value={form.cooperado_id} onChange={e => setForm(f => ({ ...f, cooperado_id: e.target.value }))} style={inp}>
+                  <select value={form.cooperado_id} onChange={e => setForm(f => ({ ...f, cooperado_id: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
                     <option value="">Selecionar...</option>
                     {cooperados.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 </div>
               )}
 
+              {/* CPF com máscara */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
                 <input
                   value={form.cpf}
-                  onChange={e => setForm(f => ({ ...f, cpf: mascaraCPF(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))}
                   placeholder="000.000.000-00"
-                  maxLength={14}
-                  style={inp}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
                 />
               </div>
 
+              {/* Telefone com máscara */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
                 <input
                   value={form.telefone}
-                  onChange={e => setForm(f => ({ ...f, telefone: mascaraTelefone(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))}
                   placeholder="(73) 99999-0000"
-                  maxLength={15}
-                  style={inp}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Inscrição Estadual (Produtor Rural)</label>
-                <input
-                  value={form.ie_produtor_rural}
-                  onChange={e => setForm(f => ({ ...f, ie_produtor_rural: e.target.value }))}
-                  placeholder="Opcional"
-                  style={inp}
-                />
-              </div>
-
+              {/* Email */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
-                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inp} />
+                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
+              {/* Município */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
-                <input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} style={inp} />
+                <input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
+              {/* Endereço */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
-                <input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} style={inp} />
+                <input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
-              <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e3dc', paddingTop: '12px', marginTop: '4px' }}>
-                <span style={{ fontSize: '12px', color: '#6b6b6b', fontWeight: 500 }}>Propriedade rural</span>
-              </div>
-
-              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome da propriedade</label>
-                <input
-                  value={form.nome_propriedade}
-                  onChange={e => setForm(f => ({ ...f, nome_propriedade: e.target.value }))}
-                  placeholder="Ex: Fazenda Boa Esperança"
-                  style={inp}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de posse</label>
-                <select
-                  value={form.tipo_posse}
-                  onChange={e => setForm(f => ({ ...f, tipo_posse: e.target.value, percentual_posse: e.target.value === 'proprietario' ? '100' : f.percentual_posse }))}
-                  style={inp}
-                >
-                  <option value="">Selecionar...</option>
-                  <option value="proprietario">Proprietário</option>
-                  <option value="meeiro">Meeiro</option>
-                  <option value="arrendatario">Arrendatário</option>
-                </select>
-              </div>
-
-              {form.tipo_posse && form.tipo_posse !== 'proprietario' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Percentual de posse (%)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    step="0.5"
-                    value={form.percentual_posse}
-                    onChange={e => setForm(f => ({ ...f, percentual_posse: e.target.value }))}
-                    placeholder="Ex: 50"
-                    style={inp}
-                  />
-                </div>
-              )}
-
+              {/* Área total */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área total (ha)</label>
                 <input type="number" step="0.01" value={form.area_total_ha}
-                  onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))} style={inp} />
+                  onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
+              {/* Área cacau */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área cacau (ha)</label>
                 <input type="number" step="0.01" value={form.area_cacau_ha}
-                  onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))} style={inp} />
+                  onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
+              {/* Certificação */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Certificação</label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', padding: '8px 0' }}>
@@ -458,45 +432,51 @@ export default function ProdutoresPage() {
                   <input value={form.tipo_certificacao}
                     onChange={e => setForm(f => ({ ...f, tipo_certificacao: e.target.value }))}
                     placeholder="Ex: Orgânico, UTZ, Rainforest"
-                    style={inp} />
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
                 </div>
               )}
 
+              {/* Dados bancários */}
               <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e3dc', paddingTop: '12px', marginTop: '4px' }}>
                 <span style={{ fontSize: '12px', color: '#6b6b6b', fontWeight: 500 }}>Dados para pagamento</span>
               </div>
 
+              {/* Chave pix */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
                 <input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))}
-                  placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
+                  placeholder="CPF, telefone, e-mail ou chave aleatória"
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
-                <input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))} style={inp} />
+                <input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
-                <input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))} style={inp} />
+                <input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
-                <input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))} style={inp} />
+                <input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de conta</label>
-                <select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))} style={inp}>
+                <select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
                   <option value="">Selecionar...</option>
                   <option value="corrente">Corrente</option>
                   <option value="poupanca">Poupança</option>
                   <option value="pix">Pix</option>
                 </select>
               </div>
-
             </div>
 
             {status === 'erro' && (

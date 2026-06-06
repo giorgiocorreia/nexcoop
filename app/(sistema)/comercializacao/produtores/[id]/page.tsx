@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
-import { registrarConversaoESaque, registrarSaqueFinanceiro } from '@/lib/comercializacao/caixa.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 
 const COR = '#92400e'
@@ -54,6 +53,44 @@ type Movimentacao = {
 
 type Sessao = { id: string; status: string }
 
+type PrevisaoSaldo = {
+  produto_id: string
+  nome: string
+  unidade: string
+  quantidade: number
+  preco: number | null
+  valor_estimado: number | null
+}
+
+// ─── helpers de máscara ───────────────────────────────────────────────────────
+
+function mascararCPF(v: string) {
+  return v.replace(/\D/g, '').slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
+function mascararTelefone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 10) return d.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+}
+
+function exibirCPF(cpf: string | null) {
+  if (!cpf) return '—'
+  const d = cpf.replace(/\D/g, '')
+  if (d.length === 11) return mascararCPF(d)
+  return cpf
+}
+
+function exibirTelefone(tel: string | null) {
+  if (!tel) return '—'
+  return mascararTelefone(tel)
+}
+
+// ─── page ────────────────────────────────────────────────────────────────────
+
 export default function PerfilProdutorPage() {
   const router = useRouter()
   const params = useParams()
@@ -66,21 +103,9 @@ export default function PerfilProdutorPage() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState<'extrato' | 'dados'>('extrato')
 
-  // Modal pagar
-  const [modalPagar, setModalPagar] = useState(false)
-  const [tipoPagamento, setTipoPagamento] = useState<'produto' | 'financeiro'>('produto')
-  const [formPagar, setFormPagar] = useState({
-    produto_id: '',
-    quantidade: '',
-    preco_kg: '',
-    forma_pagamento: 'especie' as 'especie' | 'pix',
-    chave_pix: '',
-    valor_saque: '',
-  })
-  const [cotacao, setCotacao] = useState<number | null>(null)
-  const [pagando, setPagando] = useState(false)
-  const [erroPagar, setErroPagar] = useState('')
-  const [okPagar, setOkPagar] = useState('')
+  // Previsão de saldo
+  const [previsoes, setPrevisoes] = useState<PrevisaoSaldo[]>([])
+  const [carregandoPrevisao, setCarregandoPrevisao] = useState(false)
 
   // Edição inline
   const [editando, setEditando] = useState(false)
@@ -102,8 +127,8 @@ export default function PerfilProdutorPage() {
       if (res.produtor) {
         setFormEdit({
           nome: res.produtor.nome,
-          cpf: res.produtor.cpf ?? '',
-          telefone: res.produtor.telefone ?? '',
+          cpf: res.produtor.cpf ? mascararCPF(res.produtor.cpf) : '',
+          telefone: res.produtor.telefone ? mascararTelefone(res.produtor.telefone) : '',
           email: res.produtor.email ?? '',
           municipio: res.produtor.municipio ?? '',
           endereco: res.produtor.endereco ?? '',
@@ -117,66 +142,39 @@ export default function PerfilProdutorPage() {
           conta_bancaria: res.produtor.conta_bancaria ?? '',
         } as any)
       }
+      // Carrega previsões de saldo após ter a conta
+      if (res.conta) {
+        carregarPrevisoes(res.conta as unknown as Conta, res.produtor?.tipo ?? 'externo')
+      }
     } finally {
       setCarregando(false)
     }
   }
 
-  async function handleCarregarCotacao(produto_id: string) {
-    if (!produto_id) return
-    const cot = await getCotacaoHoje(produto_id)
-    if (cot) {
-      const preco = produtor?.tipo === 'cooperado' ? cot.preco_cooperado : cot.preco_externo
-      setCotacao(preco)
-      setFormPagar(f => ({ ...f, preco_kg: preco.toString() }))
-    } else {
-      setCotacao(null)
-      setFormPagar(f => ({ ...f, preco_kg: '' }))
-    }
-  }
-
-  async function handlePagar() {
-    if (!sessao || !conta) return
-    setPagando(true)
-    setErroPagar('')
+  async function carregarPrevisoes(contaDados: Conta, tipoProdutor: string) {
+    const saldosComProduto = (contaDados.saldos_produto ?? []).filter(s => s.quantidade > 0)
+    if (saldosComProduto.length === 0) return
+    setCarregandoPrevisao(true)
     try {
-      if (tipoPagamento === 'produto') {
-        if (!formPagar.produto_id || !formPagar.quantidade || !formPagar.preco_kg) {
-          setErroPagar('Preencha produto, quantidade e preço.'); setPagando(false); return
-        }
-        const qtd = parseFloat(formPagar.quantidade)
-        const preco = parseFloat(formPagar.preco_kg)
-        await registrarConversaoESaque({
-          sessao_id: sessao.id,
-          produtor_id: id,
-          conta_id: conta.id,
-          produto_id: formPagar.produto_id,
-          quantidade_produto: qtd,
-          preco_unitario: preco,
-          valor_financeiro: parseFloat((qtd * preco).toFixed(2)),
-          forma_pagamento: formPagar.forma_pagamento,
-          chave_pix: formPagar.chave_pix || undefined,
+      const lista: PrevisaoSaldo[] = await Promise.all(
+        saldosComProduto.map(async (s) => {
+          const cot = await getCotacaoHoje(s.produtos.id)
+          const preco = cot
+            ? (tipoProdutor === 'cooperado' ? (cot as any).preco_cooperado : (cot as any).preco_externo)
+            : null
+          return {
+            produto_id: s.produtos.id,
+            nome: s.produtos.nome,
+            unidade: s.produtos.unidade,
+            quantidade: s.quantidade,
+            preco,
+            valor_estimado: preco !== null ? parseFloat((s.quantidade * preco).toFixed(2)) : null,
+          }
         })
-      } else {
-        if (!formPagar.valor_saque) {
-          setErroPagar('Informe o valor do saque.'); setPagando(false); return
-        }
-        await registrarSaqueFinanceiro({
-          sessao_id: sessao.id,
-          conta_id: conta.id,
-          valor_financeiro: parseFloat(formPagar.valor_saque),
-          forma_pagamento: formPagar.forma_pagamento,
-          chave_pix: formPagar.chave_pix || undefined,
-        })
-      }
-      setOkPagar('Pagamento registrado com sucesso.')
-      setModalPagar(false)
-      setTimeout(() => setOkPagar(''), 4000)
-      await carregar()
-    } catch (e: any) {
-      setErroPagar(e.message)
+      )
+      setPrevisoes(lista)
     } finally {
-      setPagando(false)
+      setCarregandoPrevisao(false)
     }
   }
 
@@ -185,7 +183,12 @@ export default function PerfilProdutorPage() {
     setSalvando(true)
     setErroEdit('')
     try {
-      await editarProdutor(produtor.id, formEdit as any)
+      const payload = {
+        ...formEdit,
+        cpf: (formEdit as any).cpf ? (formEdit as any).cpf.replace(/\D/g, '') : undefined,
+        telefone: (formEdit as any).telefone ? (formEdit as any).telefone.replace(/\D/g, '') : undefined,
+      }
+      await editarProdutor(produtor.id, payload as any)
       setOkEdit('Dados atualizados.')
       setEditando(false)
       setTimeout(() => setOkEdit(''), 3000)
@@ -197,80 +200,158 @@ export default function PerfilProdutorPage() {
     }
   }
 
+  // Navegar para caixa com produtor e ação pré-selecionados
+  function irParaCaixa(acao: 'entrega' | 'receber' | 'saque') {
+    if (!sessao) {
+      // caixa fechado: redireciona para caixa (que mostrará tela de abrir)
+      router.push(`/comercializacao/caixa?produtor_id=${id}&acao=${acao}`)
+    } else {
+      router.push(`/comercializacao/caixa?produtor_id=${id}&acao=${acao}`)
+    }
+  }
+
   const temSaldoProduto = (conta?.saldos_produto ?? []).some(s => s.quantidade > 0)
   const temSaldoFinanceiro = (conta?.saldo_financeiro ?? 0) > 0
-  const podePagar = sessao !== null && (temSaldoProduto || temSaldoFinanceiro)
+  const totalPrevisao = previsoes.reduce((acc, p) => acc + (p.valor_estimado ?? 0), 0)
 
-  const inp = {
+  const inp: React.CSSProperties = {
     padding: '8px 12px', border: '1px solid #e5e3dc',
     borderRadius: '8px', fontSize: '14px', width: '100%',
-    boxSizing: 'border-box' as const,
+    boxSizing: 'border-box',
   }
 
   if (carregando) return <div style={{ padding: '32px' }}>Carregando...</div>
   if (!produtor) return <div style={{ padding: '32px' }}>Produtor não encontrado.</div>
 
-  const valorEstimado = formPagar.quantidade && formPagar.preco_kg
-    ? parseFloat(formPagar.quantidade) * parseFloat(formPagar.preco_kg)
-    : null
-
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+      {/* ── HEADER ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <button
           onClick={() => router.push('/comercializacao/produtores')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#6b6b6b', padding: '0 4px' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', padding: '4px 0', whiteSpace: 'nowrap' }}
         >
-          ←
+          <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#1a1a1a' }}>{produtor.nome}</h1>
           <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
             {produtor.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
             {produtor.municipio && ` · ${produtor.municipio}`}
-            {produtor.cpf && ` · ${produtor.cpf}`}
+            {produtor.cpf && ` · ${exibirCPF(produtor.cpf)}`}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {podePagar && (
+
+        {/* ── BOTÕES DE AÇÃO ── */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Registrar entrega — sempre disponível */}
+          <button
+            onClick={() => irParaCaixa('entrega')}
+            style={{
+              padding: '8px 16px', background: '#fff', color: COR,
+              border: `1px solid ${COR}`, borderRadius: '8px',
+              fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px'
+            }}
+          >
+            ↓ Registrar entrega
+          </button>
+
+          {/* Pagar produtor — só se tem saldo produto */}
+          {temSaldoProduto && (
             <button
-              onClick={() => { setModalPagar(true); setErroPagar(''); setOkPagar('') }}
-              style={{ padding: '8px 18px', background: COR, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => irParaCaixa('receber')}
+              style={{
+                padding: '8px 16px', background: COR, color: '#fff',
+                border: 'none', borderRadius: '8px',
+                fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}
             >
-              💰 Pagar produtor
+              ↑ Pagar produtor
             </button>
           )}
+
+          {/* Saque financeiro — só se tem saldo financeiro */}
+          {temSaldoFinanceiro && (
+            <button
+              onClick={() => irParaCaixa('saque')}
+              style={{
+                padding: '8px 16px', background: '#166534', color: '#fff',
+                border: 'none', borderRadius: '8px',
+                fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}
+            >
+              $ Saque financeiro
+            </button>
+          )}
+
+          {/* Aviso caixa fechado */}
           {!sessao && (temSaldoProduto || temSaldoFinanceiro) && (
-            <div style={{ fontSize: '12px', color: '#6b6b6b', alignSelf: 'center', background: '#f0eeea', padding: '6px 12px', borderRadius: '8px' }}>
-              Abra o caixa para pagar
+            <div style={{
+              fontSize: '12px', color: '#92400e', background: '#fef3c7',
+              border: '1px solid #fde68a', padding: '6px 12px', borderRadius: '8px'
+            }}>
+              ⚠ Caixa fechado — clique para abrir
             </div>
           )}
         </div>
       </div>
 
-      {okPagar && (
+      {okEdit && (
         <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', color: '#166534', marginBottom: '16px' }}>
-          ✓ {okPagar}
+          ✓ {okEdit}
         </div>
       )}
 
-      {/* Saldos */}
+      {/* ── PAINEL FINANCEIRO ── */}
       {conta && (
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-          {(conta.saldos_produto ?? []).filter(s => s.quantidade > 0).map(s => (
-            <div key={s.produtos.id} style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>{s.quantidade.toFixed(1)} {s.produtos.unidade}</div>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>{s.produtos.nome}</div>
-            </div>
-          ))}
-          {conta.saldo_financeiro > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
+
+          {/* Saldo financeiro */}
+          {temSaldoFinanceiro && (
+            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
+              <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Saldo financeiro</div>
               <div style={{ fontSize: '22px', fontWeight: 700, color: '#166534' }}>R$ {conta.saldo_financeiro.toFixed(2)}</div>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>Saldo financeiro</div>
             </div>
           )}
+
+          {/* Saldos em produto */}
+          {(conta.saldos_produto ?? []).filter(s => s.quantidade > 0).map(s => {
+            const prev = previsoes.find(p => p.produto_id === s.produtos.id)
+            return (
+              <div key={s.produtos.id} style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '180px' }}>
+                <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{s.produtos.nome}</div>
+                <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>{s.quantidade.toFixed(3)} {s.produtos.unidade}</div>
+                {carregandoPrevisao ? (
+                  <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '4px' }}>calculando...</div>
+                ) : prev ? (
+                  prev.valor_estimado !== null ? (
+                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>
+                      ≈ <strong style={{ color: '#166534' }}>R$ {prev.valor_estimado.toFixed(2)}</strong>
+                      <span style={{ marginLeft: '4px', color: '#9a9a9a' }}>@ R$ {prev.preco?.toFixed(2)}/kg</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '4px' }}>sem cotação hoje</div>
+                  )
+                ) : null}
+              </div>
+            )
+          })}
+
+          {/* Total estimado (se múltiplos produtos) */}
+          {previsoes.filter(p => p.valor_estimado !== null).length > 1 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
+              <div style={{ fontSize: '11px', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total estimado</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>
+                R$ {(totalPrevisao + conta.saldo_financeiro).toFixed(2)}
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>produto + financeiro</div>
+            </div>
+          )}
+
           {!temSaldoProduto && !temSaldoFinanceiro && (
             <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', fontSize: '13px', color: '#6b6b6b' }}>
               Sem saldo no momento
@@ -279,7 +360,7 @@ export default function PerfilProdutorPage() {
         </div>
       )}
 
-      {/* Abas */}
+      {/* ── ABAS ── */}
       <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e3dc', marginBottom: '20px' }}>
         {(['extrato', 'dados'] as const).map(a => (
           <button key={a} onClick={() => setAba(a)} style={{
@@ -293,7 +374,7 @@ export default function PerfilProdutorPage() {
         ))}
       </div>
 
-      {/* ABA: EXTRATO */}
+      {/* ── ABA: EXTRATO ── */}
       {aba === 'extrato' && (
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
           {extrato.length === 0 ? (
@@ -338,7 +419,7 @@ export default function PerfilProdutorPage() {
         </div>
       )}
 
-      {/* ABA: DADOS CADASTRAIS */}
+      {/* ── ABA: DADOS CADASTRAIS ── */}
       {aba === 'dados' && (
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -363,13 +444,13 @@ export default function PerfilProdutorPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '14px' }}>
               {[
                 ['Nome', produtor.nome],
-                ['CPF', produtor.cpf ?? '—'],
-                ['Telefone', produtor.telefone ?? '—'],
+                ['CPF', exibirCPF(produtor.cpf)],
+                ['Telefone', exibirTelefone(produtor.telefone)],
                 ['E-mail', produtor.email ?? '—'],
                 ['Município', produtor.municipio ?? '—'],
                 ['Endereço', produtor.endereco ?? '—'],
                 ['Propriedade', produtor.nome_propriedade ?? '—'],
-                ['Tipo de posse', produtor.tipo_posse ? TIPO_POSSE_LABEL[produtor.tipo_posse] : '—'],
+                ['Tipo de posse', produtor.tipo_posse ? TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse : '—'],
                 ['Percentual', produtor.percentual_posse ? `${produtor.percentual_posse}%` : '—'],
                 ['IE Produtor Rural', produtor.ie_produtor_rural ?? '—'],
                 ['Área total', produtor.area_total_ha ? `${produtor.area_total_ha} ha` : '—'],
@@ -387,29 +468,65 @@ export default function PerfilProdutorPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {[
-                ['Nome', 'nome'],
-                ['CPF', 'cpf'],
-                ['Telefone', 'telefone'],
-                ['E-mail', 'email'],
-                ['Município', 'municipio'],
-                ['Endereço', 'endereco'],
-                ['Propriedade', 'nome_propriedade'],
-                ['IE Produtor Rural', 'ie_produtor_rural'],
-                ['Chave Pix', 'chave_pix'],
-                ['Banco', 'banco'],
-                ['Agência', 'agencia'],
-                ['Conta', 'conta_bancaria'],
-              ].map(([label, campo]) => (
-                <div key={campo} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>{label}</label>
-                  <input
-                    value={(formEdit as any)[campo] ?? ''}
-                    onChange={e => setFormEdit(f => ({ ...f, [campo]: e.target.value }))}
-                    style={inp}
-                  />
-                </div>
-              ))}
+              {/* Nome */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome</label>
+                <input value={(formEdit as any).nome ?? ''} onChange={e => setFormEdit(f => ({ ...f, nome: e.target.value }))} style={inp} />
+              </div>
+
+              {/* CPF com máscara */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
+                <input
+                  value={(formEdit as any).cpf ?? ''}
+                  onChange={e => setFormEdit(f => ({ ...f, cpf: mascararCPF(e.target.value) }))}
+                  placeholder="000.000.000-00"
+                  style={inp}
+                />
+              </div>
+
+              {/* Telefone com máscara */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
+                <input
+                  value={(formEdit as any).telefone ?? ''}
+                  onChange={e => setFormEdit(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))}
+                  placeholder="(73) 99999-0000"
+                  style={inp}
+                />
+              </div>
+
+              {/* E-mail */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
+                <input value={(formEdit as any).email ?? ''} onChange={e => setFormEdit(f => ({ ...f, email: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Município */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
+                <input value={(formEdit as any).municipio ?? ''} onChange={e => setFormEdit(f => ({ ...f, municipio: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Endereço */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
+                <input value={(formEdit as any).endereco ?? ''} onChange={e => setFormEdit(f => ({ ...f, endereco: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Propriedade */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Propriedade</label>
+                <input value={(formEdit as any).nome_propriedade ?? ''} onChange={e => setFormEdit(f => ({ ...f, nome_propriedade: e.target.value }))} style={inp} />
+              </div>
+
+              {/* IE */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>IE Produtor Rural</label>
+                <input value={(formEdit as any).ie_produtor_rural ?? ''} onChange={e => setFormEdit(f => ({ ...f, ie_produtor_rural: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Tipo de posse */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de posse</label>
                 <select value={(formEdit as any).tipo_posse ?? ''} onChange={e => setFormEdit(f => ({ ...f, tipo_posse: e.target.value }))} style={inp}>
@@ -419,6 +536,8 @@ export default function PerfilProdutorPage() {
                   <option value="arrendatario">Arrendatário</option>
                 </select>
               </div>
+
+              {/* Percentual */}
               {(formEdit as any).tipo_posse && (formEdit as any).tipo_posse !== 'proprietario' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Percentual (%)</label>
@@ -429,9 +548,35 @@ export default function PerfilProdutorPage() {
                   />
                 </div>
               )}
+
+              {/* Chave Pix */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
+                <input value={(formEdit as any).chave_pix ?? ''} onChange={e => setFormEdit(f => ({ ...f, chave_pix: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Banco */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
+                <input value={(formEdit as any).banco ?? ''} onChange={e => setFormEdit(f => ({ ...f, banco: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Agência */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
+                <input value={(formEdit as any).agencia ?? ''} onChange={e => setFormEdit(f => ({ ...f, agencia: e.target.value }))} style={inp} />
+              </div>
+
+              {/* Conta */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
+                <input value={(formEdit as any).conta_bancaria ?? ''} onChange={e => setFormEdit(f => ({ ...f, conta_bancaria: e.target.value }))} style={inp} />
+              </div>
+
               {erroEdit && (
                 <div style={{ gridColumn: '1 / -1', color: '#991b1b', fontSize: '13px' }}>{erroEdit}</div>
               )}
+
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button onClick={() => setEditando(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer' }}>
                   Cancelar
@@ -442,138 +587,6 @@ export default function PerfilProdutorPage() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Modal Pagar */}
-      {modalPagar && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}
-          onClick={() => setModalPagar(false)}>
-          <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '480px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
-            onClick={e => e.stopPropagation()}>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 600 }}>Pagar produtor</span>
-              <button onClick={() => setModalPagar(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#888' }}>×</button>
-            </div>
-
-            {/* Tipo de pagamento */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {temSaldoProduto && (
-                <button
-                  onClick={() => setTipoPagamento('produto')}
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                    border: `2px solid ${tipoPagamento === 'produto' ? COR : '#e5e3dc'}`,
-                    background: tipoPagamento === 'produto' ? '#FEF3C7' : '#fff',
-                    color: tipoPagamento === 'produto' ? COR : '#555',
-                  }}
-                >
-                  Converter produto
-                </button>
-              )}
-              {temSaldoFinanceiro && (
-                <button
-                  onClick={() => setTipoPagamento('financeiro')}
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                    border: `2px solid ${tipoPagamento === 'financeiro' ? '#166534' : '#e5e3dc'}`,
-                    background: tipoPagamento === 'financeiro' ? '#dcfce7' : '#fff',
-                    color: tipoPagamento === 'financeiro' ? '#166534' : '#555',
-                  }}
-                >
-                  Saldo financeiro
-                </button>
-              )}
-            </div>
-
-            {/* Converter produto */}
-            {tipoPagamento === 'produto' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>Produto</label>
-                  <select
-                    value={formPagar.produto_id}
-                    onChange={e => { setFormPagar(f => ({ ...f, produto_id: e.target.value })); handleCarregarCotacao(e.target.value) }}
-                    style={inp}
-                  >
-                    <option value="">Selecionar...</option>
-                    {(conta?.saldos_produto ?? []).filter(s => s.quantidade > 0).map(s => (
-                      <option key={s.produtos.id} value={s.produtos.id}>
-                        {s.produtos.nome} ({s.quantidade.toFixed(1)} {s.produtos.unidade})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>Quantidade (kg)</label>
-                    <input type="number" step="0.001" placeholder="0,000" value={formPagar.quantidade}
-                      onChange={e => setFormPagar(f => ({ ...f, quantidade: e.target.value }))} style={inp} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>
-                      Preço/kg (R$) {cotacao && <span style={{ color: COR }}>· cotação: R$ {cotacao.toFixed(2)}</span>}
-                    </label>
-                    <input type="number" step="0.01" placeholder="0,00" value={formPagar.preco_kg}
-                      onChange={e => setFormPagar(f => ({ ...f, preco_kg: e.target.value }))} style={inp} />
-                  </div>
-                </div>
-                {valorEstimado !== null && (
-                  <div style={{ background: '#FEF3C7', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontWeight: 600, color: COR }}>
-                    Total: R$ {valorEstimado.toFixed(2)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Saque financeiro */}
-            {tipoPagamento === 'financeiro' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ fontSize: '13px', color: '#6b6b6b' }}>
-                  Saldo disponível: <strong style={{ color: '#166534' }}>R$ {(conta?.saldo_financeiro ?? 0).toFixed(2)}</strong>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>Valor (R$)</label>
-                  <input type="number" step="0.01" placeholder="0,00" value={formPagar.valor_saque}
-                    onChange={e => setFormPagar(f => ({ ...f, valor_saque: e.target.value }))} style={inp} />
-                </div>
-              </div>
-            )}
-
-            {/* Forma de pagamento */}
-            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>Forma de pagamento</label>
-                <select value={formPagar.forma_pagamento} onChange={e => setFormPagar(f => ({ ...f, forma_pagamento: e.target.value as any }))} style={inp}>
-                  <option value="especie">Espécie</option>
-                  <option value="pix">Pix</option>
-                </select>
-              </div>
-              {formPagar.forma_pagamento === 'pix' && (
-                <div>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b', display: 'block', marginBottom: '4px' }}>Chave Pix</label>
-                  <input value={formPagar.chave_pix || produtor.chave_pix || ''}
-                    onChange={e => setFormPagar(f => ({ ...f, chave_pix: e.target.value }))} style={inp} />
-                </div>
-              )}
-            </div>
-
-            {erroPagar && (
-              <div style={{ marginTop: '12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#dc2626' }}>
-                {erroPagar}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setModalPagar(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer' }}>
-                Cancelar
-              </button>
-              <button onClick={handlePagar} disabled={pagando} style={{ padding: '8px 20px', background: pagando ? '#b45309' : COR, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: pagando ? 'not-allowed' : 'pointer' }}>
-                {pagando ? 'Processando...' : 'Confirmar pagamento'}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

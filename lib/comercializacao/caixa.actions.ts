@@ -109,7 +109,30 @@ export async function getExtrato(conta_id: string) {
   return data
 }
 
-// Entrega simples (sem rateio) — mantida para compatibilidade
+export async function getOperacoesHoje(sessao_id: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('movimentacoes_conta')
+    .select(`
+      id,
+      tipo,
+      quantidade_produto,
+      valor_financeiro,
+      forma_pagamento,
+      observacoes,
+      created_at,
+      produtos(nome, unidade),
+      contas_produtor(
+        produtor_id,
+        produtores(nome)
+      )
+    `)
+    .eq('sessao_caixa_id', sessao_id)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function registrarEntrega(params: {
   sessao_id: string
   produtor_id: string
@@ -153,7 +176,6 @@ export type ParticipanteRateio = {
   quantidade_rateada: number
 }
 
-// Entrega com rateio entre participantes
 export async function registrarEntregaComRateio(params: {
   sessao_id: string
   produto_id: string
@@ -164,13 +186,11 @@ export async function registrarEntregaComRateio(params: {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
 
-  // Validação: percentuais devem somar 100
   const totalPercentual = params.participantes.reduce((acc, p) => acc + p.percentual, 0)
   if (Math.abs(totalPercentual - 100) > 0.01) {
     throw new Error(`Percentuais somam ${totalPercentual.toFixed(2)}%, devem somar 100%`)
   }
 
-  // Para cada participante: inserir movimentação individual + rateio
   for (const participante of params.participantes) {
     const { data: mov, error: eMov } = await supabase
       .from('movimentacoes_conta')
@@ -202,7 +222,6 @@ export async function registrarEntregaComRateio(params: {
     if (eRateio) throw new Error(eRateio.message)
   }
 
-  // Estoque físico: 1 insert com o total
   const { error: eEstoque } = await supabase
     .from('movimentacoes_estoque_fisico')
     .insert({
