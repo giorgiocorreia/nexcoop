@@ -129,7 +129,7 @@ export default function CaixaPage() {
 
     // Busca dados completos do produtor (percentual_posse)
     const dadosProdutor = await getProdutorParaRateio(produtorSelecionado.id)
-    const percentualPrincipal = dadosProdutor?.percentual_posse ?? 100
+    const percentualPrincipal = (dadosProdutor?.percentual_posse as number | null) ?? 100
 
     const participanteInicial: ParticipanteModal = {
       produtor_id: produtorSelecionado.id,
@@ -205,7 +205,7 @@ export default function CaixaPage() {
     }
     const qtdTotal = parseFloat(formEntrega.quantidade) || 0
     const dadosP = await getProdutorParaRateio(p.id)
-    const percentualSugerido = dadosP?.percentual_posse ?? 0
+    const percentualSugerido = (dadosP?.percentual_posse as number | null) ?? 0
 
     const novo: ParticipanteModal = {
       produtor_id: p.id,
