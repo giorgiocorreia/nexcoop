@@ -650,6 +650,7 @@ export interface NFeItem {
 
 export type TipoProdutoUnidade     = 'kg' | 'unidade' | 'litro' | 'caixa'
 export type TipoProdutorVinculo    = 'externo' | 'cooperado'
+export type TipoPosseProdutor      = 'proprietario' | 'meeiro' | 'arrendatario'
 export type TipoContaProdutorConta = 'corrente' | 'poupanca' | 'pix'
 export type TipoMovimentacaoConta  =
   | 'entrega' | 'conversao' | 'saque_especie' | 'saque_pix'
@@ -707,6 +708,10 @@ export interface Produtor {
   conta_bancaria:   string | null
   tipo_conta:       TipoContaProdutorConta | null
   chave_pix:        string | null
+  nome_propriedade: string | null
+  tipo_posse:       TipoPosseProdutor | null
+  percentual_posse: number | null
+  ie_produtor_rural: string | null
   ativo:            boolean
   created_at:       string
 }
@@ -874,6 +879,17 @@ export interface VendaExterna {
   created_at:               string
 }
 
+export interface RateioEntrega {
+  id:                string
+  organizacao_id:    string
+  movimentacao_id:   string
+  produtor_id:       string
+  percentual:        number
+  quantidade_rateada: number
+  valor_rateado:     number | null
+  criado_em:         string
+}
+
 export interface DistribuicaoResultado {
   id:               string
   organizacao_id:   string
@@ -992,6 +1008,8 @@ export type Database = {
       lotes:                       TableDef<Lote>
       vendas_externas:             TableDef<VendaExterna>
       distribuicao_resultado:      TableDef<DistribuicaoResultado>
+      // ── Comercialização (027) ──────────────────────────────────────────────
+      rateio_entrega:              TableDef<RateioEntrega>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
