@@ -836,40 +836,7 @@ export default function CaixaPage() {
           </div>
         </div>
       )}
-
- {aba === 'fechar' && (
-  <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px', maxWidth: '400px' }}>
-    <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Fechar caixa</div>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-        <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
-        <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-        <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
-        <span>R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-        <span style={{ color: '#6b6b6b' }}>Total Pix</span>
-        <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
-      </div>
-      <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-        <span style={{ color: '#6b6b6b' }}>Saldo esperado em caixa</span>
-        <span style={{ fontWeight: 500 }}>
-          R$ {(sessao.saldo_inicial_especie - (sessao.total_saidas_especie ?? 0)).toFixed(2)}
-        </span>
-      </div>
-    </div>
-    <button
-      onClick={() => setModalFechar(true)}
-      style={{ marginTop: '24px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-    >
-      Fechar caixa
-    </button>
-  </div>
-)}
-
-{/* Modal fechar caixa */}
+     {/* Modal fechar caixa */}
      {aba === 'fechar' && (
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px', maxWidth: '400px' }}>
           <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Fechar caixa</div>
