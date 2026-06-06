@@ -3,11 +3,11 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database'
+import type { UsuarioPendente } from './page'
 import { atualizarUsuario, convidarUsuario, toggleAtivo } from './actions'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
-const TEAL = '#1D9E75'
 
 const VINCULO_OPTIONS: { value: VinculoUsuario; label: string }[] = [
   { value: 'cooperado',   label: 'Cooperado' },
@@ -27,13 +27,14 @@ const FUNCAO_LABEL: Record<string, string> = {
 
 interface Props {
   usuarios: Usuario[]
+  pendentes: UsuarioPendente[]
   funcoes: FuncaoDisponivel[]
   usuarioAtualId: string
   isSuperAdmin: boolean
   embeddedMode?: boolean
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
   const [busca, setBusca] = useState('')
@@ -65,6 +66,12 @@ export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuari
       return a.nome_completo.localeCompare(b.nome_completo, 'pt-BR')
     })
   }, [usuarios, busca])
+
+  const filtradosPendentes = useMemo(() => {
+    const q = busca.toLowerCase().trim()
+    if (!q) return pendentes
+    return pendentes.filter(p => p.nome_completo.toLowerCase().includes(q) || p.email.toLowerCase().includes(q))
+  }, [pendentes, busca])
 
   const totalAtivos = usuarios.filter(u => u.ativo).length
 
@@ -142,6 +149,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuari
           <p style={{ fontSize: '13px', color: '#888', marginTop: embeddedMode ? 0 : '4px', marginBottom: 0 }}>
             {totalAtivos} membro{totalAtivos !== 1 ? 's' : ''} ativo{totalAtivos !== 1 ? 's' : ''}
             {usuarios.length > totalAtivos && ` · ${usuarios.length - totalAtivos} inativo${usuarios.length - totalAtivos !== 1 ? 's' : ''}`}
+            {pendentes.length > 0 && ` · ${pendentes.length} aguardando aceite`}
           </p>
         </div>
         <button
@@ -266,8 +274,8 @@ export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuari
         />
       </div>
 
-      {/* Lista */}
-      {filtrados.length === 0 ? (
+      {/* Lista de membros ativos/inativos */}
+      {filtrados.length === 0 && filtradosPendentes.length === 0 ? (
         <div style={{
           background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px',
           padding: '3rem', textAlign: 'center', color: '#888', fontSize: '13px',
@@ -275,199 +283,258 @@ export default function UsuariosGestao({ usuarios: usuariosInit, funcoes, usuari
           {busca ? 'Nenhum usuário encontrado.' : 'Nenhum usuário cadastrado.'}
         </div>
       ) : (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-          {filtrados.map((u, i) => {
-            const isSelf        = u.id === usuarioAtualId
-            const isSuperAdminRow = u.role === 'super_admin'
-            const podeEditar    = !isSuperAdminRow
-            const editando      = editandoId === u.id
-            const toggling      = togglingId === u.id
-            const salvando      = salvandoId === u.id
-            const iniciais      = u.nome_completo.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+        <>
+          {filtrados.length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
+              {filtrados.map((u, i) => {
+                const isSelf          = u.id === usuarioAtualId
+                const isSuperAdminRow = u.role === 'super_admin'
+                const podeEditar      = !isSuperAdminRow
+                const editando        = editandoId === u.id
+                const toggling        = togglingId === u.id
+                const salvando        = salvandoId === u.id
+                const iniciais        = u.nome_completo.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
 
-            return (
-              <div key={u.id}>
-                {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
+                return (
+                  <div key={u.id}>
+                    {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
 
-                {/* Linha principal */}
-                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
 
-                  {/* Avatar */}
-                  <div style={{ flexShrink: 0 }}>
-                    {u.avatar_url ? (
-                      <img
-                        src={u.avatar_url} alt=""
-                        style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: 40, height: 40, borderRadius: '50%',
-                        background: u.ativo ? GREEN : '#ccc',
-                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '14px', fontWeight: '700', flexShrink: 0,
-                      }}>
-                        {iniciais}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Nome + e-mail */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      {u.nome_completo}
-                      {isSelf && (
-                        <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>
-                          Você
-                        </span>
-                      )}
-                      {isSuperAdminRow && (
-                        <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>
-                          Super Admin
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#888', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.email}
-                    </div>
-                  </div>
-
-                  {/* Badges vínculo + funções */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', flexShrink: 0, maxWidth: '260px' }}>
-                    {u.vinculo && (
-                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500', whiteSpace: 'nowrap' }}>
-                        {VINCULO_LABEL[u.vinculo] ?? u.vinculo}
-                      </span>
-                    )}
-                    {(u.funcoes ?? []).map(f => (
-                      <span key={f} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EEF0FF', color: GREEN_DARK, fontWeight: '600', whiteSpace: 'nowrap' }}>
-                        {FUNCAO_LABEL[f] ?? f}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Status + ações */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <span style={{
-                      fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
-                      background: u.ativo ? '#E6F7F1' : '#f0eeea',
-                      color: u.ativo ? '#166534' : '#888',
-                    }}>
-                      {u.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-
-                    {podeEditar && (
-                      <>
-                        <button
-                          onClick={() => handleToggleAtivo(u.id, u.ativo)}
-                          disabled={toggling}
-                          title={u.ativo ? 'Desativar' : 'Ativar'}
-                          style={{
-                            padding: '5px 10px', border: '1px solid #d5d3cc',
-                            borderRadius: '6px', background: '#fff',
-                            fontSize: '11px', color: '#555',
-                            cursor: toggling ? 'not-allowed' : 'pointer',
-                            opacity: toggling ? 0.6 : 1,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {toggling ? '...' : u.ativo ? 'Desativar' : 'Ativar'}
-                        </button>
-
-                        <button
-                          onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
-                          style={{
-                            padding: '5px 10px',
-                            border: `1px solid ${editando ? '#d5d3cc' : GREEN}`,
-                            borderRadius: '6px',
-                            background: editando ? '#f0eeea' : '#fff',
-                            fontSize: '11px',
-                            color: editando ? '#555' : GREEN,
-                            cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {editando ? 'Cancelar' : 'Editar'}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Painel de edição inline */}
-                {editando && (
-                  <div style={{ borderTop: '1px solid #f0eeea', background: '#f8f7f4', padding: '16px 16px 16px 68px' }}>
-                    {erroEditar && <Alerta tipo="erro" style={{ marginBottom: '12px' }}>{erroEditar}</Alerta>}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '20px', alignItems: 'start' }}>
-                      <div>
-                        <FieldLabel>Vínculo</FieldLabel>
-                        <select
-                          value={editForm.vinculo}
-                          onChange={e => setEditForm(prev => ({ ...prev, vinculo: e.target.value }))}
-                          style={{ ...inp, background: '#fff' }}
-                        >
-                          <option value="">Sem vínculo</option>
-                          {VINCULO_OPTIONS.map(o => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </select>
+                      {/* Avatar */}
+                      <div style={{ flexShrink: 0 }}>
+                        {u.avatar_url ? (
+                          <img
+                            src={u.avatar_url} alt=""
+                            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: 40, height: 40, borderRadius: '50%',
+                            background: u.ativo ? GREEN : '#ccc',
+                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '14px', fontWeight: '700', flexShrink: 0,
+                          }}>
+                            {iniciais}
+                          </div>
+                        )}
                       </div>
 
-                      <div>
-                        <FieldLabel>Funções</FieldLabel>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                          {funcoes.map(f => {
-                            const sel = editForm.funcoes.includes(f.nome)
-                            return (
-                              <button
-                                key={f.nome} type="button"
-                                onClick={() => toggleFuncaoEdit(f.nome)}
-                                style={{
-                                  fontSize: '12px', padding: '4px 12px', borderRadius: '12px',
-                                  border: `1px solid ${sel ? GREEN : '#d5d3cc'}`,
-                                  background: sel ? '#EEF0FF' : '#fff',
-                                  color: sel ? GREEN_DARK : '#555',
-                                  cursor: 'pointer', fontWeight: sel ? '600' : '400',
-                                }}
-                              >
-                                {f.label}
-                              </button>
-                            )
-                          })}
+                      {/* Nome + e-mail */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          {u.nome_completo}
+                          {isSelf && (
+                            <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>
+                              Você
+                            </span>
+                          )}
+                          {isSuperAdminRow && (
+                            <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>
+                              Super Admin
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#888', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.email}
                         </div>
                       </div>
+
+                      {/* Badges */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', flexShrink: 0, maxWidth: '260px' }}>
+                        {u.vinculo && (
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                            {VINCULO_LABEL[u.vinculo] ?? u.vinculo}
+                          </span>
+                        )}
+                        {(u.funcoes ?? []).map(f => (
+                          <span key={f} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EEF0FF', color: GREEN_DARK, fontWeight: '600', whiteSpace: 'nowrap' }}>
+                            {FUNCAO_LABEL[f] ?? f}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Status + ações */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <span style={{
+                          fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
+                          background: u.ativo ? '#E6F7F1' : '#f0eeea',
+                          color: u.ativo ? '#166534' : '#888',
+                        }}>
+                          {u.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+
+                        {podeEditar && (
+                          <>
+                            <button
+                              onClick={() => handleToggleAtivo(u.id, u.ativo)}
+                              disabled={toggling}
+                              title={u.ativo ? 'Desativar' : 'Ativar'}
+                              style={{
+                                padding: '5px 10px', border: '1px solid #d5d3cc',
+                                borderRadius: '6px', background: '#fff',
+                                fontSize: '11px', color: '#555',
+                                cursor: toggling ? 'not-allowed' : 'pointer',
+                                opacity: toggling ? 0.6 : 1,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {toggling ? '...' : u.ativo ? 'Desativar' : 'Ativar'}
+                            </button>
+
+                            <button
+                              onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
+                              style={{
+                                padding: '5px 10px',
+                                border: `1px solid ${editando ? '#d5d3cc' : GREEN}`,
+                                borderRadius: '6px',
+                                background: editando ? '#f0eeea' : '#fff',
+                                fontSize: '11px',
+                                color: editando ? '#555' : GREEN,
+                                cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {editando ? 'Cancelar' : 'Editar'}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div style={{ marginTop: '14px', display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => salvarEdicao(u.id)}
-                        disabled={salvando}
-                        style={{
-                          padding: '8px 18px',
-                          background: salvando ? '#9F9BFF' : GREEN,
-                          color: '#fff', border: 'none', borderRadius: '7px',
-                          fontSize: '12px', fontWeight: '600',
-                          cursor: salvando ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {salvando ? 'Salvando...' : 'Salvar'}
-                      </button>
-                      <button
-                        onClick={() => setEditandoId(null)}
-                        style={{
-                          padding: '8px 14px', background: '#fff',
-                          border: '1px solid #d5d3cc', borderRadius: '7px',
-                          fontSize: '12px', color: '#555', cursor: 'pointer',
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
+                    {/* Painel de edição inline */}
+                    {editando && (
+                      <div style={{ borderTop: '1px solid #f0eeea', background: '#f8f7f4', padding: '16px 16px 16px 68px' }}>
+                        {erroEditar && <Alerta tipo="erro" style={{ marginBottom: '12px' }}>{erroEditar}</Alerta>}
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '20px', alignItems: 'start' }}>
+                          <div>
+                            <FieldLabel>Vínculo</FieldLabel>
+                            <select
+                              value={editForm.vinculo}
+                              onChange={e => setEditForm(prev => ({ ...prev, vinculo: e.target.value }))}
+                              style={{ ...inp, background: '#fff' }}
+                            >
+                              <option value="">Sem vínculo</option>
+                              {VINCULO_OPTIONS.map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <FieldLabel>Funções</FieldLabel>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                              {funcoes.map(f => {
+                                const sel = editForm.funcoes.includes(f.nome)
+                                return (
+                                  <button
+                                    key={f.nome} type="button"
+                                    onClick={() => toggleFuncaoEdit(f.nome)}
+                                    style={{
+                                      fontSize: '12px', padding: '4px 12px', borderRadius: '12px',
+                                      border: `1px solid ${sel ? GREEN : '#d5d3cc'}`,
+                                      background: sel ? '#EEF0FF' : '#fff',
+                                      color: sel ? GREEN_DARK : '#555',
+                                      cursor: 'pointer', fontWeight: sel ? '600' : '400',
+                                    }}
+                                  >
+                                    {f.label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: '14px', display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => salvarEdicao(u.id)}
+                            disabled={salvando}
+                            style={{
+                              padding: '8px 18px',
+                              background: salvando ? '#9F9BFF' : GREEN,
+                              color: '#fff', border: 'none', borderRadius: '7px',
+                              fontSize: '12px', fontWeight: '600',
+                              cursor: salvando ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {salvando ? 'Salvando...' : 'Salvar'}
+                          </button>
+                          <button
+                            onClick={() => setEditandoId(null)}
+                            style={{
+                              padding: '8px 14px', background: '#fff',
+                              border: '1px solid #d5d3cc', borderRadius: '7px',
+                              fontSize: '12px', color: '#555', cursor: 'pointer',
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                )
+              })}
+            </div>
+          )}
+
+          {/* Seção de pendentes */}
+          {filtradosPendentes.length > 0 && (
+            <div style={{ marginTop: filtrados.length > 0 ? '1.5rem' : 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Aguardando aceite ({filtradosPendentes.length})
               </div>
-            )
-          })}
-        </div>
+              <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
+                {filtradosPendentes.map((p, i) => {
+                  const iniciais = p.nome_completo.split(' ').map(x => x[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+                  return (
+                    <div key={p.id}>
+                      {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
+                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.8 }}>
+
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                          background: '#e5e3dc', color: '#aaa',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '14px', fontWeight: '700',
+                        }}>
+                          {iniciais}
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>{p.nome_completo}</div>
+                          <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{p.email}</div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', flexShrink: 0 }}>
+                          {p.vinculo && (
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500' }}>
+                              {VINCULO_LABEL[p.vinculo] ?? p.vinculo}
+                            </span>
+                          )}
+                          {p.funcoes.map(f => (
+                            <span key={f} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EEF0FF', color: GREEN_DARK, fontWeight: '600' }}>
+                              {FUNCAO_LABEL[f] ?? f}
+                            </span>
+                          ))}
+                        </div>
+
+                        <span style={{
+                          fontSize: '11px', padding: '2px 10px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
+                          background: '#FFF8E1', color: '#92400e', border: '1px solid #FDE68A',
+                        }}>
+                          Convite enviado
+                        </span>
+
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
