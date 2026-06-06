@@ -28,6 +28,62 @@ export async function listarProdutores() {
   }
 }
 
+export async function getProdutorCompleto(id: string) {
+  const usuario = await getUsuarioLogado()
+  if (!usuario?.organizacao_id) throw new Error('Usuário sem organização')
+  const supabase = createAdminClient()
+
+  // Dados do produtor
+  const { data: produtor, error: eProd } = await supabase
+    .from('produtores')
+    .select(`
+      id, nome, cpf, telefone, email, municipio, endereco, tipo,
+      cooperado_id, area_total_ha, area_cacau_ha, tem_certificacao,
+      tipo_certificacao, banco, agencia, conta_bancaria, tipo_conta,
+      chave_pix, ativo, nome_propriedade, tipo_posse, percentual_posse,
+      ie_produtor_rural
+    `)
+    .eq('id', id)
+    .eq('organizacao_id', usuario.organizacao_id)
+    .single()
+  if (eProd) throw new Error(eProd.message)
+
+  // Conta do produtor
+  const { data: conta, error: eConta } = await supabase
+    .from('contas_produtor')
+    .select(`
+      id, saldo_financeiro,
+      saldos_produto(quantidade, produtos(id, nome, unidade))
+    `)
+    .eq('produtor_id', id)
+    .maybeSingle()
+  if (eConta) throw new Error(eConta.message)
+
+  // Extrato completo
+  const { data: extrato, error: eExt } = await supabase
+    .from('movimentacoes_conta')
+    .select('*, produtos(nome, unidade)')
+    .eq('conta_id', conta?.id ?? '')
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (eExt && conta?.id) throw new Error(eExt.message)
+
+  // Sessão de caixa aberta
+  const { data: sessao } = await supabase
+    .from('sessoes_caixa')
+    .select('id, status')
+    .eq('organizacao_id', usuario.organizacao_id)
+    .eq('status', 'aberta')
+    .maybeSingle()
+
+  return {
+    produtor,
+    conta: conta ?? null,
+    extrato: extrato ?? [],
+    sessaoAberta: sessao ?? null,
+  }
+}
+
 export async function criarProdutor(form: {
   nome: string
   cpf?: string
