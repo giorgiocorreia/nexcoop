@@ -56,28 +56,27 @@ export default async function UsuariosPage() {
       admin.auth.admin.listUsers({ perPage: 1000 }),
     ])
 
+    usuarios = (usersRes.data ?? []) as Usuario[]
+    funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
+
     const authUsers = authRes.data?.users ?? []
-    const confirmedIds = new Set(
-      authUsers.filter(u => u.email_confirmed_at).map(u => u.id)
-    )
+    const usuariosIds = new Set(usuarios.map(u => u.id))
 
-    const todosUsuarios = (usersRes.data ?? []) as Usuario[]
-    funcoes = (funcoesRes.data ?? []) as FuncaoDisponivel[]
-
-    // Pendentes: ativo:false e e-mail ainda não confirmado no Auth
-    pendentes = todosUsuarios
-      .filter(u => !u.ativo && !confirmedIds.has(u.id))
+    pendentes = authUsers
+      .filter(u =>
+        u.invited_at &&
+        !u.email_confirmed_at &&
+        !usuariosIds.has(u.id) &&
+        u.user_metadata?.organizacao_id === orgId
+      )
       .map(u => ({
         id: u.id,
         email: u.email ?? '',
-        nome_completo: u.nome_completo,
-        funcoes: (u.funcoes ?? []) as string[],
-        vinculo: u.vinculo ?? null,
-        invited_at: (u as any).created_at ?? '',
+        nome_completo: u.user_metadata?.nome_completo ?? u.email ?? '',
+        funcoes: u.user_metadata?.funcoes ?? [],
+        vinculo: u.user_metadata?.vinculo ?? null,
+        invited_at: u.invited_at!,
       }))
-
-    const pendentesIds = new Set(pendentes.map(p => p.id))
-    usuarios = todosUsuarios.filter(u => !pendentesIds.has(u.id))
   }
 
   return (
