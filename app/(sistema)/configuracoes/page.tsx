@@ -1,10 +1,12 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import { isAdmin } from '@/lib/permissoes'
 import ConfiguracoesForm from './ConfiguracoesForm'
 import type { Organizacao, PerfilCaptacao, Usuario, FuncaoDisponivel } from '@/types/database'
+import type { UsuarioPendente } from './usuarios/page'
 
 export const metadata = { title: 'Configurações — NexCoop' }
 
@@ -24,7 +26,6 @@ export default async function ConfiguracoesPage() {
   const superAdmin = usuario.role === 'super_admin'
   if (!usuario.organizacao_id && !superAdmin) redirect('/dashboard')
 
-  // Resolve org_id: impersonation cookie tem prioridade sobre organizacao_id do usuário
   const ctx = await getOrgContext()
   const orgId = ctx?.orgId ?? null
 
@@ -32,6 +33,7 @@ export default async function ConfiguracoesPage() {
   let perfilCaptacao: PerfilCaptacao | null = null
   let usuarios: Usuario[] = []
   let funcoes: FuncaoDisponivel[] = []
+  let pendentes: UsuarioPendente[] = []
 
   if (orgId) {
     const db = ctx!.supabase
@@ -44,7 +46,9 @@ export default async function ConfiguracoesPage() {
     perfilCaptacao = perfilRes.data ?? null
 
     if (isAdmin(usuario) || superAdmin) {
-      const [usersRes, funcoesRes] = await Promise.all([
+      const admin = createAdminClient()
+
+      const [usersRes, funcoesRes, authRes] = await Promise.all([
         db
           .from('usuarios')
           .select('*')
@@ -55,9 +59,30 @@ export default async function ConfiguracoesPage() {
           .select('*')
           .or(`organizacao_id.is.null,organizacao_id.eq.${orgId}`)
           .order('nome'),
+        admin.auth.admin.listUsers({ perPage: 1000 }),
       ])
+
       usuarios = (usersRes.data ?? []) as Usuario[]
       funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
+
+      const authUsers = authRes.data?.users ?? []
+      const usuariosIds = new Set(usuarios.map(u => u.id))
+
+      pendentes = authUsers
+        .filter(u =>
+          u.invited_at &&
+          !u.email_confirmed_at &&
+          !usuariosIds.has(u.id) &&
+          u.user_metadata?.organizacao_id === orgId
+        )
+        .map(u => ({
+          id: u.id,
+          email: u.email ?? '',
+          nome_completo: u.user_metadata?.nome_completo ?? u.email ?? '',
+          funcoes: u.user_metadata?.funcoes ?? [],
+          vinculo: u.user_metadata?.vinculo ?? null,
+          invited_at: u.invited_at!,
+        }))
     }
   }
 
@@ -69,6 +94,7 @@ export default async function ConfiguracoesPage() {
         perfilCaptacao={perfilCaptacao}
         usuario={usuario as Usuario}
         usuarios={usuarios}
+        pendentes={pendentes}
         funcoes={funcoes}
       />
     </Suspense>

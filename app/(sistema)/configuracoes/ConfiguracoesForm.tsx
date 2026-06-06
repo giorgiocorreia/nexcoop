@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { Organizacao, PerfilCaptacao, TipoOrganizacao, Usuario, FuncaoDisponivel } from '@/types/database'
+import type { UsuarioPendente } from './usuarios/page'
 import { salvarOrganizacao, atualizarLogoOrg, atualizarPerfilOrg } from './actions'
 import { createClient as createClientBrowser } from '@/lib/supabase/client'
 import { salvarPerfilCaptacao } from '@/lib/captacao/actions'
@@ -61,6 +62,7 @@ interface Props {
   perfilCaptacao: PerfilCaptacao | null
   usuario: Usuario
   usuarios: Usuario[]
+  pendentes: UsuarioPendente[]
   funcoes: FuncaoDisponivel[]
 }
 
@@ -147,7 +149,7 @@ export default function ConfiguracoesForm(props: Props) {
       {abaEfetiva === 'usuarios' && showAdminTabs && (
         <UsuariosGestao
           usuarios={props.usuarios}
-          pendentes={[]}
+          pendentes={props.pendentes}
           funcoes={props.funcoes}
           usuarioAtualId={props.usuario.id}
           isSuperAdmin={props.isSuperAdmin}
