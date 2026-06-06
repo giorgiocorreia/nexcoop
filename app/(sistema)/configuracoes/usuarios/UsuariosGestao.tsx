@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database'
 import type { UsuarioPendente } from './page'
-import { atualizarUsuario, convidarUsuario, toggleAtivo } from './actions'
+import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite } from './actions'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
@@ -34,9 +34,10 @@ interface Props {
   embeddedMode?: boolean
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
+  const [pendentes, setPendentes] = useState(pendentesInit)
   const [busca, setBusca] = useState('')
 
   // Convite
@@ -55,6 +56,18 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
   // Toggle ativo
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [erroToggle, setErroToggle] = useState('')
+
+  // Ações nos pendentes
+  const [ativandoId, setAtivandoId] = useState<string | null>(null)
+  const [reenviandoId, setReenviandoId] = useState<string | null>(null)
+  const [revogandoId, setRevogandoId] = useState<string | null>(null)
+  const [erroPendente, setErroPendente] = useState('')
+
+  // Modal de ativação com senha
+  const [modalAtivar, setModalAtivar] = useState<UsuarioPendente | null>(null)
+  const [senhaAtivar, setSenhaAtivar] = useState('')
+  const [erroSenha, setErroSenha] = useState('')
+  const [salvandoAtivar, setSalvandoAtivar] = useState(false)
 
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -139,8 +152,120 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
     router.refresh()
   }
 
+  async function handleAtivar() {
+    if (!modalAtivar) return
+    if (!senhaAtivar.trim() || senhaAtivar.length < 6) {
+      setErroSenha('A senha deve ter pelo menos 6 caracteres.')
+      return
+    }
+    setSalvandoAtivar(true)
+    setErroSenha('')
+    const res = await ativarConvite(modalAtivar.id, senhaAtivar)
+    setSalvandoAtivar(false)
+    if (res.error) { setErroSenha(res.error); return }
+    setPendentes(prev => prev.filter(p => p.id !== modalAtivar.id))
+    setUsuarios(prev => [...prev, {
+      id: modalAtivar.id,
+      email: modalAtivar.email,
+      nome_completo: modalAtivar.nome_completo,
+      funcoes: modalAtivar.funcoes,
+      vinculo: modalAtivar.vinculo as VinculoUsuario | null,
+      ativo: true,
+      role: 'membro',
+      organizacao_id: '',
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+    } as Usuario])
+    setModalAtivar(null)
+    setSenhaAtivar('')
+    router.refresh()
+  }
+
+  async function handleReenviar(p: UsuarioPendente) {
+    setReenviandoId(p.id)
+    setErroPendente('')
+    const res = await reenviarConvite(p.email)
+    setReenviandoId(null)
+    if (res.error) { setErroPendente(res.error); return }
+  }
+
+  async function handleRevogar(p: UsuarioPendente) {
+    if (!confirm(`Revogar convite de ${p.nome_completo}? O usuário será removido.`)) return
+    setRevogandoId(p.id)
+    setErroPendente('')
+    const res = await revogarConvite(p.id)
+    setRevogandoId(null)
+    if (res.error) { setErroPendente(res.error); return }
+    setPendentes(prev => prev.filter(x => x.id !== p.id))
+  }
+
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+
+      {/* Modal de ativação */}
+      {modalAtivar && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px',
+        }} onClick={() => { setModalAtivar(null); setSenhaAtivar(''); setErroSenha('') }}>
+          <div style={{
+            background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '400px',
+            padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '15px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+              Ativar usuário
+            </div>
+            <div style={{ fontSize: '13px', color: '#888', marginBottom: '1.25rem' }}>
+              {modalAtivar.nome_completo} · {modalAtivar.email}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: '12px', fontWeight: '500', color: '#555', marginBottom: '5px' }}>
+                Senha inicial <span style={{ color: '#dc2626' }}>*</span>
+              </div>
+              <input
+                type="password"
+                value={senhaAtivar}
+                onChange={e => setSenhaAtivar(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoFocus
+                style={inp}
+                onFocus={e => e.target.style.borderColor = GREEN}
+                onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+              />
+              <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>
+                O usuário poderá trocar a senha nas configurações de conta.
+              </div>
+            </div>
+            {erroSenha && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>
+                {erroSenha}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setModalAtivar(null); setSenhaAtivar(''); setErroSenha('') }}
+                style={{ padding: '8px 16px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAtivar}
+                disabled={salvandoAtivar}
+                style={{
+                  padding: '8px 18px', border: 'none', borderRadius: '8px',
+                  background: salvandoAtivar ? '#9F9BFF' : GREEN,
+                  color: '#fff', fontSize: '13px', fontWeight: '600',
+                  cursor: salvandoAtivar ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {salvandoAtivar ? 'Ativando...' : 'Ativar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -166,10 +291,9 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
         </button>
       </div>
 
-      {/* Erro de toggle */}
-      {erroToggle && (
-        <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroToggle}</Alerta>
-      )}
+      {/* Erros globais */}
+      {erroToggle && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroToggle}</Alerta>}
+      {erroPendente && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroPendente}</Alerta>}
 
       {/* Formulário de convite */}
       {conviteAberto && (
@@ -274,7 +398,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
         />
       </div>
 
-      {/* Lista de membros ativos/inativos */}
+      {/* Lista */}
       {filtrados.length === 0 && filtradosPendentes.length === 0 ? (
         <div style={{
           background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px',
@@ -298,16 +422,10 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                 return (
                   <div key={u.id}>
                     {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
-
                     <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-
-                      {/* Avatar */}
                       <div style={{ flexShrink: 0 }}>
                         {u.avatar_url ? (
-                          <img
-                            src={u.avatar_url} alt=""
-                            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                          />
+                          <img src={u.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{
                             width: 40, height: 40, borderRadius: '50%',
@@ -319,28 +437,16 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                           </div>
                         )}
                       </div>
-
-                      {/* Nome + e-mail */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           {u.nome_completo}
-                          {isSelf && (
-                            <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>
-                              Você
-                            </span>
-                          )}
-                          {isSuperAdminRow && (
-                            <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>
-                              Super Admin
-                            </span>
-                          )}
+                          {isSelf && <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>Você</span>}
+                          {isSuperAdminRow && <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>Super Admin</span>}
                         </div>
                         <div style={{ fontSize: '12px', color: '#888', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.email}
                         </div>
                       </div>
-
-                      {/* Badges */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', flexShrink: 0, maxWidth: '260px' }}>
                         {u.vinculo && (
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500', whiteSpace: 'nowrap' }}>
@@ -353,8 +459,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                           </span>
                         ))}
                       </div>
-
-                      {/* Status + ações */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                         <span style={{
                           fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
@@ -363,25 +467,21 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                         }}>
                           {u.ativo ? 'Ativo' : 'Inativo'}
                         </span>
-
                         {podeEditar && (
                           <>
                             <button
                               onClick={() => handleToggleAtivo(u.id, u.ativo)}
                               disabled={toggling}
-                              title={u.ativo ? 'Desativar' : 'Ativar'}
                               style={{
                                 padding: '5px 10px', border: '1px solid #d5d3cc',
                                 borderRadius: '6px', background: '#fff',
                                 fontSize: '11px', color: '#555',
                                 cursor: toggling ? 'not-allowed' : 'pointer',
-                                opacity: toggling ? 0.6 : 1,
-                                whiteSpace: 'nowrap',
+                                opacity: toggling ? 0.6 : 1, whiteSpace: 'nowrap',
                               }}
                             >
                               {toggling ? '...' : u.ativo ? 'Desativar' : 'Ativar'}
                             </button>
-
                             <button
                               onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
                               style={{
@@ -401,11 +501,9 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                       </div>
                     </div>
 
-                    {/* Painel de edição inline */}
                     {editando && (
                       <div style={{ borderTop: '1px solid #f0eeea', background: '#f8f7f4', padding: '16px 16px 16px 68px' }}>
                         {erroEditar && <Alerta tipo="erro" style={{ marginBottom: '12px' }}>{erroEditar}</Alerta>}
-
                         <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '20px', alignItems: 'start' }}>
                           <div>
                             <FieldLabel>Vínculo</FieldLabel>
@@ -420,7 +518,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                               ))}
                             </select>
                           </div>
-
                           <div>
                             <FieldLabel>Funções</FieldLabel>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
@@ -445,7 +542,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                             </div>
                           </div>
                         </div>
-
                         <div style={{ marginTop: '14px', display: 'flex', gap: '8px' }}>
                           <button
                             onClick={() => salvarEdicao(u.id)}
@@ -488,11 +584,15 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
               <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
                 {filtradosPendentes.map((p, i) => {
                   const iniciais = p.nome_completo.split(' ').map(x => x[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+                  const ativando   = ativandoId === p.id
+                  const reenviando = reenviandoId === p.id
+                  const revogando  = revogandoId === p.id
+                  const ocupado    = ativando || reenviando || revogando
+
                   return (
                     <div key={p.id}>
                       {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
-                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.8 }}>
-
+                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
                           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
                           background: '#e5e3dc', color: '#aaa',
@@ -501,12 +601,10 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                         }}>
                           {iniciais}
                         </div>
-
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}>{p.nome_completo}</div>
                           <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{p.email}</div>
                         </div>
-
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', flexShrink: 0 }}>
                           {p.vinculo && (
                             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500' }}>
@@ -519,14 +617,53 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
                             </span>
                           ))}
                         </div>
-
-                        <span style={{
-                          fontSize: '11px', padding: '2px 10px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
-                          background: '#FFF8E1', color: '#92400e', border: '1px solid #FDE68A',
-                        }}>
-                          Convite enviado
-                        </span>
-
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                          <span style={{
+                            fontSize: '11px', padding: '2px 10px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
+                            background: '#FFF8E1', color: '#92400e', border: '1px solid #FDE68A',
+                          }}>
+                            Convite enviado
+                          </span>
+                          <button
+                            onClick={() => { setModalAtivar(p); setSenhaAtivar(''); setErroSenha('') }}
+                            disabled={ocupado}
+                            style={{
+                              padding: '5px 10px', border: 'none',
+                              borderRadius: '6px', background: '#E6F7F1',
+                              fontSize: '11px', color: '#166534', fontWeight: '600',
+                              cursor: ocupado ? 'not-allowed' : 'pointer',
+                              opacity: ocupado ? 0.6 : 1, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Ativar
+                          </button>
+                          <button
+                            onClick={() => handleReenviar(p)}
+                            disabled={ocupado}
+                            style={{
+                              padding: '5px 10px', border: '1px solid #d5d3cc',
+                              borderRadius: '6px', background: '#fff',
+                              fontSize: '11px', color: '#555',
+                              cursor: ocupado ? 'not-allowed' : 'pointer',
+                              opacity: ocupado ? 0.6 : 1, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {reenviando ? '...' : 'Reenviar'}
+                          </button>
+                          <button
+                            onClick={() => handleRevogar(p)}
+                            disabled={ocupado}
+                            style={{
+                              padding: '5px 10px', border: '1px solid #fca5a5',
+                              borderRadius: '6px', background: '#fff',
+                              fontSize: '11px', color: '#dc2626',
+                              cursor: ocupado ? 'not-allowed' : 'pointer',
+                              opacity: ocupado ? 0.6 : 1, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {revogando ? '...' : 'Revogar'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -539,8 +676,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes, func
     </div>
   )
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (

@@ -104,3 +104,57 @@ export async function toggleAtivo(id: string, ativo: boolean): Promise<{ error?:
   if (error) return { error: error.message }
   return {}
 }
+
+export async function ativarConvite(
+  id: string,
+  senha: string
+): Promise<{ error?: string }> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Sem permissão.' }
+  const { admin } = ctx
+
+  const { error: authError } = await admin.auth.admin.updateUserById(id, {
+    email_confirm: true,
+    password: senha,
+  })
+  if (authError) return { error: authError.message }
+
+  const { error: dbError } = await admin
+    .from('usuarios')
+    .update({ ativo: true })
+    .eq('id', id)
+  if (dbError) return { error: dbError.message }
+
+  return {}
+}
+
+export async function reenviarConvite(
+  email: string
+): Promise<{ error?: string }> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Sem permissão.' }
+  const { admin } = ctx
+
+  const { error } = await admin.auth.admin.inviteUserByEmail(email)
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function revogarConvite(
+  id: string
+): Promise<{ error?: string }> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Sem permissão.' }
+  const { admin } = ctx
+
+  const { error: dbError } = await admin
+    .from('usuarios')
+    .delete()
+    .eq('id', id)
+  if (dbError) return { error: dbError.message }
+
+  const { error: authError } = await admin.auth.admin.deleteUser(id)
+  if (authError) return { error: authError.message }
+
+  return {}
+}
