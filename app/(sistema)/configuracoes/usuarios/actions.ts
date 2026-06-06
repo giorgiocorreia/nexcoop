@@ -142,7 +142,11 @@ export async function ativarConvite(
       ativo: true,
     }, { onConflict: 'id' })
 
-  if (upsertError) return { error: upsertError.message }
+  if (upsertError) {
+    console.error('[ativarConvite] upsertError:', JSON.stringify(upsertError))
+    return { error: upsertError.message }
+  }
+  console.log('[ativarConvite] upsert ok para id:', id)
   return {}
 }
 
