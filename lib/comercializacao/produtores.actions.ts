@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUsuarioLogado } from '@/lib/auth'
-import type { TipoContaProdutorConta, TipoProdutorVinculo } from '@/types/database'
+import type { TipoContaProdutorConta, TipoProdutorVinculo, TipoPosseProdutor } from '@/types/database'
 
 export async function listarProdutores() {
   try {
@@ -118,7 +118,7 @@ export async function criarProdutor(form: {
         ...form,
         tipo: form.tipo as TipoProdutorVinculo,
         tipo_conta: (form.tipo_conta as TipoContaProdutorConta) ?? null,
-        tipo_posse: form.tipo_posse ?? null,
+        tipo_posse: (form.tipo_posse as TipoPosseProdutor) ?? null,
         organizacao_id: orgId,
       })
     if (error) throw new Error(error.message)
