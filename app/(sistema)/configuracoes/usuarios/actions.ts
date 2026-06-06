@@ -26,7 +26,6 @@ export async function convidarUsuario(input: {
   if (!ctx) return { error: 'Sem permissão.' }
   const { usuarioAtual, admin } = ctx
 
-  // Resolve orgId: cookie de impersonation tem prioridade sobre organizacao_id do usuário
   let orgId: string | null = usuarioAtual.organizacao_id
   if (!orgId && isSuperAdmin(usuarioAtual)) {
     const cookieStore = await cookies()
@@ -35,7 +34,12 @@ export async function convidarUsuario(input: {
   if (!orgId) return { error: 'Organização não encontrada.' }
 
   const { data, error } = await admin.auth.admin.inviteUserByEmail(input.email.trim(), {
-    data: { nome_completo: input.nome.trim() },
+    data: {
+      nome_completo: input.nome.trim(),
+      organizacao_id: orgId,
+      vinculo: input.vinculo || null,
+      funcoes: input.funcoes,
+    },
   })
 
   if (error) {
@@ -43,18 +47,20 @@ export async function convidarUsuario(input: {
     return { error: error.message }
   }
 
-  const { error: updateError } = await admin
+  const { error: insertError } = await admin
     .from('usuarios')
-    .update({
+    .insert({
+      id: data.user.id,
       organizacao_id: orgId,
+      email: input.email.trim(),
       nome_completo: input.nome.trim(),
       vinculo: (input.vinculo || null) as VinculoUsuario | null,
       funcoes: input.funcoes,
       role: 'membro',
+      ativo: false,
     })
-    .eq('id', data.user.id)
 
-  if (updateError) return { error: `Convite enviado, mas erro ao configurar: ${updateError.message}` }
+  if (insertError) return { error: `Convite enviado, mas erro ao configurar: ${insertError.message}` }
   return {}
 }
 
