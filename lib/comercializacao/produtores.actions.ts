@@ -154,13 +154,14 @@ export async function editarProdutor(id: string, form: Partial<{
 }>) {
   try {
     const supabase = createAdminClient()
-    const { tipo_conta, tipo, ...rest } = form
+    const { tipo_conta, tipo, tipo_posse, ...rest } = form
     const { error } = await supabase
       .from('produtores')
       .update({
         ...rest,
         ...(tipo ? { tipo: tipo as TipoProdutorVinculo } : {}),
         ...(tipo_conta !== undefined ? { tipo_conta: tipo_conta as TipoContaProdutorConta | null } : {}),
+        ...(tipo_posse !== undefined ? { tipo_posse: tipo_posse as TipoPosseProdutor | null } : {}),
       })
       .eq('id', id)
     if (error) throw new Error(error.message)
