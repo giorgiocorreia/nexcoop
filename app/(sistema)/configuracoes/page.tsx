@@ -49,12 +49,12 @@ export default async function ConfiguracoesPage() {
       const admin = createAdminClient()
 
       const [usersRes, funcoesRes, authRes] = await Promise.all([
-        db
+        admin
           .from('usuarios')
           .select('*')
           .eq('organizacao_id', orgId)
           .order('nome_completo'),
-        db
+        admin
           .from('funcoes_disponiveis')
           .select('*')
           .or(`organizacao_id.is.null,organizacao_id.eq.${orgId}`)
