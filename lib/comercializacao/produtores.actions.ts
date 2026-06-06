@@ -133,7 +133,6 @@ export async function listarCooperadosSemProdutor() {
       .from('cooperados')
       .select('id, nome_completo')
       .eq('organizacao_id', orgId)
-      .eq('ativo', true)
     if (error) throw new Error(error.message)
     const resultado = (data ?? [])
       .filter((c: any) => !idsVinculados.includes(c.id))
