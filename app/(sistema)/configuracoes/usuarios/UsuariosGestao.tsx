@@ -163,24 +163,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
     const res = await ativarConvite(modalAtivar.id, senhaAtivar)
     setSalvandoAtivar(false)
     if (res.error) { setErroSenha(res.error); return }
-    setPendentes(prev => prev.filter(p => p.id !== modalAtivar.id))
-    setUsuarios(prev => [...prev, {
-      id: modalAtivar.id,
-      email: modalAtivar.email,
-      nome_completo: modalAtivar.nome_completo,
-      funcoes: modalAtivar.funcoes,
-      vinculo: modalAtivar.vinculo as VinculoUsuario | null,
-      ativo: true,
-      role: 'org_admin',
-      organizacao_id: '',
-      avatar_url: null,
-      created_at: new Date().toISOString(),
-      cpf: null,
-      telefone: null,
-      ultimo_acesso: null,
-      criado_em: new Date().toISOString(),
-      atualizado_em: new Date().toISOString(),
-    } as unknown as Usuario])
     setModalAtivar(null)
     setSenhaAtivar('')
     router.refresh()
