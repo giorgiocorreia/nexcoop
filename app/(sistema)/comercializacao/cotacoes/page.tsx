@@ -15,6 +15,17 @@ type Cotacao = {
   produtos: { nome: string; unidade: string }
 }
 
+function mascaraPreco(valor: string): string {
+  const digits = valor.replace(/\D/g, '')
+  if (!digits) return ''
+  const num = parseInt(digits, 10) / 100
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function parsePreco(valor: string): number {
+  return parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0
+}
+
 export default function CotacoesPage() {
   const hoje = new Date().toISOString().split('T')[0]
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([])
@@ -40,8 +51,8 @@ export default function CotacoesPage() {
     }
   }
 
-  const precoExt = parseFloat(form.preco_externo)
-  const precoCoop = parseFloat(form.preco_cooperado)
+  const precoExt = parsePreco(form.preco_externo)
+  const precoCoop = parsePreco(form.preco_cooperado)
   const avisoPreco = form.preco_externo && form.preco_cooperado && precoCoop < precoExt
 
   async function handleSalvar() {
@@ -55,6 +66,7 @@ export default function CotacoesPage() {
         preco_cooperado: precoCoop,
         observacoes: form.observacoes
       })
+      setForm(f => ({ ...f, preco_externo: '', preco_cooperado: '', observacoes: '' }))
       await carregar()
       setStatus('sucesso')
       setTimeout(() => setStatus('idle'), 3000)
@@ -64,7 +76,6 @@ export default function CotacoesPage() {
     }
   }
 
-  // Última cotação por produto
   const ultimasPorProduto = produtos.map(p => ({
     produto: p,
     cotacao: cotacoes.find(c => c.produto_id === p.id) ?? null
@@ -128,21 +139,31 @@ export default function CotacoesPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Preço externo (R$/kg)</label>
-            <input
-              type="number" step="0.01" placeholder="0,00"
-              value={form.preco_externo}
-              onChange={e => setForm(f => ({ ...f, preco_externo: e.target.value }))}
-              style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', width: '130px' }}
-            />
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#6b6b6b' }}>R$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0,00"
+                value={form.preco_externo}
+                onChange={e => setForm(f => ({ ...f, preco_externo: mascaraPreco(e.target.value) }))}
+                style={{ padding: '8px 12px 8px 32px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', width: '130px' }}
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Preço cooperado (R$/kg)</label>
-            <input
-              type="number" step="0.01" placeholder="0,00"
-              value={form.preco_cooperado}
-              onChange={e => setForm(f => ({ ...f, preco_cooperado: e.target.value }))}
-              style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', width: '130px' }}
-            />
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#6b6b6b' }}>R$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0,00"
+                value={form.preco_cooperado}
+                onChange={e => setForm(f => ({ ...f, preco_cooperado: mascaraPreco(e.target.value) }))}
+                style={{ padding: '8px 12px 8px 32px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', width: '130px' }}
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '160px' }}>
             <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>

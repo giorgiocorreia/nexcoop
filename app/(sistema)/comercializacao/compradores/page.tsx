@@ -37,6 +37,34 @@ const formVazio = {
   telefone: ''
 }
 
+function mascaraCNPJ(valor: string): string {
+  const digits = valor.replace(/\D/g, '').slice(0, 14)
+  return digits
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+}
+
+function mascaraTelefone(valor: string): string {
+  const digits = valor.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 10) {
+    return digits
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+  }
+  return digits
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+}
+
+function formatarCNPJ(cnpj: string | null): string {
+  if (!cnpj) return '—'
+  const digits = cnpj.replace(/\D/g, '')
+  if (digits.length !== 14) return cnpj
+  return mascaraCNPJ(digits)
+}
+
 export default function CompradoresPage() {
   const [compradores, setCompradores] = useState<Comprador[]>([])
   const [editando, setEditando] = useState<Comprador | null>(null)
@@ -63,12 +91,19 @@ export default function CompradoresPage() {
     setForm({
       nome: c.nome,
       tipo: c.tipo,
-      cnpj: c.cnpj ?? '',
+      cnpj: c.cnpj ? mascaraCNPJ(c.cnpj) : '',
       contato: c.contato ?? '',
       email: c.email ?? '',
-      telefone: c.telefone ?? ''
+      telefone: c.telefone ? mascaraTelefone(c.telefone) : ''
     })
     setAbrirModal(true)
+  }
+
+  function fecharModal() {
+    setAbrirModal(false)
+    setEditando(null)
+    setErroMsg('')
+    setStatus('idle')
   }
 
   async function handleSalvar() {
@@ -78,18 +113,17 @@ export default function CompradoresPage() {
       const payload = {
         nome: form.nome,
         tipo: form.tipo,
-        cnpj: form.cnpj || undefined,
+        cnpj: form.cnpj ? form.cnpj.replace(/\D/g, '') : undefined,
         contato: form.contato || undefined,
         email: form.email || undefined,
-        telefone: form.telefone || undefined
+        telefone: form.telefone ? form.telefone.replace(/\D/g, '') : undefined
       }
       if (editando) {
         await editarComprador(editando.id, { ...payload, ativo: editando.ativo })
       } else {
         await criarComprador(payload)
       }
-      setAbrirModal(false)
-      setEditando(null)
+      fecharModal()
       await carregar()
       setStatus('sucesso')
       setTimeout(() => setStatus('idle'), 3000)
@@ -112,7 +146,7 @@ export default function CompradoresPage() {
       </div>
 
       {status === 'sucesso' && (
-        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>Comprador salvo com sucesso.</div>
+        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>✓ Comprador salvo com sucesso.</div>
       )}
 
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
@@ -141,9 +175,11 @@ export default function CompradoresPage() {
                     {TIPO_LABEL[c.tipo]}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{c.cnpj ?? '—'}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{formatarCNPJ(c.cnpj)}</td>
                 <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{c.contato ?? '—'}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{c.telefone ?? '—'}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
+                  {c.telefone ? mascaraTelefone(c.telefone) : '—'}
+                </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{
                     fontSize: '12px', padding: '2px 10px', borderRadius: '20px',
@@ -180,11 +216,19 @@ export default function CompradoresPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
         }}>
           <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '480px', maxWidth: '95vw' }}>
-            <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>
-              {editando ? 'Editar comprador' : 'Novo comprador'}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
+            {/* Header modal com X */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontWeight: 500, fontSize: '16px' }}>
+                {editando ? 'Editar comprador' : 'Novo comprador'}
+              </div>
+              <button onClick={fecharModal}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1, padding: '4px' }}>
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 2 }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome *</label>
@@ -207,9 +251,12 @@ export default function CompradoresPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CNPJ</label>
-                <input value={form.cnpj} placeholder="00.000.000/0001-00"
-                  onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input
+                  value={form.cnpj}
+                  placeholder="00.000.000/0001-00"
+                  onChange={e => setForm(f => ({ ...f, cnpj: mascaraCNPJ(e.target.value) }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                />
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
@@ -221,9 +268,12 @@ export default function CompradoresPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
-                  <input value={form.telefone}
-                    onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                  <input
+                    value={form.telefone}
+                    placeholder="(00) 00000-0000"
+                    onChange={e => setForm(f => ({ ...f, telefone: mascaraTelefone(e.target.value) }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  />
                 </div>
               </div>
 
@@ -241,7 +291,6 @@ export default function CompradoresPage() {
                   Ativo
                 </label>
               )}
-
             </div>
 
             {status === 'erro' && (
@@ -249,17 +298,12 @@ export default function CompradoresPage() {
             )}
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setAbrirModal(false); setEditando(null) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
-              >
+              <button onClick={fecharModal}
+                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button
-                onClick={handleSalvar}
-                disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-              >
+              <button onClick={handleSalvar} disabled={status === 'salvando'}
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 {status === 'salvando' ? 'Salvando...' : 'Salvar'}
               </button>
             </div>

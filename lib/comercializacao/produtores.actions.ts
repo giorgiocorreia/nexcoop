@@ -33,7 +33,6 @@ export async function getProdutorCompleto(id: string) {
   if (!usuario?.organizacao_id) throw new Error('Usuário sem organização')
   const supabase = createAdminClient()
 
-  // Dados do produtor
   const { data: produtor, error: eProd } = await supabase
     .from('produtores')
     .select(`
@@ -48,7 +47,6 @@ export async function getProdutorCompleto(id: string) {
     .single()
   if (eProd) throw new Error(eProd.message)
 
-  // Conta do produtor
   const { data: conta, error: eConta } = await supabase
     .from('contas_produtor')
     .select(`
@@ -59,7 +57,6 @@ export async function getProdutorCompleto(id: string) {
     .maybeSingle()
   if (eConta) throw new Error(eConta.message)
 
-  // Extrato completo
   const { data: extrato, error: eExt } = await supabase
     .from('movimentacoes_conta')
     .select('*, produtos(nome, unidade)')
@@ -68,7 +65,6 @@ export async function getProdutorCompleto(id: string) {
     .limit(100)
   if (eExt && conta?.id) throw new Error(eExt.message)
 
-  // Sessão de caixa aberta
   const { data: sessao } = await supabase
     .from('sessoes_caixa')
     .select('id, status')
@@ -159,7 +155,7 @@ export async function editarProdutor(id: string, form: Partial<{
       .from('produtores')
       .update({
         ...rest,
-        ...(tipo ? { tipo: tipo as TipoProdutorVinculo } : {}),
+        ...(tipo !== undefined ? { tipo: tipo as TipoProdutorVinculo } : {}),
         ...(tipo_conta !== undefined ? { tipo_conta: tipo_conta as TipoContaProdutorConta | null } : {}),
         ...(tipo_posse !== undefined ? { tipo_posse: tipo_posse as TipoPosseProdutor | null } : {}),
       })
@@ -169,6 +165,86 @@ export async function editarProdutor(id: string, form: Partial<{
     console.error('[editarProdutor] FALHA:', e?.message ?? e)
     throw e
   }
+}
+
+/**
+ * Chamada automaticamente ao cadastrar um cooperado.
+ * Cenário 1: já existe produtor com o CPF → vincula cooperado_id + atualiza tipo
+ * Cenário 2: não existe → cria produtor + conta_produtor
+ */
+export async function vincularCooperadoComoProdutor(params: {
+  cooperado_id: string
+  organizacao_id: string
+  nome: string
+  cpf: string | null
+  telefone: string | null
+  email: string | null
+  municipio: string | null
+  endereco: string | null
+  nome_propriedade: string | null
+}) {
+  const supabase = createAdminClient()
+
+  // Tenta encontrar produtor pelo CPF
+  let produtorId: string | null = null
+
+  if (params.cpf) {
+    const { data: existente } = await supabase
+      .from('produtores')
+      .select('id')
+      .eq('organizacao_id', params.organizacao_id)
+      .eq('cpf', params.cpf)
+      .maybeSingle()
+
+    if (existente) {
+      // Cenário 1: vincula cooperado ao produtor existente
+      const { error } = await supabase
+        .from('produtores')
+        .update({
+          cooperado_id: params.cooperado_id,
+          tipo: 'cooperado' as TipoProdutorVinculo,
+        })
+        .eq('id', existente.id)
+      if (error) throw new Error(`[vincular] update produtor: ${error.message}`)
+      produtorId = existente.id
+    }
+  }
+
+  if (!produtorId) {
+    // Cenário 2: cria produtor novo
+    const { data: novo, error: eCriar } = await supabase
+      .from('produtores')
+      .insert({
+        organizacao_id: params.organizacao_id,
+        cooperado_id: params.cooperado_id,
+        nome: params.nome,
+        cpf: params.cpf,
+        telefone: params.telefone,
+        email: params.email,
+        municipio: params.municipio,
+        endereco: params.endereco,
+        nome_propriedade: params.nome_propriedade,
+        tipo: 'cooperado' as TipoProdutorVinculo,
+        tem_certificacao: false,
+        ativo: true,
+      })
+      .select('id')
+      .single()
+    if (eCriar) throw new Error(`[vincular] insert produtor: ${eCriar.message}`)
+    produtorId = novo.id
+
+    // Cria conta_produtor para o novo produtor
+    const { error: eConta } = await supabase
+      .from('contas_produtor')
+      .insert({
+        organizacao_id: params.organizacao_id,
+        produtor_id: produtorId,
+        saldo_financeiro: 0,
+      })
+    if (eConta) throw new Error(`[vincular] insert conta_produtor: ${eConta.message}`)
+  }
+
+  return produtorId
 }
 
 export async function listarCooperadosSemProdutor() {

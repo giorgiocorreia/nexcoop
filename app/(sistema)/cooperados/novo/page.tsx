@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
+import { vincularCooperadoComoProdutor } from '@/lib/comercializacao/produtores.actions'
 import BannerLimiteAtingido from '@/components/BannerLimiteAtingido'
 import type { ResultadoLimite } from '@/lib/assinatura'
 import type { StatusCooperado } from '@/types/database'
@@ -158,11 +159,13 @@ export default function NovoCooperadoPage() {
     }
     // ────────────────────────────────────────────────────────
 
+    const cpfLimpo = form.tipo === 'pessoa_fisica' ? form.cpf.replace(/\D/g, '') || null : null
+
     const payload = {
       organizacao_id: usuario.organizacao_id,
       tipo: form.tipo,
       nome_completo: form.nome_completo.trim(),
-      cpf:           form.tipo === 'pessoa_fisica' ? form.cpf.replace(/\D/g, '') || null : null,
+      cpf:           cpfLimpo,
       rg:            form.tipo === 'pessoa_fisica' ? form.rg.trim() || null : null,
       data_nascimento: form.tipo === 'pessoa_fisica' ? form.data_nascimento || null : null,
       sexo:          form.tipo === 'pessoa_fisica' ? (form.sexo as 'M' | 'F' | 'outro' | null) || null : null,
@@ -204,6 +207,25 @@ export default function NovoCooperadoPage() {
       setSalvando(false)
       return
     }
+
+    // ── VÍNCULO AUTOMÁTICO COOPERADO → PRODUTOR ──────────────
+    try {
+      await vincularCooperadoComoProdutor({
+        cooperado_id: data.id,
+        organizacao_id: usuario.organizacao_id,
+        nome: form.nome_completo.trim(),
+        cpf: cpfLimpo,
+        telefone: form.telefone.trim() || null,
+        email: form.email.trim() || null,
+        municipio: form.cidade.trim() || null,
+        endereco: form.logradouro.trim() ? `${form.logradouro.trim()}${form.numero ? ', ' + form.numero : ''}` : null,
+        nome_propriedade: form.nome_propriedade.trim() || null,
+      })
+    } catch (eVinculo: any) {
+      // Não bloqueia o cadastro — cooperado foi salvo, apenas loga o erro
+      console.error('[NovoCooperado] falha ao vincular produtor:', eVinculo?.message ?? eVinculo)
+    }
+    // ────────────────────────────────────────────────────────
 
     router.push(`/cooperados/${data.id}`)
   }
@@ -304,7 +326,15 @@ export default function NovoCooperadoPage() {
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <InputGroup label="CPF">
-                      <input type="text" value={form.cpf} onChange={set('cpf')}
+                      <input type="text" value={form.cpf}
+                        onChange={e => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+                          const masked = digits
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+                          setForm(prev => ({ ...prev, cpf: masked }))
+                        }}
                         placeholder="000.000.000-00" maxLength={14} style={inputStyle}
                         onFocus={e => (e.target.style.borderColor = '#635BFF')}
                         onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
@@ -378,14 +408,28 @@ export default function NovoCooperadoPage() {
                   />
                 </InputGroup>
                 <InputGroup label="Telefone">
-                  <input type="tel" value={form.telefone} onChange={set('telefone')}
+                  <input type="tel" value={form.telefone}
+                    onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+                      const masked = digits.length <= 10
+                        ? digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+                        : digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
+                      setForm(prev => ({ ...prev, telefone: masked }))
+                    }}
                     placeholder="(00) 00000-0000" style={inputStyle}
                     onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
                 <InputGroup label="WhatsApp">
-                  <input type="tel" value={form.whatsapp} onChange={set('whatsapp')}
+                  <input type="tel" value={form.whatsapp}
+                    onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+                      const masked = digits.length <= 10
+                        ? digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+                        : digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
+                      setForm(prev => ({ ...prev, whatsapp: masked }))
+                    }}
                     placeholder="(00) 00000-0000" style={inputStyle}
                     onFocus={e => (e.target.style.borderColor = '#635BFF')}
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
