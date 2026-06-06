@@ -111,7 +111,14 @@ export async function ativarConvite(
 ): Promise<{ error?: string }> {
   const ctx = await getCtx()
   if (!ctx) return { error: 'Sem permissão.' }
-  const { admin } = ctx
+  const { usuarioAtual, admin } = ctx
+
+  let orgId: string | null = usuarioAtual.organizacao_id
+  if (!orgId && isSuperAdmin(usuarioAtual)) {
+    const cookieStore = await cookies()
+    orgId = cookieStore.get('impersonating_org')?.value ?? null
+  }
+  if (!orgId) return { error: 'Organização não encontrada.' }
 
   const { error: authError } = await admin.auth.admin.updateUserById(id, {
     email_confirm: true,
@@ -119,12 +126,23 @@ export async function ativarConvite(
   })
   if (authError) return { error: authError.message }
 
-  const { error: dbError } = await admin
-    .from('usuarios')
-    .update({ ativo: true })
-    .eq('id', id)
-  if (dbError) return { error: dbError.message }
+  const { data: { user: authUser } } = await admin.auth.admin.getUserById(id)
+  if (!authUser) return { error: 'Usuário não encontrado no Auth.' }
 
+  const { error: upsertError } = await admin
+    .from('usuarios')
+    .upsert({
+      id,
+      organizacao_id: orgId,
+      email: authUser.email ?? '',
+      nome_completo: authUser.user_metadata?.nome_completo ?? authUser.email ?? '',
+      vinculo: authUser.user_metadata?.vinculo ?? null,
+      funcoes: authUser.user_metadata?.funcoes ?? [],
+      role: 'membro',
+      ativo: true,
+    }, { onConflict: 'id' })
+
+  if (upsertError) return { error: upsertError.message }
   return {}
 }
 
