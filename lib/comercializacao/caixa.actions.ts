@@ -63,11 +63,22 @@ export async function buscarProdutor(termo: string) {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('produtores')
-    .select('id, nome, cpf, telefone, tipo, chave_pix')
+    .select('id, nome, cpf, telefone, tipo, chave_pix, tipo_posse, percentual_posse')
     .eq('organizacao_id', usuario.organizacao_id as string)
     .eq('ativo', true)
     .or(`nome.ilike.%${termo}%,cpf.ilike.%${termo}%`)
     .limit(10)
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getProdutorParaRateio(produtor_id: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('produtores')
+    .select('id, nome, cpf, tipo_posse, percentual_posse, chave_pix')
+    .eq('id', produtor_id)
+    .single()
   if (error) throw new Error(error.message)
   return data
 }
@@ -98,6 +109,7 @@ export async function getExtrato(conta_id: string) {
   return data
 }
 
+// Entrega simples (sem rateio) — mantida para compatibilidade
 export async function registrarEntrega(params: {
   sessao_id: string
   produtor_id: string
@@ -108,7 +120,6 @@ export async function registrarEntrega(params: {
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
-  // 1. Movimentação na conta (virtual)
   const { error: e1 } = await supabase
     .from('movimentacoes_conta')
     .insert({
@@ -122,7 +133,6 @@ export async function registrarEntrega(params: {
       observacoes: params.observacoes
     })
   if (e1) throw new Error(e1.message)
-  // 2. Movimentação no estoque físico
   const { error: e2 } = await supabase
     .from('movimentacoes_estoque_fisico')
     .insert({
@@ -134,6 +144,76 @@ export async function registrarEntrega(params: {
       referencia_tipo: 'entrega_caixa'
     })
   if (e2) throw new Error(e2.message)
+}
+
+export type ParticipanteRateio = {
+  produtor_id: string
+  conta_id: string
+  percentual: number
+  quantidade_rateada: number
+}
+
+// Entrega com rateio entre participantes
+export async function registrarEntregaComRateio(params: {
+  sessao_id: string
+  produto_id: string
+  quantidade_total: number
+  participantes: ParticipanteRateio[]
+  observacoes?: string
+}) {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+
+  // Validação: percentuais devem somar 100
+  const totalPercentual = params.participantes.reduce((acc, p) => acc + p.percentual, 0)
+  if (Math.abs(totalPercentual - 100) > 0.01) {
+    throw new Error(`Percentuais somam ${totalPercentual.toFixed(2)}%, devem somar 100%`)
+  }
+
+  // Para cada participante: inserir movimentação individual + rateio
+  for (const participante of params.participantes) {
+    const { data: mov, error: eMov } = await supabase
+      .from('movimentacoes_conta')
+      .insert({
+        organizacao_id: usuario.organizacao_id as string,
+        conta_id: participante.conta_id,
+        usuario_id: usuario.id,
+        sessao_caixa_id: params.sessao_id,
+        tipo: 'entrega',
+        produto_id: params.produto_id,
+        quantidade_produto: participante.quantidade_rateada,
+        observacoes: params.observacoes
+          ? `[Rateio ${participante.percentual}%] ${params.observacoes}`
+          : `Rateio ${participante.percentual}%`
+      })
+      .select('id')
+      .single()
+    if (eMov) throw new Error(eMov.message)
+
+    const { error: eRateio } = await supabase
+      .from('rateio_entrega')
+      .insert({
+        organizacao_id: usuario.organizacao_id as string,
+        movimentacao_id: mov.id,
+        produtor_id: participante.produtor_id,
+        percentual: participante.percentual,
+        quantidade_rateada: participante.quantidade_rateada
+      })
+    if (eRateio) throw new Error(eRateio.message)
+  }
+
+  // Estoque físico: 1 insert com o total
+  const { error: eEstoque } = await supabase
+    .from('movimentacoes_estoque_fisico')
+    .insert({
+      organizacao_id: usuario.organizacao_id as string,
+      produto_id: params.produto_id,
+      tipo: 'entrada',
+      quantidade: params.quantidade_total,
+      responsavel_id: usuario.id,
+      referencia_tipo: 'entrega_caixa'
+    })
+  if (eEstoque) throw new Error(eEstoque.message)
 }
 
 export async function registrarConversaoESaque(params: {
@@ -160,12 +240,10 @@ export async function registrarConversaoESaque(params: {
     preco_unitario: params.preco_unitario,
     observacoes: params.observacoes
   }
-  // 1. Conversão produto → R$
   const { error: e1 } = await supabase
     .from('movimentacoes_conta')
     .insert({ ...base, tipo: 'conversao', valor_financeiro: params.valor_financeiro })
   if (e1) throw new Error(e1.message)
-  // 2. Saque
   const tipoSaque = params.forma_pagamento === 'pix' ? 'saque_pix' : 'saque_especie'
   const { error: e2 } = await supabase
     .from('movimentacoes_conta')
@@ -180,7 +258,6 @@ export async function registrarConversaoESaque(params: {
       observacoes: params.chave_pix ? `Pix: ${params.chave_pix}` : params.observacoes
     })
   if (e2) throw new Error(e2.message)
-  // 3. Atualizar total caixa
   const campo = params.forma_pagamento === 'pix' ? 'total_pix' : 'total_saidas_especie'
   const { data: sessao } = await supabase
     .from('sessoes_caixa')

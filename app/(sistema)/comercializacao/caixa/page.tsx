@@ -4,19 +4,30 @@ import { useEffect, useState } from 'react'
 import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
   buscarProdutor, getContaProdutor, getExtrato,
-  registrarEntrega, registrarConversaoESaque,
-  registrarSaqueFinanceiro, listarSolicitacoesPendentes
+  registrarEntrega, registrarEntregaComRateio,
+  registrarConversaoESaque, registrarSaqueFinanceiro,
+  listarSolicitacoesPendentes, getProdutorParaRateio,
+  type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
-type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null }
+type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
 type SaldoProduto = { produto_id: string; quantidade: number; produtos: { nome: string; unidade: string } }
 type Conta = { id: string; saldo_financeiro: number; saldos_produto: SaldoProduto[] }
 type Movimentacao = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; created_at: string; produtos: { nome: string; unidade: string } | null }
 type Produto = { id: string; nome: string; unidade: string }
 type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; forma_pagamento: string; chave_pix: string | null; produtores: { nome: string; telefone: string | null }; produtos: { nome: string; unidade: string }; cotacoes: { preco_cooperado: number } }
+
+// Participante no modal de rateio (antes de ter conta_id resolvido)
+type ParticipanteModal = {
+  produtor_id: string
+  nome: string
+  conta_id: string
+  percentual: number
+  quantidade_rateada: number
+}
 
 const TIPO_LABEL: Record<string, string> = {
   entrega: 'Entrega',
@@ -34,18 +45,15 @@ export default function CaixaPage() {
   const [carregando, setCarregando] = useState(true)
   const [aba, setAba] = useState<'buscar' | 'solicitacoes' | 'operacoes' | 'fechar'>('buscar')
 
-  // Abertura de caixa
   const [saldoInicial, setSaldoInicial] = useState('')
   const [abrindo, setAbrindo] = useState(false)
 
-  // Busca de produtor
   const [termoBusca, setTermoBusca] = useState('')
   const [resultadosBusca, setResultadosBusca] = useState<ProdutorBusca[]>([])
   const [produtorSelecionado, setProdutorSelecionado] = useState<ProdutorBusca | null>(null)
   const [conta, setConta] = useState<Conta | null>(null)
   const [extrato, setExtrato] = useState<Movimentacao[]>([])
 
-  // Operação selecionada
   const [operacao, setOperacao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '' })
@@ -54,14 +62,20 @@ export default function CaixaPage() {
   const [statusOp, setStatusOp] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
 
-  // Solicitações
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([])
 
-  // Fechar caixa
   const [saldoFinal, setSaldoFinal] = useState('')
   const [obsFechamento, setObsFechamento] = useState('')
   const [fechando, setFechando] = useState(false)
   const [resumoFechamento, setResumoFechamento] = useState<Sessao | null>(null)
+
+  // Modal de rateio
+  const [modalRateio, setModalRateio] = useState(false)
+  const [participantes, setParticipantes] = useState<ParticipanteModal[]>([])
+  const [buscaRateio, setBuscaRateio] = useState('')
+  const [resultadosBuscaRateio, setResultadosBuscaRateio] = useState<ProdutorBusca[]>([])
+  const [salvandoRateio, setSalvandoRateio] = useState(false)
+  const [erroRateio, setErroRateio] = useState('')
 
   useEffect(() => { init() }, [])
   useEffect(() => { if (aba === 'fechar') recarregarSessao() }, [aba])
@@ -83,12 +97,8 @@ export default function CaixaPage() {
   async function handleAbrirCaixa() {
     if (!saldoInicial) return
     setAbrindo(true)
-    try {
-      await abrirCaixa(parseFloat(saldoInicial))
-      await init()
-    } finally {
-      setAbrindo(false)
-    }
+    try { await abrirCaixa(parseFloat(saldoInicial)); await init() }
+    finally { setAbrindo(false) }
   }
 
   async function handleBuscar() {
@@ -111,7 +121,33 @@ export default function CaixaPage() {
     setFormReceber(f => ({ ...f, chave_pix: p.chave_pix ?? '' }))
   }
 
-  async function handleEntrega() {
+  // Abre modal de rateio pré-preenchido com o produtor principal
+  async function abrirModalRateio() {
+    if (!produtorSelecionado || !conta || !formEntrega.quantidade) return
+    const qtdTotal = parseFloat(formEntrega.quantidade)
+    if (isNaN(qtdTotal) || qtdTotal <= 0) return
+
+    // Busca dados completos do produtor (percentual_posse)
+    const dadosProdutor = await getProdutorParaRateio(produtorSelecionado.id)
+    const percentualPrincipal = dadosProdutor?.percentual_posse ?? 100
+
+    const participanteInicial: ParticipanteModal = {
+      produtor_id: produtorSelecionado.id,
+      nome: produtorSelecionado.nome,
+      conta_id: conta.id,
+      percentual: percentualPrincipal,
+      quantidade_rateada: parseFloat(((qtdTotal * percentualPrincipal) / 100).toFixed(4))
+    }
+
+    setParticipantes([participanteInicial])
+    setBuscaRateio('')
+    setResultadosBuscaRateio([])
+    setErroRateio('')
+    setModalRateio(true)
+  }
+
+  // Entrega simples (sem rateio)
+  async function handleEntregaSimples() {
     if (!sessao || !conta || !formEntrega.produto_id || !formEntrega.quantidade) return
     setStatusOp('salvando')
     try {
@@ -130,6 +166,91 @@ export default function CaixaPage() {
       setTimeout(() => setStatusOp('idle'), 3000)
     } catch (e: any) {
       setErroMsg(e.message); setStatusOp('erro')
+    }
+  }
+
+  // Recalcula kg de todos os participantes ao mudar percentual
+  function recalcularKg(lista: ParticipanteModal[], qtdTotal: number): ParticipanteModal[] {
+    return lista.map(p => ({
+      ...p,
+      quantidade_rateada: parseFloat(((qtdTotal * p.percentual) / 100).toFixed(4))
+    }))
+  }
+
+  function atualizarPercentual(index: number, novoPercentual: number) {
+    const qtdTotal = parseFloat(formEntrega.quantidade) || 0
+    const nova = participantes.map((p, i) =>
+      i === index ? { ...p, percentual: novoPercentual, quantidade_rateada: parseFloat(((qtdTotal * novoPercentual) / 100).toFixed(4)) } : p
+    )
+    setParticipantes(nova)
+  }
+
+  function removerParticipante(index: number) {
+    setParticipantes(p => p.filter((_, i) => i !== index))
+  }
+
+  async function buscarParaRateio() {
+    if (!buscaRateio.trim()) return
+    const r = await buscarProdutor(buscaRateio)
+    // Filtra quem já está na lista
+    const idsExistentes = new Set(participantes.map(p => p.produtor_id))
+    setResultadosBuscaRateio(((r ?? []) as ProdutorBusca[]).filter(p => !idsExistentes.has(p.id)))
+  }
+
+  async function adicionarParticipante(p: ProdutorBusca) {
+    const contaP = await getContaProdutor(p.id)
+    if (!contaP) {
+      setErroRateio(`${p.nome} não possui conta no sistema.`)
+      return
+    }
+    const qtdTotal = parseFloat(formEntrega.quantidade) || 0
+    const dadosP = await getProdutorParaRateio(p.id)
+    const percentualSugerido = dadosP?.percentual_posse ?? 0
+
+    const novo: ParticipanteModal = {
+      produtor_id: p.id,
+      nome: p.nome,
+      conta_id: (contaP as any).id,
+      percentual: percentualSugerido,
+      quantidade_rateada: parseFloat(((qtdTotal * percentualSugerido) / 100).toFixed(4))
+    }
+    setParticipantes(prev => [...prev, novo])
+    setBuscaRateio('')
+    setResultadosBuscaRateio([])
+    setErroRateio('')
+  }
+
+  const totalPercentual = participantes.reduce((acc, p) => acc + p.percentual, 0)
+  const percentualOk = Math.abs(totalPercentual - 100) <= 0.01
+
+  async function confirmarRateio() {
+    if (!sessao || !percentualOk) return
+    setSalvandoRateio(true)
+    setErroRateio('')
+    try {
+      const listaParticipantes: ParticipanteRateio[] = participantes.map(p => ({
+        produtor_id: p.produtor_id,
+        conta_id: p.conta_id,
+        percentual: p.percentual,
+        quantidade_rateada: p.quantidade_rateada
+      }))
+      await registrarEntregaComRateio({
+        sessao_id: sessao.id,
+        produto_id: formEntrega.produto_id,
+        quantidade_total: parseFloat(formEntrega.quantidade),
+        participantes: listaParticipantes,
+        observacoes: formEntrega.observacoes
+      })
+      setModalRateio(false)
+      setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
+      await recarregarConta()
+      await recarregarSessao()
+      setStatusOp('sucesso')
+      setTimeout(() => setStatusOp('idle'), 3000)
+    } catch (e: any) {
+      setErroRateio(e.message)
+    } finally {
+      setSalvandoRateio(false)
     }
   }
 
@@ -217,7 +338,6 @@ export default function CaixaPage() {
 
   if (carregando) return <div style={{ padding: '32px' }}>Carregando...</div>
 
-  // Resumo de fechamento
   if (resumoFechamento) return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '32px', maxWidth: '480px' }}>
@@ -254,7 +374,6 @@ export default function CaixaPage() {
     </div>
   )
 
-  // Caixa fechado
   if (!sessao) return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '24px' }}>Caixa</h1>
@@ -263,18 +382,12 @@ export default function CaixaPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo inicial em espécie (R$)</label>
-            <input
-              type="number" step="0.01" placeholder="0,00"
-              value={saldoInicial}
+            <input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
               onChange={e => setSaldoInicial(e.target.value)}
-              style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-            />
+              style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
           </div>
-          <button
-            onClick={handleAbrirCaixa}
-            disabled={abrindo || !saldoInicial}
-            style={{ padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-          >
+          <button onClick={handleAbrirCaixa} disabled={abrindo || !saldoInicial}
+            style={{ padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             {abrindo ? 'Abrindo...' : 'Abrir caixa'}
           </button>
         </div>
@@ -282,9 +395,147 @@ export default function CaixaPage() {
     </div>
   )
 
-  // Caixa aberto
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+
+      {/* ===== MODAL DE RATEIO ===== */}
+      {modalRateio && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', padding: '28px',
+            width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
+          }}>
+            {/* Header modal */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '16px' }}>Rateio de entrega</div>
+                <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
+                  {formEntrega.quantidade} kg · {produtos.find(p => p.id === formEntrega.produto_id)?.nome}
+                </div>
+              </div>
+              <button onClick={() => setModalRateio(false)}
+                style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>
+                ×
+              </button>
+            </div>
+
+            {/* Participantes */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              {participantes.map((p, i) => (
+                <div key={p.produtor_id} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '12px 14px', background: '#fafaf8', border: '1px solid #e5e3dc', borderRadius: '10px'
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.nome}
+                      {i === 0 && <span style={{ fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '1px 6px', borderRadius: '4px', marginLeft: '6px' }}>principal</span>}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
+                      {p.quantidade_rateada.toFixed(3)} kg
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input
+                      type="number" step="0.01" min="0.01" max="100"
+                      value={p.percentual}
+                      onChange={e => atualizarPercentual(i, parseFloat(e.target.value) || 0)}
+                      style={{
+                        width: '64px', padding: '6px 8px', border: '1px solid #e5e3dc',
+                        borderRadius: '6px', fontSize: '14px', textAlign: 'right'
+                      }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#6b6b6b' }}>%</span>
+                  </div>
+                  {participantes.length > 1 && (
+                    <button onClick={() => removerParticipante(i)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#991b1b', fontSize: '16px', lineHeight: 1, padding: '4px' }}>
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Indicador de total */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '10px 14px', borderRadius: '8px', marginBottom: '16px',
+              background: percentualOk ? '#dcfce7' : '#fee2e2',
+              border: `1px solid ${percentualOk ? '#bbf7d0' : '#fecaca'}`
+            }}>
+              <span style={{ fontSize: '13px', color: percentualOk ? '#166534' : '#991b1b' }}>
+                {percentualOk ? '✓ Percentuais corretos' : `Total: ${totalPercentual.toFixed(2)}% (faltam ${(100 - totalPercentual).toFixed(2)}%)`}
+              </span>
+              <span style={{ fontSize: '13px', fontWeight: 500, color: percentualOk ? '#166534' : '#991b1b' }}>
+                {totalPercentual.toFixed(1)}% / 100%
+              </span>
+            </div>
+
+            {/* Busca de participante adicional */}
+            <div style={{ marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#6b6b6b', marginBottom: '6px' }}>Adicionar participante</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  placeholder="Nome ou CPF..."
+                  value={buscaRateio}
+                  onChange={e => setBuscaRateio(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && buscarParaRateio()}
+                  style={{ flex: 1, padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                />
+                <button onClick={buscarParaRateio}
+                  style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+                  Buscar
+                </button>
+              </div>
+            </div>
+
+            {/* Resultados busca rateio */}
+            {resultadosBuscaRateio.length > 0 && (
+              <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
+                {resultadosBuscaRateio.map(p => (
+                  <button key={p.id} onClick={() => adicionarParticipante(p)} style={{
+                    width: '100%', padding: '10px 14px', border: 'none', borderBottom: '1px solid #f0ede8',
+                    background: '#fff', cursor: 'pointer', textAlign: 'left',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}>
+                    <span style={{ fontSize: '14px' }}>{p.nome}</span>
+                    <span style={{ fontSize: '12px', color: '#6b6b6b' }}>
+                      {p.tipo_posse ? `${p.tipo_posse} · ${p.percentual_posse ?? 0}%` : p.cpf ?? ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {erroRateio && (
+              <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroRateio}</div>
+            )}
+
+            {/* Botões modal */}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button onClick={() => setModalRateio(false)}
+                style={{ padding: '10px 20px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarRateio} disabled={!percentualOk || salvandoRateio}
+                style={{
+                  padding: '10px 24px', background: percentualOk ? '#92400e' : '#d1d5db',
+                  color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px',
+                  cursor: percentualOk ? 'pointer' : 'not-allowed'
+                }}>
+                {salvandoRateio ? 'Salvando...' : 'Confirmar entrega'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CABEÇALHO ===== */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Caixa</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -334,7 +585,6 @@ export default function CaixaPage() {
             )}
           </div>
 
-          {/* Resultados busca */}
           {resultadosBusca.length > 0 && !produtorSelecionado && (
             <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
               {resultadosBusca.map(p => (
@@ -345,13 +595,13 @@ export default function CaixaPage() {
                   <span style={{ fontSize: '14px', fontWeight: 500 }}>{p.nome}</span>
                   <span style={{ fontSize: '12px', color: '#6b6b6b' }}>
                     {p.cpf ?? ''} · {p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
+                    {p.tipo_posse ? ` · ${p.tipo_posse}` : ''}
                   </span>
                 </button>
               ))}
             </div>
           )}
 
-          {/* Conta do produtor selecionado */}
           {produtorSelecionado && conta && (
             <div>
               {/* Header produtor */}
@@ -362,6 +612,7 @@ export default function CaixaPage() {
                     <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
                       {produtorSelecionado.cpf ?? ''} · {produtorSelecionado.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
                       {produtorSelecionado.telefone ? ` · ${produtorSelecionado.telefone}` : ''}
+                      {produtorSelecionado.tipo_posse ? ` · ${produtorSelecionado.tipo_posse}${produtorSelecionado.percentual_posse ? ` (${produtorSelecionado.percentual_posse}%)` : ''}` : ''}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -395,7 +646,7 @@ export default function CaixaPage() {
               </div>
 
               {statusOp === 'sucesso' && (
-                <div style={{ marginBottom: '12px', color: '#166534', fontSize: '13px' }}>Operação registrada com sucesso.</div>
+                <div style={{ marginBottom: '12px', color: '#166534', fontSize: '13px' }}>✓ Operação registrada com sucesso.</div>
               )}
               {statusOp === 'erro' && (
                 <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>
@@ -425,15 +676,33 @@ export default function CaixaPage() {
                         onChange={e => setFormEntrega(f => ({ ...f, observacoes: e.target.value }))}
                         style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
                     </div>
-                    <button onClick={handleEntrega} disabled={statusOp === 'salvando'}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                      {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar'}
+                  </div>
+
+                  {/* Dois botões de confirmação */}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleEntregaSimples}
+                      disabled={statusOp === 'salvando' || !formEntrega.quantidade}
+                      style={{
+                        padding: '8px 20px', background: '#92400e', color: '#fff',
+                        border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer'
+                      }}>
+                      {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar (individual)'}
+                    </button>
+                    <button
+                      onClick={abrirModalRateio}
+                      disabled={!formEntrega.quantidade || !formEntrega.produto_id}
+                      style={{
+                        padding: '8px 20px', background: '#fff', color: '#92400e',
+                        border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', cursor: 'pointer'
+                      }}>
+                      Rateio entre participantes →
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Formulário Receber (conversão + saque) */}
+              {/* Formulário Receber */}
               {operacao === 'receber' && (
                 <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
                   <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Pagar produtor</div>
@@ -489,7 +758,7 @@ export default function CaixaPage() {
                 </div>
               )}
 
-              {/* Formulário Saque financeiro */}
+              {/* Formulário Saque */}
               {operacao === 'saque' && (
                 <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
                   <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Saque de saldo financeiro</div>
@@ -526,7 +795,7 @@ export default function CaixaPage() {
                 </div>
               )}
 
-              {/* Extrato do produtor */}
+              {/* Extrato */}
               {extrato.length > 0 && (
                 <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e3dc', fontSize: '13px', fontWeight: 500 }}>Extrato recente</div>
