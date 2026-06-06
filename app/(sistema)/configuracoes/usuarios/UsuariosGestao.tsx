@@ -175,7 +175,12 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
       organizacao_id: '',
       avatar_url: null,
       created_at: new Date().toISOString(),
-    } as Usuario])
+      cpf: null,
+      telefone: null,
+      ultimo_acesso: null,
+      criado_em: new Date().toISOString(),
+      atualizado_em: new Date().toISOString(),
+    } as unknown as Usuario])
     setModalAtivar(null)
     setSenhaAtivar('')
     router.refresh()
