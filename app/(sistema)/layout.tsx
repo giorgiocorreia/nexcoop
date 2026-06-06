@@ -115,7 +115,7 @@ export default async function SistemaLayout({
 
   // Durante impersonation, faz o super admin aparecer como admin da org visualizada
   const usuarioComOrg = impersonandoOrg && usuario
-    ? { ...usuario, role: 'membro' as RoleUsuario, funcoes: ['admin'], organizacao_id: impersonandoOrg.id, organizacao: impersonandoOrg } as any
+    ? { ...usuario, role: 'org_admin' as RoleUsuario, funcoes: ['admin'], organizacao_id: impersonandoOrg.id, organizacao: impersonandoOrg } as any
     : usuario
       ? { ...usuario, organizacao }
       : null

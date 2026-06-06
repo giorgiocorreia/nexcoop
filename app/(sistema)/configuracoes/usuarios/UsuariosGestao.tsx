@@ -171,7 +171,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
       funcoes: modalAtivar.funcoes,
       vinculo: modalAtivar.vinculo as VinculoUsuario | null,
       ativo: true,
-      role: 'membro',
+      role: 'org_admin',
       organizacao_id: '',
       avatar_url: null,
       created_at: new Date().toISOString(),

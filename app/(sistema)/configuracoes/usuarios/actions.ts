@@ -56,7 +56,7 @@ export async function convidarUsuario(input: {
       nome_completo: input.nome.trim(),
       vinculo: (input.vinculo || null) as VinculoUsuario | null,
       funcoes: input.funcoes,
-      role: 'membro',
+      role: 'org_admin',
       ativo: false,
     })
 
@@ -138,7 +138,7 @@ export async function ativarConvite(
       nome_completo: authUser.user_metadata?.nome_completo ?? authUser.email ?? '',
       vinculo: authUser.user_metadata?.vinculo ?? null,
       funcoes: authUser.user_metadata?.funcoes ?? [],
-      role: 'cooperado',
+      role: 'org_admin',
       ativo: true,
     }, { onConflict: 'id' })
 

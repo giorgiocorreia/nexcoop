@@ -59,7 +59,7 @@ export async function criarOrganizacao(input: CriarOrgInput): Promise<{ error?: 
     .from('usuarios')
     .update({
       organizacao_id: org.id,
-      role: 'membro',
+      role: 'org_admin',
       funcoes: ['admin'],
       vinculo: 'diretoria',
       nome_completo: input.admin_nome.trim(),

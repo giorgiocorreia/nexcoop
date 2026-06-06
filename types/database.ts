@@ -2,8 +2,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type TipoOrganizacao = 'cooperativa' | 'associacao' | 'central'
 export type PlanoOrganizacao = 'gratuito' | 'essencial' | 'profissional' | 'cooperativa' | 'agro' | 'impacto' | 'enterprise'
-/** Papel estrutural: super_admin (plataforma) ou membro (usuário de uma org). */
-export type RoleUsuario = 'super_admin' | 'membro' | 'parceiro'
+/** Papel estrutural do usuário na plataforma. */
+export type RoleUsuario = 'super_admin' | 'org_admin' | 'financeiro' | 'tecnico' | 'comercial' | 'conselho_fiscal' | 'cooperado' | 'parceiro'
 
 /** Tipo de vínculo da pessoa com a organização. */
 export type VinculoUsuario = 'cooperado' | 'funcionario' | 'diretoria' | 'externo'
