@@ -54,8 +54,6 @@ const formVazio = {
   chave_pix: '',
 }
 
-// ─── helpers de máscara ───────────────────────────────────────────────────────
-
 function mascararCPF(v: string) {
   return v.replace(/\D/g, '').slice(0, 11)
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -74,26 +72,27 @@ function isCPFInput(v: string) {
 }
 
 function formatarBuscaCPF(v: string) {
-  const digits = v.replace(/\D/g, '').slice(0, 11)
-  return mascararCPF(digits)
+  return mascararCPF(v.replace(/\D/g, '').slice(0, 11))
 }
 
 function exibirCPF(cpf: string | null) {
   if (!cpf) return '—'
   const d = cpf.replace(/\D/g, '')
-  if (d.length === 11) return mascararCPF(d)
-  return cpf
+  return d.length === 11 ? mascararCPF(d) : cpf
 }
 
-// ─── page ────────────────────────────────────────────────────────────────────
+function exibirTelefone(tel: string | null) {
+  if (!tel) return '—'
+  return mascararTelefone(tel)
+}
 
 export default function ProdutoresPage() {
   const router = useRouter()
   const [produtores, setProdutores] = useState<Produtor[]>([])
   const [cooperados, setCooperados] = useState<Cooperado[]>([])
-  const [abrirForm, setAbrirForm] = useState(false)
-  const [editando, setEditando] = useState<Produtor | null>(null)
+  const [perfilAberto, setPerfilAberto] = useState<Produtor | null>(null)
   const [form, setForm] = useState(formVazio)
+  const [novoForm, setNovoForm] = useState(false)
   const [busca, setBusca] = useState('')
   const [status, setStatus] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
@@ -112,19 +111,15 @@ export default function ProdutoresPage() {
 
   function handleBuscaChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value
-    if (isCPFInput(v)) {
-      setBusca(formatarBuscaCPF(v))
-    } else {
-      setBusca(v)
-    }
+    setBusca(isCPFInput(v) ? formatarBuscaCPF(v) : v)
   }
 
-  function abrirEdicao(p: Produtor) {
-    setEditando(p)
+  function abrirPerfil(p: Produtor) {
+    setPerfilAberto(p)
     setForm({
       nome: p.nome,
-      cpf: p.cpf ?? '',
-      telefone: p.telefone ?? '',
+      cpf: p.cpf ? mascararCPF(p.cpf) : '',
+      telefone: p.telefone ? mascararTelefone(p.telefone) : '',
       email: p.email ?? '',
       municipio: p.municipio ?? '',
       endereco: p.endereco ?? '',
@@ -140,7 +135,6 @@ export default function ProdutoresPage() {
       tipo_conta: p.tipo_conta ?? '',
       chave_pix: p.chave_pix ?? '',
     })
-    setAbrirForm(true)
   }
 
   async function handleSalvar() {
@@ -164,14 +158,14 @@ export default function ProdutoresPage() {
         tipo_conta: form.tipo_conta || undefined,
         chave_pix: form.chave_pix || undefined,
       }
-      if (editando) {
-        await editarProdutor(editando.id, payload)
+      if (perfilAberto) {
+        await editarProdutor(perfilAberto.id, payload)
       } else {
         await criarProdutor(payload)
       }
       setForm(formVazio)
-      setEditando(null)
-      setAbrirForm(false)
+      setPerfilAberto(null)
+      setNovoForm(false)
       await carregar()
       setStatus('sucesso')
       setTimeout(() => setStatus('idle'), 3000)
@@ -181,7 +175,6 @@ export default function ProdutoresPage() {
     }
   }
 
-  // Busca filtra por nome, CPF (com ou sem máscara) e município
   const buscaLimpa = busca.replace(/\D/g, '')
   const produtoresFiltrados = produtores.filter(p => {
     const cpfLimpo = (p.cpf ?? '').replace(/\D/g, '')
@@ -192,9 +185,16 @@ export default function ProdutoresPage() {
     )
   })
 
+  const modalAberto = perfilAberto !== null || novoForm
+
+  const inp: React.CSSProperties = {
+    padding: '8px 12px', border: '1px solid #e5e3dc',
+    borderRadius: '8px', fontSize: '14px', width: '100%',
+    boxSizing: 'border-box',
+  }
+
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      {/* Botão voltar */}
       <button
         onClick={() => router.push('/comercializacao')}
         style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', marginBottom: '20px', padding: 0 }}
@@ -205,7 +205,7 @@ export default function ProdutoresPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Produtores</h1>
         <button
-          onClick={() => { setEditando(null); setForm(formVazio); setAbrirForm(true) }}
+          onClick={() => { setPerfilAberto(null); setForm(formVazio); setNovoForm(true) }}
           style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
         >
           + Novo produtor
@@ -213,10 +213,9 @@ export default function ProdutoresPage() {
       </div>
 
       {status === 'sucesso' && (
-        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>Produtor salvo com sucesso.</div>
+        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>✓ Produtor salvo com sucesso.</div>
       )}
 
-      {/* Busca */}
       <div style={{ marginBottom: '16px' }}>
         <input
           placeholder="Buscar por nome, CPF ou município..."
@@ -226,7 +225,6 @@ export default function ProdutoresPage() {
         />
       </div>
 
-      {/* Tabela */}
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
@@ -234,20 +232,20 @@ export default function ProdutoresPage() {
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Nome</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Tipo</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Município</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>CPF</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Telefone</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Área cacau</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Certif.</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 16px' }}></th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {produtoresFiltrados.map(p => (
               <tr key={p.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 500 }}>
+                <td style={{ padding: '12px 16px' }}>
                   <button
                     onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontWeight: 500, fontSize: '14px', padding: 0, textAlign: 'left' }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a1a1a', fontWeight: 500, fontSize: '14px', padding: 0, textAlign: 'left' }}
                   >
                     {p.nome}
                   </button>
@@ -261,19 +259,11 @@ export default function ProdutoresPage() {
                     {p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{p.municipio ?? '—'}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
-                  {p.telefone ? mascararTelefone(p.telefone) : '—'}
-                </td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b', fontSize: '13px' }}>{p.municipio ?? '—'}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b', fontSize: '13px' }}>{exibirCPF(p.cpf)}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b', fontSize: '13px' }}>{exibirTelefone(p.telefone)}</td>
+                <td style={{ padding: '12px 16px', color: '#6b6b6b', fontSize: '13px' }}>
                   {p.area_cacau_ha ? `${p.area_cacau_ha} ha` : '—'}
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  {p.tem_certificacao ? (
-                    <span style={{ fontSize: '12px', color: '#166534' }}>✓ {p.tipo_certificacao ?? ''}</span>
-                  ) : (
-                    <span style={{ fontSize: '12px', color: '#9a9a9a' }}>—</span>
-                  )}
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{
@@ -284,19 +274,31 @@ export default function ProdutoresPage() {
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
-                    style={{ fontSize: '13px', color: '#6b6b6b', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Ver ficha
-                  </button>
-                  <button
-                    onClick={() => abrirEdicao(p)}
-                    style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Editar
-                  </button>
+                <td style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
+                      style={{
+                        fontSize: '12px', padding: '4px 12px',
+                        color: '#92400e', background: '#fef3c7',
+                        border: '1px solid #fde68a', borderRadius: '6px',
+                        cursor: 'pointer', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Ver ficha
+                    </button>
+                    <button
+                      onClick={() => abrirPerfil(p)}
+                      style={{
+                        fontSize: '12px', padding: '4px 12px',
+                        color: '#6b6b6b', background: '#f1f0eb',
+                        border: '1px solid #e5e3dc', borderRadius: '6px',
+                        cursor: 'pointer', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Ver perfil
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -311,8 +313,7 @@ export default function ProdutoresPage() {
         </table>
       </div>
 
-      {/* Modal formulário */}
-      {abrirForm && (
+      {modalAberto && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
@@ -320,157 +321,112 @@ export default function ProdutoresPage() {
         }}>
           <div style={{
             background: '#fff', borderRadius: '12px', padding: '28px',
-            width: '600px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto'
+            width: '620px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto'
           }}>
-            <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>
-              {editando ? 'Editar produtor' : 'Novo produtor'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '16px' }}>
+                  {perfilAberto ? perfilAberto.nome : 'Novo produtor'}
+                </div>
+                {perfilAberto && (
+                  <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
+                    {perfilAberto.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
+                    {perfilAberto.municipio ? ` · ${perfilAberto.municipio}` : ''}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => { setPerfilAberto(null); setNovoForm(false) }}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}
+              >
+                ×
+              </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-
-              {/* Nome */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome *</label>
-                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inp} />
               </div>
-
-              {/* Tipo */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
-                <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
+                <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))} style={inp}>
                   <option value="externo">Externo</option>
                   <option value="cooperado">Cooperado</option>
                 </select>
               </div>
-
-              {/* Cooperado vinculado */}
               {form.tipo === 'cooperado' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Cooperado vinculado</label>
-                  <select value={form.cooperado_id} onChange={e => setForm(f => ({ ...f, cooperado_id: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
+                  <select value={form.cooperado_id} onChange={e => setForm(f => ({ ...f, cooperado_id: e.target.value }))} style={inp}>
                     <option value="">Selecionar...</option>
                     {cooperados.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 </div>
               )}
-
-              {/* CPF com máscara */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
-                <input
-                  value={form.cpf}
-                  onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))}
-                  placeholder="000.000.000-00"
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                />
+                <input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))} placeholder="000.000.000-00" style={inp} />
               </div>
-
-              {/* Telefone com máscara */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
-                <input
-                  value={form.telefone}
-                  onChange={e => setForm(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))}
-                  placeholder="(73) 99999-0000"
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                />
+                <input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))} placeholder="(73) 99999-0000" style={inp} />
               </div>
-
-              {/* Email */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
-                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inp} />
               </div>
-
-              {/* Município */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
-                <input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} style={inp} />
               </div>
-
-              {/* Endereço */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
-                <input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} style={inp} />
               </div>
-
-              {/* Área total */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área total (ha)</label>
-                <input type="number" step="0.01" value={form.area_total_ha}
-                  onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input type="number" step="0.01" value={form.area_total_ha} onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))} style={inp} />
               </div>
-
-              {/* Área cacau */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área cacau (ha)</label>
-                <input type="number" step="0.01" value={form.area_cacau_ha}
-                  onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input type="number" step="0.01" value={form.area_cacau_ha} onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))} style={inp} />
               </div>
-
-              {/* Certificação */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Certificação</label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', padding: '8px 0' }}>
-                  <input type="checkbox" checked={form.tem_certificacao}
-                    onChange={e => setForm(f => ({ ...f, tem_certificacao: e.target.checked }))} />
+                  <input type="checkbox" checked={form.tem_certificacao} onChange={e => setForm(f => ({ ...f, tem_certificacao: e.target.checked }))} />
                   Possui certificação
                 </label>
               </div>
-
               {form.tem_certificacao && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de certificação</label>
-                  <input value={form.tipo_certificacao}
-                    onChange={e => setForm(f => ({ ...f, tipo_certificacao: e.target.value }))}
-                    placeholder="Ex: Orgânico, UTZ, Rainforest"
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                  <input value={form.tipo_certificacao} onChange={e => setForm(f => ({ ...f, tipo_certificacao: e.target.value }))} placeholder="Ex: Orgânico, UTZ, Rainforest" style={inp} />
                 </div>
               )}
-
-              {/* Dados bancários */}
               <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e3dc', paddingTop: '12px', marginTop: '4px' }}>
                 <span style={{ fontSize: '12px', color: '#6b6b6b', fontWeight: 500 }}>Dados para pagamento</span>
               </div>
-
-              {/* Chave pix */}
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
-                <input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))}
-                  placeholder="CPF, telefone, e-mail ou chave aleatória"
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))} placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
-                <input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))} style={inp} />
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
-                <input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))} style={inp} />
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
-                <input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                <input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))} style={inp} />
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de conta</label>
-                <select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
+                <select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))} style={inp}>
                   <option value="">Selecionar...</option>
                   <option value="corrente">Corrente</option>
                   <option value="poupanca">Poupança</option>
@@ -485,7 +441,7 @@ export default function ProdutoresPage() {
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
               <button
-                onClick={() => { setAbrirForm(false); setEditando(null) }}
+                onClick={() => { setPerfilAberto(null); setNovoForm(false) }}
                 style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
               >
                 Cancelar
