@@ -138,6 +138,7 @@ export default function CaixaPage() {
 
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [modalFechar, setModalFechar] = useState(false)
   const [aba, setAba] = useState<'buscar' | 'solicitacoes' | 'operacoes' | 'fechar'>('buscar')
   const [saldoInicial, setSaldoInicial] = useState('')
   const [abrindo, setAbrindo] = useState(false)
@@ -836,29 +837,113 @@ export default function CaixaPage() {
         </div>
       )}
 
-      {aba === 'fechar' && (
+ {aba === 'fechar' && (
+  <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px', maxWidth: '400px' }}>
+    <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Fechar caixa</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+        <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
+        <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+        <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
+        <span>R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+        <span style={{ color: '#6b6b6b' }}>Total Pix</span>
+        <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
+      </div>
+      <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+        <span style={{ color: '#6b6b6b' }}>Saldo esperado em caixa</span>
+        <span style={{ fontWeight: 500 }}>
+          R$ {(sessao.saldo_inicial_especie - (sessao.total_saidas_especie ?? 0)).toFixed(2)}
+        </span>
+      </div>
+    </div>
+    <button
+      onClick={() => setModalFechar(true)}
+      style={{ marginTop: '24px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+    >
+      Fechar caixa
+    </button>
+  </div>
+)}
+
+{/* Modal fechar caixa */}
+     {aba === 'fechar' && (
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px', maxWidth: '400px' }}>
           <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Fechar caixa</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}><span style={{ color: '#6b6b6b' }}>Saldo inicial</span><span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}><span style={{ color: '#6b6b6b' }}>Saídas espécie</span><span>R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}><span style={{ color: '#6b6b6b' }}>Total Pix</span><span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span></div>
-            <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo final em espécie (R$)</label>
-              <input type="number" step="0.01" placeholder="0,00" value={saldoFinal}
-                onChange={e => setSaldoFinal(e.target.value)} style={inputStyle} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
+              <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-              <input placeholder="Opcional" value={obsFechamento} onChange={e => setObsFechamento(e.target.value)} style={inputStyle} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
+              <span>R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
             </div>
-            <button onClick={handleFecharCaixa} disabled={fechando || !saldoFinal}
-              style={{ padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginTop: '8px' }}>
-              {fechando ? 'Fechando...' : 'Fechar caixa'}
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <span style={{ color: '#6b6b6b' }}>Total Pix</span>
+              <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
+            </div>
+            <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <span style={{ color: '#6b6b6b' }}>Saldo esperado em caixa</span>
+              <span style={{ fontWeight: 500 }}>
+                R$ {(sessao.saldo_inicial_especie - (sessao.total_saidas_especie ?? 0)).toFixed(2)}
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setModalFechar(true)}
+            style={{ marginTop: '24px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+          >
+            Fechar caixa
+          </button>
         </div>
       )}
+{modalFechar && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+    <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+      <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '20px' }}>Confirmar fechamento</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo final em espécie (R$) *</label>
+          <input
+            type="number" step="0.01" placeholder="0,00"
+            value={saldoFinal}
+            onChange={e => setSaldoFinal(e.target.value)}
+            autoFocus
+            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+          />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
+          <input
+            placeholder="Opcional"
+            value={obsFechamento}
+            onChange={e => setObsFechamento(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+          />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setModalFechar(false)}
+          style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleFecharCaixa}
+          disabled={fechando || !saldoFinal}
+          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+        >
+          {fechando ? 'Fechando...' : 'Confirmar'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }
