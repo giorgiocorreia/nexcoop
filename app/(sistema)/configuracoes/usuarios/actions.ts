@@ -138,7 +138,7 @@ export async function ativarConvite(
       nome_completo: authUser.user_metadata?.nome_completo ?? authUser.email ?? '',
       vinculo: authUser.user_metadata?.vinculo ?? null,
       funcoes: authUser.user_metadata?.funcoes ?? [],
-      role: 'membro',
+      role: authUser.user_metadata?.role ?? 'cooperado',
       ativo: true,
     }, { onConflict: 'id' })
 
