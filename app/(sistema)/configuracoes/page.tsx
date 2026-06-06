@@ -63,6 +63,7 @@ export default async function ConfiguracoesPage() {
       ])
 
       usuarios = (usersRes.data ?? []) as Usuario[]
+      console.log('[ConfiguracoesPage] usuarios encontrados:', usuarios.length, usuarios.map(u => u.email))
       funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
 
       const authUsers = authRes.data?.users ?? []
