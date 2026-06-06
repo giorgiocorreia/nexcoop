@@ -64,6 +64,7 @@ export default function CaixaPage() {
   const [resumoFechamento, setResumoFechamento] = useState<Sessao | null>(null)
 
   useEffect(() => { init() }, [])
+  useEffect(() => { if (aba === 'fechar') recarregarSessao() }, [aba])
 
   async function init() {
     setCarregando(true)
@@ -124,6 +125,7 @@ export default function CaixaPage() {
       })
       setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
       await recarregarConta()
+      await recarregarSessao()
       setStatusOp('sucesso')
       setTimeout(() => setStatusOp('idle'), 3000)
     } catch (e: any) {
@@ -151,6 +153,7 @@ export default function CaixaPage() {
       })
       setFormReceber(f => ({ ...f, quantidade: '', preco_kg: '' }))
       await recarregarConta()
+      await recarregarSessao()
       setStatusOp('sucesso')
       setTimeout(() => setStatusOp('idle'), 3000)
     } catch (e: any) {
@@ -171,11 +174,17 @@ export default function CaixaPage() {
       })
       setFormSaque(f => ({ ...f, valor: '' }))
       await recarregarConta()
+      await recarregarSessao()
       setStatusOp('sucesso')
       setTimeout(() => setStatusOp('idle'), 3000)
     } catch (e: any) {
       setErroMsg(e.message); setStatusOp('erro')
     }
+  }
+
+  async function recarregarSessao() {
+    const s = await getSessaoAberta()
+    setSessao(s)
   }
 
   async function recarregarConta() {
