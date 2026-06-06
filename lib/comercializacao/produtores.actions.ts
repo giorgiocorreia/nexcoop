@@ -14,14 +14,41 @@ export async function listarProdutores() {
     console.log('[listarProdutores] usuario:', { id: usuario.id, organizacao_id: orgId, role: usuario.role })
     if (!orgId) throw new Error('Usuário sem organização')
     const supabase = createAdminClient()
-    const { data, error } = await supabase
+
+    // Query 1: produtores sem join (PostgREST não reconhece a relação cooperados)
+    const { data: prods, error: eProd } = await supabase
       .from('produtores')
-      .select('*, cooperados(nome_completo)')
+      .select('*')
       .eq('organizacao_id', orgId)
       .order('nome')
-    console.log('[listarProdutores] resultado:', data?.length ?? 0, 'registros | erro:', error?.message ?? 'nenhum')
-    if (error) throw new Error(error.message)
-    return data as unknown as Array<{
+    console.log('[listarProdutores] produtores:', prods?.length ?? 0, '| erro:', eProd?.message ?? 'nenhum')
+    if (eProd) throw new Error(eProd.message)
+
+    // Query 2: cooperados dos ids presentes nos resultados
+    const cooperadoIds = (prods ?? [])
+      .map(p => (p as any).cooperado_id as string | null)
+      .filter((id): id is string => !!id)
+
+    const cooperadosMap: Record<string, { nome_completo: string }> = {}
+    if (cooperadoIds.length > 0) {
+      const { data: coops, error: eCoop } = await supabase
+        .from('cooperados')
+        .select('id, nome_completo')
+        .in('id', cooperadoIds)
+      console.log('[listarProdutores] cooperados encontrados:', coops?.length ?? 0, '| erro:', eCoop?.message ?? 'nenhum')
+      if (eCoop) throw new Error(eCoop.message)
+      for (const c of (coops ?? [])) {
+        cooperadosMap[(c as any).id] = { nome_completo: (c as any).nome_completo }
+      }
+    }
+
+    // Merge manual
+    return (prods ?? []).map(p => ({
+      ...(p as any),
+      cooperados: (p as any).cooperado_id
+        ? (cooperadosMap[(p as any).cooperado_id] ?? null)
+        : null,
+    })) as Array<{
       id: string; nome: string; cpf: string | null; telefone: string | null
       email: string | null; municipio: string | null; endereco: string | null
       tipo: 'externo' | 'cooperado'; cooperado_id: string | null
@@ -33,7 +60,7 @@ export async function listarProdutores() {
       cooperados: { nome_completo: string } | null
     }>
   } catch (e: any) {
-    console.error('[listarProdutores] FALHA na linha:', e?.stack ?? e?.message ?? e)
+    console.error('[listarProdutores] FALHA:', e?.stack ?? e?.message ?? e)
     throw e
   }
 }
