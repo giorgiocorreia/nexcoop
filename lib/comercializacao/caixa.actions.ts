@@ -20,6 +20,19 @@ export async function getSessaoAberta() {
 export async function abrirCaixa(saldo_inicial_especie: number) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
+
+  const { data: estoqueAtual } = await supabase
+    .from('estoque_fisico')
+    .select('produto_id, quantidade, produtos(nome, unidade)')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+
+  const snapshot = (estoqueAtual ?? []).map((e: any) => ({
+    produto_id: e.produto_id,
+    nome: e.produtos?.nome ?? '',
+    unidade: e.produtos?.unidade ?? 'kg',
+    quantidade: e.quantidade
+  }))
+
   const { error } = await supabase
     .from('sessoes_caixa')
     .insert({
@@ -27,6 +40,8 @@ export async function abrirCaixa(saldo_inicial_especie: number) {
       usuario_id: usuario.id,
       data: new Date().toISOString().split('T')[0],
       saldo_inicial_especie,
+      saldo_especie_calculado: saldo_inicial_especie,
+      snapshot_estoque: snapshot,
       status: 'aberta'
     })
   if (error) throw new Error(error.message)
@@ -340,4 +355,92 @@ export async function listarSolicitacoesPendentes() {
     .order('created_at', { ascending: true })
   if (error) throw new Error(error.message)
   return data
+}
+
+export async function listarAdminsDaOrg() {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nome_completo, email')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+    .contains('funcoes', ['admin'])
+    .eq('ativo', true)
+    .order('nome_completo')
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getAportesESangriasDaSessao(sessao_id: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('aportes_sangrias')
+    .select('*, autorizador:autorizado_por(nome_completo), executor:executado_por(nome_completo)')
+    .eq('sessao_caixa_id', sessao_id)
+    .order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function registrarAporteSangria(params: {
+  sessao_id: string
+  tipo: 'aporte' | 'sangria'
+  valor: number
+  admin_email: string
+  admin_senha: string
+  observacoes?: string
+}) {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabasePublic = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+  const { data: authData, error: authError } = await supabasePublic.auth.signInWithPassword({
+    email: params.admin_email,
+    password: params.admin_senha
+  })
+  if (authError || !authData.user) throw new Error('Credenciais inválidas.')
+
+  const { data: adminUser } = await supabase
+    .from('usuarios')
+    .select('id, funcoes, organizacao_id')
+    .eq('id', authData.user.id)
+    .single()
+
+  if (!adminUser) throw new Error('Usuário não encontrado.')
+  if (adminUser.organizacao_id !== usuario.organizacao_id) throw new Error('Admin de outra organização.')
+  if (!adminUser.funcoes?.includes('admin')) throw new Error('Usuário não tem permissão de admin.')
+
+  const { error: insertError } = await supabase
+    .from('aportes_sangrias')
+    .insert({
+      organizacao_id: usuario.organizacao_id as string,
+      sessao_caixa_id: params.sessao_id,
+      tipo: params.tipo,
+      valor: params.valor,
+      autorizado_por: adminUser.id,
+      executado_por: usuario.id,
+      observacoes: params.observacoes
+    })
+  if (insertError) throw new Error(insertError.message)
+
+  const { data: sessao } = await supabase
+    .from('sessoes_caixa')
+    .select('saldo_especie_calculado')
+    .eq('id', params.sessao_id)
+    .single()
+
+  if (sessao) {
+    const novoSaldo = params.tipo === 'aporte'
+      ? (sessao.saldo_especie_calculado ?? 0) + params.valor
+      : (sessao.saldo_especie_calculado ?? 0) - params.valor
+
+    await supabase
+      .from('sessoes_caixa')
+      .update({ saldo_especie_calculado: novoSaldo })
+      .eq('id', params.sessao_id)
+  }
 }
