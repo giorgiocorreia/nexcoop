@@ -31,6 +31,12 @@ export default async function ComercializacaoPage() {
       funcoes: ['admin', 'caixa_cacau'],
     },
     {
+      href: '/comercializacao/diario',
+      titulo: 'Diário de Caixa',
+      descricao: 'Histórico de sessões fechadas',
+      funcoes: ['admin', 'diario_caixa'],
+    },
+    {
       href: '/comercializacao/safras',
       titulo: 'Safras',
       descricao: 'Períodos de produção',
