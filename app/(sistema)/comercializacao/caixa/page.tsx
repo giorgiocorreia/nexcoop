@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
@@ -8,7 +8,8 @@ import {
   registrarEntrega, registrarEntregaComRateio,
   registrarConversaoESaque, registrarSaqueFinanceiro,
   listarSolicitacoesPendentes, getProdutorParaRateio,
-  getOperacoesHoje,
+  getOperacoesHoje, listarAdminsDaOrg,
+  registrarAporteSangria, getAportesESangriasDaSessao,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
@@ -22,6 +23,8 @@ type Movimentacao = { id: string; tipo: string; quantidade_produto: number | nul
 type Produto = { id: string; nome: string; unidade: string }
 type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; forma_pagamento: string; chave_pix: string | null; produtores: { nome: string; telefone: string | null }; produtos: { nome: string; unidade: string }; cotacoes: { preco_cooperado: number } }
 type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
+type AdminOrg = { id: string; nome_completo: string; email: string }
+type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
 
 type ParticipanteModal = {
   produtor_id: string
@@ -167,9 +170,15 @@ export default function CaixaPage() {
   const [resultadosBuscaRateio, setResultadosBuscaRateio] = useState<ProdutorBusca[]>([])
   const [salvandoRateio, setSalvandoRateio] = useState(false)
   const [erroRateio, setErroRateio] = useState('')
+  const [modalAporte, setModalAporte] = useState(false)
+  const [admins, setAdmins] = useState<AdminOrg[]>([])
+  const [formAporte, setFormAporte] = useState({ tipo: 'aporte' as 'aporte' | 'sangria', valor: '', admin_id: '', admin_senha: '', observacoes: '' })
+  const [salvandoAporte, setSalvandoAporte] = useState(false)
+  const [erroAporte, setErroAporte] = useState('')
+  const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
 
   useEffect(() => { init() }, [])
-  useEffect(() => { if (aba === 'fechar') recarregarSessao() }, [aba])
+  useEffect(() => { if (aba === 'fechar') { recarregarSessao(); carregarAportesDia() } }, [aba])
   useEffect(() => { if (aba === 'operacoes' && sessao) carregarOperacoesDia() }, [aba, sessao])
   useEffect(() => {
     const produtorId = searchParams.get('produtor_id')
@@ -220,6 +229,45 @@ export default function CaixaPage() {
       setOperacoesDia((ops ?? []) as unknown as OperacaoDia[])
     } finally {
       setCarregandoOps(false)
+    }
+  }
+
+  async function carregarAportesDia() {
+    if (!sessao) return
+    const dados = await getAportesESangriasDaSessao(sessao.id)
+    setAportesDia((dados ?? []) as unknown as AporteSangria[])
+  }
+
+  async function abrirModalAporte() {
+    const lista = await listarAdminsDaOrg()
+    setAdmins((lista ?? []) as unknown as AdminOrg[])
+    setFormAporte({ tipo: 'aporte', valor: '', admin_id: '', admin_senha: '', observacoes: '' })
+    setErroAporte('')
+    setModalAporte(true)
+  }
+
+  async function handleAporteSangria() {
+    if (!sessao || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha) return
+    const admin = admins.find(a => a.id === formAporte.admin_id)
+    if (!admin) return
+    setSalvandoAporte(true)
+    setErroAporte('')
+    try {
+      await registrarAporteSangria({
+        sessao_id: sessao.id,
+        tipo: formAporte.tipo,
+        valor: parseFloat(formAporte.valor),
+        admin_email: admin.email,
+        admin_senha: formAporte.admin_senha,
+        observacoes: formAporte.observacoes || undefined
+      })
+      setModalAporte(false)
+      await recarregarSessao()
+      await carregarAportesDia()
+    } catch (e: any) {
+      setErroAporte(e.message)
+    } finally {
+      setSalvandoAporte(false)
     }
   }
 
@@ -446,6 +494,71 @@ export default function CaixaPage() {
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
 
+      {/* MODAL APORTE/SANGRIA */}
+      {modalAporte && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontWeight: 600, fontSize: '16px' }}>Aporte / Sangria</div>
+              <button onClick={() => setModalAporte(false)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              {(['aporte', 'sangria'] as const).map(t => (
+                <button key={t} onClick={() => setFormAporte(f => ({ ...f, tipo: t }))} style={{
+                  flex: 1, padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+                  border: `2px solid ${formAporte.tipo === t ? (t === 'aporte' ? '#166534' : '#991b1b') : '#e5e3dc'}`,
+                  background: formAporte.tipo === t ? (t === 'aporte' ? '#dcfce7' : '#fee2e2') : '#fff',
+                  color: formAporte.tipo === t ? (t === 'aporte' ? '#166534' : '#991b1b') : '#6b6b6b',
+                }}>
+                  {t === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Valor (R$) *</label>
+                <input type="number" step="0.01" placeholder="0,00" value={formAporte.valor}
+                  onChange={e => setFormAporte(f => ({ ...f, valor: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Admin autorizador *</label>
+                <select value={formAporte.admin_id} onChange={e => setFormAporte(f => ({ ...f, admin_id: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
+                  <option value="">Selecionar admin...</option>
+                  {admins.map(a => <option key={a.id} value={a.id}>{a.nome_completo}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Senha do admin *</label>
+                <input type="password" placeholder="••••••••" value={formAporte.admin_senha}
+                  onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
+                <input placeholder="Opcional" value={formAporte.observacoes}
+                  onChange={e => setFormAporte(f => ({ ...f, observacoes: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+            </div>
+            {erroAporte && (
+              <div style={{ marginTop: '12px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#991b1b' }}>
+                {erroAporte}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button onClick={() => setModalAporte(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleAporteSangria} disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha}
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                {salvandoAporte ? 'Processando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RATEIO */}
       {modalRateio && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
           <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
@@ -515,6 +628,7 @@ export default function CaixaPage() {
         </div>
       )}
 
+      {/* CABEÇALHO */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button onClick={() => router.push('/comercializacao')}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', padding: 0 }}>
@@ -522,11 +636,16 @@ export default function CaixaPage() {
         </button>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Caixa</h1>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={abrirModalAporte}
+            style={{ padding: '6px 14px', background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', color: '#6b6b6b' }}>
+            ⇅ Aporte / Sangria
+          </button>
           <span style={{ fontSize: '13px', color: '#166534', background: '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>● Aberto</span>
           <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Saldo inicial: R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
         </div>
       </div>
 
+      {/* ABAS */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid #e5e3dc' }}>
         {(['buscar', 'solicitacoes', 'operacoes', 'fechar'] as const).map(a => (
           <button key={a} onClick={() => setAba(a)} style={{
@@ -539,6 +658,7 @@ export default function CaixaPage() {
         ))}
       </div>
 
+      {/* ABA BUSCAR */}
       {aba === 'buscar' && (
         <div>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
@@ -759,6 +879,7 @@ export default function CaixaPage() {
         </div>
       )}
 
+      {/* ABA SOLICITAÇÕES */}
       {aba === 'solicitacoes' && (
         <div>
           {solicitacoes.length === 0 ? (
@@ -786,6 +907,7 @@ export default function CaixaPage() {
         </div>
       )}
 
+      {/* ABA OPERAÇÕES DO DIA */}
       {aba === 'operacoes' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -836,81 +958,113 @@ export default function CaixaPage() {
           </div>
         </div>
       )}
-     {/* Modal fechar caixa */}
-     {aba === 'fechar' && (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '28px', maxWidth: '400px' }}>
-          <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Fechar caixa</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
-              <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
-              <span>R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ color: '#6b6b6b' }}>Total Pix</span>
-              <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
-            </div>
-            <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ color: '#6b6b6b' }}>Saldo esperado em caixa</span>
-              <span style={{ fontWeight: 500 }}>
-                R$ {(sessao.saldo_inicial_especie - (sessao.total_saidas_especie ?? 0)).toFixed(2)}
-              </span>
+
+      {/* ABA FECHAR CAIXA */}
+      {aba === 'fechar' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '480px' }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '24px' }}>
+            <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '16px' }}>Resumo do dia</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b6b6b' }}>Saldo inicial espécie</span>
+                <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
+              </div>
+              {aportesDia.filter(a => a.tipo === 'aporte').length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534' }}>
+                  <span>Aportes ({aportesDia.filter(a => a.tipo === 'aporte').length})</span>
+                  <span>+ R$ {aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                </div>
+              )}
+              {aportesDia.filter(a => a.tipo === 'sangria').length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#991b1b' }}>
+                  <span>Sangrias ({aportesDia.filter(a => a.tipo === 'sangria').length})</span>
+                  <span>− R$ {aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b6b6b' }}>Saídas espécie (pagamentos)</span>
+                <span>− R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b6b6b' }}>Total Pix</span>
+                <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
+              </div>
+              <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                <span>Saldo esperado em caixa</span>
+                <span style={{ color: '#92400e' }}>
+                  R$ {(
+                    sessao.saldo_inicial_especie +
+                    aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
+                    aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
+                    (sessao.total_saidas_especie ?? 0)
+                  ).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
-          <button
-            onClick={() => setModalFechar(true)}
-            style={{ marginTop: '24px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-          >
+
+          {aportesDia.length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e3dc', fontSize: '13px', fontWeight: 500 }}>Aportes e sangrias do dia</div>
+              {aportesDia.map(a => (
+                <div key={a.id} style={{ padding: '12px 16px', borderBottom: '1px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                  <div>
+                    <div style={{ fontWeight: 500, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
+                      {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
+                      {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {a.autorizador && ` · Auth: ${(a.autorizador as any).nome_completo}`}
+                    </div>
+                    {a.observacoes && <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '2px' }}>{a.observacoes}</div>}
+                  </div>
+                  <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
+                    {a.tipo === 'aporte' ? '+' : '−'} R$ {a.valor.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button onClick={() => setModalFechar(true)}
+            style={{ width: '100%', padding: '12px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
             Fechar caixa
           </button>
         </div>
       )}
-{modalFechar && (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-    <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-      <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '20px' }}>Confirmar fechamento</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo final em espécie (R$) *</label>
-          <input
-            type="number" step="0.01" placeholder="0,00"
-            value={saldoFinal}
-            onChange={e => setSaldoFinal(e.target.value)}
-            autoFocus
-            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-          />
+
+      {/* MODAL FECHAR CAIXA */}
+      {modalFechar && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '20px' }}>Confirmar fechamento</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo final em espécie (R$) *</label>
+                <input type="number" step="0.01" placeholder="0,00" value={saldoFinal}
+                  onChange={e => setSaldoFinal(e.target.value)} autoFocus
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
+                <input placeholder="Opcional" value={obsFechamento}
+                  onChange={e => setObsFechamento(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setModalFechar(false)}
+                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={handleFecharCaixa} disabled={fechando || !saldoFinal}
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                {fechando ? 'Fechando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-          <input
-            placeholder="Opcional"
-            value={obsFechamento}
-            onChange={e => setObsFechamento(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-          />
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-        <button
-          onClick={() => setModalFechar(false)}
-          style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleFecharCaixa}
-          disabled={fechando || !saldoFinal}
-          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-        >
-          {fechando ? 'Fechando...' : 'Confirmar'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   )
 }
