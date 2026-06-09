@@ -430,10 +430,20 @@ export default function CaixaPage() {
   }
 
   async function handleFecharCaixa() {
-    if (!sessao || !saldoFinal) return
+    if (!sessao) return
     setFechando(true)
-    try { await fecharCaixa(sessao.id, parseFloat(saldoFinal), obsFechamento); setResumoFechamento(sessao); setSessao(null) }
-    finally { setFechando(false) }
+    const saldoCalculado = (
+      sessao.saldo_inicial_especie +
+      aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
+      aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
+      (sessao.total_saidas_especie ?? 0)
+    )
+    const saldoParaSalvar = saldoFinal ? parseFloat(saldoFinal) : saldoCalculado
+    try {
+      await fecharCaixa(sessao.id, saldoParaSalvar, obsFechamento)
+      setResumoFechamento(sessao)
+      setSessao(null)
+    } finally { setFechando(false) }
   }
 
   async function carregarCotacao(produto_id: string) {
@@ -441,6 +451,13 @@ export default function CaixaPage() {
     const cot = await getCotacaoHoje(produto_id)
     if (cot) setFormReceber(f => ({ ...f, preco_kg: (cot as any).preco_cooperado.toString() }))
   }
+
+  const saldoEsperado = sessao ? (
+    sessao.saldo_inicial_especie +
+    aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
+    aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
+    (sessao.total_saidas_especie ?? 0)
+  ) : 0
 
   const inputStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff' }
 
@@ -456,7 +473,8 @@ export default function CaixaPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saídas espécie</span><span>R$ {(resumoFechamento.total_saidas_especie ?? 0).toFixed(2)}</span></div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Total Pix</span><span>R$ {(resumoFechamento.total_pix ?? 0).toFixed(2)}</span></div>
           <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: 500 }}>
-            <span>Saldo final espécie</span><span>R$ {parseFloat(saldoFinal).toFixed(2)}</span>
+            <span>Saldo final espécie</span>
+            <span>R$ {saldoFinal ? parseFloat(saldoFinal).toFixed(2) : saldoEsperado.toFixed(2)}</span>
           </div>
         </div>
         <button onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
@@ -991,14 +1009,7 @@ export default function CaixaPage() {
               </div>
               <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
                 <span>Saldo esperado em caixa</span>
-                <span style={{ color: '#92400e' }}>
-                  R$ {(
-                    sessao.saldo_inicial_especie +
-                    aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
-                    aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
-                    (sessao.total_saidas_especie ?? 0)
-                  ).toFixed(2)}
-                </span>
+                <span style={{ color: '#92400e' }}>R$ {saldoEsperado.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -1036,14 +1047,27 @@ export default function CaixaPage() {
       {/* MODAL FECHAR CAIXA */}
       {modalFechar && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
             <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '20px' }}>Confirmar fechamento</div>
+
+            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '4px' }}>Saldo esperado em caixa</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: '#92400e' }}>R$ {saldoEsperado.toFixed(2)}</div>
+              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>calculado automaticamente</div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo final em espécie (R$) *</label>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo físico contado (opcional — para conferência)</label>
                 <input type="number" step="0.01" placeholder="0,00" value={saldoFinal}
                   onChange={e => setSaldoFinal(e.target.value)} autoFocus
                   style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                {saldoFinal && (() => {
+                  const diferenca = parseFloat(saldoFinal) - saldoEsperado
+                  const cor = Math.abs(diferenca) < 0.01 ? '#166534' : diferenca > 0 ? '#166534' : '#991b1b'
+                  const label = Math.abs(diferenca) < 0.01 ? '✓ Confere' : diferenca > 0 ? `Sobra R$ ${diferenca.toFixed(2)}` : `Falta R$ ${Math.abs(diferenca).toFixed(2)}`
+                  return <div style={{ fontSize: '13px', color: cor, fontWeight: 500, marginTop: '4px' }}>{label}</div>
+                })()}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
@@ -1052,14 +1076,15 @@ export default function CaixaPage() {
                   style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
               </div>
             </div>
+
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModalFechar(false)}
                 style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button onClick={handleFecharCaixa} disabled={fechando || !saldoFinal}
+              <button onClick={handleFecharCaixa} disabled={fechando}
                 style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                {fechando ? 'Fechando...' : 'Confirmar'}
+                {fechando ? 'Fechando...' : 'Confirmar fechamento'}
               </button>
             </div>
           </div>
