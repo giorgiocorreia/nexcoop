@@ -748,9 +748,11 @@ export interface SessaoCaixa {
   hora_fechamento:        string | null
   saldo_inicial_especie:  number
   saldo_final_especie:    number | null
+  saldo_especie_calculado: number
   total_entradas_especie: number
   total_saidas_especie:   number
   total_pix:              number
+  snapshot_estoque:       Json
   status:                 StatusSessaoCaixa
   observacoes_fechamento: string | null
   created_at:             string
@@ -906,6 +908,18 @@ export interface DistribuicaoResultado {
   created_at:       string
 }
 
+export interface AporteSangria {
+  id:               string
+  organizacao_id:   string
+  sessao_caixa_id:  string
+  tipo:             'aporte' | 'sangria'
+  valor:            number
+  autorizado_por:   string
+  executado_por:    string
+  observacoes:      string | null
+  created_at:       string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -1010,6 +1024,8 @@ export type Database = {
       distribuicao_resultado:      TableDef<DistribuicaoResultado>
       // ── Comercialização (027) ──────────────────────────────────────────────
       rateio_entrega:              TableDef<RateioEntrega>
+      // ── Tesouraria (028) ──────────────────────────────────────────────────
+      aportes_sangrias:            TableDef<AporteSangria>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
