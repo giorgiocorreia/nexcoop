@@ -141,11 +141,13 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
   console.log('[comprovante] nota data:', JSON.stringify(nota))
   if (error || !nota) throw new Error('Nota não encontrada: ' + JSON.stringify(error))
 
-  const { data: org } = await adminClient
+  const { data: org, error: orgErr } = await adminClient
     .from('organizacoes')
-    .select('nome, cnpj, endereco, municipio')
+    .select('*')
     .eq('id', nota.organizacao_id)
     .single()
+  console.log('[comprovante] orgErr:', JSON.stringify(orgErr))
+  console.log('[comprovante] org fields:', org ? Object.keys(org) : null)
 
   console.log('[comprovante] org:', JSON.stringify(org))
   const { data: operador } = nota.emitida_por
