@@ -137,8 +137,9 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota_id)
     .single()
 
-  console.log('[comprovante] nota:', JSON.stringify(nota))
-  if (error || !nota) throw new Error('Nota não encontrada')
+  console.log('[comprovante] nota error:', JSON.stringify(error))
+  console.log('[comprovante] nota data:', JSON.stringify(nota))
+  if (error || !nota) throw new Error('Nota não encontrada: ' + JSON.stringify(error))
 
   const { data: org } = await adminClient
     .from('organizacoes')
