@@ -76,8 +76,6 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
     .eq('id', movimentacao_id)
     .single()
 
-  console.log('[emitirComprovante] movErr:', JSON.stringify(movErr))
-  console.log('[emitirComprovante] mov:', JSON.stringify(mov))
   if (movErr || !mov) throw new Error('Movimentação não encontrada')
 
   const org_id = (mov as any).sessoes_caixa.organizacao_id
@@ -137,19 +135,13 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota_id)
     .single()
 
-  console.log('[comprovante] nota error:', JSON.stringify(error))
-  console.log('[comprovante] nota data:', JSON.stringify(nota))
-  if (error || !nota) throw new Error('Nota não encontrada: ' + JSON.stringify(error))
+  if (error || !nota) throw new Error('Nota não encontrada')
 
-  const { data: org, error: orgErr } = await adminClient
+  const { data: org } = await adminClient
     .from('organizacoes')
-    .select('*')
+    .select('nome, cnpj, endereco, municipio')
     .eq('id', nota.organizacao_id)
     .single()
-  console.log('[comprovante] orgErr:', JSON.stringify(orgErr))
-  console.log('[comprovante] org fields:', org ? Object.keys(org) : null)
-
-  console.log('[comprovante] org:', JSON.stringify(org))
   const { data: operador } = nota.emitida_por
     ? await adminClient.from('usuarios').select('nome_completo').eq('id', nota.emitida_por).maybeSingle()
     : { data: null }
@@ -169,7 +161,6 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota.movimentacao_id)
     .single()
 
-  console.log('[comprovante] mov:', JSON.stringify(mov))
   const { data: rateioRows } = await adminClient
     .from('rateio_entrega')
     .select(`
