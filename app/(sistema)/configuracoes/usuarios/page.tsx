@@ -59,22 +59,10 @@ export default async function UsuariosPage() {
     usuarios = (usersRes.data ?? []) as Usuario[]
     funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
 
+    // Pendentes: convidados desta org que ainda não confirmaram e-mail
+    // e que já têm linha em usuarios (ativo: false, sem email_confirmed_at)
     const authUsers = authRes.data?.users ?? []
     const usuariosIds = new Set(usuarios.map(u => u.id))
-
-    console.log('[DEBUG pendentes] total authUsers:', authUsers.length)
-    console.log('[DEBUG pendentes] orgId:', orgId)
-    authUsers.forEach(u => {
-      if (u.invited_at) {
-        console.log('[DEBUG pendentes] convidado:', u.email, {
-          invited_at: u.invited_at,
-          email_confirmed_at: u.email_confirmed_at,
-          inUsuarios: usuariosIds.has(u.id),
-          org_metadata: u.user_metadata?.organizacao_id,
-          org_match: u.user_metadata?.organizacao_id === orgId,
-        })
-      }
-    })
 
     pendentes = authUsers
       .filter(u =>
@@ -91,8 +79,6 @@ export default async function UsuariosPage() {
         vinculo: u.user_metadata?.vinculo ?? null,
         invited_at: u.invited_at!,
       }))
-
-    console.log('[DEBUG pendentes] resultado final:', pendentes.length)
   }
 
   return (

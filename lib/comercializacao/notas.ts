@@ -57,7 +57,7 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
     return { nota_id: notaExistente.id, numero: notaExistente.numero_sequencial }
   }
 
-  const { data: mov, error: movErr } = await supabase
+  const { data: mov, error: movErr } = await adminClient
     .from('movimentacoes_conta')
     .select(`
       id,
