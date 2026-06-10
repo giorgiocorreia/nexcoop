@@ -33,7 +33,12 @@ export async function GET(
   try {
     const { id } = await params
     console.log('[comprovante] buscando nota_id:', id)
+    console.log('[comprovante] chamando buscarDadosComprovante:', id)
     const dados = await buscarDadosComprovante(id)
+    console.log('[comprovante] dados.organizacao:', JSON.stringify(dados.organizacao))
+    console.log('[comprovante] dados.produtor:', JSON.stringify(dados.produtor))
+    console.log('[comprovante] dados.produto:', JSON.stringify(dados.produto))
+    console.log('[comprovante] dados.operador:', JSON.stringify(dados.operador))
 
     const pdfDoc = await PDFDocument.create()
     const page = pdfDoc.addPage([595, 842]) // A4
