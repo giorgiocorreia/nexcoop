@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
@@ -15,6 +15,7 @@ import {
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
+import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -178,6 +179,25 @@ export default function CaixaPage() {
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
   const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
+
+  const { baixarPdf } = usePdfFechamento()
+
+  const movimentacaoPorProduto = useMemo(() => {
+    const map = new Map<string, { totalKg: number; produtores: Set<string> }>()
+    for (const op of operacoesDia) {
+      if (op.tipo !== 'entrega') continue
+      const key = op.produtos?.nome ?? 'Desconhecido'
+      if (!map.has(key)) map.set(key, { totalKg: 0, produtores: new Set() })
+      const entry = map.get(key)!
+      entry.totalKg += op.quantidade_produto ?? 0
+      if (op.contas_produtor?.produtor_id) entry.produtores.add(op.contas_produtor.produtor_id)
+    }
+    return Array.from(map.entries()).map(([produto, v]) => ({
+      produto,
+      totalKg: v.totalKg,
+      nProdutores: v.produtores.size,
+    }))
+  }, [operacoesDia])
 
   useEffect(() => { init() }, [])
   useEffect(() => { if (aba === 'fechar') { recarregarSessao(); carregarAportesDia() } }, [aba])
@@ -480,8 +500,52 @@ export default function CaixaPage() {
             <span>R$ {saldoFinal ? parseFloat(saldoFinal).toFixed(2) : saldoEsperado.toFixed(2)}</span>
           </div>
         </div>
+        <button
+          onClick={async () => {
+            const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
+            const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
+            const saldoEsp = resumoFechamento.saldo_inicial_especie + totalAp - totalSang - (resumoFechamento.total_saidas_especie ?? 0)
+            const saldoCont = saldoFinal ? parseFloat(saldoFinal) : saldoEsp
+            await baixarPdf({
+              orgNome: '',
+              orgCnpj: '',
+              operadorNome: '',
+              dataAbertura: resumoFechamento.data,
+              dataFechamento: new Date().toISOString(),
+              saldoInicial: resumoFechamento.saldo_inicial_especie,
+              totalAportes: totalAp,
+              totalSangrias: totalSang,
+              totalSaquesEspecie: resumoFechamento.total_saidas_especie ?? 0,
+              totalPix: resumoFechamento.total_pix ?? 0,
+              saldoEsperado: saldoEsp,
+              saldoContado: saldoCont,
+              diferenca: saldoCont - saldoEsp,
+              aportesSangrias: aportesDia.map(a => ({
+                tipo: a.tipo as 'aporte' | 'sangria',
+                valor: a.valor,
+                motivo: a.observacoes ?? '',
+                autorizadorNome: a.autorizador?.nome_completo ?? 'Sistema',
+                horario: new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              })),
+              operacoes: operacoesDia.map(op => ({
+                horario: new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                produtor: op.contas_produtor?.produtores?.nome ?? '',
+                produto: op.produtos?.nome ?? '',
+                kg: op.quantidade_produto ?? 0,
+                valorEspecie: op.forma_pagamento === 'especie' ? Math.abs(op.valor_financeiro ?? 0) : 0,
+                valorPix: op.forma_pagamento === 'pix' ? Math.abs(op.valor_financeiro ?? 0) : 0,
+                total: Math.abs(op.valor_financeiro ?? 0),
+              })),
+              movimentacaoProdutos: movimentacaoPorProduto,
+              observacoes: obsFechamento || undefined,
+            })
+          }}
+          style={{ marginTop: '16px', width: '100%', padding: '10px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          Baixar PDF do Fechamento
+        </button>
         <button onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
-          style={{ marginTop: '24px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+          style={{ marginTop: '8px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
           Novo dia
         </button>
       </div>
