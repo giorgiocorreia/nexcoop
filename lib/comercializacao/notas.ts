@@ -78,6 +78,8 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
     .eq('id', movimentacao_id)
     .single()
 
+  console.log('[emitirComprovante] movErr:', JSON.stringify(movErr))
+  console.log('[emitirComprovante] mov:', JSON.stringify(mov))
   if (movErr || !mov) throw new Error('Movimentação não encontrada')
 
   const org_id = (mov as any).sessoes_caixa.organizacao_id
