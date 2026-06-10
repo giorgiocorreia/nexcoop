@@ -16,6 +16,7 @@ import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
+import { createClient } from '@/lib/supabase/client'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -179,6 +180,9 @@ export default function CaixaPage() {
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
   const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
+  const [orgNome, setOrgNome] = useState('')
+  const [orgCnpj, setOrgCnpj] = useState('')
+  const [operadorNome, setOperadorNome] = useState('')
 
   const { baixarPdf } = usePdfFechamento()
 
@@ -231,7 +235,12 @@ export default function CaixaPage() {
 
   async function init() {
     setCarregando(true)
-    const [s, p] = await Promise.all([getSessaoAberta(), listarProdutos()])
+    const supabase = createClient()
+    const [s, p, { data: { user } }] = await Promise.all([
+      getSessaoAberta(),
+      listarProdutos(),
+      supabase.auth.getUser(),
+    ])
     setSessao(s)
     const ativos = (p as Produto[]).filter((pr) => (pr as any).ativo !== false)
     setProdutos(ativos)
@@ -239,6 +248,25 @@ export default function CaixaPage() {
     if (s) {
       const sols = await listarSolicitacoesPendentes()
       setSolicitacoes((sols ?? []) as unknown as Solicitacao[])
+    }
+    if (user) {
+      const { data: usuarioData } = await supabase
+        .from('usuarios')
+        .select('nome_completo, organizacao_id')
+        .eq('id', user.id)
+        .single()
+      if (usuarioData) {
+        setOperadorNome((usuarioData as any).nome_completo ?? '')
+        const { data: orgData } = await supabase
+          .from('organizacoes')
+          .select('nome, cnpj')
+          .eq('id', (usuarioData as any).organizacao_id)
+          .single()
+        if (orgData) {
+          setOrgNome((orgData as any).nome ?? '')
+          setOrgCnpj((orgData as any).cnpj ?? '')
+        }
+      }
     }
     setCarregando(false)
   }
@@ -455,17 +483,19 @@ export default function CaixaPage() {
   async function handleFecharCaixa() {
     if (!sessao) return
     setFechando(true)
-    const saldoCalculado = (
-      sessao.saldo_inicial_especie +
-      aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
-      aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
-      (sessao.total_saidas_especie ?? 0)
-    )
+    const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
+    const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
+    const saldoCalculado = sessao.saldo_inicial_especie + totalAp - totalSang - (sessao.total_saidas_especie ?? 0)
     const saldoParaSalvar = saldoFinal ? parseFloat(saldoFinal) : saldoCalculado
     try {
       await fecharCaixa(sessao.id, saldoParaSalvar, obsFechamento)
+      if (operacoesDia.length === 0) {
+        const ops = await getOperacoesHoje(sessao.id)
+        setOperacoesDia((ops ?? []) as unknown as OperacaoDia[])
+      }
       setResumoFechamento(sessao)
       setSessao(null)
+      setModalFechar(false)
     } finally { setFechando(false) }
   }
 
@@ -507,9 +537,9 @@ export default function CaixaPage() {
             const saldoEsp = resumoFechamento.saldo_inicial_especie + totalAp - totalSang - (resumoFechamento.total_saidas_especie ?? 0)
             const saldoCont = saldoFinal ? parseFloat(saldoFinal) : saldoEsp
             await baixarPdf({
-              orgNome: '',
-              orgCnpj: '',
-              operadorNome: '',
+              orgNome: orgNome,
+              orgCnpj: orgCnpj,
+              operadorNome: operadorNome,
               dataAbertura: resumoFechamento.data,
               dataFechamento: new Date().toISOString(),
               saldoInicial: resumoFechamento.saldo_inicial_especie,
