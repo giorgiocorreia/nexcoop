@@ -32,6 +32,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    console.log('[comprovante] buscando nota_id:', id)
     const dados = await buscarDadosComprovante(id)
 
     const pdfDoc = await PDFDocument.create()

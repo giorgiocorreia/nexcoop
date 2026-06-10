@@ -137,6 +137,7 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota_id)
     .single()
 
+  console.log('[comprovante] nota:', JSON.stringify(nota))
   if (error || !nota) throw new Error('Nota não encontrada')
 
   const { data: org } = await adminClient
@@ -145,6 +146,7 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota.organizacao_id)
     .single()
 
+  console.log('[comprovante] org:', JSON.stringify(org))
   const { data: operador } = nota.emitida_por
     ? await adminClient.from('usuarios').select('nome_completo').eq('id', nota.emitida_por).maybeSingle()
     : { data: null }
@@ -164,6 +166,7 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .eq('id', nota.movimentacao_id)
     .single()
 
+  console.log('[comprovante] mov:', JSON.stringify(mov))
   const { data: rateioRows } = await adminClient
     .from('rateio_entrega')
     .select(`
