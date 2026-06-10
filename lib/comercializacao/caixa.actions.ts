@@ -158,7 +158,7 @@ export async function registrarEntrega(params: {
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
-  const { error: e1 } = await supabase
+  const { data: mov, error: e1 } = await supabase
     .from('movimentacoes_conta')
     .insert({
       organizacao_id: usuario.organizacao_id as string,
@@ -170,6 +170,8 @@ export async function registrarEntrega(params: {
       quantidade_produto: params.quantidade_produto,
       observacoes: params.observacoes
     })
+    .select('id')
+    .single()
   if (e1) throw new Error(e1.message)
   const { error: e2 } = await supabase
     .from('movimentacoes_estoque_fisico')
@@ -182,6 +184,7 @@ export async function registrarEntrega(params: {
       referencia_tipo: 'entrega_caixa'
     })
   if (e2) throw new Error(e2.message)
+  return { id: mov!.id }
 }
 
 export type ParticipanteRateio = {

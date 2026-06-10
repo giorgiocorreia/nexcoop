@@ -908,6 +908,21 @@ export interface DistribuicaoResultado {
   created_at:       string
 }
 
+export interface NotaEntrega {
+  id:                    string
+  organizacao_id:        string
+  movimentacao_id:       string
+  numero_sequencial:     number
+  status:                'rascunho' | 'emitida' | 'cancelada'
+  snapshot:              Record<string, unknown>
+  emitida_por:           string | null
+  emitida_em:            string | null
+  cancelada_em:          string | null
+  cancelada_por:         string | null
+  motivo_cancelamento:   string | null
+  created_at:            string | null
+}
+
 export interface AporteSangria {
   id:               string
   organizacao_id:   string
@@ -1024,6 +1039,8 @@ export type Database = {
       distribuicao_resultado:      TableDef<DistribuicaoResultado>
       // ── Comercialização (027) ──────────────────────────────────────────────
       rateio_entrega:              TableDef<RateioEntrega>
+      // ── Comercialização (029) ──────────────────────────────────────────────
+      notas_entrega:               TableDef<NotaEntrega>
       // ── Tesouraria (028) ──────────────────────────────────────────────────
       aportes_sangrias:            TableDef<AporteSangria>
     }

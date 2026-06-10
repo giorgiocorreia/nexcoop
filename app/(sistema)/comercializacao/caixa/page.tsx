@@ -14,6 +14,7 @@ import {
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
+import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -176,6 +177,7 @@ export default function CaixaPage() {
   const [salvandoAporte, setSalvandoAporte] = useState(false)
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
+  const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
 
   useEffect(() => { init() }, [])
   useEffect(() => { if (aba === 'fechar') { recarregarSessao(); carregarAportesDia() } }, [aba])
@@ -325,14 +327,15 @@ export default function CaixaPage() {
     if (!sessao || !conta || !formEntrega.produto_id || !formEntrega.quantidade) return
     setStatusOp('salvando')
     try {
-      await registrarEntrega({
+      const result = await registrarEntrega({
         sessao_id: sessao.id, produtor_id: produtorSelecionado!.id,
         conta_id: conta.id, produto_id: formEntrega.produto_id,
         quantidade_produto: parseFloat(formEntrega.quantidade), observacoes: formEntrega.observacoes
       })
       setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
+      setUltimaMovimentacaoId(result.id)
       await recarregarConta(); await recarregarSessao()
-      setStatusOp('sucesso'); setTimeout(() => setStatusOp('idle'), 3000)
+      setStatusOp('sucesso'); setTimeout(() => { setStatusOp('idle'); setUltimaMovimentacaoId(null) }, 30000)
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
   }
 
@@ -745,7 +748,14 @@ export default function CaixaPage() {
                 ))}
               </div>
 
-              {statusOp === 'sucesso' && <div style={{ marginBottom: '12px', color: '#166534', fontSize: '13px' }}>✓ Operação registrada com sucesso.</div>}
+              {statusOp === 'sucesso' && (
+                <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Operação registrada com sucesso.</span>
+                  {ultimaMovimentacaoId && (
+                    <BotaoComprovante movimentacao_id={ultimaMovimentacaoId} />
+                  )}
+                </div>
+              )}
               {statusOp === 'erro' && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>}
 
               {operacao === 'entrega' && (
@@ -944,13 +954,14 @@ export default function CaixaPage() {
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Operação</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Quantidade</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 500 }}>Comprovante</th>
                 </tr>
               </thead>
               <tbody>
                 {carregandoOps ? (
-                  <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Carregando...</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Carregando...</td></tr>
                 ) : operacoesDia.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Nenhuma operação registrada ainda.</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Nenhuma operação registrada ainda.</td></tr>
                 ) : (
                   operacoesDia.map(op => (
                     <tr key={op.id} style={{ borderBottom: '1px solid #f0ede8' }}>
@@ -967,6 +978,11 @@ export default function CaixaPage() {
                       </td>
                       <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: op.valor_financeiro ? (op.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
                         {op.valor_financeiro ? `R$ ${Math.abs(op.valor_financeiro).toFixed(2)}` : '—'}
+                      </td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        {op.tipo === 'entrega' && (
+                          <BotaoComprovante movimentacao_id={op.id} />
+                        )}
                       </td>
                     </tr>
                   ))
