@@ -65,11 +65,9 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
       observacoes,
       created_at,
       contas_produtor!inner(
-        produtor_id,
-        produtores!inner(nome, cpf, municipio),
-        produto_id,
-        produtos!inner(nome, unidade)
+        produtores!inner(nome, cpf, municipio)
       ),
+      produtos!inner(nome, unidade),
       sessoes_caixa!inner(
         organizacao_id,
         usuario_id
@@ -95,8 +93,8 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
     movimentacao_id,
     quantidade_produto: mov.quantidade_produto,
     observacoes: mov.observacoes,
-    produto_nome: (mov as any).contas_produtor.produtos.nome,
-    produto_unidade: (mov as any).contas_produtor.produtos.unidade,
+    produto_nome: (mov as any).produtos.nome,
+    produto_unidade: (mov as any).produtos.unidade,
     produtor_nome: (mov as any).contas_produtor.produtores.nome,
     produtor_cpf: (mov as any).contas_produtor.produtores.cpf,
     produtor_municipio: (mov as any).contas_produtor.produtores.municipio,
@@ -159,9 +157,9 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       observacoes,
       created_at,
       contas_produtor!inner(
-        produtores!inner(nome, cpf, municipio),
-        produtos!inner(nome, unidade)
-      )
+        produtores!inner(nome, cpf, municipio)
+      ),
+      produtos!inner(nome, unidade)
     `)
     .eq('id', nota.movimentacao_id)
     .single()
@@ -202,8 +200,8 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       municipio: (mov as any).contas_produtor.produtores.municipio,
     },
     produto: {
-      nome: (mov as any).contas_produtor.produtos.nome,
-      unidade: (mov as any).contas_produtor.produtos.unidade,
+      nome: (mov as any).produtos.nome,
+      unidade: (mov as any).produtos.unidade,
     },
     movimentacao: {
       id: mov!.id,
