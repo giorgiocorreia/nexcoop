@@ -199,13 +199,13 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     },
     operador: { nome: operador?.nome_completo || 'Operador' },
     produtor: {
-      nome: (mov as any).contas_produtor.produtores.nome,
-      cpf: (mov as any).contas_produtor.produtores.cpf,
-      municipio: (mov as any).contas_produtor.produtores.municipio,
+      nome: (mov as any)?.contas_produtor?.produtores?.nome ?? '',
+      cpf: (mov as any)?.contas_produtor?.produtores?.cpf ?? '',
+      municipio: (mov as any)?.contas_produtor?.produtores?.municipio ?? '',
     },
     produto: {
-      nome: (mov as any).produtos.nome,
-      unidade: (mov as any).produtos.unidade,
+      nome: (mov as any)?.produtos?.nome ?? '',
+      unidade: (mov as any)?.produtos?.unidade ?? '',
     },
     movimentacao: {
       id: mov!.id,
