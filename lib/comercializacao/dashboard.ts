@@ -20,22 +20,24 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   const usuarioId = usuarioLogado?.id ?? ''
 
   // Admin vê todas as sessões abertas; atendente vê só a própria
-  const queryBase = supabase
+  let queryBase = supabase
     .from('sessoes_caixa')
     .select(`
       id,
-      abertura,
+      created_at,
       saldo_especie_calculado,
-      operador_id,
-      operador:usuarios!operador_id(nome)
+      usuario_id,
+      usuarios!usuario_id(nome_completo)
     `)
     .eq('organizacao_id', organizacaoId)
-    .is('fechamento', null)
-    .order('abertura', { ascending: false })
+    .eq('status', 'aberta')
+    .order('created_at', { ascending: false })
 
-  const { data: sessoesAbertas } = isAdmin
-    ? await queryBase
-    : await queryBase.eq('operador_id', usuarioId)
+  if (!isAdmin) {
+    queryBase = queryBase.eq('usuario_id', usuarioId) as typeof queryBase
+  }
+
+  const { data: sessoesRaw } = await queryBase
 
   // Aportes e sangrias por sessão
   const sessoesComMovimentos: {
@@ -47,7 +49,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     sangrias: number
   }[] = []
 
-  for (const sessao of sessoesAbertas ?? []) {
+  for (const sessao of sessoesRaw ?? []) {
     const { data: movimentos } = await supabase
       .from('aportes_sangrias')
       .select('tipo, valor')
@@ -62,18 +64,18 @@ export async function getDashboardComercializacao(organizacaoId: string) {
 
     sessoesComMovimentos.push({
       id: sessao.id,
-      operador: (sessao.operador as any)?.nome ?? '—',
-      abertura: sessao.abertura as string,
+      operador: (sessao.usuarios as any)?.nome_completo ?? '—',
+      abertura: sessao.created_at as string,
       saldoCalculado: Number(sessao.saldo_especie_calculado ?? 0),
       aportes,
       sangrias,
     })
   }
 
-  // Sessão do próprio usuário (para o botão de solicitar aporte)
-  const minhaSessao = sessoesComMovimentos.find((s) =>
-    (sessoesAbertas ?? []).find((sa) => sa.id === s.id && sa.operador_id === usuarioId)
-  ) ?? sessoesComMovimentos[0] ?? null
+  // Sessão do próprio usuário (para botão de solicitar aporte)
+  const minhaSessao = sessoesComMovimentos.find((_, i) =>
+    (sessoesRaw ?? [])[i]?.usuario_id === usuarioId
+  ) ?? null
 
   let entregasHoje: { count: number; totalKg: number } = { count: 0, totalKg: 0 }
   let entregasSemana: { dia: string; totalKg: number }[] = []
@@ -184,31 +186,25 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     // silencioso
   }
 
-  // Solicitações de aporte pendentes
+  // Solicitações de aporte pendentes — só para admin
   let solicitacoesPendentes: { id: string; valor: number; motivo: string | null; operador: string; created_at: string }[] = []
-  try {
-    const { data: solic } = await supabase
-      .from('solicitacoes_aporte')
-      .select(`
-        id,
-        valor,
-        motivo,
-        created_at,
-        operador:usuarios!operador_id(nome)
-      `)
-      .eq('organizacao_id', organizacaoId)
-      .eq('status', 'pendente')
-      .order('created_at', { ascending: false })
+  if (isAdmin) {
+    try {
+      const { data: solic } = await supabase
+        .from('solicitacoes_aporte')
+        .select(`id, valor, motivo, created_at, operador:usuarios!operador_id(nome_completo)`)
+        .eq('organizacao_id', organizacaoId)
+        .eq('status', 'pendente')
+        .order('created_at', { ascending: false })
 
-    solicitacoesPendentes = (solic ?? []).map((s) => ({
-      id: s.id,
-      valor: Number(s.valor),
-      motivo: s.motivo,
-      operador: (s.operador as any)?.nome ?? '—',
-      created_at: s.created_at,
-    }))
-  } catch {
-    // silencioso
+      solicitacoesPendentes = (solic ?? []).map((s) => ({
+        id: s.id,
+        valor: Number(s.valor),
+        motivo: s.motivo,
+        operador: (s.operador as any)?.nome_completo ?? '—',
+        created_at: s.created_at,
+      }))
+    } catch { /* silencioso */ }
   }
 
   // Saldo do último fechamento
@@ -216,17 +212,17 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   try {
     const { data: uf } = await supabase
       .from('sessoes_caixa')
-      .select('saldo_especie_calculado, fechamento')
+      .select('saldo_especie_calculado, hora_fechamento')
       .eq('organizacao_id', organizacaoId)
-      .not('fechamento', 'is', null)
-      .order('fechamento', { ascending: false })
+      .eq('status', 'fechada')
+      .order('hora_fechamento', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     if (uf) {
       ultimoFechamento = {
         saldo: Number(uf.saldo_especie_calculado ?? 0),
-        fechamento: uf.fechamento as string,
+        fechamento: uf.hora_fechamento as string,
       }
     }
   } catch {

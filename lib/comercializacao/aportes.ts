@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function criarSolicitacaoAporte(
   organizacaoId: string,
@@ -12,15 +13,15 @@ export async function criarSolicitacaoAporte(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Não autenticado')
 
-  const { error } = await supabase.from('solicitacoes_aporte').insert({
+  const adminClient = createAdminClient()
+  const { error } = await adminClient.from('solicitacoes_aporte').insert({
     organizacao_id: organizacaoId,
     sessao_caixa_id: sessaoCaixaId,
     operador_id: user.id,
     valor,
-    motivo,
+    motivo: motivo || null,
     status: 'pendente',
   })
-
   if (error) throw new Error(error.message)
   return { ok: true }
 }
@@ -35,7 +36,7 @@ export async function getSolicitacoesPendentes(organizacaoId: string) {
       motivo,
       created_at,
       status,
-      operador:usuarios!operador_id(nome)
+      operador:usuarios!operador_id(nome_completo)
     `)
     .eq('organizacao_id', organizacaoId)
     .eq('status', 'pendente')

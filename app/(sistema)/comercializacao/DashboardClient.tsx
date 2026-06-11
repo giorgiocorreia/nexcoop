@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getDashboardComercializacao } from '@/lib/comercializacao/dashboard'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
+import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -27,14 +29,55 @@ export default function DashboardComercializacao({
   data: Awaited<ReturnType<typeof getDashboardComercializacao>>
   organizacaoId: string
 }) {
-  const [modalAberto, setModalAberto] = useState(false)
+  const router = useRouter()
+
+  // Modal abrir caixa
+  const [modalAbrirCaixa, setModalAbrirCaixa] = useState(false)
+  const [saldoInicial, setSaldoInicial] = useState('')
+  const [abrindoCaixa, setAbrindoCaixa] = useState(false)
+
+  // Modal solicitar aporte
+  const [modalAporte, setModalAporte] = useState(false)
   const [valorAporte, setValorAporte] = useState('')
   const [motivoAporte, setMotivoAporte] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [sucesso, setSucesso] = useState(false)
+  const [enviandoAporte, setEnviandoAporte] = useState(false)
+  const [aporteEnviado, setAporteEnviado] = useState(false)
 
   const maxKg = Math.max(...d.entregasSemana.map((e) => e.totalKg), 1)
   const hoje = new Date().toISOString().slice(0, 10)
+
+  async function handleAbrirCaixa() {
+    if (!saldoInicial) return
+    setAbrindoCaixa(true)
+    try {
+      await abrirCaixa(parseFloat(saldoInicial))
+      setModalAbrirCaixa(false)
+      setSaldoInicial('')
+      router.refresh()
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setAbrindoCaixa(false)
+    }
+  }
+
+  async function handleSolicitarAporte() {
+    if (!d.minhaSessao || !valorAporte || Number(valorAporte) <= 0) return
+    setEnviandoAporte(true)
+    try {
+      await criarSolicitacaoAporte(
+        organizacaoId,
+        d.minhaSessao.id,
+        Number(valorAporte),
+        motivoAporte
+      )
+      setAporteEnviado(true)
+    } catch {
+      alert('Erro ao enviar solicitação. Tente novamente.')
+    } finally {
+      setEnviandoAporte(false)
+    }
+  }
 
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
@@ -97,28 +140,35 @@ export default function DashboardComercializacao({
                   <p style={{ fontSize: 22, fontWeight: 500, color: '#111827', margin: 0, lineHeight: 1 }}>
                     {fmtReal(d.ultimoFechamento.saldo)}
                   </p>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>
+                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 8px' }}>
                     Último fechamento · {new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}
                   </p>
                 </>
               ) : (
-                <>
-                  <p style={{ fontSize: 22, fontWeight: 500, color: '#9ca3af', margin: 0, lineHeight: 1 }}>—</p>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>Sem sessão</p>
-                </>
+                <p style={{ fontSize: 22, fontWeight: 500, color: '#9ca3af', margin: '0 0 8px', lineHeight: 1 }}>—</p>
               )}
+              <button
+                onClick={() => setModalAbrirCaixa(true)}
+                style={{
+                  fontSize: 11, padding: '4px 10px', borderRadius: 6,
+                  border: '1px solid #1D9E75', background: 'transparent',
+                  color: '#1D9E75', cursor: 'pointer', fontWeight: 500,
+                }}
+              >
+                Abrir caixa
+              </button>
             </>
           ) : d.sessoesAbertas.length === 1 ? (
             <>
               <p style={{ fontSize: 22, fontWeight: 500, color: '#111827', margin: 0, lineHeight: 1 }}>
                 {fmtReal(d.sessoesAbertas[0].saldoCalculado)}
               </p>
-              <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 6px' }}>
+              <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 8px' }}>
                 {d.sessoesAbertas[0].operador}
               </p>
               {d.minhaSessao && (
                 <button
-                  onClick={() => setModalAberto(true)}
+                  onClick={() => setModalAporte(true)}
                   style={{
                     fontSize: 11, padding: '4px 10px', borderRadius: 6,
                     border: '1px solid #1D9E75', background: 'transparent',
@@ -235,13 +285,16 @@ export default function DashboardComercializacao({
           {!d.minhaSessao ? (
             <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
               <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 12px' }}>Nenhuma sessão aberta</p>
-              <Link href="/comercializacao/caixa" style={{
-                display: 'inline-block', fontSize: 13, padding: '7px 16px',
-                border: '1px solid #e5e3dc', borderRadius: 8, color: '#374151',
-                textDecoration: 'none',
-              }}>
+              <button
+                onClick={() => setModalAbrirCaixa(true)}
+                style={{
+                  fontSize: 13, padding: '7px 16px', border: '1px solid #e5e3dc',
+                  borderRadius: 8, color: '#374151', background: 'transparent',
+                  cursor: 'pointer',
+                }}
+              >
                 Abrir caixa
-              </Link>
+              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -335,33 +388,100 @@ export default function DashboardComercializacao({
         ))}
       </div>
 
-      {/* Modal de solicitação de aporte */}
-      {modalAberto && (
+      {/* Modal abrir caixa */}
+      {modalAbrirCaixa && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 1000, padding: '0 1rem',
         }}>
           <div style={{
             background: '#fff', borderRadius: 12, padding: '1.5rem',
-            width: '100%', maxWidth: 400, margin: '0 1rem',
+            width: '100%', maxWidth: 360,
+          }}>
+            <h2 style={{ fontSize: 16, fontWeight: 500, margin: '0 0 1rem', color: '#111827' }}>
+              Abrir caixa
+            </h2>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>
+                Saldo inicial em espécie (R$)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={saldoInicial}
+                onChange={(e) => setSaldoInicial(e.target.value)}
+                autoFocus
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: 8,
+                  border: '1px solid #e5e3dc', fontSize: 14, boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setModalAbrirCaixa(false); setSaldoInicial('') }}
+                style={{
+                  fontSize: 13, padding: '8px 16px', borderRadius: 8,
+                  border: '1px solid #e5e3dc', background: 'transparent', cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!saldoInicial || abrindoCaixa}
+                onClick={handleAbrirCaixa}
+                style={{
+                  fontSize: 13, padding: '8px 16px', borderRadius: 8,
+                  border: 'none', background: '#1D9E75', color: '#fff',
+                  cursor: 'pointer', fontWeight: 500,
+                  opacity: (!saldoInicial || abrindoCaixa) ? 0.5 : 1,
+                }}
+              >
+                {abrindoCaixa ? 'Abrindo...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal solicitar aporte */}
+      {modalAporte && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '0 1rem',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 12, padding: '1.5rem',
+            width: '100%', maxWidth: 400,
           }}>
             <h2 style={{ fontSize: 16, fontWeight: 500, margin: '0 0 1rem', color: '#111827' }}>
               Solicitar aporte
             </h2>
 
-            {sucesso ? (
+            {aporteEnviado ? (
               <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                 <p style={{ fontSize: 32, margin: '0 0 8px' }}>✓</p>
                 <p style={{ fontSize: 14, color: '#1D9E75', fontWeight: 500, margin: '0 0 4px' }}>
                   Solicitação enviada!
                 </p>
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 1rem' }}>
-                  O gerente será notificado ao acessar o sistema.
+                  O gerente verá ao acessar o sistema.
                 </p>
                 <button
-                  onClick={() => { setModalAberto(false); setSucesso(false); setValorAporte(''); setMotivoAporte('') }}
-                  style={{ fontSize: 13, padding: '8px 20px', borderRadius: 8, border: '1px solid #e5e3dc', cursor: 'pointer', background: 'transparent' }}
+                  onClick={() => {
+                    setModalAporte(false)
+                    setAporteEnviado(false)
+                    setValorAporte('')
+                    setMotivoAporte('')
+                  }}
+                  style={{
+                    fontSize: 13, padding: '8px 20px', borderRadius: 8,
+                    border: '1px solid #e5e3dc', cursor: 'pointer', background: 'transparent',
+                  }}
                 >
                   Fechar
                 </button>
@@ -373,12 +493,10 @@ export default function DashboardComercializacao({
                     Valor solicitado (R$)
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0,00"
+                    type="number" min="0" step="0.01" placeholder="0,00"
                     value={valorAporte}
                     onChange={(e) => setValorAporte(e.target.value)}
+                    autoFocus
                     style={{
                       width: '100%', padding: '8px 12px', borderRadius: 8,
                       border: '1px solid #e5e3dc', fontSize: 14, boxSizing: 'border-box',
@@ -390,8 +508,7 @@ export default function DashboardComercializacao({
                     Motivo (opcional)
                   </label>
                   <input
-                    type="text"
-                    placeholder="Ex: caixa baixo para pagamentos"
+                    type="text" placeholder="Ex: caixa baixo para pagamentos"
                     value={motivoAporte}
                     onChange={(e) => setMotivoAporte(e.target.value)}
                     style={{
@@ -402,38 +519,25 @@ export default function DashboardComercializacao({
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button
-                    onClick={() => { setModalAberto(false); setValorAporte(''); setMotivoAporte('') }}
-                    style={{ fontSize: 13, padding: '8px 16px', borderRadius: 8, border: '1px solid #e5e3dc', cursor: 'pointer', background: 'transparent' }}
+                    onClick={() => { setModalAporte(false); setValorAporte(''); setMotivoAporte('') }}
+                    style={{
+                      fontSize: 13, padding: '8px 16px', borderRadius: 8,
+                      border: '1px solid #e5e3dc', background: 'transparent', cursor: 'pointer',
+                    }}
                   >
                     Cancelar
                   </button>
                   <button
-                    disabled={!valorAporte || Number(valorAporte) <= 0 || enviando}
-                    onClick={async () => {
-                      if (!d.minhaSessao) return
-                      setEnviando(true)
-                      try {
-                        await criarSolicitacaoAporte(
-                          organizacaoId,
-                          d.minhaSessao.id,
-                          Number(valorAporte),
-                          motivoAporte
-                        )
-                        setSucesso(true)
-                      } catch {
-                        alert('Erro ao enviar solicitação. Tente novamente.')
-                      } finally {
-                        setEnviando(false)
-                      }
-                    }}
+                    disabled={!valorAporte || Number(valorAporte) <= 0 || enviandoAporte}
+                    onClick={handleSolicitarAporte}
                     style={{
                       fontSize: 13, padding: '8px 16px', borderRadius: 8,
                       border: 'none', background: '#1D9E75', color: '#fff',
                       cursor: 'pointer', fontWeight: 500,
-                      opacity: (!valorAporte || Number(valorAporte) <= 0 || enviando) ? 0.5 : 1,
+                      opacity: (!valorAporte || Number(valorAporte) <= 0 || enviandoAporte) ? 0.5 : 1,
                     }}
                   >
-                    {enviando ? 'Enviando...' : 'Solicitar'}
+                    {enviandoAporte ? 'Enviando...' : 'Solicitar'}
                   </button>
                 </div>
               </>
