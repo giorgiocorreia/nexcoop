@@ -68,7 +68,7 @@ export async function emitirComprovante(movimentacao_id: string): Promise<{ nota
         produtores!inner(nome, cpf, municipio)
       ),
       produtos!inner(nome, unidade),
-      sessoes_caixa!inner(
+      sessoes_caixa!sessao_caixa_id(
         organizacao_id,
         usuario_id
       )
