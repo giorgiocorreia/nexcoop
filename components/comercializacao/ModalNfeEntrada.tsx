@@ -167,7 +167,8 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
     try {
       const nota = await getNfeStatus(movimentacao_id)
 
-      if (!nota || nota.status === 'pendente' || nota.status === 'erro' || nota.status === 'rejeitada') {
+      const s = nota?.status as string | undefined
+      if (!nota || s === 'pendente' || s === 'erro' || s === 'rejeitada') {
         // Ainda não emitida ou falhou — emite agora
         setNfeStatus('emitindo')
         const resultado = await emitirNfeEntradaAction(movimentacao_id)
@@ -185,14 +186,14 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
         return
       }
 
-      if (nota.status === 'autorizada' && nota.danfe_url) {
-        setDanfeUrl(nota.danfe_url)
+      if (s === 'autorizada' && nota.danfe_url) {
+        setDanfeUrl(nota.danfe_url as string)
         setNfeStatus('autorizada')
-        window.open(nota.danfe_url, '_blank')
+        window.open(nota.danfe_url as string, '_blank')
         return
       }
 
-      if (nota.status === 'processando') {
+      if (s === 'processando') {
         setNfeStatus('emitindo')
         return
       }
