@@ -137,45 +137,64 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
 
   if (error || !nota) throw new Error('Nota não encontrada')
 
+  const snap = (nota.snapshot as any) ?? {}
+
   const { data: org } = await adminClient
     .from('organizacoes')
     .select('nome, cnpj, endereco, municipio')
     .eq('id', nota.organizacao_id)
     .single()
+
+  if (!org) throw new Error('Organização não encontrada: ' + nota.organizacao_id)
+
   const { data: operador } = nota.emitida_por
     ? await adminClient.from('usuarios').select('nome_completo').eq('id', nota.emitida_por).maybeSingle()
     : { data: null }
 
-  const { data: mov } = await adminClient
+  const { data: mov, error: movErr } = await adminClient
     .from('movimentacoes_conta')
     .select(`
       id,
       quantidade_produto,
       observacoes,
       created_at,
-      contas_produtor!inner(
-        produtores!inner(nome, cpf, municipio)
+      contas_produtor!conta_id(
+        produtor_id,
+        produtores!produtor_id(nome, cpf, municipio)
       ),
-      produtos!inner(nome, unidade)
+      produtos!produto_id(nome, unidade)
     `)
     .eq('id', nota.movimentacao_id)
     .single()
+
+  if (movErr) console.error('[buscarDadosComprovante] mov error:', movErr)
+
+  const contaProdutor = (mov as any)?.contas_produtor
+  const produtorData = Array.isArray(contaProdutor)
+    ? contaProdutor[0]?.produtores
+    : contaProdutor?.produtores
+  const produtorFinal = Array.isArray(produtorData) ? produtorData[0] : produtorData
+  const produtoData = (mov as any)?.produtos
+  const produtoFinal = Array.isArray(produtoData) ? produtoData[0] : produtoData
 
   const { data: rateioRows } = await adminClient
     .from('rateio_entrega')
     .select(`
       percentual,
       quantidade_rateada,
-      produtores!inner(nome, cpf)
+      produtores!produtor_id(nome, cpf)
     `)
     .eq('movimentacao_id', nota.movimentacao_id)
 
-  const rateio = (rateioRows || []).map((r: any) => ({
-    nome: r.produtores.nome,
-    cpf: r.produtores.cpf,
-    percentual: r.percentual,
-    quantidade_kg: r.quantidade_rateada,
-  }))
+  const rateio = (rateioRows || []).map((r: any) => {
+    const p = Array.isArray(r.produtores) ? r.produtores[0] : r.produtores
+    return {
+      nome: p?.nome ?? '',
+      cpf: p?.cpf ?? '',
+      percentual: r.percentual,
+      quantidade_kg: r.quantidade_rateada,
+    }
+  })
 
   return {
     nota: {
@@ -185,26 +204,26 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       status: nota.status,
     },
     organizacao: {
-      nome: org!.nome,
-      cnpj: org!.cnpj ?? '',
+      nome: org.nome,
+      cnpj: org.cnpj ?? '',
       endereco: (org as any).endereco ?? '',
       municipio: (org as any).municipio ?? '',
     },
     operador: { nome: operador?.nome_completo || 'Operador' },
     produtor: {
-      nome: (mov as any)?.contas_produtor?.produtores?.nome ?? '',
-      cpf: (mov as any)?.contas_produtor?.produtores?.cpf ?? '',
-      municipio: (mov as any)?.contas_produtor?.produtores?.municipio ?? '',
+      nome: produtorFinal?.nome ?? snap.produtor_nome ?? '',
+      cpf: produtorFinal?.cpf ?? snap.produtor_cpf ?? '',
+      municipio: produtorFinal?.municipio ?? snap.produtor_municipio ?? '',
     },
     produto: {
-      nome: (mov as any)?.produtos?.nome ?? '',
-      unidade: (mov as any)?.produtos?.unidade ?? '',
+      nome: produtoFinal?.nome ?? snap.produto_nome ?? '',
+      unidade: produtoFinal?.unidade ?? snap.produto_unidade ?? '',
     },
     movimentacao: {
-      id: mov!.id,
-      quantidade_produto: mov!.quantidade_produto ?? 0,
-      observacoes: mov!.observacoes,
-      created_at: mov!.created_at,
+      id: mov?.id ?? nota.movimentacao_id,
+      quantidade_produto: mov?.quantidade_produto ?? snap.quantidade_produto ?? 0,
+      observacoes: mov?.observacoes ?? snap.observacoes ?? null,
+      created_at: mov?.created_at ?? nota.emitida_em ?? new Date().toISOString(),
     },
     rateio,
   }

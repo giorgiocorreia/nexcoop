@@ -196,7 +196,9 @@ export async function GET(
       },
     })
   } catch (err) {
-    console.error('[comprovante] Erro:', err)
+    console.error('[comprovante] Erro detalhado:', JSON.stringify(err, null, 2))
+    console.error('[comprovante] Message:', (err as any)?.message)
+    console.error('[comprovante] Stack:', (err as any)?.stack)
     return NextResponse.json({ error: 'Erro ao gerar comprovante' }, { status: 500 })
   }
 }
