@@ -935,6 +935,19 @@ export interface AporteSangria {
   created_at:       string
 }
 
+export interface SolicitacaoAporte {
+  id:               string
+  organizacao_id:   string
+  sessao_caixa_id:  string
+  operador_id:      string
+  valor:            number
+  motivo:           string | null
+  status:           'pendente' | 'atendida' | 'cancelada'
+  atendida_por:     string | null
+  atendida_em:      string | null
+  created_at:       string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -1043,6 +1056,8 @@ export type Database = {
       notas_entrega:               TableDef<NotaEntrega>
       // ── Tesouraria (028) ──────────────────────────────────────────────────
       aportes_sangrias:            TableDef<AporteSangria>
+      // ── Comercialização (029b) ────────────────────────────────────────────
+      solicitacoes_aporte:         TableDef<SolicitacaoAporte>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

@@ -142,6 +142,55 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     // silencioso
   }
 
+  // Solicitações de aporte pendentes
+  let solicitacoesPendentes: { id: string; valor: number; motivo: string | null; operador: string; created_at: string }[] = []
+  try {
+    const { data: solic } = await supabase
+      .from('solicitacoes_aporte')
+      .select(`
+        id,
+        valor,
+        motivo,
+        created_at,
+        operador:usuarios!operador_id(nome)
+      `)
+      .eq('organizacao_id', organizacaoId)
+      .eq('status', 'pendente')
+      .order('created_at', { ascending: false })
+
+    solicitacoesPendentes = (solic ?? []).map((s) => ({
+      id: s.id,
+      valor: Number(s.valor),
+      motivo: s.motivo,
+      operador: (s.operador as any)?.nome ?? '—',
+      created_at: s.created_at,
+    }))
+  } catch {
+    // silencioso
+  }
+
+  // Saldo do último fechamento
+  let ultimoFechamento: { saldo: number; fechamento: string } | null = null
+  try {
+    const { data: uf } = await supabase
+      .from('sessoes_caixa')
+      .select('saldo_especie_calculado, fechamento')
+      .eq('organizacao_id', organizacaoId)
+      .not('fechamento', 'is', null)
+      .order('fechamento', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (uf) {
+      ultimoFechamento = {
+        saldo: Number(uf.saldo_especie_calculado ?? 0),
+        fechamento: uf.fechamento as string,
+      }
+    }
+  } catch {
+    // silencioso
+  }
+
   return {
     sessaoAberta: sessaoAberta
       ? {
@@ -158,5 +207,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     produtoresHoje,
     totalProdutores: totalProdutores ?? 0,
     lotesAbertos,
+    solicitacoesPendentes,
+    ultimoFechamento,
   }
 }
