@@ -20,3 +20,8 @@ export async function getUsuarioLogado() {
   if (error || !usuario) redirect('/login')
   return usuario
 }
+
+export async function getOrganizacaoId(): Promise<string> {
+  const usuario = await getUsuarioLogado()
+  return usuario.organizacao_id
+}
