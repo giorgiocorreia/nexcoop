@@ -9,7 +9,7 @@ export default async function PerfilPage() {
 
   const { data: usuario } = await supabase
     .from('usuarios')
-    .select('id, nome_completo, telefone, cpf, endereco, municipio, funcoes, vinculo, organizacao_id, ultimo_acesso, created_at')
+    .select('*')
     .eq('id', user.id)
     .single()
 

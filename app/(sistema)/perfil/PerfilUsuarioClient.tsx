@@ -338,7 +338,7 @@ export default function PerfilUsuarioClient({
               { label: 'Organização', value: orgNome || '—' },
               { label: 'Função', value: getFuncaoLabel(funcoes), badge: true },
               { label: 'Vínculo', value: vinculo ? (VINCULO_LABEL[vinculo] ?? vinculo) : '—' },
-              { label: 'Desde', value: usuario?.created_at ? fmtMesBr(usuario.created_at) : '—' },
+              { label: 'Desde', value: usuario?.criado_em ? fmtMesBr(usuario.criado_em) : '—' },
             ].map((r, i, arr) => (
               <div key={r.label} style={{ ...rowStyle, borderBottom: i === arr.length - 1 ? 'none' : '1px solid #f3f4f6', paddingBottom: i === arr.length - 1 ? 0 : undefined }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>{r.label}</span>
@@ -404,7 +404,7 @@ export default function PerfilUsuarioClient({
               <div style={{ background: '#f9fafb', borderRadius: 8, padding: '12px 14px' }}>
                 <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 4px' }}>Membro desde</p>
                 <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>
-                  {usuario?.created_at ? fmtMesBr(usuario.created_at) : '—'}
+                  {usuario?.criado_em ? fmtMesBr(usuario.criado_em) : '—'}
                 </p>
               </div>
             </div>

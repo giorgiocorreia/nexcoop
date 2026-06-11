@@ -75,6 +75,8 @@ export interface Usuario {
   vinculo: VinculoUsuario | null
   ativo: boolean
   ultimo_acesso: string | null
+  endereco: string | null
+  municipio: string | null
   criado_em: string
   atualizado_em: string
 }
