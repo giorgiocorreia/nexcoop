@@ -71,6 +71,27 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Redireciona usuário operacional para o módulo correto
+  if (user && pathname === '/dashboard' && !isRSC) {
+    const { data: usuarioFuncoes } = await supabase
+      .from('usuarios')
+      .select('funcoes, role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const funcoes: string[] = usuarioFuncoes?.funcoes ?? []
+    const role = usuarioFuncoes?.role ?? ''
+
+    if (role !== 'super_admin' && !funcoes.includes('admin')) {
+      if (funcoes.includes('caixa_cacau')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/comercializacao'
+        return NextResponse.redirect(url)
+      }
+      // Futuramente: caixa_loja, vendedor_loja → /loja
+    }
+  }
+
   return supabaseResponse
 }
 
