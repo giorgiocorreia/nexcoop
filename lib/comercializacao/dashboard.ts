@@ -8,30 +8,72 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toISOString()
   const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1).toISOString()
 
-  // Sessão de caixa aberta
-  const { data: sessaoAberta } = await supabase
+  // Usuário logado e funções
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: usuarioLogado } = await supabase
+    .from('usuarios')
+    .select('id, funcoes')
+    .eq('id', user?.id ?? '')
+    .maybeSingle()
+
+  const isAdmin = ((usuarioLogado?.funcoes as string[] | null) ?? []).includes('admin')
+  const usuarioId = usuarioLogado?.id ?? ''
+
+  // Admin vê todas as sessões abertas; atendente vê só a própria
+  const queryBase = supabase
     .from('sessoes_caixa')
-    .select('id, abertura, saldo_especie_calculado, operador_id')
+    .select(`
+      id,
+      abertura,
+      saldo_especie_calculado,
+      operador_id,
+      operador:usuarios!operador_id(nome)
+    `)
     .eq('organizacao_id', organizacaoId)
     .is('fechamento', null)
     .order('abertura', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  // Aportes e sangrias da sessão aberta
-  let aportes = 0
-  let sangrias = 0
-  if (sessaoAberta?.id) {
+  const { data: sessoesAbertas } = isAdmin
+    ? await queryBase
+    : await queryBase.eq('operador_id', usuarioId)
+
+  // Aportes e sangrias por sessão
+  const sessoesComMovimentos: {
+    id: string
+    operador: string
+    abertura: string
+    saldoCalculado: number
+    aportes: number
+    sangrias: number
+  }[] = []
+
+  for (const sessao of sessoesAbertas ?? []) {
     const { data: movimentos } = await supabase
       .from('aportes_sangrias')
       .select('tipo, valor')
-      .eq('sessao_caixa_id', sessaoAberta.id)
+      .eq('sessao_caixa_id', sessao.id)
 
+    let aportes = 0
+    let sangrias = 0
     for (const m of movimentos ?? []) {
       if (m.tipo === 'aporte') aportes += Number(m.valor)
       else sangrias += Number(m.valor)
     }
+
+    sessoesComMovimentos.push({
+      id: sessao.id,
+      operador: (sessao.operador as any)?.nome ?? '—',
+      abertura: sessao.abertura as string,
+      saldoCalculado: Number(sessao.saldo_especie_calculado ?? 0),
+      aportes,
+      sangrias,
+    })
   }
+
+  // Sessão do próprio usuário (para o botão de solicitar aporte)
+  const minhaSessao = sessoesComMovimentos.find((s) =>
+    (sessoesAbertas ?? []).find((sa) => sa.id === s.id && sa.operador_id === usuarioId)
+  ) ?? sessoesComMovimentos[0] ?? null
 
   let entregasHoje: { count: number; totalKg: number } = { count: 0, totalKg: 0 }
   let entregasSemana: { dia: string; totalKg: number }[] = []
@@ -192,15 +234,10 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   }
 
   return {
-    sessaoAberta: sessaoAberta
-      ? {
-          id: sessaoAberta.id,
-          abertura: sessaoAberta.abertura,
-          saldoCalculado: Number(sessaoAberta.saldo_especie_calculado ?? 0),
-          aportes,
-          sangrias,
-        }
-      : null,
+    isAdmin,
+    sessoesAbertas: sessoesComMovimentos,
+    minhaSessao,
+    ultimoFechamento,
     entregasHoje,
     entregasSemana,
     ultimasEntregas,
@@ -208,6 +245,5 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     totalProdutores: totalProdutores ?? 0,
     lotesAbertos,
     solicitacoesPendentes,
-    ultimoFechamento,
   }
 }

@@ -49,7 +49,7 @@ export default function DashboardComercializacao({
             <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
               Gestão completa do ciclo de comercialização
             </p>
-            {d.sessaoAberta ? (
+            {d.sessoesAbertas.length > 0 ? (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
                 fontSize: 11, padding: '3px 10px', borderRadius: 20,
@@ -84,27 +84,13 @@ export default function DashboardComercializacao({
           <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>{fmtKg(d.entregasHoje.totalKg)} recebidos</p>
         </div>
 
-        {/* Saldo em caixa — expandido com botão de solicitar aporte */}
+        {/* Saldo em caixa */}
         <div style={{ background: '#f9fafb', borderRadius: 8, padding: '14px 16px', borderLeft: '3px solid #1D9E75' }}>
-          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>Saldo em caixa</p>
-          {d.sessaoAberta ? (
-            <>
-              <p style={{ fontSize: 22, fontWeight: 500, color: '#111827', margin: 0, lineHeight: 1 }}>
-                {fmtReal(d.sessaoAberta.saldoCalculado)}
-              </p>
-              <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 8px' }}>Sessão aberta</p>
-              <button
-                onClick={() => setModalAberto(true)}
-                style={{
-                  fontSize: 11, padding: '4px 10px', borderRadius: 6,
-                  border: '1px solid #1D9E75', background: 'transparent',
-                  color: '#1D9E75', cursor: 'pointer', fontWeight: 500,
-                }}
-              >
-                + Solicitar aporte
-              </button>
-            </>
-          ) : (
+          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>
+            {d.isAdmin && d.sessoesAbertas.length > 1 ? 'Caixas abertos' : 'Saldo em caixa'}
+          </p>
+
+          {d.sessoesAbertas.length === 0 ? (
             <>
               {d.ultimoFechamento ? (
                 <>
@@ -122,6 +108,42 @@ export default function DashboardComercializacao({
                 </>
               )}
             </>
+          ) : d.sessoesAbertas.length === 1 ? (
+            <>
+              <p style={{ fontSize: 22, fontWeight: 500, color: '#111827', margin: 0, lineHeight: 1 }}>
+                {fmtReal(d.sessoesAbertas[0].saldoCalculado)}
+              </p>
+              <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 6px' }}>
+                {d.sessoesAbertas[0].operador}
+              </p>
+              {d.minhaSessao && (
+                <button
+                  onClick={() => setModalAberto(true)}
+                  style={{
+                    fontSize: 11, padding: '4px 10px', borderRadius: 6,
+                    border: '1px solid #1D9E75', background: 'transparent',
+                    color: '#1D9E75', cursor: 'pointer', fontWeight: 500,
+                  }}
+                >
+                  + Solicitar aporte
+                </button>
+              )}
+            </>
+          ) : (
+            // Múltiplas sessões — só admin chega aqui
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
+              {d.sessoesAbertas.map((s) => (
+                <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block', flexShrink: 0 }} />
+                    {s.operador}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111827', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtReal(s.saldoCalculado)}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -141,8 +163,8 @@ export default function DashboardComercializacao({
 
       </div>
 
-      {/* Alerta de solicitações de aporte pendentes */}
-      {d.solicitacoesPendentes.length > 0 && (
+      {/* Alerta de solicitações de aporte pendentes — só para admin */}
+      {d.isAdmin && d.solicitacoesPendentes.length > 0 && (
         <div style={{
           background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10,
           padding: '12px 16px', marginBottom: '1.5rem',
@@ -210,7 +232,7 @@ export default function DashboardComercializacao({
           <p style={{ fontSize: 13, fontWeight: 500, margin: '0 0 14px', color: '#111827' }}>
             Sessão de caixa
           </p>
-          {!d.sessaoAberta ? (
+          {!d.minhaSessao ? (
             <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
               <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 12px' }}>Nenhuma sessão aberta</p>
               <Link href="/comercializacao/caixa" style={{
@@ -224,8 +246,8 @@ export default function DashboardComercializacao({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Aportes', valor: d.sessaoAberta.aportes, positivo: true },
-                { label: 'Sangrias', valor: d.sessaoAberta.sangrias, positivo: false },
+                { label: 'Aportes', valor: d.minhaSessao.aportes, positivo: true },
+                { label: 'Sangrias', valor: d.minhaSessao.sangrias, positivo: false },
               ].map((r) => (
                 <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: '#6b7280' }}>{r.label}</span>
@@ -238,7 +260,7 @@ export default function DashboardComercializacao({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>Saldo atual</span>
                 <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>
-                  {fmtReal(d.sessaoAberta.saldoCalculado)}
+                  {fmtReal(d.minhaSessao.saldoCalculado)}
                 </span>
               </div>
               <Link href="/comercializacao/caixa" style={{
@@ -388,12 +410,12 @@ export default function DashboardComercializacao({
                   <button
                     disabled={!valorAporte || Number(valorAporte) <= 0 || enviando}
                     onClick={async () => {
-                      if (!d.sessaoAberta) return
+                      if (!d.minhaSessao) return
                       setEnviando(true)
                       try {
                         await criarSolicitacaoAporte(
                           organizacaoId,
-                          d.sessaoAberta.id,
+                          d.minhaSessao.id,
                           Number(valorAporte),
                           motivoAporte
                         )
