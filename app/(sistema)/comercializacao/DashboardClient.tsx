@@ -83,11 +83,11 @@ export default function DashboardComercializacao({
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
 
       {/* Cabeçalho */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 4px', color: '#1a1a1a' }}>
-            Comercialização
-          </h1>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 6px', color: '#1a1a1a' }}>
+          Comercialização
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
               Gestão completa do ciclo de comercialização
@@ -110,6 +110,26 @@ export default function DashboardComercializacao({
                 Caixa fechado
               </span>
             )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/comercializacao/produtores" style={{
+              fontSize: 13, padding: '6px 14px', borderRadius: 8,
+              border: '1px solid #e5e3dc', background: '#fff',
+              color: '#374151', textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ fontSize: 14, color: '#92400e' }}>◈</span>
+              Produtores
+            </Link>
+            <Link href="/comercializacao/caixa" style={{
+              fontSize: 13, padding: '6px 14px', borderRadius: 8,
+              border: '1px solid #e5e3dc', background: '#fff',
+              color: '#374151', textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ fontSize: 14, color: '#1D9E75' }}>◈</span>
+              Caixa
+            </Link>
           </div>
         </div>
       </div>
@@ -359,34 +379,6 @@ export default function DashboardComercializacao({
           </table>
         </div>
       )}
-
-      {/* Acesso rápido */}
-      <p style={{ fontSize: 11, fontWeight: 500, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 10px' }}>
-        Acesso rápido
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 10 }}>
-        {[
-          { href: '/comercializacao/produtores', titulo: 'Produtores', sub: 'Cadastro e fichas', bg: '#fef3c7', cor: '#92400e' },
-          { href: '/comercializacao/caixa', titulo: 'Caixa', sub: 'Recebimento e pagamentos', bg: '#f0fdf4', cor: '#1D9E75' },
-        ].map((c) => (
-          <Link key={c.href} href={c.href} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12,
-            padding: '1rem 1.25rem', textDecoration: 'none',
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 18, color: c.cor }}>◈</span>
-            </div>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 500, color: '#111827', margin: '0 0 2px' }}>{c.titulo}</p>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>{c.sub}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
 
       {/* Modal abrir caixa */}
       {modalAbrirCaixa && (
