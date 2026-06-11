@@ -110,14 +110,14 @@ export default function DashboardComercializacao({
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BtnLink href="/comercializacao/produtores" variante="marrom" icone="ti-users">
+            <BtnLink href="/comercializacao/produtores" variante="cinza" icone="ti-users">
               Produtores
             </BtnLink>
-            <BtnLink href="/comercializacao/caixa" variante="verde" icone="ti-cash-register">
+            <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-cash-register">
               Caixa
             </BtnLink>
             {d.isAdmin && (
-              <BtnLink href="/comercializacao/diario" variante="roxo" icone="ti-book">
+              <BtnLink href="/comercializacao/diario" variante="cinza" icone="ti-notebook">
                 Diário
               </BtnLink>
             )}

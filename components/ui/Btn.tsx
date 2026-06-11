@@ -5,16 +5,16 @@ import { useState } from 'react'
 type BtnVariante = 'marrom' | 'verde' | 'roxo' | 'cinza'
 type BtnTamanho = 'sm' | 'md'
 
-const CORES: Record<BtnVariante, { texto: string; hover: string; borda: string }> = {
-  marrom: { texto: '#92400e', hover: '#fef3c7', borda: '#92400e' },
-  verde:  { texto: '#1D9E75', hover: '#dcfce7', borda: '#1D9E75' },
-  roxo:   { texto: '#635BFF', hover: '#ede9fe', borda: '#635BFF' },
-  cinza:  { texto: '#6b7280', hover: '#f3f4f6', borda: '#d1d5db' },
+const CORES: Record<BtnVariante, { texto: string; borda: string; hoverBg: string; hoverBorda: string }> = {
+  marrom: { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  verde:  { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  roxo:   { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  cinza:  { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
 }
 
 const TAMANHOS: Record<BtnTamanho, { padding: string; fontSize: string }> = {
-  sm: { padding: '4px 10px', fontSize: '11px' },
-  md: { padding: '7px 16px', fontSize: '13px' },
+  sm: { padding: '3px 10px', fontSize: '11px' },
+  md: { padding: '6px 14px', fontSize: '13px' },
 }
 
 interface BtnProps {
@@ -56,22 +56,29 @@ export function Btn({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        background: hover && !disabled ? cor.hover : 'transparent',
+        background: hover && !disabled ? cor.hoverBg : 'transparent',
         color: cor.texto,
-        border: `1.5px solid ${cor.borda}`,
+        border: `1.5px solid ${hover && !disabled ? cor.hoverBorda : cor.borda}`,
         padding: tam.padding,
         borderRadius: 8,
         fontSize: tam.fontSize,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
-        transform: hover && !disabled ? 'scale(0.96)' : 'scale(1)',
-        transition: 'background .15s, transform .12s',
+        transform: hover && !disabled ? 'scale(0.97)' : 'scale(1)',
+        transition: 'background .15s, border-color .15s, transform .12s',
         fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
         ...style,
       }}
     >
-      {icone && <i className={`ti ${icone}`} style={{ fontSize: tamanho === 'sm' ? 12 : 14 }} aria-hidden="true" />}
+      {icone && (
+        <i
+          className={`ti ${icone}`}
+          style={{ fontSize: tamanho === 'sm' ? 12 : 14 }}
+          aria-hidden="true"
+        />
+      )}
       {children}
     </button>
   )
@@ -105,22 +112,29 @@ export function BtnLink({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        background: hover ? cor.hover : 'transparent',
+        background: hover ? cor.hoverBg : 'transparent',
         color: cor.texto,
-        border: `1.5px solid ${cor.borda}`,
+        border: `1.5px solid ${hover ? cor.hoverBorda : cor.borda}`,
         padding: tam.padding,
         borderRadius: 8,
         fontSize: tam.fontSize,
         fontWeight: 500,
         cursor: 'pointer',
-        transform: hover ? 'scale(0.96)' : 'scale(1)',
-        transition: 'background .15s, transform .12s',
+        transform: hover ? 'scale(0.97)' : 'scale(1)',
+        transition: 'background .15s, border-color .15s, transform .12s',
         textDecoration: 'none',
         fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
         ...style,
       }}
     >
-      {icone && <i className={`ti ${icone}`} style={{ fontSize: tamanho === 'sm' ? 12 : 14 }} aria-hidden="true" />}
+      {icone && (
+        <i
+          className={`ti ${icone}`}
+          style={{ fontSize: tamanho === 'sm' ? 12 : 14 }}
+          aria-hidden="true"
+        />
+      )}
       {children}
     </a>
   )
