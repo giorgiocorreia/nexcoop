@@ -9,11 +9,17 @@ export async function PATCH(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { nome_completo, telefone } = await request.json()
+    const { nome_completo, telefone, cpf, endereco, municipio } = await request.json()
 
     const { error } = await admin
       .from('usuarios')
-      .update({ nome_completo, telefone })
+      .update({
+        nome_completo: nome_completo?.trim() || undefined,
+        telefone: telefone || null,
+        cpf: cpf || null,
+        endereco: endereco || null,
+        municipio: municipio || null,
+      })
       .eq('id', user.id)
 
     if (error) throw new Error(error.message)
