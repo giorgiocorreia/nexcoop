@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 const COR = '#92400e'
 
@@ -297,7 +298,7 @@ export default function PerfilProdutorPage() {
           {temSaldoFinanceiro && (
             <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
               <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Saldo financeiro</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: '#166534' }}>R$ {conta.saldo_financeiro.toFixed(2)}</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</div>
             </div>
           )}
 
@@ -312,8 +313,8 @@ export default function PerfilProdutorPage() {
                 ) : prev ? (
                   prev.valor_estimado !== null ? (
                     <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '6px' }}>
-                      ≈ <strong style={{ color: '#166534' }}>R$ {prev.valor_estimado.toFixed(2)}</strong>
-                      <span style={{ marginLeft: '4px', color: '#9a9a9a' }}>@ R$ {prev.preco?.toFixed(2)}/kg</span>
+                      ≈ <strong style={{ color: '#166534' }}>{fmtReal(prev.valor_estimado)}</strong>
+                      <span style={{ marginLeft: '4px', color: '#9a9a9a' }}>@ {fmtReal(prev.preco ?? 0)}/kg</span>
                     </div>
                   ) : (
                     <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '6px' }}>sem cotação hoje</div>
@@ -326,7 +327,7 @@ export default function PerfilProdutorPage() {
           {previsoes.filter(p => p.valor_estimado !== null).length > 1 && (
             <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
               <div style={{ fontSize: '11px', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total estimado</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>R$ {(totalPrevisao + conta.saldo_financeiro).toFixed(2)}</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>{fmtReal(totalPrevisao + conta.saldo_financeiro)}</div>
               <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>produto + financeiro</div>
             </div>
           )}
@@ -382,7 +383,7 @@ export default function PerfilProdutorPage() {
                       })() : '—'}
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                      {m.valor_financeiro ? `R$ ${Math.abs(m.valor_financeiro).toFixed(2)}` : '—'}
+                      {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
                     </td>
                   </tr>
                 ))}

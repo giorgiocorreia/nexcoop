@@ -17,6 +17,7 @@ import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -525,12 +526,12 @@ export default function CaixaPage() {
         <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>✓ Caixa fechado</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Data</span><span>{new Date(resumoFechamento.data).toLocaleDateString('pt-BR')}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saldo inicial</span><span>R$ {resumoFechamento.saldo_inicial_especie.toFixed(2)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saídas espécie</span><span>R$ {(resumoFechamento.total_saidas_especie ?? 0).toFixed(2)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Total Pix</span><span>R$ {(resumoFechamento.total_pix ?? 0).toFixed(2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saldo inicial</span><span>{fmtReal(resumoFechamento.saldo_inicial_especie)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saídas espécie</span><span>{fmtReal(resumoFechamento.total_saidas_especie ?? 0)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Total Pix</span><span>{fmtReal(resumoFechamento.total_pix ?? 0)}</span></div>
           <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: 500 }}>
             <span>Saldo final espécie</span>
-            <span>R$ {saldoFinal ? parseFloat(saldoFinal).toFixed(2) : saldoEsperado.toFixed(2)}</span>
+            <span>{fmtReal(saldoFinal ? parseFloat(saldoFinal) : saldoEsperado)}</span>
           </div>
         </div>
         <button
@@ -759,7 +760,7 @@ export default function CaixaPage() {
             ⇅ Aporte / Sangria
           </button>
           <span style={{ fontSize: '13px', color: '#166534', background: '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>● Aberto</span>
-          <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Saldo inicial: R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
+          <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}</span>
         </div>
       </div>
 
@@ -854,7 +855,7 @@ export default function CaixaPage() {
                           ? (op.tipo === 'conversao' ? '#166534' : '#111827')
                           : '#111827' }}>
                         {op.valor_financeiro
-                          ? `R$ ${Math.abs(op.valor_financeiro).toFixed(2)}`
+                          ? fmtReal(Math.abs(op.valor_financeiro))
                           : '—'}
                       </td>
                     </tr>
@@ -894,7 +895,7 @@ export default function CaixaPage() {
                     ))}
                     {conta.saldo_financeiro > 0 && (
                       <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 14px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '16px', fontWeight: 600, color: '#166534' }}>R$ {conta.saldo_financeiro.toFixed(2)}</div>
+                        <div style={{ fontSize: '16px', fontWeight: 600, color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</div>
                         <div style={{ fontSize: '11px', color: '#6b6b6b' }}>Saldo financeiro</div>
                       </div>
                     )}
@@ -1004,7 +1005,7 @@ export default function CaixaPage() {
                     </div>
                     {formReceber.quantidade && formReceber.preco_kg && (
                       <div style={{ padding: '8px 14px', background: '#fef3c7', borderRadius: '8px', fontSize: '14px', fontWeight: 500, color: '#92400e' }}>
-                        = R$ {(parseFloat(formReceber.quantidade) * parseFloat(formReceber.preco_kg)).toFixed(2)}
+                        = {fmtReal(parseFloat(formReceber.quantidade) * parseFloat(formReceber.preco_kg))}
                       </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1031,7 +1032,7 @@ export default function CaixaPage() {
                 <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
                   <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Saque de saldo financeiro</div>
                   <div style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '12px' }}>
-                    Saldo disponível: <strong style={{ color: '#166534' }}>R$ {conta.saldo_financeiro.toFixed(2)}</strong>
+                    Saldo disponível: <strong style={{ color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</strong>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1075,7 +1076,7 @@ export default function CaixaPage() {
                             {m.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(m.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span> })() : ''}
                           </td>
                           <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                            {m.valor_financeiro ? `R$ ${Math.abs(m.valor_financeiro).toFixed(2)}` : ''}
+                            {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : ''}
                           </td>
                         </tr>
                       ))}
@@ -1101,7 +1102,7 @@ export default function CaixaPage() {
                     <div>
                       <div style={{ fontWeight: 500, fontSize: '15px' }}>{s.produtores?.nome}</div>
                       <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '4px' }}>
-                        {s.quantidade_kg} kg de {s.produtos?.nome} · R$ {s.valor_estimado.toFixed(2)} · {s.forma_pagamento === 'pix' ? `Pix: ${s.chave_pix}` : 'Espécie'}
+                        {s.quantidade_kg} kg de {s.produtos?.nome} · {fmtReal(s.valor_estimado)} · {s.forma_pagamento === 'pix' ? `Pix: ${s.chave_pix}` : 'Espécie'}
                       </div>
                     </div>
                     <button onClick={async () => { const p = await buscarProdutor(s.produtores?.nome ?? ''); if (p && p[0]) { await selecionarProdutor(p[0] as ProdutorBusca); setAba('buscar') } }}
@@ -1158,7 +1159,7 @@ export default function CaixaPage() {
                         {op.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(op.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {op.produtos?.unidade ?? 'kg'}</span> })() : '—'}
                       </td>
                       <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: op.valor_financeiro ? (op.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                        {op.valor_financeiro ? `R$ ${Math.abs(op.valor_financeiro).toFixed(2)}` : '—'}
+                        {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
                       </td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                         {op.tipo === 'entrega' && (
@@ -1182,31 +1183,31 @@ export default function CaixaPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6b6b6b' }}>Saldo inicial espécie</span>
-                <span>R$ {sessao.saldo_inicial_especie.toFixed(2)}</span>
+                <span>{fmtReal(sessao.saldo_inicial_especie)}</span>
               </div>
               {aportesDia.filter(a => a.tipo === 'aporte').length > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534' }}>
                   <span>Aportes ({aportesDia.filter(a => a.tipo === 'aporte').length})</span>
-                  <span>+ R$ {aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                  <span>+ {fmtReal(aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
                 </div>
               )}
               {aportesDia.filter(a => a.tipo === 'sangria').length > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#991b1b' }}>
                   <span>Sangrias ({aportesDia.filter(a => a.tipo === 'sangria').length})</span>
-                  <span>− R$ {aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                  <span>− {fmtReal(aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6b6b6b' }}>Saídas espécie (pagamentos)</span>
-                <span>− R$ {(sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
+                <span>− {fmtReal(sessao.total_saidas_especie ?? 0)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6b6b6b' }}>Total Pix</span>
-                <span>R$ {(sessao.total_pix ?? 0).toFixed(2)}</span>
+                <span>{fmtReal(sessao.total_pix ?? 0)}</span>
               </div>
               <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
                 <span>Saldo esperado em caixa</span>
-                <span style={{ color: '#92400e' }}>R$ {saldoEsperado.toFixed(2)}</span>
+                <span style={{ color: '#92400e' }}>{fmtReal(saldoEsperado)}</span>
               </div>
             </div>
           </div>
@@ -1227,7 +1228,7 @@ export default function CaixaPage() {
                     {a.observacoes && <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '2px' }}>{a.observacoes}</div>}
                   </div>
                   <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
-                    {a.tipo === 'aporte' ? '+' : '−'} R$ {a.valor.toFixed(2)}
+                    {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
                   </span>
                 </div>
               ))}
@@ -1249,7 +1250,7 @@ export default function CaixaPage() {
 
             <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
               <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '4px' }}>Saldo esperado em caixa</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: '#92400e' }}>R$ {saldoEsperado.toFixed(2)}</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: '#92400e' }}>{fmtReal(saldoEsperado)}</div>
               <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>calculado automaticamente</div>
             </div>
 
@@ -1262,7 +1263,7 @@ export default function CaixaPage() {
                 {saldoFinal && (() => {
                   const diferenca = parseFloat(saldoFinal) - saldoEsperado
                   const cor = Math.abs(diferenca) < 0.01 ? '#166534' : diferenca > 0 ? '#166534' : '#991b1b'
-                  const label = Math.abs(diferenca) < 0.01 ? '✓ Confere' : diferenca > 0 ? `Sobra R$ ${diferenca.toFixed(2)}` : `Falta R$ ${Math.abs(diferenca).toFixed(2)}`
+                  const label = Math.abs(diferenca) < 0.01 ? '✓ Confere' : diferenca > 0 ? `Sobra ${fmtReal(diferenca)}` : `Falta ${fmtReal(Math.abs(diferenca))}`
                   return <div style={{ fontSize: '13px', color: cor, fontWeight: 500, marginTop: '4px' }}>{label}</div>
                 })()}
               </div>

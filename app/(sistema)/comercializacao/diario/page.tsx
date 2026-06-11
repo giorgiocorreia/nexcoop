@@ -6,6 +6,7 @@ import {
   listarSessoesFechadas,
   getDetalheSessao
 } from '@/lib/comercializacao/diario.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 const COR = '#92400e'
 
@@ -166,11 +167,11 @@ export default function DiarioCaixaPage() {
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total saídas espécie</div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>R$ {totalSaidas.toFixed(2)}</div>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{fmtReal(totalSaidas)}</div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total Pix</div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>R$ {totalPix.toFixed(2)}</div>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{fmtReal(totalPix)}</div>
           </div>
         </div>
       )}
@@ -217,19 +218,19 @@ export default function DiarioCaixaPage() {
                   {/* Saldo inicial */}
                   <div style={{ minWidth: '100px', textAlign: 'right' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo inicial</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>R$ {s.saldo_inicial_especie.toFixed(2)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{fmtReal(s.saldo_inicial_especie)}</div>
                   </div>
 
                   {/* Saídas espécie */}
                   <div style={{ minWidth: '100px', textAlign: 'right' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Saídas espécie</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>R$ {(s.total_saidas_especie ?? 0).toFixed(2)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>{fmtReal(s.total_saidas_especie ?? 0)}</div>
                   </div>
 
                   {/* Pix */}
                   <div style={{ minWidth: '100px', textAlign: 'right' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Total Pix</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#166534' }}>R$ {(s.total_pix ?? 0).toFixed(2)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#166534' }}>{fmtReal(s.total_pix ?? 0)}</div>
                   </div>
 
                   {/* Diferença */}
@@ -257,37 +258,37 @@ export default function DiarioCaixaPage() {
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                               <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
-                              <span>R$ {detalhe.sessao.saldo_inicial_especie.toFixed(2)}</span>
+                              <span>{fmtReal(detalhe.sessao.saldo_inicial_especie)}</span>
                             </div>
                             {detalhe.aportes.filter(a => a.tipo === 'aporte').length > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                                 <span style={{ color: '#166534' }}>Aportes ({detalhe.aportes.filter(a => a.tipo === 'aporte').length})</span>
-                                <span style={{ color: '#166534' }}>+ R$ {detalhe.aportes.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                                <span style={{ color: '#166534' }}>+ {fmtReal(detalhe.aportes.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
                               </div>
                             )}
                             {detalhe.aportes.filter(a => a.tipo === 'sangria').length > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                                 <span style={{ color: '#991b1b' }}>Sangrias ({detalhe.aportes.filter(a => a.tipo === 'sangria').length})</span>
-                                <span style={{ color: '#991b1b' }}>− R$ {detalhe.aportes.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0).toFixed(2)}</span>
+                                <span style={{ color: '#991b1b' }}>− {fmtReal(detalhe.aportes.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
                               </div>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                               <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
-                              <span>− R$ {(detalhe.sessao.total_saidas_especie ?? 0).toFixed(2)}</span>
+                              <span>− {fmtReal(detalhe.sessao.total_saidas_especie ?? 0)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                               <span style={{ color: '#6b6b6b' }}>Total Pix</span>
-                              <span>R$ {(detalhe.sessao.total_pix ?? 0).toFixed(2)}</span>
+                              <span>{fmtReal(detalhe.sessao.total_pix ?? 0)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 600 }}>
                               <span>Saldo esperado</span>
-                              <span style={{ color: COR }}>R$ {saldoEsperado.toFixed(2)}</span>
+                              <span style={{ color: COR }}>{fmtReal(saldoEsperado)}</span>
                             </div>
                             {detalhe.sessao.saldo_final_especie !== null && (
                               <>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
                                   <span style={{ color: '#6b6b6b' }}>Saldo contado</span>
-                                  <span>R$ {detalhe.sessao.saldo_final_especie.toFixed(2)}</span>
+                                  <span>{fmtReal(detalhe.sessao.saldo_final_especie)}</span>
                                 </div>
                                 {(() => {
                                   const dif = detalhe.sessao.saldo_final_especie - saldoEsperado
@@ -300,7 +301,7 @@ export default function DiarioCaixaPage() {
                                   return (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
                                       <span style={{ color: '#991b1b' }}>Diferença</span>
-                                      <span style={{ color: '#991b1b', fontWeight: 500 }}>{dif > 0 ? `Sobra R$ ${dif.toFixed(2)}` : `Falta R$ ${Math.abs(dif).toFixed(2)}`}</span>
+                                      <span style={{ color: '#991b1b', fontWeight: 500 }}>{dif > 0 ? `Sobra ${fmtReal(dif)}` : `Falta ${fmtReal(Math.abs(dif))}`}</span>
                                     </div>
                                   )
                                 })()}
@@ -345,7 +346,7 @@ export default function DiarioCaixaPage() {
                                     {a.observacoes && <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '2px' }}>{a.observacoes}</div>}
                                   </div>
                                   <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
-                                    {a.tipo === 'aporte' ? '+' : '−'} R$ {a.valor.toFixed(2)}
+                                    {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
                                   </span>
                                 </div>
                               ))}
@@ -386,7 +387,7 @@ export default function DiarioCaixaPage() {
                                       {m.quantidade_produto ? `${formatarKg(m.quantidade_produto)} ${m.produtos?.unidade ?? 'kg'}` : '—'}
                                     </td>
                                     <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                                      {m.valor_financeiro ? `R$ ${Math.abs(m.valor_financeiro).toFixed(2)}` : '—'}
+                                      {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
                                     </td>
                                   </tr>
                                 ))}

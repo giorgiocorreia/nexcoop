@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { listarCotacoes, registrarCotacao } from '@/lib/comercializacao/cotacoes.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 type Produto = { id: string; nome: string; unidade: string }
 type Cotacao = {
@@ -100,10 +101,10 @@ export default function CotacoesPage() {
                     {new Date(cotacao.data).toLocaleDateString('pt-BR')}
                   </div>
                   <div style={{ fontSize: '13px', color: '#6b6b6b' }}>
-                    Externo: <strong>R$ {cotacao.preco_externo.toFixed(2)}/{produto.unidade}</strong>
+                    Externo: <strong>{fmtReal(cotacao.preco_externo)}/{produto.unidade}</strong>
                   </div>
                   <div style={{ fontSize: '13px', color: '#92400e' }}>
-                    Cooperado: <strong>R$ {cotacao.preco_cooperado.toFixed(2)}/{produto.unidade}</strong>
+                    Cooperado: <strong>{fmtReal(cotacao.preco_cooperado)}/{produto.unidade}</strong>
                   </div>
                 </>
               ) : (
@@ -217,10 +218,10 @@ export default function CotacoesPage() {
                   </td>
                   <td style={{ padding: '12px 16px' }}>{c.produtos?.nome}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    R$ {c.preco_externo.toFixed(2)}
+                    {fmtReal(c.preco_externo)}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', color: '#92400e', fontWeight: 500 }}>
-                    R$ {c.preco_cooperado.toFixed(2)}
+                    {fmtReal(c.preco_cooperado)}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', color: '#166534', fontSize: '13px' }}>
                     +{diff}%

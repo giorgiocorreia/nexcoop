@@ -7,6 +7,7 @@ import {
   calcularDistribuicao,
   pagarDistribuicao
 } from '@/lib/comercializacao/distribuicao.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 type VendaSimples = {
   id: string
@@ -109,7 +110,7 @@ export default function DistribuicaoPage() {
                   {v.compradores?.nome ?? '—'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}>
-                  R$ {v.valor_liquido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) ?? '—'}
+                  {v.valor_liquido != null ? fmtReal(v.valor_liquido) : '—'}
                 </div>
               </button>
             ))
@@ -132,7 +133,7 @@ export default function DistribuicaoPage() {
                       {vendaSelecionada.lotes?.codigo} — {vendaSelecionada.compradores?.nome}
                     </div>
                     <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
-                      {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: R$ {vendaSelecionada.valor_liquido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: {fmtReal(vendaSelecionada.valor_liquido ?? 0)}
                     </div>
                   </div>
                   <button
@@ -160,11 +161,11 @@ export default function DistribuicaoPage() {
                   </div>
                   <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Pago</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#166534' }}>R$ {totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#166534' }}>{fmtReal(totalPago)}</div>
                   </div>
                   <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Pendente</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#92400e' }}>R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#92400e' }}>{fmtReal(totalPendente)}</div>
                   </div>
                 </div>
               )}
@@ -199,7 +200,7 @@ export default function DistribuicaoPage() {
                             {l.percentual.toFixed(2)}%
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>
-                            R$ {l.valor_liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {fmtReal(l.valor_liquido)}
                           </td>
                           <td style={{ padding: '12px 16px' }}>
                             <span style={{

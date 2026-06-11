@@ -6,13 +6,10 @@ import Link from 'next/link'
 import { getDashboardComercializacao } from '@/lib/comercializacao/dashboard'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-}
-
-function fmtReal(n: number) {
-  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 
 function fmtKg(n: number) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { listarVendas, criarVenda, atualizarStatusVenda, editarVenda } from '@/lib/comercializacao/vendas.actions'
+import { fmtReal } from '@/lib/comercializacao/fmt'
 import { listarSafras } from '@/lib/comercializacao/safras.actions'
 import { listarLotes } from '@/lib/comercializacao/lotes.actions'
 import { listarCompradores } from '@/lib/comercializacao/compradores.actions'
@@ -237,10 +238,10 @@ export default function VendasPage() {
                   {v.quantidade_kg.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}
                 </td>
                 <td style={{ padding: '12px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                  R$ {v.preco_kg.toFixed(2)}
+                  {fmtReal(v.preco_kg)}
                 </td>
                 <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500, color: '#166534' }}>
-                  {v.valor_liquido != null ? `R$ ${v.valor_liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                  {v.valor_liquido != null ? fmtReal(v.valor_liquido) : '—'}
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{
@@ -380,21 +381,21 @@ export default function VendasPage() {
                 <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 16px', fontSize: '13px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span style={{ color: '#6b6b6b' }}>Valor bruto</span>
-                    <span>R$ {valorBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>{fmtReal(valorBruto)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span style={{ color: '#6b6b6b' }}>Taxa ({taxa}%)</span>
-                    <span>− R$ {valorTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>− {fmtReal(valorTaxa)}</span>
                   </div>
                   {custos > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ color: '#6b6b6b' }}>Logística</span>
-                      <span>− R$ {custos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span>− {fmtReal(custos)}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #fde68a', paddingTop: '8px', fontWeight: 600, color: '#92400e' }}>
                     <span>Valor líquido</span>
-                    <span>R$ {valorLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>{fmtReal(valorLiquido)}</span>
                   </div>
                 </div>
               )}
