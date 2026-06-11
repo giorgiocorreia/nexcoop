@@ -141,7 +141,7 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
 
   const { data: org, error: orgErr } = await adminClient
     .from('organizacoes')
-    .select('nome, cnpj, endereco, municipio')
+    .select('nome, cnpj')
     .eq('id', nota.organizacao_id)
     .single()
 
@@ -208,8 +208,8 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     organizacao: {
       nome: org.nome,
       cnpj: org.cnpj ?? '',
-      endereco: (org as any).endereco ?? '',
-      municipio: (org as any).municipio ?? '',
+      endereco: '',
+      municipio: '',
     },
     operador: { nome: operador?.nome_completo || 'Operador' },
     produtor: {
