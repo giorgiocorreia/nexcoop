@@ -19,6 +19,7 @@ import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
+import { ModalNfeEntrada, BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -182,6 +183,7 @@ export default function CaixaPage() {
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
   const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
+  const [modalNfe, setModalNfe] = useState<string | null>(null)
   const [orgNome, setOrgNome] = useState('')
   const [orgCnpj, setOrgCnpj] = useState('')
   const [operadorNome, setOperadorNome] = useState('')
@@ -387,6 +389,7 @@ export default function CaixaPage() {
       })
       setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
       setUltimaMovimentacaoId(result.id)
+      setModalNfe(result.id)
       await recarregarConta(); await recarregarSessao()
       setStatusOp('sucesso'); setTimeout(() => { setStatusOp('idle'); setUltimaMovimentacaoId(null) }, 30000)
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
@@ -613,6 +616,10 @@ export default function CaixaPage() {
 
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+
+      {modalNfe && (
+        <ModalNfeEntrada movimentacao_id={modalNfe} onClose={() => setModalNfe(null)} />
+      )}
 
       {/* MODAL APORTE/SANGRIA */}
       {modalAporte && (
@@ -1141,7 +1148,10 @@ export default function CaixaPage() {
                       </td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                         {op.tipo === 'entrega' && (
-                          <BotaoComprovante movimentacao_id={op.id} />
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                            <BotaoComprovante movimentacao_id={op.id} />
+                            <BotaoNfe movimentacao_id={op.id} />
+                          </div>
                         )}
                       </td>
                     </tr>
