@@ -18,6 +18,7 @@ import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import { Btn } from '@/components/ui/Btn'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -574,24 +575,25 @@ export default function CaixaPage() {
               observacoes: obsFechamento || undefined,
             })
           }}
-          style={{ marginTop: '16px', width: '100%', padding: '10px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          style={{ display: 'contents' }}
         >
-          Baixar PDF do Fechamento
+          <Btn variante="roxo" icone="ti-download" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
+            Baixar PDF do fechamento
+          </Btn>
         </button>
-        <button onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
-          style={{ marginTop: '8px', width: '100%', padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+        <Btn variante="marrom" onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
+          style={{ marginTop: 8, width: '100%', justifyContent: 'center' }}>
           Novo dia
-        </button>
+        </Btn>
       </div>
     </div>
   )
 
   if (!sessao) return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <button onClick={() => router.push('/comercializacao')}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', marginBottom: '20px', padding: 0 }}>
-        <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
-      </button>
+      <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')} style={{ marginBottom: 20 }}>
+        Voltar
+      </Btn>
       <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '24px' }}>Caixa</h1>
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '32px', maxWidth: '360px' }}>
         <div style={{ fontWeight: 500, marginBottom: '16px' }}>Abrir caixa</div>
@@ -601,10 +603,9 @@ export default function CaixaPage() {
             <input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
               onChange={e => setSaldoInicial(e.target.value)} style={inputStyle} />
           </div>
-          <button onClick={handleAbrirCaixa} disabled={abrindo || !saldoInicial}
-            style={{ padding: '10px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+          <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo || !saldoInicial} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
             {abrindo ? 'Abrindo...' : 'Abrir caixa'}
-          </button>
+          </Btn>
         </div>
       </div>
     </div>
@@ -667,11 +668,10 @@ export default function CaixaPage() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setModalAporte(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={handleAporteSangria} disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+              <Btn variante="cinza" onClick={() => setModalAporte(false)}>Cancelar</Btn>
+              <Btn variante="marrom" icone="ti-check" disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha} onClick={handleAporteSangria}>
                 {salvandoAporte ? 'Processando...' : 'Confirmar'}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>
@@ -722,7 +722,7 @@ export default function CaixaPage() {
                 <input placeholder="Nome ou CPF..." value={buscaRateio} onChange={e => setBuscaRateio(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && buscarParaRateio()}
                   style={{ flex: 1, ...inputStyle }} />
-                <button onClick={buscarParaRateio} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>Buscar</button>
+                <Btn variante="cinza" onClick={buscarParaRateio}>Buscar</Btn>
               </div>
             </div>
             {resultadosBuscaRateio.length > 0 && (
@@ -737,11 +737,10 @@ export default function CaixaPage() {
             )}
             {erroRateio && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroRateio}</div>}
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={() => setModalRateio(false)} style={{ padding: '10px 20px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={confirmarRateio} disabled={!percentualOk || salvandoRateio}
-                style={{ padding: '10px 24px', background: percentualOk ? '#92400e' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: percentualOk ? 'pointer' : 'not-allowed' }}>
+              <Btn variante="cinza" onClick={() => setModalRateio(false)}>Cancelar</Btn>
+              <Btn variante="marrom" icone="ti-check" disabled={!percentualOk || salvandoRateio} onClick={confirmarRateio}>
                 {salvandoRateio ? 'Salvando...' : 'Confirmar entrega'}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>
@@ -749,16 +748,14 @@ export default function CaixaPage() {
 
       {/* CABEÇALHO */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={() => router.push('/comercializacao')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', padding: 0 }}>
-          <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
-        </button>
+        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
+          Voltar
+        </Btn>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Caixa</h1>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={abrirModalAporte}
-            style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
-            ⇅ Aporte / Sangria
-          </button>
+          <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
+            Aporte / Sangria
+          </Btn>
           <span style={{ fontSize: '13px', color: '#166534', background: '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>● Aberto</span>
           <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}</span>
         </div>
@@ -784,12 +781,11 @@ export default function CaixaPage() {
             <input placeholder="Nome ou CPF do produtor..." value={termoBusca}
               onChange={handleTermoBuscaChange} onKeyDown={e => e.key === 'Enter' && handleBuscar()}
               style={{ flex: 1, maxWidth: '360px', ...inputStyle }} />
-            <button onClick={handleBuscar} style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>Buscar</button>
+            <Btn variante="cinza" onClick={handleBuscar}>Buscar</Btn>
             {produtorSelecionado && (
-              <button onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>
+              <Btn variante="cinza" onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}>
                 Limpar
-              </button>
+              </Btn>
             )}
           </div>
 
@@ -904,30 +900,18 @@ export default function CaixaPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <button onClick={() => setOperacao(operacao === 'entrega' ? null : 'entrega')} style={{
-                  background: operacao === 'entrega' ? '#7a3409' : '#92400e',
-                  color: '#fff', border: 'none',
-                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
-                  fontWeight: 500, cursor: 'pointer',
-                }}>
-                  ↓ Registrar entrega
-                </button>
-                <button onClick={() => setOperacao(operacao === 'receber' ? null : 'receber')} style={{
-                  background: operacao === 'receber' ? '#fef3c7' : '#fff',
-                  color: '#92400e', border: '1px solid #92400e',
-                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
-                  fontWeight: 500, cursor: 'pointer',
-                }}>
-                  ↑ Pagar produtor
-                </button>
-                <button onClick={() => setOperacao(operacao === 'saque' ? null : 'saque')} style={{
-                  background: operacao === 'saque' ? '#f3f4f6' : '#fff',
-                  color: '#374151', border: '1px solid #e5e3dc',
-                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
-                  cursor: 'pointer',
-                }}>
-                  $ Saque financeiro
-                </button>
+                <Btn variante="marrom" icone="ti-arrow-down" onClick={() => setOperacao(operacao === 'entrega' ? null : 'entrega')}
+                  style={operacao === 'entrega' ? { background: '#fef3c7' } : {}}>
+                  Registrar entrega
+                </Btn>
+                <Btn variante="verde" icone="ti-arrow-up" onClick={() => setOperacao(operacao === 'receber' ? null : 'receber')}
+                  style={operacao === 'receber' ? { background: '#dcfce7' } : {}}>
+                  Pagar produtor
+                </Btn>
+                <Btn variante="cinza" icone="ti-currency-dollar" onClick={() => setOperacao(operacao === 'saque' ? null : 'saque')}
+                  style={operacao === 'saque' ? { background: '#f3f4f6' } : {}}>
+                  Saque financeiro
+                </Btn>
               </div>
 
               {statusOp === 'sucesso' && (
@@ -962,14 +946,12 @@ export default function CaixaPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-                    <button onClick={handleEntregaSimples} disabled={statusOp === 'salvando' || !formEntrega.quantidade}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+                    <Btn variante="marrom" disabled={statusOp === 'salvando' || !formEntrega.quantidade} onClick={handleEntregaSimples}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar (individual)'}
-                    </button>
-                    <button onClick={abrirModalRateio} disabled={!formEntrega.quantidade || !formEntrega.produto_id}
-                      style={{ padding: '8px 20px', background: '#fff', color: '#92400e', border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
-                      Rateio entre participantes →
-                    </button>
+                    </Btn>
+                    <Btn variante="cinza" disabled={!formEntrega.quantidade || !formEntrega.produto_id} onClick={abrirModalRateio}>
+                      Rateio →
+                    </Btn>
                   </div>
                 </div>
               )}
@@ -1020,10 +1002,9 @@ export default function CaixaPage() {
                         <PixInput value={formReceber.chave_pix} onChange={v => setFormReceber(f => ({ ...f, chave_pix: v }))} style={inputStyle} />
                       </div>
                     )}
-                    <button onClick={handleReceber} disabled={statusOp === 'salvando'}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+                    <Btn variante="verde" disabled={statusOp === 'salvando'} onClick={handleReceber}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar pagamento'}
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               )}
@@ -1053,10 +1034,9 @@ export default function CaixaPage() {
                         <PixInput value={formSaque.chave_pix} onChange={v => setFormSaque(f => ({ ...f, chave_pix: v }))} style={{ ...inputStyle, width: '100%' }} />
                       </div>
                     )}
-                    <button onClick={handleSaque} disabled={statusOp === 'salvando'}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+                    <Btn variante="marrom" disabled={statusOp === 'salvando'} onClick={handleSaque}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar saque'}
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               )}
@@ -1105,10 +1085,9 @@ export default function CaixaPage() {
                         {s.quantidade_kg} kg de {s.produtos?.nome} · {fmtReal(s.valor_estimado)} · {s.forma_pagamento === 'pix' ? `Pix: ${s.chave_pix}` : 'Espécie'}
                       </div>
                     </div>
-                    <button onClick={async () => { const p = await buscarProdutor(s.produtores?.nome ?? ''); if (p && p[0]) { await selecionarProdutor(p[0] as ProdutorBusca); setAba('buscar') } }}
-                      style={{ padding: '8px 16px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    <Btn variante="marrom" tamanho="sm" onClick={async () => { const p = await buscarProdutor(s.produtores?.nome ?? ''); if (p && p[0]) { await selecionarProdutor(p[0] as ProdutorBusca); setAba('buscar') } }}>
                       Atender
-                    </button>
+                    </Btn>
                   </div>
                 </div>
               ))}
@@ -1122,10 +1101,9 @@ export default function CaixaPage() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <span style={{ fontSize: '13px', color: '#6b6b6b' }}>{operacoesDia.length} operação(ões) hoje</span>
-            <button onClick={carregarOperacoesDia} disabled={carregandoOps}
-              style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <Btn variante="cinza" tamanho="sm" disabled={carregandoOps} onClick={carregarOperacoesDia}>
               {carregandoOps ? 'Atualizando...' : '↻ Atualizar'}
-            </button>
+            </Btn>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -1235,10 +1213,9 @@ export default function CaixaPage() {
             </div>
           )}
 
-          <button onClick={() => setModalFechar(true)}
-            style={{ width: '100%', padding: '12px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+          <Btn variante="marrom" icone="ti-lock" onClick={() => setModalFechar(true)} style={{ width: '100%', justifyContent: 'center', padding: '12px 18px' }}>
             Fechar caixa
-          </button>
+          </Btn>
         </div>
       )}
 
@@ -1276,14 +1253,12 @@ export default function CaixaPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setModalFechar(false)}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>
+              <Btn variante="cinza" onClick={() => setModalFechar(false)}>
                 Cancelar
-              </button>
-              <button onClick={handleFecharCaixa} disabled={fechando}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
+              </Btn>
+              <Btn variante="marrom" icone="ti-check" disabled={fechando} onClick={handleFecharCaixa}>
                 {fechando ? 'Fechando...' : 'Confirmar fechamento'}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

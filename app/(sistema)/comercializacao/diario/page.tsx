@@ -7,6 +7,7 @@ import {
   getDetalheSessao
 } from '@/lib/comercializacao/diario.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import { Btn } from '@/components/ui/Btn'
 
 const COR = '#92400e'
 
@@ -136,10 +137,9 @@ export default function DiarioCaixaPage() {
 
       {/* CABEÇALHO */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={() => router.push('/comercializacao')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', padding: 0 }}>
-          <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
-        </button>
+        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
+          Voltar
+        </Btn>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Diário de Caixa</h1>
       </div>
 

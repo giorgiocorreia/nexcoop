@@ -8,6 +8,7 @@ import {
   editarProdutor,
   listarCooperadosSemProdutor
 } from '@/lib/comercializacao/produtores.actions'
+import { Btn } from '@/components/ui/Btn'
 
 type Produtor = {
   id: string
@@ -204,12 +205,9 @@ export default function ProdutoresPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Produtores</h1>
-        <button
-          onClick={() => { setPerfilAberto(null); setForm(formVazio); setNovoForm(true) }}
-          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
-        >
-          + Novo produtor
-        </button>
+        <Btn variante="marrom" icone="ti-plus" onClick={() => { setPerfilAberto(null); setForm(formVazio); setNovoForm(true) }}>
+          Novo produtor
+        </Btn>
       </div>
 
       {status === 'sucesso' && (
@@ -276,26 +274,12 @@ export default function ProdutoresPage() {
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
-                      style={{
-                        background: '#fff', color: '#92400e', border: '1px solid #92400e',
-                        padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
-                        fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
-                      }}
-                    >
+                    <Btn variante="marrom" tamanho="sm" icone="ti-file-text" onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}>
                       Ver ficha
-                    </button>
-                    <button
-                      onClick={() => abrirPerfil(p)}
-                      style={{
-                        background: '#fff', color: '#374151', border: '1px solid #e5e3dc',
-                        padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
-                        cursor: 'pointer', whiteSpace: 'nowrap',
-                      }}
-                    >
+                    </Btn>
+                    <Btn variante="cinza" tamanho="sm" onClick={() => abrirPerfil(p)}>
                       Ver perfil
-                    </button>
+                    </Btn>
                   </div>
                 </td>
               </tr>
@@ -438,19 +422,12 @@ export default function ProdutoresPage() {
             )}
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setPerfilAberto(null); setNovoForm(false) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}
-              >
+              <Btn variante="cinza" onClick={() => { setPerfilAberto(null); setNovoForm(false) }}>
                 Cancelar
-              </button>
-              <button
-                onClick={handleSalvar}
-                disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
-              >
+              </Btn>
+              <Btn variante="verde" icone="ti-check" disabled={status === 'salvando'} onClick={handleSalvar}>
                 {status === 'salvando' ? 'Salvando...' : 'Salvar'}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

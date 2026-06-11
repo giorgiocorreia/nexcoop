@@ -7,6 +7,7 @@ import { getDashboardComercializacao } from '@/lib/comercializacao/dashboard'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import { Btn, BtnLink } from '@/components/ui/Btn'
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -109,34 +110,16 @@ export default function DashboardComercializacao({
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Link href="/comercializacao/produtores" style={{
-              fontSize: 13, padding: '6px 14px', borderRadius: 8,
-              border: '1px solid #e5e3dc', background: '#fff',
-              color: '#374151', textDecoration: 'none',
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}>
-              <span style={{ fontSize: 14, color: '#92400e' }}>◈</span>
+            <BtnLink href="/comercializacao/produtores" variante="marrom" icone="ti-users">
               Produtores
-            </Link>
-            <Link href="/comercializacao/caixa" style={{
-              fontSize: 13, padding: '6px 14px', borderRadius: 8,
-              border: '1px solid #e5e3dc', background: '#fff',
-              color: '#374151', textDecoration: 'none',
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}>
-              <span style={{ fontSize: 14, color: '#1D9E75' }}>◈</span>
+            </BtnLink>
+            <BtnLink href="/comercializacao/caixa" variante="verde" icone="ti-cash-register">
               Caixa
-            </Link>
+            </BtnLink>
             {d.isAdmin && (
-              <Link href="/comercializacao/diario" style={{
-                fontSize: 13, padding: '6px 14px', borderRadius: 8,
-                border: '1px solid #e5e3dc', background: '#fff',
-                color: '#374151', textDecoration: 'none',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}>
-                <span style={{ fontSize: 14, color: '#635BFF' }}>◈</span>
+              <BtnLink href="/comercializacao/diario" variante="roxo" icone="ti-book">
                 Diário
-              </Link>
+              </BtnLink>
             )}
           </div>
         </div>
@@ -175,16 +158,9 @@ export default function DashboardComercializacao({
               ) : (
                 <p style={{ fontSize: 22, fontWeight: 500, color: '#9ca3af', margin: '0 0 8px', lineHeight: 1 }}>—</p>
               )}
-              <button
-                onClick={() => setModalAbrirCaixa(true)}
-                style={{
-                  fontSize: 11, padding: '4px 10px', borderRadius: 6,
-                  border: '1px solid #1D9E75', background: 'transparent',
-                  color: '#1D9E75', cursor: 'pointer', fontWeight: 500,
-                }}
-              >
+              <Btn variante="verde" tamanho="sm" onClick={() => setModalAbrirCaixa(true)}>
                 Abrir caixa
-              </button>
+              </Btn>
             </>
           ) : d.sessoesAbertas.length === 1 ? (
             <>
@@ -195,16 +171,9 @@ export default function DashboardComercializacao({
                 {d.sessoesAbertas[0].operador}
               </p>
               {d.minhaSessao && (
-                <button
-                  onClick={() => setModalAporte(true)}
-                  style={{
-                    fontSize: 11, padding: '4px 10px', borderRadius: 6,
-                    border: '1px solid #1D9E75', background: 'transparent',
-                    color: '#1D9E75', cursor: 'pointer', fontWeight: 500,
-                  }}
-                >
-                  + Solicitar aporte
-                </button>
+                <Btn variante="verde" tamanho="sm" icone="ti-plus" onClick={() => setModalAporte(true)}>
+                  Solicitar aporte
+                </Btn>
               )}
             </>
           ) : (
@@ -313,16 +282,9 @@ export default function DashboardComercializacao({
           {!d.minhaSessao ? (
             <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
               <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 12px' }}>Nenhuma sessão aberta</p>
-              <button
-                onClick={() => setModalAbrirCaixa(true)}
-                style={{
-                  fontSize: 13, padding: '7px 16px', border: '1px solid #e5e3dc',
-                  borderRadius: 8, color: '#374151', background: 'transparent',
-                  cursor: 'pointer',
-                }}
-              >
+              <Btn variante="cinza" onClick={() => setModalAbrirCaixa(true)}>
                 Abrir caixa
-              </button>
+              </Btn>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -344,13 +306,9 @@ export default function DashboardComercializacao({
                   {fmtReal(d.minhaSessao.saldoCalculado)}
                 </span>
               </div>
-              <Link href="/comercializacao/caixa" style={{
-                display: 'block', textAlign: 'center', fontSize: 13,
-                padding: '8px', border: '1px solid #e5e3dc', borderRadius: 8,
-                color: '#374151', textDecoration: 'none', marginTop: 4,
-              }}>
+              <BtnLink href="/comercializacao/caixa" variante="cinza" style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
                 Ver caixa completo →
-              </Link>
+              </BtnLink>
             </div>
           )}
         </div>
@@ -421,27 +379,12 @@ export default function DashboardComercializacao({
               />
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setModalAbrirCaixa(false); setSaldoInicial('') }}
-                style={{
-                  fontSize: 13, padding: '8px 16px', borderRadius: 8,
-                  border: '1px solid #e5e3dc', background: 'transparent', cursor: 'pointer',
-                }}
-              >
+              <Btn variante="cinza" onClick={() => { setModalAbrirCaixa(false); setSaldoInicial('') }}>
                 Cancelar
-              </button>
-              <button
-                disabled={!saldoInicial || abrindoCaixa}
-                onClick={handleAbrirCaixa}
-                style={{
-                  fontSize: 13, padding: '8px 16px', borderRadius: 8,
-                  border: 'none', background: '#1D9E75', color: '#fff',
-                  cursor: 'pointer', fontWeight: 500,
-                  opacity: (!saldoInicial || abrindoCaixa) ? 0.5 : 1,
-                }}
-              >
+              </Btn>
+              <Btn variante="verde" icone="ti-check" disabled={!saldoInicial || abrindoCaixa} onClick={handleAbrirCaixa}>
                 {abrindoCaixa ? 'Abrindo...' : 'Confirmar'}
-              </button>
+              </Btn>
             </div>
           </div>
         </div>
@@ -471,20 +414,9 @@ export default function DashboardComercializacao({
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 1rem' }}>
                   O gerente verá ao acessar o sistema.
                 </p>
-                <button
-                  onClick={() => {
-                    setModalAporte(false)
-                    setAporteEnviado(false)
-                    setValorAporte('')
-                    setMotivoAporte('')
-                  }}
-                  style={{
-                    fontSize: 13, padding: '8px 20px', borderRadius: 8,
-                    border: '1px solid #e5e3dc', cursor: 'pointer', background: 'transparent',
-                  }}
-                >
+                <Btn variante="cinza" onClick={() => { setModalAporte(false); setAporteEnviado(false); setValorAporte(''); setMotivoAporte('') }}>
                   Fechar
-                </button>
+                </Btn>
               </div>
             ) : (
               <>
@@ -518,27 +450,12 @@ export default function DashboardComercializacao({
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={() => { setModalAporte(false); setValorAporte(''); setMotivoAporte('') }}
-                    style={{
-                      fontSize: 13, padding: '8px 16px', borderRadius: 8,
-                      border: '1px solid #e5e3dc', background: 'transparent', cursor: 'pointer',
-                    }}
-                  >
+                  <Btn variante="cinza" onClick={() => { setModalAporte(false); setValorAporte(''); setMotivoAporte('') }}>
                     Cancelar
-                  </button>
-                  <button
-                    disabled={!valorAporte || Number(valorAporte) <= 0 || enviandoAporte}
-                    onClick={handleSolicitarAporte}
-                    style={{
-                      fontSize: 13, padding: '8px 16px', borderRadius: 8,
-                      border: 'none', background: '#1D9E75', color: '#fff',
-                      cursor: 'pointer', fontWeight: 500,
-                      opacity: (!valorAporte || Number(valorAporte) <= 0 || enviandoAporte) ? 0.5 : 1,
-                    }}
-                  >
+                  </Btn>
+                  <Btn variante="verde" icone="ti-send" disabled={!valorAporte || Number(valorAporte) <= 0 || enviandoAporte} onClick={handleSolicitarAporte}>
                     {enviandoAporte ? 'Enviando...' : 'Solicitar'}
-                  </button>
+                  </Btn>
                 </div>
               </>
             )}

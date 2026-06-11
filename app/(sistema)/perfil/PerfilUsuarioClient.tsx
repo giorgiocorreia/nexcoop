@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Usuario } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { CampoSenha } from '@/components/CampoSenha'
+import { Btn } from '@/components/ui/Btn'
 
 const FUNCAO_LABEL: Record<string, string> = {
   admin: 'Administrador',
@@ -271,14 +272,9 @@ export default function PerfilUsuarioClient({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
-                <button type="submit" disabled={salvando} style={{
-                  background: '#92400e', color: '#fff', border: 'none',
-                  padding: '8px 18px', borderRadius: 8, fontSize: 13,
-                  fontWeight: 500, cursor: 'pointer',
-                  opacity: salvando ? 0.7 : 1,
-                }}>
+                <Btn variante="verde" icone="ti-check" type="submit" disabled={salvando}>
                   {salvando ? 'Salvando...' : sucesso ? '✓ Salvo' : 'Salvar dados'}
-                </button>
+                </Btn>
               </div>
             </div>
           </form>
@@ -292,12 +288,9 @@ export default function PerfilUsuarioClient({
                 <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>••••••••••</p>
               </div>
               {!mostrarFormSenha && !senhaAlterada && (
-                <button
-                  onClick={() => setMostrarFormSenha(true)}
-                  style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '7px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-                >
+                <Btn variante="marrom" icone="ti-lock" onClick={() => setMostrarFormSenha(true)}>
                   Trocar senha
-                </button>
+                </Btn>
               )}
             </div>
 
@@ -308,14 +301,12 @@ export default function PerfilUsuarioClient({
                 <CampoSenha placeholder="Confirmar nova senha" value={confirmarNovaSenha} onChange={setConfirmarNovaSenha} style={{ marginBottom: 12 }} />
                 {erroSenha && <p style={{ fontSize: 13, color: '#dc2626', margin: '0 0 10px' }}>{erroSenha}</p>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <button onClick={() => { setMostrarFormSenha(false); setSenhaAtual(''); setNovaSenha(''); setConfirmarNovaSenha(''); setErroSenha('') }}
-                    style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '7px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <Btn variante="cinza" onClick={() => { setMostrarFormSenha(false); setSenhaAtual(''); setNovaSenha(''); setConfirmarNovaSenha(''); setErroSenha('') }}>
                     Cancelar
-                  </button>
-                  <button onClick={handleAlterarSenha} disabled={alterando}
-                    style={{ background: '#92400e', color: '#fff', border: 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: alterando ? 0.7 : 1 }}>
+                  </Btn>
+                  <Btn variante="verde" icone="ti-check" disabled={alterando} onClick={handleAlterarSenha}>
                     {alterando ? 'Salvando...' : 'Salvar nova senha'}
-                  </button>
+                  </Btn>
                 </div>
               </div>
             )}
