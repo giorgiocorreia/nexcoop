@@ -206,7 +206,7 @@ export default function ProdutoresPage() {
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Produtores</h1>
         <button
           onClick={() => { setPerfilAberto(null); setForm(formVazio); setNovoForm(true) }}
-          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
         >
           + Novo produtor
         </button>
@@ -279,10 +279,9 @@ export default function ProdutoresPage() {
                     <button
                       onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
                       style={{
-                        fontSize: '12px', padding: '4px 12px',
-                        color: '#92400e', background: '#fef3c7',
-                        border: '1px solid #fde68a', borderRadius: '6px',
-                        cursor: 'pointer', whiteSpace: 'nowrap'
+                        background: '#fff', color: '#92400e', border: '1px solid #92400e',
+                        padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+                        fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
                       }}
                     >
                       Ver ficha
@@ -290,10 +289,9 @@ export default function ProdutoresPage() {
                     <button
                       onClick={() => abrirPerfil(p)}
                       style={{
-                        fontSize: '12px', padding: '4px 12px',
-                        color: '#6b6b6b', background: '#f1f0eb',
-                        border: '1px solid #e5e3dc', borderRadius: '6px',
-                        cursor: 'pointer', whiteSpace: 'nowrap'
+                        background: '#fff', color: '#374151', border: '1px solid #e5e3dc',
+                        padding: '6px 14px', borderRadius: '8px', fontSize: '13px',
+                        cursor: 'pointer', whiteSpace: 'nowrap',
                       }}
                     >
                       Ver perfil
@@ -442,14 +440,14 @@ export default function ProdutoresPage() {
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => { setPerfilAberto(null); setNovoForm(false) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSalvar}
                 disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
               >
                 {status === 'salvando' ? 'Salvando...' : 'Salvar'}
               </button>

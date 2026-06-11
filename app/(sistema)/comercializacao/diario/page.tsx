@@ -145,11 +145,11 @@ export default function DiarioCaixaPage() {
       {/* FILTROS */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={mes} onChange={e => setMes(parseInt(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff' }}>
+          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#374151', cursor: 'pointer' }}>
           {meses.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
         </select>
         <select value={ano} onChange={e => setAno(parseInt(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff' }}>
+          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#374151', cursor: 'pointer' }}>
           {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <span style={{ fontSize: '13px', color: '#6b6b6b' }}>
@@ -162,15 +162,15 @@ export default function DiarioCaixaPage() {
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Sessões no período</div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>{sessoes.length}</div>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{sessoes.length}</div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total saídas espécie</div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#991b1b' }}>R$ {totalSaidas.toFixed(2)}</div>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>R$ {totalSaidas.toFixed(2)}</div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
             <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total Pix</div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#166534' }}>R$ {totalPix.toFixed(2)}</div>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>R$ {totalPix.toFixed(2)}</div>
           </div>
         </div>
       )}
@@ -223,7 +223,7 @@ export default function DiarioCaixaPage() {
                   {/* Saídas espécie */}
                   <div style={{ minWidth: '100px', textAlign: 'right' }}>
                     <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Saídas espécie</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#991b1b' }}>R$ {(s.total_saidas_especie ?? 0).toFixed(2)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>R$ {(s.total_saidas_especie ?? 0).toFixed(2)}</div>
                   </div>
 
                   {/* Pix */}
@@ -234,9 +234,9 @@ export default function DiarioCaixaPage() {
 
                   {/* Diferença */}
                   {temDiferenca && (
-                    <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', color: '#991b1b', fontWeight: 500 }}>
+                    <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e', fontWeight: 500 }}>
                       Diferença
-                    </div>
+                    </span>
                   )}
 
                   {/* Chevron */}

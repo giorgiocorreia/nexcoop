@@ -130,6 +130,17 @@ export default function DashboardComercializacao({
               <span style={{ fontSize: 14, color: '#1D9E75' }}>◈</span>
               Caixa
             </Link>
+            {d.isAdmin && (
+              <Link href="/comercializacao/diario" style={{
+                fontSize: 13, padding: '6px 14px', borderRadius: 8,
+                border: '1px solid #e5e3dc', background: '#fff',
+                color: '#374151', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ fontSize: 14, color: '#635BFF' }}>◈</span>
+                Diário
+              </Link>
+            )}
           </div>
         </div>
       </div>
