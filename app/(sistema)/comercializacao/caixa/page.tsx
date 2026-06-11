@@ -207,6 +207,9 @@ export default function CaixaPage() {
   useEffect(() => { if (aba === 'fechar') { recarregarSessao(); carregarAportesDia() } }, [aba])
   useEffect(() => { if (aba === 'operacoes' && sessao) carregarOperacoesDia() }, [aba, sessao])
   useEffect(() => {
+    if (sessao && operacoesDia.length === 0) carregarOperacoesDia()
+  }, [sessao])
+  useEffect(() => {
     const produtorId = searchParams.get('produtor_id')
     const acao = searchParams.get('acao') as 'entrega' | 'receber' | 'saque' | null
     if (produtorId && sessao) carregarProdutorPorId(produtorId, acao)
@@ -663,9 +666,9 @@ export default function CaixaPage() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button onClick={() => setModalAporte(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={() => setModalAporte(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={handleAporteSangria} disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                 {salvandoAporte ? 'Processando...' : 'Confirmar'}
               </button>
             </div>
@@ -733,9 +736,9 @@ export default function CaixaPage() {
             )}
             {erroRateio && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroRateio}</div>}
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={() => setModalRateio(false)} style={{ padding: '10px 20px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={() => setModalRateio(false)} style={{ padding: '10px 20px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={confirmarRateio} disabled={!percentualOk || salvandoRateio}
-                style={{ padding: '10px 24px', background: percentualOk ? '#92400e' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: percentualOk ? 'pointer' : 'not-allowed' }}>
+                style={{ padding: '10px 24px', background: percentualOk ? '#92400e' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: percentualOk ? 'pointer' : 'not-allowed' }}>
                 {salvandoRateio ? 'Salvando...' : 'Confirmar entrega'}
               </button>
             </div>
@@ -752,7 +755,7 @@ export default function CaixaPage() {
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Caixa</h1>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={abrirModalAporte}
-            style={{ padding: '6px 14px', background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', color: '#6b6b6b' }}>
+            style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
             ⇅ Aporte / Sangria
           </button>
           <span style={{ fontSize: '13px', color: '#166534', background: '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>● Aberto</span>
@@ -780,10 +783,10 @@ export default function CaixaPage() {
             <input placeholder="Nome ou CPF do produtor..." value={termoBusca}
               onChange={handleTermoBuscaChange} onKeyDown={e => e.key === 'Enter' && handleBuscar()}
               style={{ flex: 1, maxWidth: '360px', ...inputStyle }} />
-            <button onClick={handleBuscar} style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>Buscar</button>
+            <button onClick={handleBuscar} style={{ background: '#fff', color: '#374151', border: '1px solid #e5e3dc', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>Buscar</button>
             {produtorSelecionado && (
               <button onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>
                 Limpar
               </button>
             )}
@@ -800,6 +803,74 @@ export default function CaixaPage() {
                   </span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {!produtorSelecionado && sessao && operacoesDia.length > 0 && (
+            <div style={{
+              background: '#fff', border: '1px solid #e5e3dc',
+              borderRadius: 12, overflow: 'hidden', marginTop: 8,
+            }}>
+              <div style={{
+                padding: '12px 16px', borderBottom: '1px solid #e5e3dc',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>
+                  Operações de hoje
+                </span>
+                <span style={{ fontSize: 12, color: '#6b7280' }}>
+                  {operacoesDia.length} operação(ões)
+                </span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#fafaf8' }}>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Horário</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Produtor</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Operação</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Qtd</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {operacoesDia.slice(0, 8).map(op => (
+                    <tr key={op.id} style={{ borderTop: '1px solid #f0ede8' }}>
+                      <td style={{ padding: '9px 16px', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        {new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '9px 16px', color: '#111827' }}>
+                        {op.contas_produtor?.produtores?.nome ?? '—'}
+                      </td>
+                      <td style={{ padding: '9px 16px', color: '#6b7280' }}>
+                        {TIPO_LABEL[op.tipo] ?? op.tipo}
+                      </td>
+                      <td style={{ padding: '9px 16px', textAlign: 'right', color: '#6b7280' }}>
+                        {op.quantidade_produto
+                          ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} kg` })()
+                          : '—'}
+                      </td>
+                      <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 500,
+                        color: op.valor_financeiro
+                          ? (op.tipo === 'conversao' ? '#166534' : '#111827')
+                          : '#111827' }}>
+                        {op.valor_financeiro
+                          ? `R$ ${Math.abs(op.valor_financeiro).toFixed(2)}`
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {operacoesDia.length > 8 && (
+                <div style={{ padding: '10px 16px', borderTop: '1px solid #e5e3dc', textAlign: 'center' }}>
+                  <button onClick={() => setAba('operacoes')} style={{
+                    background: 'none', border: 'none', color: '#92400e',
+                    fontSize: 13, cursor: 'pointer',
+                  }}>
+                    Ver todas as {operacoesDia.length} operações →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -832,14 +903,30 @@ export default function CaixaPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                {(['entrega', 'receber', 'saque'] as const).map(op => (
-                  <button key={op} onClick={() => setOperacao(operacao === op ? null : op)} style={{
-                    padding: '8px 20px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
-                    background: operacao === op ? '#92400e' : '#fff', color: operacao === op ? '#fff' : '#1a1a1a'
-                  }}>
-                    {op === 'entrega' ? '↓ Registrar entrega' : op === 'receber' ? '↑ Pagar produtor' : '$ Saque financeiro'}
-                  </button>
-                ))}
+                <button onClick={() => setOperacao(operacao === 'entrega' ? null : 'entrega')} style={{
+                  background: operacao === 'entrega' ? '#7a3409' : '#92400e',
+                  color: '#fff', border: 'none',
+                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
+                  fontWeight: 500, cursor: 'pointer',
+                }}>
+                  ↓ Registrar entrega
+                </button>
+                <button onClick={() => setOperacao(operacao === 'receber' ? null : 'receber')} style={{
+                  background: operacao === 'receber' ? '#fef3c7' : '#fff',
+                  color: '#92400e', border: '1px solid #92400e',
+                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
+                  fontWeight: 500, cursor: 'pointer',
+                }}>
+                  ↑ Pagar produtor
+                </button>
+                <button onClick={() => setOperacao(operacao === 'saque' ? null : 'saque')} style={{
+                  background: operacao === 'saque' ? '#f3f4f6' : '#fff',
+                  color: '#374151', border: '1px solid #e5e3dc',
+                  padding: '8px 18px', borderRadius: '8px', fontSize: '14px',
+                  cursor: 'pointer',
+                }}>
+                  $ Saque financeiro
+                </button>
               </div>
 
               {statusOp === 'sucesso' && (
@@ -875,11 +962,11 @@ export default function CaixaPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
                     <button onClick={handleEntregaSimples} disabled={statusOp === 'salvando' || !formEntrega.quantidade}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar (individual)'}
                     </button>
                     <button onClick={abrirModalRateio} disabled={!formEntrega.quantidade || !formEntrega.produto_id}
-                      style={{ padding: '8px 20px', background: '#fff', color: '#92400e', border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ padding: '8px 20px', background: '#fff', color: '#92400e', border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                       Rateio entre participantes →
                     </button>
                   </div>
@@ -933,7 +1020,7 @@ export default function CaixaPage() {
                       </div>
                     )}
                     <button onClick={handleReceber} disabled={statusOp === 'salvando'}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar pagamento'}
                     </button>
                   </div>
@@ -966,7 +1053,7 @@ export default function CaixaPage() {
                       </div>
                     )}
                     <button onClick={handleSaque} disabled={statusOp === 'salvando'}
-                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar saque'}
                     </button>
                   </div>
@@ -1189,11 +1276,11 @@ export default function CaixaPage() {
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModalFechar(false)}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>
                 Cancelar
               </button>
               <button onClick={handleFecharCaixa} disabled={fechando}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
                 {fechando ? 'Fechando...' : 'Confirmar fechamento'}
               </button>
             </div>
