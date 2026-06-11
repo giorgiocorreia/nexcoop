@@ -23,5 +23,6 @@ export async function getUsuarioLogado() {
 
 export async function getOrganizacaoId(): Promise<string> {
   const usuario = await getUsuarioLogado()
+  if (!usuario.organizacao_id) throw new Error('Organização não encontrada')
   return usuario.organizacao_id
 }
