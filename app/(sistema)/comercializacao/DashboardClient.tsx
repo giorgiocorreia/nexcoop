@@ -113,7 +113,7 @@ export default function DashboardComercializacao({
             <BtnLink href="/comercializacao/produtores" variante="cinza" icone="ti-users">
               Produtores
             </BtnLink>
-            <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-cash-register">
+            <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-wallet">
               Caixa
             </BtnLink>
             {d.isAdmin && (
