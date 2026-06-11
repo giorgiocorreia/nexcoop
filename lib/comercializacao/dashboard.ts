@@ -77,7 +77,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
         mapa[key] = 0
       }
       for (const n of notasSemana) {
-        const key = n.created_at.slice(0, 10)
+        const key = (n.created_at ?? '').slice(0, 10)
         if (key in mapa) mapa[key] += Number(n.peso_liquido ?? 0)
       }
       entregasSemana = Object.entries(mapa).map(([dia, totalKg]) => ({ dia, totalKg }))
@@ -102,7 +102,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
         produto: (n as any).produto ?? 'Cacau seco',
         kg: Number(n.peso_liquido ?? 0),
         valor: Number(n.valor_total ?? 0),
-        horario: new Date(n.created_at).toLocaleTimeString('pt-BR', {
+        horario: new Date(n.created_at ?? Date.now()).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
         }),
