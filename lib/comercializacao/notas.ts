@@ -139,11 +139,13 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
 
   const snap = (nota.snapshot as any) ?? {}
 
-  const { data: org } = await adminClient
+  const { data: org, error: orgErr } = await adminClient
     .from('organizacoes')
     .select('nome, cnpj, endereco, municipio')
     .eq('id', nota.organizacao_id)
     .single()
+
+  console.error('[comprovante] org result:', JSON.stringify({ org, orgErr }))
 
   if (!org) throw new Error('Organização não encontrada: ' + nota.organizacao_id)
 
