@@ -81,7 +81,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     .from('cotacoes')
     .select('preco_cooperado, preco_externo')
     .eq('organizacao_id', params.organizacao_id)
-    .eq('produto_id', mov.produto_id as string)
+    .eq('produto_id', mov.produto_id as any)
     .lte('data', dataMovimentacao)
     .order('data', { ascending: false })
     .limit(1)
@@ -123,8 +123,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     return {
       sucesso: true,
       nota_id: notaExistente.id,
-      chave_nfe: notaExistente.chave_nfe as string | undefined,
-      danfe_url: (notaExistente.danfe_url as string | null) ?? undefined,
+      chave_nfe: notaExistente.chave_nfe,
+      danfe_url: notaExistente.danfe_url ?? undefined,
     }
   }
 
@@ -144,7 +144,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       cfop,
       serie: SERIE,
       referencia,
-      status: 'processando' as any,
+      status: 'processando',
       numero_sequencial: 0, // será atualizado após autorização
     }, { onConflict: 'movimentacao_id' })
     .select('id')
@@ -214,20 +214,23 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         valor_bruto: valor_total.toFixed(2),
         inclui_no_total: '1',
 
-        // ICMS CST 041 - Não tributado (imune/isento para produtor rural)
-        icms_modalidade: '40',
-        icms_cst: '041',
-        icms_origem: '0',
+        // Bloco de impostos exigido pelo schema NF-e
+        imposto: {
+          icms: {
+            // CST 041 - Não tributado (imune/isento para produtor rural)
+            cst: '41',
+            origem: '0',
+          },
+          pis: {
+            // CST 72 - Operação de Aquisição para Revenda com Suspensão
+            cst: '72',
+          },
+          cofins: {
+            cst: '72',
+          },
+        },
 
-        // PIS CST 72 - Operações de Aquisição para Revenda com Suspensão
-        pis_modalidade: 'NT',
-        pis_cst: '72',
-
-        // COFINS CST 72
-        cofins_modalidade: 'NT',
-        cofins_cst: '72',
-
-        // FUNRURAL retido na fonte (1,63%)
+        // FUNRURAL retido na fonte (1,63%) — informativo
         valor_senar: valor_funrural.toFixed(2),
       }
     ],
@@ -254,7 +257,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   } catch (err: any) {
     await supabase
       .from('notas_entrega')
-      .update({ status: 'erro' as any, motivo_rejeicao: err.message })
+      .update({ status: 'erro', motivo_rejeicao: err.message })
       .eq('id', notaRecord.id)
     return { sucesso: false, erro: err.message }
   }
@@ -266,7 +269,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     await supabase
       .from('notas_entrega')
       .update({
-        status: 'autorizada' as any,
+        status: 'autorizada',
         chave_nfe: focusResposta.chave_nfe,
         numero_nfe: focusResposta.numero,
         xml_url: focusResposta.caminho_xml_nota_fiscal,
@@ -287,7 +290,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     // NF-e em processamento — salva e retorna para polling posterior
     await supabase
       .from('notas_entrega')
-      .update({ status: 'processando' as any })
+      .update({ status: 'processando' })
       .eq('id', notaRecord.id)
 
     return { sucesso: true, nota_id: notaRecord.id }
@@ -300,7 +303,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
 
   await supabase
     .from('notas_entrega')
-    .update({ status: 'rejeitada' as any, motivo_rejeicao: motivo })
+    .update({ status: 'rejeitada', motivo_rejeicao: motivo })
     .eq('id', notaRecord.id)
 
   return { sucesso: false, nota_id: notaRecord.id, erro: motivo }
