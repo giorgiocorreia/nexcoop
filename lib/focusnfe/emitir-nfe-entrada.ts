@@ -81,7 +81,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     .from('cotacoes')
     .select('preco_cooperado, preco_externo')
     .eq('organizacao_id', params.organizacao_id)
-    .eq('produto_id', mov.produto_id as any)
+    .eq('produto_id', mov.produto_id as string)
     .lte('data', dataMovimentacao)
     .order('data', { ascending: false })
     .limit(1)
@@ -161,10 +161,14 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   // FUNRURAL 1,63% sobre valor bruto (retido na fonte)
   const valor_funrural = Number((valor_total * 0.0163).toFixed(2))
 
+  // Data/hora de emissão no formato ISO 8601 com timezone (-03:00)
+  const dataEmissao = new Date().toISOString().replace('Z', '-03:00')
+
   const payload = {
     natureza_operacao: isCooperado
       ? 'Compra de producao do estabelecimento rural - cooperado'
       : 'Compra de producao do estabelecimento rural',
+    data_emissao: dataEmissao,
     forma_pagamento: '0', // 0 = à vista
     serie: SERIE,
     tipo_documento: '0', // 0 = entrada
