@@ -788,9 +788,9 @@ export default function CaixaPage() {
             <input placeholder="Nome ou CPF do produtor..." value={termoBusca}
               onChange={handleTermoBuscaChange} onKeyDown={e => e.key === 'Enter' && handleBuscar()}
               style={{ flex: 1, maxWidth: '360px', ...inputStyle }} />
-            <Btn variante="cinza" onClick={handleBuscar}>Buscar</Btn>
+            <Btn variante="azul" onClick={handleBuscar}>Buscar</Btn>
             {produtorSelecionado && (
-              <Btn variante="cinza" onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}>
+              <Btn variante="azul" onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}>
                 Limpar
               </Btn>
             )}

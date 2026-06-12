@@ -2,14 +2,23 @@
 
 import { useState } from 'react'
 
-type BtnVariante = 'marrom' | 'verde' | 'roxo' | 'cinza'
+type BtnVariante = 'marrom' | 'verde' | 'roxo' | 'cinza' | 'azul'
 type BtnTamanho = 'sm' | 'md'
 
-const CORES: Record<BtnVariante, { texto: string; borda: string; hoverBg: string; hoverBorda: string }> = {
-  marrom: { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
-  verde:  { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
-  roxo:   { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
-  cinza:  { texto: '#374151', borda: '#d1d5db', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+interface CorVariante {
+  texto: string
+  borda: string
+  bg: string
+  hoverBg: string
+  hoverBorda: string
+}
+
+const CORES: Record<BtnVariante, CorVariante> = {
+  marrom: { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  verde:  { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  roxo:   { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  cinza:  { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
+  azul:   { texto: '#ffffff', borda: '#378ADD', bg: '#378ADD', hoverBg: '#185FA5', hoverBorda: '#185FA5' },
 }
 
 const TAMANHOS: Record<BtnTamanho, { padding: string; fontSize: string }> = {
@@ -56,7 +65,7 @@ export function Btn({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        background: hover && !disabled ? cor.hoverBg : 'transparent',
+        background: hover && !disabled ? cor.hoverBg : cor.bg,
         color: cor.texto,
         border: `1.5px solid ${hover && !disabled ? cor.hoverBorda : cor.borda}`,
         padding: tam.padding,
@@ -112,7 +121,7 @@ export function BtnLink({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        background: hover ? cor.hoverBg : 'transparent',
+        background: hover ? cor.hoverBg : cor.bg,
         color: cor.texto,
         border: `1.5px solid ${hover ? cor.hoverBorda : cor.borda}`,
         padding: tam.padding,
