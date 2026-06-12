@@ -37,9 +37,9 @@ export async function getNfeStatus(movimentacao_id: string) {
   if (!data) return data
 
   // Se ainda está "processando" localmente, consulta a Focus para ver se já autorizou
-  if (data.status === 'processando' && data.referencia) {
+  if ((data.status as string) === 'processando' && data.referencia) {
     try {
-      const resposta = await consultarNfeEntrada(data.referencia)
+      const resposta = await consultarNfeEntrada(data.referencia as string)
 
       if (resposta.status === 'autorizado') {
         const danfe_url = urlCompleta(resposta.caminho_danfe)
@@ -48,7 +48,7 @@ export async function getNfeStatus(movimentacao_id: string) {
         await supabase
           .from('notas_entrega')
           .update({
-            status: 'autorizada',
+            status: 'autorizada' as any,
             chave_nfe: resposta.chave_nfe,
             numero_nfe: resposta.numero,
             xml_url,
@@ -73,7 +73,7 @@ export async function getNfeStatus(movimentacao_id: string) {
 
         await supabase
           .from('notas_entrega')
-          .update({ status: 'rejeitada', motivo_rejeicao: motivo })
+          .update({ status: 'rejeitada' as any, motivo_rejeicao: motivo })
           .eq('id', data.id)
 
         return { ...data, status: 'rejeitada', motivo_rejeicao: motivo }
