@@ -758,7 +758,6 @@ export default function CaixaPage() {
         <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
           Voltar
         </Btn>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Caixa</h1>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
             Aporte / Sangria
