@@ -224,21 +224,15 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         valor_bruto: valor_total.toFixed(2),
         inclui_no_total: '1',
 
-        // Bloco de impostos exigido pelo schema NF-e
-        imposto: {
-          icms: {
-            // CST 041 - Não tributado (imune/isento para produtor rural)
-            cst: '41',
-            origem: '0',
-          },
-          pis: {
-            // CST 72 - Operação de Aquisição para Revenda com Suspensão
-            cst: '72',
-          },
-          cofins: {
-            cst: '72',
-          },
-        },
+        // ICMS - CST 41 (Não tributada), origem 0 (nacional)
+        icms_origem: '0',
+        icms_situacao_tributaria: '41',
+
+        // PIS - CST 72 (Aquisição para Revenda com Suspensão)
+        pis_situacao_tributaria: '72',
+
+        // COFINS - CST 72
+        cofins_situacao_tributaria: '72',
 
         // FUNRURAL retido na fonte (1,63%) — informativo
         valor_senar: valor_funrural.toFixed(2),
