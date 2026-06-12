@@ -28,13 +28,14 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+  const isApiCron = pathname.startsWith('/api/cron')
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha')
   const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado')
   const isOnboarding = pathname.startsWith('/onboarding')
   const isRSC = request.headers.get('rsc') === '1'
 
   // Não autenticado — redireciona para login
-  if (!user && !isAuthPage && !isPublicPage) {
+  if (!user && !isAuthPage && !isPublicPage && !isApiCron) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
