@@ -123,8 +123,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     return {
       sucesso: true,
       nota_id: notaExistente.id,
-      chave_nfe: notaExistente.chave_nfe,
-      danfe_url: notaExistente.danfe_url ?? undefined,
+      chave_nfe: notaExistente.chave_nfe as string | undefined,
+      danfe_url: (notaExistente.danfe_url as string | null) ?? undefined,
     }
   }
 
@@ -144,7 +144,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       cfop,
       serie: SERIE,
       referencia,
-      status: 'processando',
+      status: 'processando' as any,
       numero_sequencial: 0, // será atualizado após autorização
     }, { onConflict: 'movimentacao_id' })
     .select('id')
@@ -257,7 +257,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   } catch (err: any) {
     await supabase
       .from('notas_entrega')
-      .update({ status: 'erro', motivo_rejeicao: err.message })
+      .update({ status: 'erro' as any, motivo_rejeicao: err.message })
       .eq('id', notaRecord.id)
     return { sucesso: false, erro: err.message }
   }
@@ -269,7 +269,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     await supabase
       .from('notas_entrega')
       .update({
-        status: 'autorizada',
+        status: 'autorizada' as any,
         chave_nfe: focusResposta.chave_nfe,
         numero_nfe: focusResposta.numero,
         xml_url: focusResposta.caminho_xml_nota_fiscal,
@@ -290,7 +290,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     // NF-e em processamento — salva e retorna para polling posterior
     await supabase
       .from('notas_entrega')
-      .update({ status: 'processando' })
+      .update({ status: 'processando' as any })
       .eq('id', notaRecord.id)
 
     return { sucesso: true, nota_id: notaRecord.id }
@@ -303,7 +303,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
 
   await supabase
     .from('notas_entrega')
-    .update({ status: 'rejeitada', motivo_rejeicao: motivo })
+    .update({ status: 'rejeitada' as any, motivo_rejeicao: motivo })
     .eq('id', notaRecord.id)
 
   return { sucesso: false, nota_id: notaRecord.id, erro: motivo }
