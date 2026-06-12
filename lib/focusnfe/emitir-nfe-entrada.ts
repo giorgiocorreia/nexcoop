@@ -171,8 +171,10 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   // FUNRURAL 1,63% sobre valor bruto (retido na fonte)
   const valor_funrural = Number((valor_total * 0.0163).toFixed(2))
 
-  // Data/hora de emissão no formato ISO 8601 com timezone (-03:00)
-  const dataEmissao = new Date().toISOString().replace('Z', '-03:00')
+  // Data/hora de emissão no horário de Brasília (UTC-3), formato ISO 8601 com offset
+  const agora = new Date()
+  const agoraBrasilia = new Date(agora.getTime() - 3 * 60 * 60 * 1000)
+  const dataEmissao = agoraBrasilia.toISOString().replace('Z', '-03:00')
 
   const payload = {
     natureza_operacao: isCooperado
