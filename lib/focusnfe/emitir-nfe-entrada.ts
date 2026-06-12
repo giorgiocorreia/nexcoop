@@ -131,6 +131,16 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   // 6. Gerar referência única
   const referencia = `ENT-${params.organizacao_id.slice(0, 8)}-${params.movimentacao_id.slice(0, 8)}`
 
+  // 6b. Gerar numero_sequencial via RPC (evita colisão com unique constraint)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: numeroData, error: numErr } = await (supabase as any)
+    .rpc('proximo_numero_nota', { p_org_id: params.organizacao_id })
+
+  if (numErr) {
+    return { sucesso: false, erro: 'Erro ao gerar número sequencial: ' + numErr.message }
+  }
+  const numero_sequencial = numeroData as number
+
   // 7. Criar/atualizar registro na notas_entrega com status processando
   const { data: notaRecord, error: insertErr } = await supabase
     .from('notas_entrega')
@@ -145,7 +155,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       serie: SERIE,
       referencia,
       status: 'processando' as any,
-      numero_sequencial: 0, // será atualizado após autorização
+      numero_sequencial,
     }, { onConflict: 'movimentacao_id' })
     .select('id')
     .single()
