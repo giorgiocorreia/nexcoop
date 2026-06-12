@@ -2,7 +2,7 @@
 // Cliente HTTP para a API Focus NFe
 // Docs: https://developer.focusnfe.com.br/docs/
 
-const FOCUS_BASE_URL = process.env.FOCUSNFE_AMBIENTE === 'producao'
+export const FOCUS_BASE_URL = process.env.FOCUSNFE_AMBIENTE === 'producao'
   ? 'https://api.focusnfe.com.br'
   : 'https://homologacao.focusnfe.com.br'
 

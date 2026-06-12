@@ -4,13 +4,25 @@
 // NCM 18010000 | Série 002 | CST ICMS 041 | PIS/COFINS CST 72 | FUNRURAL 1,63%
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { focusPost, focusGet } from './client'
+import { focusPost, focusGet, FOCUS_BASE_URL } from './client'
 
 // CNPJ da COOPAIBI (emitente) — vem da org, mas fixamos como fallback
 const CNPJ_COOPAIBI = '54305114000179'
 const SERIE = '002'
 const NCM = '18010000'
 const UNIDADE_COMERCIAL = 'KG'
+
+// Monta URL completa para XML/DANFE retornados como path relativo pela Focus
+function urlCompleta(path?: string): string | undefined {
+  if (!path) return undefined
+  if (path.startsWith('http')) return path
+  return `${FOCUS_BASE_URL}${path}`
+}
+
+// Aguarda em ms
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 interface EmitirNfeEntradaParams {
   movimentacao_id: string
@@ -269,17 +281,32 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   }
 
   // 10. Processar resposta
-  const statusFocus = focusResposta.status
+  let statusFocus = focusResposta.status
+  let respostaFinal = focusResposta
+
+  // Se ainda processando, faz polling (até 3 tentativas, 3s entre cada)
+  if (statusFocus === 'processando_autorizacao') {
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      await sleep(3000)
+      try {
+        respostaFinal = await consultarNfeEntrada(referencia)
+        statusFocus = respostaFinal.status
+        if (statusFocus !== 'processando_autorizacao') break
+      } catch {
+        // mantém status processando se a consulta falhar
+      }
+    }
+  }
 
   if (statusFocus === 'autorizado') {
     await supabase
       .from('notas_entrega')
       .update({
         status: 'autorizada' as any,
-        chave_nfe: focusResposta.chave_nfe,
-        numero_nfe: focusResposta.numero,
-        xml_url: focusResposta.caminho_xml_nota_fiscal,
-        danfe_url: focusResposta.caminho_danfe,
+        chave_nfe: respostaFinal.chave_nfe,
+        numero_nfe: respostaFinal.numero,
+        xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal),
+        danfe_url: urlCompleta(respostaFinal.caminho_danfe),
         emitido_em: new Date().toISOString(),
       })
       .eq('id', notaRecord.id)
@@ -287,13 +314,13 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     return {
       sucesso: true,
       nota_id: notaRecord.id,
-      chave_nfe: focusResposta.chave_nfe,
-      danfe_url: focusResposta.caminho_danfe,
+      chave_nfe: respostaFinal.chave_nfe,
+      danfe_url: urlCompleta(respostaFinal.caminho_danfe),
     }
   }
 
   if (statusFocus === 'processando_autorizacao' || statusFocus === 'autorizado_em_contingencia') {
-    // NF-e em processamento — salva e retorna para polling posterior
+    // Ainda processando após as tentativas — salva e retorna para consulta posterior
     await supabase
       .from('notas_entrega')
       .update({ status: 'processando' as any })
@@ -303,8 +330,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   }
 
   // Rejeitada ou erro
-  const motivo = focusResposta.erros?.map(e => `${e.codigo}: ${e.mensagem}`).join('; ')
-    || focusResposta.mensagem_sefaz
+  const motivo = respostaFinal.erros?.map(e => `${e.codigo}: ${e.mensagem}`).join('; ')
+    || respostaFinal.mensagem_sefaz
     || 'Rejeitada pela SEFAZ'
 
   await supabase
