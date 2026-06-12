@@ -176,6 +176,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     finalidade_emissao: '1', // 1 = NF-e normal
     consumidor_final: '0',
     presenca_comprador: '2', // 2 = operação não presencial
+    modalidade_frete: '9', // 9 = sem frete
 
     // Emitente (COOPAIBI)
     cnpj_emitente: cnpjEmitente,
@@ -203,7 +204,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         codigo_produto: 'CACAU-AMEND',
         descricao: 'Cacau em Amendoa',
         cfop,
-        ncm: NCM,
+        codigo_ncm: NCM,
         unidade_comercial: UNIDADE_COMERCIAL,
         unidade_tributavel: UNIDADE_COMERCIAL,
         quantidade_comercial: quantidade_kg.toFixed(3),
