@@ -1,19 +1,36 @@
 ﻿import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Lancamento, Assembleia, Documento } from '@/types/database'
+import { CardCotacaoCacau } from '@/components/dashboard/CardCotacaoCacau'
+import {
+  getCotacaoMercadoAtual,
+  getTendencia7dias,
+  getConfigPrecosSugeridos,
+} from '@/lib/dashboard/cotacoes-mercado-actions'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Redireciona super_admin para /admin
-  const { data: usuarioRole } = await supabase
+  // Redireciona super_admin para /admin; busca tipo da org em um único select
+  const { data: usuarioData } = await supabase
     .from('usuarios')
-    .select('role')
+    .select('role, organizacoes(tipo)')
     .eq('id', user.id)
     .single()
-  if (usuarioRole?.role === 'super_admin') redirect('/admin')
+  if (usuarioData?.role === 'super_admin') redirect('/admin')
+  const orgTipo = (usuarioData?.organizacoes as unknown as { tipo?: string } | null)?.tipo
+
+  // Dados de cotação de cacau — só para cooperativas
+  const [cotacaoAtual, tendencia7d, configCotacao] =
+    orgTipo === 'cooperativa'
+      ? await Promise.all([
+          getCotacaoMercadoAtual(),
+          getTendencia7dias(),
+          getConfigPrecosSugeridos(),
+        ])
+      : [null, null, null]
 
   const [
     { count: totalCooperados },
@@ -162,6 +179,15 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {orgTipo === 'cooperativa' && (
+        <CardCotacaoCacau
+          cepea={cotacaoAtual?.cepea ?? null}
+          iceNy={cotacaoAtual?.iceNy ?? null}
+          tendencia={tendencia7d ?? []}
+          config={configCotacao}
+        />
+      )}
     </div>
   )
 }

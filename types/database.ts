@@ -950,6 +950,30 @@ export interface SolicitacaoAporte {
   created_at:       string
 }
 
+// ── Dashboard — Cotações de Mercado (032) ────────────────────────────────────
+
+export interface CotacaoMercadoExterno {
+  id:              string
+  produto:         string
+  fonte:           'cepea' | 'ice_ny'
+  preco_usd:       number | null
+  preco_brl:       number | null
+  cambio_usd_brl:  number | null
+  data_referencia: string
+  coletado_em:     string
+  created_at:      string
+}
+
+export interface ConfigPrecosSugeridos {
+  id:                   string
+  organizacao_id:       string
+  produto_id:           string
+  percentual_cooperado: number
+  percentual_externo:   number
+  ativo:                boolean
+  updated_at:           string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -1060,6 +1084,9 @@ export type Database = {
       aportes_sangrias:            TableDef<AporteSangria>
       // ── Comercialização (029b) ────────────────────────────────────────────
       solicitacoes_aporte:         TableDef<SolicitacaoAporte>
+      // ── Dashboard (032) ───────────────────────────────────────────────
+      cotacoes_mercado_externo:    TableDef<CotacaoMercadoExterno>
+      config_precos_sugeridos:     TableDef<ConfigPrecosSugeridos>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
