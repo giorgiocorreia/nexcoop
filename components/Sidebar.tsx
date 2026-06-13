@@ -33,8 +33,9 @@ const NAV_ADMIN: NavGrupo[] = [
       { label: 'Usuários',     href: '/admin/usuarios', icone: '👥', em_breve: true },
       { label: 'Módulos',      href: '/admin/modulos',  icone: '🧩', em_breve: true },
       { label: 'Planos',       href: '/admin/planos',   icone: '💳', em_breve: true },
-      { label: 'Manuais',      href: '/admin/manuais',  icone: '📚' },
-      { label: 'Logs',         href: '/admin/logs',     icone: '📋' },
+      { label: 'Manuais',      href: '/admin/manuais',    icone: '📚' },
+      { label: 'Logs',         href: '/admin/logs',       icone: '📋' },
+      { label: 'Novidades',    href: '/admin/changelog',  icone: '🕐' },
     ],
   },
 ]

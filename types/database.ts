@@ -974,6 +974,14 @@ export interface ConfigPrecosSugeridos {
   updated_at:           string
 }
 
+export interface ChangelogEntry {
+  id:         string
+  data:       string
+  modulo:     string
+  itens:      Json
+  created_at: string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -1087,6 +1095,8 @@ export type Database = {
       // ── Dashboard (032) ───────────────────────────────────────────────
       cotacoes_mercado_externo:    TableDef<CotacaoMercadoExterno>
       config_precos_sugeridos:     TableDef<ConfigPrecosSugeridos>
+      // ── Admin (033) ────────────────────────────────────────────────────
+      changelog_entries:           TableDef<ChangelogEntry>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
