@@ -6,6 +6,7 @@ import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produ
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { getContextoUsuario } from '@/lib/cooperados/actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import { Btn } from '@/components/ui/Btn'
 import ModalPromoverCooperado from '@/components/cooperados/ModalPromoverCooperado'
 
 const COR = '#92400e'
@@ -16,7 +17,13 @@ const TIPO_POSSE_LABEL: Record<string, string> = {
   arrendatario: 'Arrendatário',
 }
 
-const TIPO_LABEL: Record<string, string> = {
+const TIPO_CONTA_LABEL: Record<string, string> = {
+  corrente: 'Corrente',
+  poupanca: 'Poupança',
+  pix: 'Pix',
+}
+
+const TIPO_MOV_LABEL: Record<string, string> = {
   entrega: 'Entrega',
   conversao: 'Conversão',
   saque_especie: 'Saque espécie',
@@ -66,6 +73,27 @@ type PrevisaoSaldo = {
   valor_estimado: number | null
 }
 
+type FormEdit = {
+  nome: string
+  email: string
+  telefone: string
+  tipo: string
+  municipio: string
+  endereco: string
+  nome_propriedade: string
+  area_total_ha: string
+  area_cacau_ha: string
+  tipo_posse: string
+  ie_produtor_rural: string
+  tem_certificacao: boolean
+  tipo_certificacao: string
+  banco: string
+  agencia: string
+  conta_bancaria: string
+  tipo_conta: string
+  chave_pix: string
+}
+
 function mascararCPF(v: string) {
   return v.replace(/\D/g, '').slice(0, 11)
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -79,14 +107,14 @@ function mascararTelefone(v: string) {
   return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
 }
 
-function exibirCPF(cpf: string | null) {
-  if (!cpf) return '—'
+function exibirCPF(cpf: string | null): string | null {
+  if (!cpf) return null
   const d = cpf.replace(/\D/g, '')
   return d.length === 11 ? mascararCPF(d) : cpf
 }
 
-function exibirTelefone(tel: string | null) {
-  if (!tel) return '—'
+function exibirTelefone(tel: string | null): string | null {
+  if (!tel) return null
   return mascararTelefone(tel)
 }
 
@@ -107,6 +135,88 @@ function KgDisplay({ valor, fontSize = 22, cor }: { valor: number; fontSize?: nu
   )
 }
 
+function initFormEdit(p: Produtor): FormEdit {
+  return {
+    nome: p.nome,
+    email: p.email ?? '',
+    telefone: p.telefone ? mascararTelefone(p.telefone) : '',
+    tipo: p.tipo || 'externo',
+    municipio: p.municipio ?? '',
+    endereco: p.endereco ?? '',
+    nome_propriedade: p.nome_propriedade ?? '',
+    area_total_ha: p.area_total_ha !== null ? String(p.area_total_ha) : '',
+    area_cacau_ha: p.area_cacau_ha !== null ? String(p.area_cacau_ha) : '',
+    tipo_posse: p.tipo_posse ?? '',
+    ie_produtor_rural: p.ie_produtor_rural ?? '',
+    tem_certificacao: p.tem_certificacao ?? false,
+    tipo_certificacao: p.tipo_certificacao ?? '',
+    banco: p.banco ?? '',
+    agencia: p.agencia ?? '',
+    conta_bancaria: p.conta_bancaria ?? '',
+    tipo_conta: p.tipo_conta ?? '',
+    chave_pix: p.chave_pix ?? '',
+  }
+}
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid #e5e3dc',
+  borderRadius: '12px',
+  padding: '1.25rem',
+  marginBottom: '20px',
+}
+
+const cardLabel: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  color: '#9a9a9a',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+}
+
+const inp: React.CSSProperties = {
+  padding: '8px 12px',
+  border: '1px solid #e5e3dc',
+  borderRadius: '8px',
+  fontSize: '13px',
+  width: '100%',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+  background: '#fff',
+}
+
+function Campo({ label, valor }: { label: string; valor: string | null | undefined }) {
+  return (
+    <div>
+      <div style={{ fontSize: '11px', color: '#9a9a9a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px', fontWeight: 500 }}>
+        {label}
+      </div>
+      {valor ? (
+        <div style={{ fontSize: '14px', color: '#1a1a1a' }}>{valor}</div>
+      ) : (
+        <div style={{ fontSize: '14px', color: '#b0aea8', fontStyle: 'italic' }}>Não informado</div>
+      )}
+    </div>
+  )
+}
+
+function BlocoHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ ...cardLabel, borderTop: '1px solid #f0ede8', paddingTop: '16px', marginBottom: '12px', marginTop: '4px' }}>
+      {children}
+    </div>
+  )
+}
+
+const FORM_VAZIO: FormEdit = {
+  nome: '', email: '', telefone: '', tipo: 'externo',
+  municipio: '', endereco: '', nome_propriedade: '',
+  area_total_ha: '', area_cacau_ha: '', tipo_posse: '',
+  ie_produtor_rural: '', tem_certificacao: false,
+  tipo_certificacao: '', banco: '', agencia: '',
+  conta_bancaria: '', tipo_conta: '', chave_pix: '',
+}
+
 export default function PerfilProdutorPage() {
   const router = useRouter()
   const params = useParams()
@@ -117,13 +227,12 @@ export default function PerfilProdutorPage() {
   const [extrato, setExtrato] = useState<Movimentacao[]>([])
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [carregando, setCarregando] = useState(true)
-  const [aba, setAba] = useState<'extrato' | 'dados'>('extrato')
 
   const [previsoes, setPrevisoes] = useState<PrevisaoSaldo[]>([])
   const [carregandoPrevisao, setCarregandoPrevisao] = useState(false)
 
   const [editando, setEditando] = useState(false)
-  const [formEdit, setFormEdit] = useState<Partial<Produtor>>({})
+  const [formEdit, setFormEdit] = useState<FormEdit>(FORM_VAZIO)
   const [salvando, setSalvando] = useState(false)
   const [erroEdit, setErroEdit] = useState('')
   const [okEdit, setOkEdit] = useState('')
@@ -144,28 +253,12 @@ export default function PerfilProdutorPage() {
       ])
       setEhAdmin(ctx.ehAdmin)
       setOrganizacaoId(ctx.organizacaoId)
-      setProdutor(res.produtor as unknown as Produtor)
+      const prod = res.produtor as unknown as Produtor
+      setProdutor(prod)
       setConta(res.conta as unknown as Conta | null)
       setExtrato(res.extrato as unknown as Movimentacao[])
       setSessao(res.sessaoAberta as unknown as Sessao | null)
-      if (res.produtor) {
-        setFormEdit({
-          nome: res.produtor.nome,
-          cpf: res.produtor.cpf ? mascararCPF(res.produtor.cpf) : '',
-          telefone: res.produtor.telefone ? mascararTelefone(res.produtor.telefone) : '',
-          email: res.produtor.email ?? '',
-          municipio: res.produtor.municipio ?? '',
-          endereco: res.produtor.endereco ?? '',
-          nome_propriedade: res.produtor.nome_propriedade ?? '',
-          tipo_posse: res.produtor.tipo_posse ?? '',
-          percentual_posse: res.produtor.percentual_posse ?? undefined,
-          ie_produtor_rural: res.produtor.ie_produtor_rural ?? '',
-          chave_pix: res.produtor.chave_pix ?? '',
-          banco: res.produtor.banco ?? '',
-          agencia: res.produtor.agencia ?? '',
-          conta_bancaria: res.produtor.conta_bancaria ?? '',
-        } as any)
-      }
+      if (prod) setFormEdit(initFormEdit(prod))
       if (res.conta) {
         carregarPrevisoes(res.conta as unknown as Conta, res.produtor?.tipo ?? 'externo')
       }
@@ -206,18 +299,32 @@ export default function PerfilProdutorPage() {
     setSalvando(true)
     setErroEdit('')
     try {
-      const payload = {
-        ...formEdit,
-        cpf: (formEdit as any).cpf ? (formEdit as any).cpf.replace(/\D/g, '') : undefined,
-        telefone: (formEdit as any).telefone ? (formEdit as any).telefone.replace(/\D/g, '') : undefined,
-      }
-      await editarProdutor(produtor.id, payload as any)
+      await editarProdutor(produtor.id, {
+        nome: formEdit.nome.trim() || undefined,
+        email: formEdit.email.trim() || undefined,
+        telefone: formEdit.telefone ? formEdit.telefone.replace(/\D/g, '') : undefined,
+        tipo: formEdit.tipo as 'externo' | 'cooperado',
+        municipio: formEdit.municipio.trim() || undefined,
+        endereco: formEdit.endereco.trim() || undefined,
+        nome_propriedade: formEdit.nome_propriedade.trim() || undefined,
+        area_total_ha: formEdit.area_total_ha ? parseFloat(formEdit.area_total_ha) : undefined,
+        area_cacau_ha: formEdit.area_cacau_ha ? parseFloat(formEdit.area_cacau_ha) : undefined,
+        tipo_posse: formEdit.tipo_posse || undefined,
+        ie_produtor_rural: formEdit.ie_produtor_rural.trim() || undefined,
+        tem_certificacao: formEdit.tem_certificacao,
+        tipo_certificacao: formEdit.tem_certificacao ? (formEdit.tipo_certificacao.trim() || undefined) : undefined,
+        banco: formEdit.banco.trim() || undefined,
+        agencia: formEdit.agencia.trim() || undefined,
+        conta_bancaria: formEdit.conta_bancaria.trim() || undefined,
+        tipo_conta: formEdit.tipo_conta || undefined,
+        chave_pix: formEdit.chave_pix.trim() || undefined,
+      })
       setOkEdit('Dados atualizados.')
       setEditando(false)
       setTimeout(() => setOkEdit(''), 3000)
       await carregar()
-    } catch (e: any) {
-      setErroEdit(e.message)
+    } catch (e: unknown) {
+      setErroEdit(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
       setSalvando(false)
     }
@@ -227,94 +334,78 @@ export default function PerfilProdutorPage() {
     router.push(`/comercializacao/caixa?produtor_id=${id}&acao=${acao}`)
   }
 
-  const temSaldoProduto = (conta?.saldos_produto ?? []).some(s => s.quantidade > 0)
-  const temSaldoFinanceiro = (conta?.saldo_financeiro ?? 0) > 0
-  const totalPrevisao = previsoes.reduce((acc, p) => acc + (p.valor_estimado ?? 0), 0)
+  if (carregando) return <div style={{ padding: '32px', color: '#6b6b6b', fontFamily: 'system-ui' }}>Carregando...</div>
+  if (!produtor) return <div style={{ padding: '32px', color: '#6b6b6b', fontFamily: 'system-ui' }}>Produtor não encontrado.</div>
 
-  const inp: React.CSSProperties = {
-    padding: '8px 12px', border: '1px solid #e5e3dc',
-    borderRadius: '8px', fontSize: '14px', width: '100%',
-    boxSizing: 'border-box',
-  }
+  const allSaldosProduto = conta?.saldos_produto ?? []
+  const mainSaldo = allSaldosProduto.length > 0
+    ? allSaldosProduto.reduce((max, s) => s.quantidade > max.quantidade ? s : max, allSaldosProduto[0])
+    : null
+  const mainPrevisao = mainSaldo ? (previsoes.find(p => p.produto_id === mainSaldo.produtos.id) ?? null) : null
+  const saldoFinanceiro = conta?.saldo_financeiro ?? 0
+  const temPrevisao = mainPrevisao !== null && mainPrevisao.valor_estimado !== null
+  const totalEstimado = (temPrevisao ? mainPrevisao!.valor_estimado! : 0) + saldoFinanceiro
 
-  if (carregando) return <div style={{ padding: '32px' }}>Carregando...</div>
-  if (!produtor) return <div style={{ padding: '32px' }}>Produtor não encontrado.</div>
+  const f = formEdit
+  const setF = (update: Partial<FormEdit>) => setFormEdit(prev => ({ ...prev, ...update }))
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => router.push('/comercializacao/produtores')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: '14px', padding: '4px 0', whiteSpace: 'nowrap' }}
+      {/* PARTE 1: Barra de botões */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '24px' }}>
+        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.back()}>
+          Voltar
+        </Btn>
+        <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
+          Registrar entrega
+        </Btn>
+        <Btn
+          variante="cinza"
+          icone="ti-arrow-up"
+          style={{ background: COR, border: `1.5px solid ${COR}`, color: '#fff' }}
+          onClick={() => irParaCaixa('receber')}
         >
-          <span style={{ fontSize: '18px', lineHeight: 1 }}>←</span> Voltar
-        </button>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#1a1a1a' }}>{produtor.nome}</h1>
-          <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
-            {produtor.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
-            {produtor.municipio && ` · ${produtor.municipio}`}
-            {produtor.cpf && ` · ${exibirCPF(produtor.cpf)}`}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
-            onClick={() => irParaCaixa('entrega')}
-            style={{ padding: '8px 16px', background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
-          >
-            ↓ Registrar entrega
-          </button>
-
-          {temSaldoProduto && (
-            <button
-              onClick={() => irParaCaixa('receber')}
-              style={{ padding: '8px 16px', background: COR, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
-            >
-              ↑ Pagar produtor
-            </button>
-          )}
-
-          <button
-            onClick={() => temSaldoFinanceiro ? irParaCaixa('saque') : undefined}
-            disabled={!temSaldoFinanceiro}
-            title={temSaldoFinanceiro ? 'Sacar saldo financeiro' : 'Sem saldo financeiro'}
-            style={{
-              padding: '8px 16px',
-              background: temSaldoFinanceiro ? '#166534' : '#f1f0eb',
-              color: temSaldoFinanceiro ? '#fff' : '#9a9a9a',
-              border: temSaldoFinanceiro ? 'none' : '1px solid #e5e3dc',
-              borderRadius: '8px', fontSize: '13px', fontWeight: 500,
-              cursor: temSaldoFinanceiro ? 'pointer' : 'not-allowed',
-            }}
-          >
-            $ Saque financeiro
-          </button>
-
-          {ehAdmin && !produtor.cooperado_id && (
-            <button
-              onClick={() => setModalPromoverAberto(true)}
-              style={{ padding: '8px 16px', background: '#fff', color: '#185FA5', border: '1px solid #185FA5', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
-            >
-              ↑ Promover a Cooperado
-            </button>
-          )}
-
-          {!sessao && (
-            <div style={{ fontSize: '12px', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', padding: '6px 12px', borderRadius: '8px' }}>
-              ⚠ Caixa fechado
-            </div>
-          )}
-        </div>
+          Pagar produtor
+        </Btn>
+        <Btn
+          variante="cinza"
+          icone="ti-cash"
+          onClick={() => saldoFinanceiro > 0 ? irParaCaixa('saque') : undefined}
+          disabled={saldoFinanceiro <= 0}
+        >
+          Saque financeiro
+        </Btn>
+        {!produtor.cooperado_id ? (
+          ehAdmin ? (
+            <Btn variante="azul" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
+              {/* TODO: terminologia dinâmica via tipos_org */}
+              Promover a cooperado
+            </Btn>
+          ) : null
+        ) : (
+          <span style={{
+            fontSize: '12px', padding: '4px 12px', borderRadius: '20px',
+            background: '#dbeafe', color: '#1e40af', fontWeight: 600,
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+          }}>
+            <i className="ti ti-user-check" style={{ fontSize: 13 }} aria-hidden="true" />
+            Cooperado
+          </span>
+        )}
+        {!sessao && (
+          <Btn variante="cinza" icone="ti-lock" disabled>
+            Caixa fechado
+          </Btn>
+        )}
       </div>
 
+      {/* Mensagens globais */}
       {okEdit && (
         <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', color: '#166534', marginBottom: '16px' }}>
           ✓ {okEdit}
         </div>
       )}
-
       {senhaGerada && (
         <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>
@@ -328,106 +419,312 @@ export default function PerfilProdutorPage() {
         </div>
       )}
 
-      {conta && (
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-          {temSaldoFinanceiro && (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
-              <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Saldo financeiro</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</div>
-            </div>
-          )}
-
-          {(conta.saldos_produto ?? []).filter(s => s.quantidade > 0).map(s => {
-            const prev = previsoes.find(p => p.produto_id === s.produtos.id)
-            return (
-              <div key={s.produtos.id} style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '180px' }}>
-                <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{s.produtos.nome}</div>
-                <KgDisplay valor={s.quantidade} fontSize={22} cor={COR} />
-                {carregandoPrevisao ? (
-                  <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '6px' }}>calculando...</div>
-                ) : prev ? (
-                  prev.valor_estimado !== null ? (
-                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '6px' }}>
-                      ≈ <strong style={{ color: '#166534' }}>{fmtReal(prev.valor_estimado)}</strong>
-                      <span style={{ marginLeft: '4px', color: '#9a9a9a' }}>@ {fmtReal(prev.preco ?? 0)}/kg</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '6px' }}>sem cotação hoje</div>
-                  )
-                ) : null}
-              </div>
-            )
-          })}
-
-          {previsoes.filter(p => p.valor_estimado !== null).length > 1 && (
-            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
-              <div style={{ fontSize: '11px', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total estimado</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>{fmtReal(totalPrevisao + conta.saldo_financeiro)}</div>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>produto + financeiro</div>
-            </div>
-          )}
-
-          {!temSaldoProduto && !temSaldoFinanceiro && (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', fontSize: '13px', color: '#6b6b6b' }}>
-              Sem saldo no momento
-            </div>
-          )}
+      {/* PARTE 2: Card "Dados cadastrais" */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <span style={cardLabel}>Dados cadastrais</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {editando ? (
+              <>
+                {erroEdit && (
+                  <span style={{ fontSize: '12px', color: '#991b1b' }}>{erroEdit}</span>
+                )}
+                <Btn tamanho="sm" variante="cinza" onClick={() => { setEditando(false); setErroEdit(''); setFormEdit(initFormEdit(produtor)) }}>
+                  Cancelar
+                </Btn>
+                <Btn tamanho="sm" variante="azul" onClick={handleSalvarEdicao} disabled={salvando}>
+                  {salvando ? 'Salvando...' : 'Salvar'}
+                </Btn>
+              </>
+            ) : (
+              <Btn tamanho="sm" variante="cinza" icone="ti-pencil" onClick={() => { setEditando(true); setErroEdit('') }}>
+                Editar
+              </Btn>
+            )}
+          </div>
         </div>
-      )}
 
-      <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e3dc', marginBottom: '20px' }}>
-        {(['extrato', 'dados'] as const).map(a => (
-          <button key={a} onClick={() => setAba(a)} style={{
-            padding: '8px 20px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px',
-            borderBottom: aba === a ? `2px solid ${COR}` : '2px solid transparent',
-            color: aba === a ? COR : '#6b6b6b', fontWeight: aba === a ? 600 : 400, marginBottom: '-1px',
-          }}>
-            {a === 'extrato' ? 'Extrato' : 'Dados cadastrais'}
-          </button>
-        ))}
+        {/* LEITURA */}
+        {!editando && (
+          <div>
+            {/* Bloco principal */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+              <Campo label="Nome" valor={produtor.nome} />
+              <Campo label="Tipo" valor={produtor.tipo === 'cooperado' ? 'Cooperado' : 'Não membro'} />
+              <Campo label="CPF" valor={exibirCPF(produtor.cpf)} />
+              <Campo label="E-mail" valor={produtor.email} />
+              <Campo label="Telefone" valor={exibirTelefone(produtor.telefone)} />
+            </div>
+
+            {/* Bloco Propriedade */}
+            <BlocoHeader>Propriedade</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+              <Campo label="Nome da propriedade" valor={produtor.nome_propriedade} />
+              <Campo label="Município" valor={produtor.municipio} />
+              <Campo label="Área total (ha)" valor={produtor.area_total_ha !== null ? `${produtor.area_total_ha} ha` : null} />
+              <Campo label="Área cacau (ha)" valor={produtor.area_cacau_ha !== null ? `${produtor.area_cacau_ha} ha` : null} />
+              <Campo label="Tipo de posse" valor={produtor.tipo_posse ? (TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse) : null} />
+              <Campo label="IE Produtor Rural" valor={produtor.ie_produtor_rural} />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <Campo label="Endereço" valor={produtor.endereco} />
+              </div>
+            </div>
+
+            {/* Bloco Certificação */}
+            <BlocoHeader>Certificação</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+              <Campo label="Possui certificação" valor={produtor.tem_certificacao ? 'Sim' : 'Não'} />
+              {produtor.tem_certificacao && (
+                <Campo label="Tipo de certificação" valor={produtor.tipo_certificacao} />
+              )}
+            </div>
+
+            {/* Bloco Dados bancários */}
+            <BlocoHeader>Dados bancários</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <Campo label="Banco" valor={produtor.banco} />
+              <Campo label="Agência" valor={produtor.agencia} />
+              <Campo label="Conta" valor={produtor.conta_bancaria} />
+              <Campo label="Tipo de conta" valor={produtor.tipo_conta ? (TIPO_CONTA_LABEL[produtor.tipo_conta] ?? produtor.tipo_conta) : null} />
+              <Campo label="Chave Pix" valor={produtor.chave_pix} />
+            </div>
+          </div>
+        )}
+
+        {/* EDIÇÃO */}
+        {editando && (
+          <div>
+            {/* Bloco principal */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome completo</label>
+                <input value={f.nome} onChange={e => setF({ nome: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
+                <select value={f.tipo} onChange={e => setF({ tipo: e.target.value })} style={inp}>
+                  <option value="externo">Não membro</option>
+                  <option value="cooperado">Cooperado</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
+                <input value={exibirCPF(produtor.cpf) ?? ''} disabled style={{ ...inp, background: '#f8f7f4', color: '#9a9a9a', cursor: 'not-allowed' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
+                <input type="email" value={f.email} onChange={e => setF({ email: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
+                <input value={f.telefone} onChange={e => setF({ telefone: mascararTelefone(e.target.value) })} placeholder="(00) 00000-0000" style={inp} />
+              </div>
+            </div>
+
+            {/* Bloco Propriedade */}
+            <BlocoHeader>Propriedade</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome da propriedade</label>
+                <input value={f.nome_propriedade} onChange={e => setF({ nome_propriedade: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
+                <input value={f.municipio} onChange={e => setF({ municipio: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área total (ha)</label>
+                <input type="number" step="0.01" min="0" value={f.area_total_ha} onChange={e => setF({ area_total_ha: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área cacau (ha)</label>
+                <input type="number" step="0.01" min="0" value={f.area_cacau_ha} onChange={e => setF({ area_cacau_ha: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de posse</label>
+                <select value={f.tipo_posse} onChange={e => setF({ tipo_posse: e.target.value })} style={inp}>
+                  <option value="">Selecionar...</option>
+                  <option value="proprietario">Proprietário</option>
+                  <option value="meeiro">Meeiro</option>
+                  <option value="arrendatario">Arrendatário</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>IE Produtor Rural</label>
+                <input value={f.ie_produtor_rural} onChange={e => setF({ ie_produtor_rural: e.target.value })} style={inp} />
+              </div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
+                <input value={f.endereco} onChange={e => setF({ endereco: e.target.value })} style={inp} />
+              </div>
+            </div>
+
+            {/* Bloco Certificação */}
+            <BlocoHeader>Certificação</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', padding: '6px 0' }}>
+                  <input type="checkbox" checked={f.tem_certificacao} onChange={e => setF({ tem_certificacao: e.target.checked })} />
+                  Possui certificação
+                </label>
+              </div>
+              {f.tem_certificacao && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de certificação</label>
+                  <input value={f.tipo_certificacao} onChange={e => setF({ tipo_certificacao: e.target.value })} placeholder="Ex: Orgânico, UTZ, Rainforest" style={inp} />
+                </div>
+              )}
+            </div>
+
+            {/* Bloco Dados bancários */}
+            <BlocoHeader>Dados bancários</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
+                <input value={f.banco} onChange={e => setF({ banco: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
+                <input value={f.agencia} onChange={e => setF({ agencia: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
+                <input value={f.conta_bancaria} onChange={e => setF({ conta_bancaria: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de conta</label>
+                <select value={f.tipo_conta} onChange={e => setF({ tipo_conta: e.target.value })} style={inp}>
+                  <option value="">Selecionar...</option>
+                  <option value="corrente">Corrente</option>
+                  <option value="poupanca">Poupança</option>
+                  <option value="pix">Pix</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
+                <input value={f.chave_pix} onChange={e => setF({ chave_pix: e.target.value })} placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {aba === 'extrato' && (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-          {extrato.length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', color: '#6b6b6b', fontSize: '13px' }}>Nenhuma movimentação registrada.</div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                  <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Data/Hora</th>
-                  <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Operação</th>
-                  <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Quantidade</th>
-                  <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {extrato.map(m => (
-                  <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                    <td style={{ padding: '10px 16px', color: '#6b6b6b' }}>
-                      {new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div>{TIPO_LABEL[m.tipo] ?? m.tipo}</div>
-                      {m.observacoes && <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px' }}>{m.observacoes}</div>}
-                    </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                      {m.quantidade_produto ? (() => {
-                        const { inteiro, decimal } = formatarKg(m.quantidade_produto)
-                        return <span>{inteiro}<span style={{ fontSize: '0.8em' }}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span>
-                      })() : '—'}
-                    </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                      {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* PARTE 3: Card "Extrato" */}
+      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '1.25rem 1.25rem 0.75rem' }}>
+          <span style={cardLabel}>Extrato</span>
         </div>
-      )}
+        {extrato.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b', fontSize: '13px' }}>
+            Nenhuma movimentação registrada.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #e5e3dc', borderTop: '1px solid #f0ede8', background: '#fafaf8' }}>
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Data/Hora</th>
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Operação</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Quantidade</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {extrato.map(m => (
+                <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
+                  <td style={{ padding: '10px 16px', color: '#6b6b6b' }}>
+                    {new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <div>{TIPO_MOV_LABEL[m.tipo] ?? m.tipo}</div>
+                    {m.observacoes && <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px' }}>{m.observacoes}</div>}
+                  </td>
+                  <td style={{ padding: '10px 16px', textAlign: 'right', color: '#6b6b6b' }}>
+                    {m.quantidade_produto ? (() => {
+                      const { inteiro, decimal } = formatarKg(m.quantidade_produto)
+                      return <span>{inteiro}<span style={{ fontSize: '0.8em' }}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span>
+                    })() : '—'}
+                  </td>
+                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
+                    {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
+      {/* PARTE 4: Card "Saldos" */}
+      <div style={cardStyle}>
+        <div style={{ ...cardLabel, marginBottom: '16px' }}>Saldos</div>
+        {!conta ? (
+          <div style={{ fontSize: '13px', color: '#9a9a9a' }}>Sem conta aberta para este produtor.</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+            {/* Sub-card Produto */}
+            <div style={{ background: '#f8f7f4', borderRadius: '10px', padding: '1rem' }}>
+              {mainSaldo ? (
+                <>
+                  <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                    {mainSaldo.produtos.nome}
+                  </div>
+                  <KgDisplay valor={mainSaldo.quantidade} fontSize={22} cor={COR} />
+                  <div style={{ marginTop: '8px' }}>
+                    {carregandoPrevisao ? (
+                      <div style={{ fontSize: '12px', color: '#9a9a9a' }}>calculando...</div>
+                    ) : temPrevisao ? (
+                      <>
+                        <div style={{ fontSize: '13px', color: '#1a1a1a' }}>
+                          ≈ <strong style={{ color: '#166534' }}>{fmtReal(mainPrevisao!.valor_estimado!)}</strong>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px' }}>
+                          Estimativa à cotação atual @ {fmtReal(mainPrevisao!.preco ?? 0)}/{mainSaldo.produtos.unidade}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#9a9a9a' }}>≈ — sem cotação hoje</div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                    Produto
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>
+                    0 <span style={{ fontSize: '13px', fontWeight: 400 }}>kg</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '8px' }}>R$ 0,00</div>
+                </>
+              )}
+            </div>
+
+            {/* Sub-card Saldo financeiro */}
+            <div style={{ background: '#E1F5EE', borderRadius: '10px', padding: '1rem' }}>
+              <div style={{ fontSize: '11px', color: '#085041', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                Saldo financeiro
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: '#0F6E56' }}>
+                {fmtReal(saldoFinanceiro)}
+              </div>
+              <div style={{ fontSize: '11px', color: '#085041', marginTop: '6px' }}>Disponível para saque</div>
+            </div>
+
+            {/* Sub-card Total estimado */}
+            <div style={{ background: '#E6F1FB', borderRadius: '10px', padding: '1rem' }}>
+              <div style={{ fontSize: '11px', color: '#0C447C', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                Total estimado
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: '#185FA5' }}>
+                {(mainSaldo && !temPrevisao && !carregandoPrevisao) ? '—' : fmtReal(totalEstimado)}
+              </div>
+              <div style={{ fontSize: '11px', color: '#0C447C', marginTop: '6px' }}>Produto + financeiro</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Promover Cooperado */}
       {modalPromoverAberto && organizacaoId && (
         <ModalPromoverCooperado
           produtorId={produtor.id}
@@ -442,122 +739,6 @@ export default function PerfilProdutorPage() {
             await carregar()
           }}
         />
-      )}
-
-      {aba === 'dados' && (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a1a1a' }}>Dados cadastrais</span>
-            {!editando && (
-              <button onClick={() => setEditando(true)} style={{ fontSize: '13px', color: COR, background: 'none', border: `1px solid ${COR}`, borderRadius: '8px', padding: '6px 14px', cursor: 'pointer' }}>
-                ✏️ Editar
-              </button>
-            )}
-          </div>
-
-          {!editando ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '14px' }}>
-              {[
-                ['Nome', produtor.nome],
-                ['CPF', exibirCPF(produtor.cpf)],
-                ['Telefone', exibirTelefone(produtor.telefone)],
-                ['E-mail', produtor.email ?? '—'],
-                ['Município', produtor.municipio ?? '—'],
-                ['Endereço', produtor.endereco ?? '—'],
-                ['Propriedade', produtor.nome_propriedade ?? '—'],
-                ['Tipo de posse', produtor.tipo_posse ? TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse : '—'],
-                ['Percentual', produtor.percentual_posse ? `${produtor.percentual_posse}%` : '—'],
-                ['IE Produtor Rural', produtor.ie_produtor_rural ?? '—'],
-                ['Área total', produtor.area_total_ha ? `${produtor.area_total_ha} ha` : '—'],
-                ['Área cacau', produtor.area_cacau_ha ? `${produtor.area_cacau_ha} ha` : '—'],
-                ['Certificação', produtor.tem_certificacao ? `✓ ${produtor.tipo_certificacao ?? ''}` : '—'],
-                ['Chave Pix', produtor.chave_pix ?? '—'],
-                ['Banco', produtor.banco ?? '—'],
-                ['Agência / Conta', produtor.agencia ? `${produtor.agencia} / ${produtor.conta_bancaria ?? ''}` : '—'],
-              ].map(([label, valor]) => (
-                <div key={label}>
-                  <div style={{ fontSize: '11px', color: '#9a9a9a', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
-                  <div style={{ color: '#1a1a1a' }}>{valor}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome</label>
-                <input value={(formEdit as any).nome ?? ''} onChange={e => setFormEdit(f => ({ ...f, nome: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
-                <input value={(formEdit as any).cpf ?? ''} onChange={e => setFormEdit(f => ({ ...f, cpf: mascararCPF(e.target.value) }))} placeholder="000.000.000-00" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
-                <input value={(formEdit as any).telefone ?? ''} onChange={e => setFormEdit(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))} placeholder="(73) 99999-0000" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
-                <input value={(formEdit as any).email ?? ''} onChange={e => setFormEdit(f => ({ ...f, email: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
-                <input value={(formEdit as any).municipio ?? ''} onChange={e => setFormEdit(f => ({ ...f, municipio: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
-                <input value={(formEdit as any).endereco ?? ''} onChange={e => setFormEdit(f => ({ ...f, endereco: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Propriedade</label>
-                <input value={(formEdit as any).nome_propriedade ?? ''} onChange={e => setFormEdit(f => ({ ...f, nome_propriedade: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>IE Produtor Rural</label>
-                <input value={(formEdit as any).ie_produtor_rural ?? ''} onChange={e => setFormEdit(f => ({ ...f, ie_produtor_rural: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de posse</label>
-                <select value={(formEdit as any).tipo_posse ?? ''} onChange={e => setFormEdit(f => ({ ...f, tipo_posse: e.target.value }))} style={inp}>
-                  <option value="">Selecionar...</option>
-                  <option value="proprietario">Proprietário</option>
-                  <option value="meeiro">Meeiro</option>
-                  <option value="arrendatario">Arrendatário</option>
-                </select>
-              </div>
-              {(formEdit as any).tipo_posse && (formEdit as any).tipo_posse !== 'proprietario' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Percentual (%)</label>
-                  <input type="number" min="1" max="100" step="0.5" value={(formEdit as any).percentual_posse ?? ''} onChange={e => setFormEdit(f => ({ ...f, percentual_posse: parseFloat(e.target.value) }))} style={inp} />
-                </div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
-                <input value={(formEdit as any).chave_pix ?? ''} onChange={e => setFormEdit(f => ({ ...f, chave_pix: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
-                <input value={(formEdit as any).banco ?? ''} onChange={e => setFormEdit(f => ({ ...f, banco: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
-                <input value={(formEdit as any).agencia ?? ''} onChange={e => setFormEdit(f => ({ ...f, agencia: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
-                <input value={(formEdit as any).conta_bancaria ?? ''} onChange={e => setFormEdit(f => ({ ...f, conta_bancaria: e.target.value }))} style={inp} />
-              </div>
-              {erroEdit && (
-                <div style={{ gridColumn: '1 / -1', color: '#991b1b', fontSize: '13px' }}>{erroEdit}</div>
-              )}
-              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                <button onClick={() => setEditando(false)} style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer' }}>Cancelar</button>
-                <button onClick={handleSalvarEdicao} disabled={salvando} style={{ padding: '8px 18px', background: COR, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
-                  {salvando ? 'Salvando...' : 'Salvar'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       )}
     </div>
   )

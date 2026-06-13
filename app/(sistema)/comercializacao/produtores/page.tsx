@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   listarProdutores,
   criarProdutor,
-  editarProdutor,
   listarCooperadosSemProdutor
 } from '@/lib/comercializacao/produtores.actions'
 import { Btn } from '@/components/ui/Btn'
@@ -91,7 +90,6 @@ export default function ProdutoresPage() {
   const router = useRouter()
   const [produtores, setProdutores] = useState<Produtor[]>([])
   const [cooperados, setCooperados] = useState<Cooperado[]>([])
-  const [perfilAberto, setPerfilAberto] = useState<Produtor | null>(null)
   const [form, setForm] = useState(formVazio)
   const [novoForm, setNovoForm] = useState(false)
   const [busca, setBusca] = useState('')
@@ -115,29 +113,6 @@ export default function ProdutoresPage() {
     setBusca(isCPFInput(v) ? formatarBuscaCPF(v) : v)
   }
 
-  function abrirPerfil(p: Produtor) {
-    setPerfilAberto(p)
-    setForm({
-      nome: p.nome,
-      cpf: p.cpf ? mascararCPF(p.cpf) : '',
-      telefone: p.telefone ? mascararTelefone(p.telefone) : '',
-      email: p.email ?? '',
-      municipio: p.municipio ?? '',
-      endereco: p.endereco ?? '',
-      tipo: p.tipo,
-      cooperado_id: p.cooperado_id ?? '',
-      area_total_ha: p.area_total_ha?.toString() ?? '',
-      area_cacau_ha: p.area_cacau_ha?.toString() ?? '',
-      tem_certificacao: p.tem_certificacao,
-      tipo_certificacao: p.tipo_certificacao ?? '',
-      banco: p.banco ?? '',
-      agencia: p.agencia ?? '',
-      conta_bancaria: p.conta_bancaria ?? '',
-      tipo_conta: p.tipo_conta ?? '',
-      chave_pix: p.chave_pix ?? '',
-    })
-  }
-
   async function handleSalvar() {
     if (!form.nome) return
     setStatus('salvando')
@@ -159,13 +134,8 @@ export default function ProdutoresPage() {
         tipo_conta: form.tipo_conta || undefined,
         chave_pix: form.chave_pix || undefined,
       }
-      if (perfilAberto) {
-        await editarProdutor(perfilAberto.id, payload)
-      } else {
-        await criarProdutor(payload)
-      }
+      await criarProdutor(payload)
       setForm(formVazio)
-      setPerfilAberto(null)
       setNovoForm(false)
       await carregar()
       setStatus('sucesso')
@@ -186,7 +156,7 @@ export default function ProdutoresPage() {
     )
   })
 
-  const modalAberto = perfilAberto !== null || novoForm
+  const modalAberto = novoForm
 
   const inp: React.CSSProperties = {
     padding: '8px 12px', border: '1px solid #e5e3dc',
@@ -205,8 +175,8 @@ export default function ProdutoresPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Produtores</h1>
-        <Btn variante="marrom" icone="ti-plus" onClick={() => { setPerfilAberto(null); setForm(formVazio); setNovoForm(true) }}>
-          Novo produtor
+        <Btn variante="azul" icone="ti-plus" onClick={() => { setForm(formVazio); setNovoForm(true) }}>
+          + Novo produtor
         </Btn>
       </div>
 
@@ -274,11 +244,8 @@ export default function ProdutoresPage() {
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                    <Btn variante="marrom" tamanho="sm" icone="ti-file-text" onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}>
+                    <Btn variante="cinza" tamanho="sm" icone="ti-eye" onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}>
                       Ver ficha
-                    </Btn>
-                    <Btn variante="cinza" tamanho="sm" onClick={() => abrirPerfil(p)}>
-                      Ver perfil
                     </Btn>
                   </div>
                 </td>
@@ -306,19 +273,9 @@ export default function ProdutoresPage() {
             width: '620px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '16px' }}>
-                  {perfilAberto ? perfilAberto.nome : 'Novo produtor'}
-                </div>
-                {perfilAberto && (
-                  <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
-                    {perfilAberto.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
-                    {perfilAberto.municipio ? ` · ${perfilAberto.municipio}` : ''}
-                  </div>
-                )}
-              </div>
+              <div style={{ fontWeight: 600, fontSize: '16px' }}>Novo produtor</div>
               <button
-                onClick={() => { setPerfilAberto(null); setNovoForm(false) }}
+                onClick={() => setNovoForm(false)}
                 style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}
               >
                 ×
@@ -422,7 +379,7 @@ export default function ProdutoresPage() {
             )}
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <Btn variante="cinza" onClick={() => { setPerfilAberto(null); setNovoForm(false) }}>
+              <Btn variante="cinza" onClick={() => setNovoForm(false)}>
                 Cancelar
               </Btn>
               <Btn variante="verde" icone="ti-check" disabled={status === 'salvando'} onClick={handleSalvar}>
