@@ -303,7 +303,7 @@ const cardLabelStyle: React.CSSProperties = {
 
 const cardValueStyle: React.CSSProperties = {
   fontSize: '24px',
-  fontWeight: '500',
+  fontWeight: '600',
   color: '#042C53',
 }
 
