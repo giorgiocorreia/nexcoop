@@ -135,19 +135,21 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             {/* Cacau Bahia */}
             <div style={azulCardStyle}>
-              <div style={cardLabelStyle}>Cacau Bahia (BRL/arroba)</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <i className="ti ti-cookie" style={{ fontSize: '18px', color: '#185FA5' }} />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '500', color: '#042C53' }}>CACAU BAHIA</div>
+                  <div style={{ fontSize: '11px', color: '#185FA5', letterSpacing: '0.5px' }}>BRL / ARROBA</div>
+                </div>
+              </div>
               {cepea?.preco_brl ? (
                 <>
-                  <div style={cardValueStyle}>R$ {fmtBRL(cepea.preco_brl)}</div>
-                  <div style={cardSecondaryStyle}>
+                  <div style={cardValueStyle}>{fmtBRL(cepea.preco_brl)}</div>
+                  <div style={{ fontSize: '12px', marginTop: '4px', color: tendPct != null && tendPct < 0 ? '#993C1D' : '#0F6E56' }}>
                     R$ {fmtBRL(cepea.preco_brl / 15)}/kg
                     {cepea.data_referencia && ` · ${fmtData(cepea.data_referencia)}`}
+                    {tendPct != null && ` · ${tendPct.toFixed(1)}% vs 7 dias`}
                   </div>
-                  {tendPct != null && (
-                    <div style={{ fontSize: '11px', marginTop: '4px', color: tendPct >= 0 ? '#1D9E75' : '#993C1D', fontWeight: '600' }}>
-                      {tendPct >= 0 ? '↑' : '↓'} {Math.abs(tendPct).toFixed(1)}% vs 7 dias
-                    </div>
-                  )}
                 </>
               ) : (
                 <div style={{ fontSize: '13px', color: '#aaa' }}>—</div>
@@ -156,15 +158,21 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
 
             {/* ICE NY */}
             <div style={azulCardStyle}>
-              <div style={cardLabelStyle}>ICE NY (USD/ton)</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <i className="ti ti-currency-dollar" style={{ fontSize: '18px', color: '#185FA5' }} />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '500', color: '#042C53' }}>ICE NY</div>
+                  <div style={{ fontSize: '11px', color: '#185FA5', letterSpacing: '0.5px' }}>USD / TON</div>
+                </div>
+              </div>
               {iceNy?.preco_usd ? (
                 <>
                   <div style={cardValueStyle}>
-                    $ {Math.round(iceNy.preco_usd).toLocaleString('pt-BR')}
+                    {Math.round(iceNy.preco_usd).toLocaleString('pt-BR')}
                   </div>
                   <div style={cardSecondaryStyle}>
                     {iceNy.cambio_usd_brl
-                      ? `Câmbio: R$ ${fmtBRL(iceNy.cambio_usd_brl)}/USD`
+                      ? `câmbio R$ ${fmtBRL(iceNy.cambio_usd_brl)}/USD`
                       : 'câmbio indisponível'}
                     {iceNy.data_referencia && ` · ${fmtData(iceNy.data_referencia)}`}
                   </div>
