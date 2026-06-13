@@ -11,6 +11,7 @@ export type VinculoUsuario = 'cooperado' | 'funcionario' | 'diretoria' | 'extern
 /** Função operacional exercida no sistema. */
 export type FuncaoUsuario = 'admin' | 'financeiro' | 'tecnico' | 'conselho_fiscal' | 'captador'
 export type StatusCooperado = 'proposta' | 'probatorio' | 'ativo' | 'inadimplente' | 'suspenso' | 'demitido' | 'excluido'
+export type StatusMembro    = 'ativo' | 'inadimplente' | 'desligado'
 export type TipoLancamento = 'receita' | 'despesa' | 'transferencia'
 export type StatusLancamento = 'pendente' | 'pago' | 'cancelado' | 'agendado'
 export type TipoAssembleia = 'AGO' | 'AGE' | 'reuniao_CA' | 'reuniao_CF'
@@ -715,7 +716,25 @@ export interface Produtor {
   percentual_posse: number | null
   ie_produtor_rural: string | null
   ativo:            boolean
+  // Colunas adicionadas na migration 034
+  usuario_id:          string | null
+  dados_fiscais:       Json
+  is_consumidor_final: boolean
   created_at:       string
+}
+
+export interface Membro {
+  id:               string
+  organizacao_id:   string
+  produtor_id:      string
+  usuario_id:       string
+  tipo_org_id:      string | null
+  numero_matricula: string | null
+  data_admissao:    string | null
+  status:           StatusMembro
+  dados_societarios: Json
+  created_at:       string
+  updated_at:       string
 }
 
 export interface ContaProdutor {
@@ -1097,6 +1116,8 @@ export type Database = {
       config_precos_sugeridos:     TableDef<ConfigPrecosSugeridos>
       // ── Admin (033) ────────────────────────────────────────────────────
       changelog_entries:           TableDef<ChangelogEntry>
+      // ── Membros (034) ─────────────────────────────────────────────────
+      membros:                     TableDef<Membro>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
