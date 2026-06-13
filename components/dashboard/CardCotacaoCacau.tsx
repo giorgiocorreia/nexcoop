@@ -266,7 +266,6 @@ const cardStyle: React.CSSProperties = {
   borderRadius: '12px',
   padding: '1.25rem',
   marginTop: '16px',
-  fontFamily: 'system-ui',
 }
 
 const headerStyle: React.CSSProperties = {
