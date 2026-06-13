@@ -81,13 +81,10 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-          Painel de controle
-        </h1>
-        <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
+      <div style={{ textAlign: 'right', marginBottom: '1.25rem' }}>
+        <span style={{ fontSize: '12px', color: '#bbb' }}>
           {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+        </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '2rem' }}>

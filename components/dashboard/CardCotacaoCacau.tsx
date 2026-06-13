@@ -120,7 +120,7 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
             {/* CEPEA */}
             <div style={fonteCardStyle('#E6F1FB', '#B5D4F4')}>
               <div style={{ fontSize: '10px', fontWeight: '600', color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                CEPEA (BRL/arroba)
+                Cacau Bahia (BRL/arroba)
               </div>
               {cepea?.preco_brl ? (
                 <>
@@ -173,7 +173,7 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
             Sugestão de preços
             {baseKg != null && (
               <span style={{ fontWeight: '400', color: '#999', marginLeft: '6px' }}>
-                base: R$ {fmtBRL(baseKg)}/kg {cepea?.preco_brl ? '(CEPEA)' : '(ICE convertido)'}
+                base: R$ {fmtBRL(baseKg)}/kg {cepea?.preco_brl ? '(Cacau Bahia)' : '(ICE convertido)'}
               </span>
             )}
           </div>

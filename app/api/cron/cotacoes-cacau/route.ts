@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         data_referencia: cepeaData.data ?? hoje,
         coletado_em: new Date().toISOString(),
       }, { onConflict: 'fonte,produto,data_referencia' })
-      resultados.cepea = { preco_brl: cepeaData.preco_brl, data: cepeaData.data }
+      resultados.cacau_bahia = { preco_brl: cepeaData.preco_brl, data: cepeaData.data }
     }
   } catch (e) {
     resultados.cepea_erro = String(e)
@@ -103,36 +103,69 @@ async function fetchUsdBrl(): Promise<number | null> {
   return null
 }
 
+// Fonte: precodocacau.com.br (Cacau Bahia, R$/arroba).
+// Mantemos fonte='cepea' no DB para compatibilidade com CardCotacaoCacau.tsx sem alterações em cascata.
 async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | null } | null> {
-  const res = await fetch('https://www.cepea.esalq.usp.br/br/indicador/cacau.aspx', {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; NexCoop/1.0)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    signal: AbortSignal.timeout(20000),
-  })
-  if (!res.ok) return null
-  const html = await res.text()
+  let html: string | null = null
 
-  // Tenta extrair data e preço do HTML da CEPEA
-  // Padrão esperado: célula com dd/mm/yyyy seguida de célula com valor em BRL
-  const patterns = [
-    // Formato: "12/06/2026" ... "1.456,78"
-    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]{1,2}\.[\d]{3},\d{2})/,
-    // Formato sem ponto de milhar: "456,78"
-    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]+,\d{2})/,
-  ]
+  try {
+    const res = await fetch('https://precodocacau.com.br/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NexCoop/1.0)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(20000),
+    })
+    if (res.ok) html = await res.text()
+  } catch { /* tenta jina */ }
 
-  for (const pattern of patterns) {
-    const match = html.match(pattern)
-    if (match) {
-      const [, dataBr, precoStr] = match
-      const preco = parseFloat(precoStr.replace(/\./g, '').replace(',', '.'))
-      if (isNaN(preco) || preco < 100) continue // preço muito baixo = parse errado
-      const [d, m, y] = dataBr.split('/')
-      const data = `${y}-${m}-${d}`
+  if (!html) {
+    try {
+      const res = await fetch('https://r.jina.ai/https://precodocacau.com.br/', {
+        headers: { Accept: 'text/plain' },
+        signal: AbortSignal.timeout(20000),
+      })
+      if (res.ok) html = await res.text()
+    } catch { return null }
+  }
+
+  if (!html) return null
+
+  // JSON-LD estruturado é a fonte mais confiável (imune a mudanças de layout)
+  const scriptTags = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) ?? []
+  for (const script of scriptTags) {
+    try {
+      const json = JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, ''))
+      const offers: Array<{ name?: string; price?: number | string; priceValidUntil?: string }> =
+        Array.isArray(json?.offers) ? json.offers : []
+      const bahia = offers.find(o => o.name === 'Cacau Bahia')
+      if (bahia?.price != null) {
+        const preco = Number(bahia.price)
+        if (isNaN(preco) || preco < 50) continue
+        let data: string | null = null
+        if (bahia.priceValidUntil && /\d{2}\/\d{2}\/\d{4}/.test(bahia.priceValidUntil)) {
+          const [d, m, y] = bahia.priceValidUntil.split('/')
+          data = `${y}-${m}-${d}`
+        }
+        return { preco_brl: preco, data }
+      }
+    } catch { continue }
+  }
+
+  // Fallback: elemento HTML id="preco-bahia"
+  const htmlMatch = html.match(/id="preco-bahia"[\s\S]{0,100}?R\$\s*([\d.,]+)/)
+  if (htmlMatch) {
+    const preco = parseFloat(htmlMatch[1].replace(/\./g, '').replace(',', '.'))
+    if (!isNaN(preco) && preco > 50) {
+      const dateMatch = html.match(/"priceValidUntil"\s*:\s*"(\d{2}\/\d{2}\/\d{4})"/)
+      let data: string | null = null
+      if (dateMatch) {
+        const [d, m, y] = dateMatch[1].split('/')
+        data = `${y}-${m}-${d}`
+      }
       return { preco_brl: preco, data }
     }
   }
+
   return null
 }
