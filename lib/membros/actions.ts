@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { registrarLog } from '@/lib/audit/logger'
 import { isAdmin } from '@/lib/permissoes'
 import { randomBytes } from 'crypto'
-import type { RoleUsuario, VinculoUsuario } from '@/types/database'
+import type { Json, RoleUsuario, VinculoUsuario } from '@/types/database'
 
 function gerarSenhaTemporaria(): string {
   return randomBytes(6).toString('hex') // 12 chars hex
@@ -92,10 +92,10 @@ export async function criarUsuarioComMembroOpcional(
         usuario_id: authUserId,
         tipo: 'cooperado',
         endereco: input.enderecoId ?? null,
-        dados_fiscais: {},
+        dados_fiscais: ({} as Json),
         is_consumidor_final: false,
         ativo: true,
-        dados_producao: input.dadosProducao ?? {},
+        dados_producao: (input.dadosProducao ?? {}) as Json,
       } as any)
       .select('id')
       .single()
@@ -111,7 +111,7 @@ export async function criarUsuarioComMembroOpcional(
         produtor_id: produtorId,
         usuario_id: authUserId,
         status: 'ativo',
-        dados_societarios: input.dadosSocietarios ?? {},
+        dados_societarios: (input.dadosSocietarios ?? {}) as Json,
       })
       .select('id')
       .single()
@@ -199,10 +199,10 @@ export async function criarMembro(
       usuario_id: authUserId,
       tipo: 'cooperado',
       endereco: input.enderecoId ?? null,
-      dados_fiscais: {},
+      dados_fiscais: ({} as Json),
       is_consumidor_final: false,
       ativo: true,
-      dados_producao: input.dadosProducao ?? {},
+      dados_producao: (input.dadosProducao ?? {}) as Json,
     } as any)
     .select('id')
     .single()
@@ -220,7 +220,7 @@ export async function criarMembro(
       numero_matricula: input.numeroMatricula ?? null,
       data_admissao: input.dataAdmissao ?? null,
       status: 'ativo',
-      dados_societarios: input.dadosSocietarios ?? {},
+      dados_societarios: (input.dadosSocietarios ?? {}) as Json,
     })
     .select('id')
     .single()
@@ -355,7 +355,7 @@ export async function promoverProdutorAMembro(
       numero_matricula: input.numeroMatricula ?? null,
       data_admissao: input.dataAdmissao ?? null,
       status: 'ativo',
-      dados_societarios: input.dadosSocietarios,
+      dados_societarios: input.dadosSocietarios as Json,
     })
     .select('id')
     .single()
