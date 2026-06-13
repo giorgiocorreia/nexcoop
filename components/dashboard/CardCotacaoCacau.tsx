@@ -102,9 +102,24 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           </span>
           {cepea?.coletado_em && (
             <span style={{ fontSize: '11px', color: '#bbb' }}>
-              atualizado {new Date(cepea.coletado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              atualizado {new Date(cepea.coletado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* 1. Referência de mercado em Tempo Real */}
+      <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f0eeea' }}>
+        <div style={{ fontSize: '10px', fontWeight: '600', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
+          Referência de mercado em Tempo Real
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+          <div style={azulCardStyle}>
+            <TradingViewMiniWidget symbol="COCOA" />
+          </div>
+          <div style={azulCardStyle}>
+            <TradingViewMiniWidget symbol="FX_IDC:USDBRL" />
+          </div>
         </div>
       </div>
 
@@ -116,20 +131,15 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
         </div>
       ) : (
         <>
-          {/* Preços de mercado */}
-
+          {/* 2. Preços de mercado */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            {/* CEPEA */}
-            <div style={fonteCardStyle('#E6F1FB', '#B5D4F4')}>
-              <div style={{ fontSize: '10px', fontWeight: '600', color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                Cacau Bahia (BRL/arroba)
-              </div>
+            {/* Cacau Bahia */}
+            <div style={azulCardStyle}>
+              <div style={cardLabelStyle}>Cacau Bahia (BRL/arroba)</div>
               {cepea?.preco_brl ? (
                 <>
-                  <div style={{ fontSize: '22px', fontWeight: '700', color: '#0C447C' }}>
-                    R$ {fmtBRL(cepea.preco_brl)}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#185FA5', marginTop: '2px' }}>
+                  <div style={cardValueStyle}>R$ {fmtBRL(cepea.preco_brl)}</div>
+                  <div style={cardSecondaryStyle}>
                     R$ {fmtBRL(cepea.preco_brl / 15)}/kg
                     {cepea.data_referencia && ` · ${fmtData(cepea.data_referencia)}`}
                   </div>
@@ -145,16 +155,14 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
             </div>
 
             {/* ICE NY */}
-            <div style={fonteCardStyle('#EEF0FF', '#C5C1F7')}>
-              <div style={{ fontSize: '10px', fontWeight: '600', color: '#4840CC', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                ICE NY (USD/ton)
-              </div>
+            <div style={azulCardStyle}>
+              <div style={cardLabelStyle}>ICE NY (USD/ton)</div>
               {iceNy?.preco_usd ? (
                 <>
-                  <div style={{ fontSize: '22px', fontWeight: '700', color: '#2D28A0' }}>
+                  <div style={cardValueStyle}>
                     $ {Math.round(iceNy.preco_usd).toLocaleString('pt-BR')}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#4840CC', marginTop: '2px' }}>
+                  <div style={cardSecondaryStyle}>
                     {iceNy.cambio_usd_brl
                       ? `Câmbio: R$ ${fmtBRL(iceNy.cambio_usd_brl)}/USD`
                       : 'câmbio indisponível'}
@@ -170,7 +178,7 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           {/* Linha separadora */}
           <div style={{ borderTop: '1px solid #f0eeea', marginBottom: '14px' }} />
 
-          {/* Sugestão de preços */}
+          {/* 3. Sugestão de preços */}
           <div style={{ fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '10px' }}>
             Sugestão de preços
             {baseKg != null && (
@@ -243,17 +251,6 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           </div>
         </>
       )}
-
-      {/* Referência de mercado */}
-      <div style={{ borderTop: '1px solid #f0eeea', marginTop: '16px', paddingTop: '14px' }}>
-        <div style={{ fontSize: '10px', fontWeight: '600', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-          Referência de mercado (TradingView)
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-          <TradingViewMiniWidget symbol="COCOA" />
-          <TradingViewMiniWidget symbol="FX_IDC:USDBRL" />
-        </div>
-      </div>
     </div>
   )
 }
@@ -281,13 +278,31 @@ const tituloStyle: React.CSSProperties = {
   color: '#1a1a1a',
 }
 
-function fonteCardStyle(bg: string, border: string): React.CSSProperties {
-  return {
-    background: bg,
-    border: `1px solid ${border}`,
-    borderRadius: '10px',
-    padding: '12px',
-  }
+const azulCardStyle: React.CSSProperties = {
+  background: '#E6F1FB',
+  borderRadius: '12px',
+  padding: '1rem',
+}
+
+const cardLabelStyle: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: '500',
+  color: '#185FA5',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  marginBottom: '4px',
+}
+
+const cardValueStyle: React.CSSProperties = {
+  fontSize: '24px',
+  fontWeight: '500',
+  color: '#042C53',
+}
+
+const cardSecondaryStyle: React.CSSProperties = {
+  fontSize: '12px',
+  color: '#185FA5',
+  marginTop: '2px',
 }
 
 const labelStyle: React.CSSProperties = {
