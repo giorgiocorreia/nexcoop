@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
+import { getContextoUsuario } from '@/lib/cooperados/actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import ModalPromoverCooperado from '@/components/cooperados/ModalPromoverCooperado'
 
 const COR = '#92400e'
 
@@ -33,6 +35,7 @@ type Produtor = {
   tipo_conta: string | null; chave_pix: string | null; ativo: boolean
   nome_propriedade: string | null; tipo_posse: string | null
   percentual_posse: number | null; ie_produtor_rural: string | null
+  cooperado_id: string | null
 }
 
 type SaldoProduto = {
@@ -125,12 +128,22 @@ export default function PerfilProdutorPage() {
   const [erroEdit, setErroEdit] = useState('')
   const [okEdit, setOkEdit] = useState('')
 
+  const [ehAdmin, setEhAdmin] = useState(false)
+  const [organizacaoId, setOrganizacaoId] = useState<string | null>(null)
+  const [modalPromoverAberto, setModalPromoverAberto] = useState(false)
+  const [senhaGerada, setSenhaGerada] = useState<string | null>(null)
+
   useEffect(() => { carregar() }, [id])
 
   async function carregar() {
     setCarregando(true)
     try {
-      const res = await getProdutorCompleto(id)
+      const [res, ctx] = await Promise.all([
+        getProdutorCompleto(id),
+        getContextoUsuario(),
+      ])
+      setEhAdmin(ctx.ehAdmin)
+      setOrganizacaoId(ctx.organizacaoId)
       setProdutor(res.produtor as unknown as Produtor)
       setConta(res.conta as unknown as Conta | null)
       setExtrato(res.extrato as unknown as Movimentacao[])
@@ -279,6 +292,15 @@ export default function PerfilProdutorPage() {
             $ Saque financeiro
           </button>
 
+          {ehAdmin && !produtor.cooperado_id && (
+            <button
+              onClick={() => setModalPromoverAberto(true)}
+              style={{ padding: '8px 16px', background: '#fff', color: '#185FA5', border: '1px solid #185FA5', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
+            >
+              ↑ Promover a Cooperado
+            </button>
+          )}
+
           {!sessao && (
             <div style={{ fontSize: '12px', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', padding: '6px 12px', borderRadius: '8px' }}>
               ⚠ Caixa fechado
@@ -290,6 +312,19 @@ export default function PerfilProdutorPage() {
       {okEdit && (
         <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', color: '#166534', marginBottom: '16px' }}>
           ✓ {okEdit}
+        </div>
+      )}
+
+      {senhaGerada && (
+        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1E40AF', marginBottom: '4px' }}>Cooperado criado com sucesso</div>
+            <div style={{ fontSize: '13px', color: '#1E3A8A' }}>
+              Senha temporária: <strong style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}>{senhaGerada}</strong>
+            </div>
+            <div style={{ fontSize: '12px', color: '#3B82F6', marginTop: '4px' }}>Compartilhe esta senha com o cooperado. Ela não será exibida novamente.</div>
+          </div>
+          <button onClick={() => setSenhaGerada(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#93C5FD', fontSize: '18px', lineHeight: 1, padding: '2px', flexShrink: 0 }}>×</button>
         </div>
       )}
 
@@ -391,6 +426,22 @@ export default function PerfilProdutorPage() {
             </table>
           )}
         </div>
+      )}
+
+      {modalPromoverAberto && organizacaoId && (
+        <ModalPromoverCooperado
+          produtorId={produtor.id}
+          nome={produtor.nome}
+          cpf={produtor.cpf}
+          emailAtual={produtor.email}
+          organizacaoId={organizacaoId}
+          onClose={() => setModalPromoverAberto(false)}
+          onSucesso={async (senha) => {
+            setModalPromoverAberto(false)
+            if (senha) setSenhaGerada(senha)
+            await carregar()
+          }}
+        />
       )}
 
       {aba === 'dados' && (

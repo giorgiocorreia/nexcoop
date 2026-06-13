@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { registrarLog } from '@/lib/audit/logger'
 import { isAdmin } from '@/lib/permissoes'
 import { randomBytes } from 'crypto'
-import type { RoleUsuario, VinculoUsuario } from '@/types/database'
+import type { RoleUsuario, StatusCooperado, VinculoUsuario } from '@/types/database'
 
 function gerarSenhaTemporaria(): string {
   return randomBytes(6).toString('hex') // 12 chars hex
@@ -352,6 +352,7 @@ export async function criarCooperado(
 // ── Fluxo 3: Promover produtor existente a cooperado ──────────────────────────
 
 interface DadosCooperadoPromocao {
+  status?: StatusCooperado
   rg?: string
   data_nascimento?: string
   sexo?: 'M' | 'F' | 'outro'
@@ -468,7 +469,7 @@ export async function promoverProdutorACooperado(
       data_admissao: dc.data_admissao ?? null,
       quota_parte: dc.quota_parte ?? null,
       tipo: dc.tipo ?? 'pessoa_fisica',
-      status: 'ativo',
+      status: dc.status ?? 'ativo',
     })
     .select('id')
     .single()
@@ -505,4 +506,26 @@ export async function promoverProdutorACooperado(
   revalidatePath('/dashboard')
 
   return { success: true, cooperadoId: cooperado.id, usuarioId, senhaTemporaria }
+}
+
+// ── Utilitário: contexto do usuário atual (para client components) ─────────────
+
+export async function getContextoUsuario(): Promise<{ ehAdmin: boolean; organizacaoId: string | null }> {
+  try {
+    const serverClient = await createClient()
+    const { data: { user } } = await serverClient.auth.getUser()
+    if (!user) return { ehAdmin: false, organizacaoId: null }
+    const { data } = await serverClient
+      .from('usuarios')
+      .select('role, funcoes, organizacao_id')
+      .eq('id', user.id)
+      .single()
+    if (!data) return { ehAdmin: false, organizacaoId: null }
+    return {
+      ehAdmin: isAdmin(data as any),
+      organizacaoId: (data as any).organizacao_id as string | null,
+    }
+  } catch {
+    return { ehAdmin: false, organizacaoId: null }
+  }
 }
