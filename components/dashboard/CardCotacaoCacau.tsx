@@ -232,7 +232,9 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
               <span style={{ fontSize: '12px', color: '#993C1D' }}>{erro}</span>
             )}
             <Btn
-              variante="azul"
+              variante="cinza"
+              tamanho="md"
+              icone="ti-refresh"
               onClick={handleAplicar}
               disabled={isPending || baseKg == null}
             >
