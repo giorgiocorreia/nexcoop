@@ -250,7 +250,7 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           Referência de mercado (TradingView)
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-          <TradingViewMiniWidget symbol="ICEUS:CC1!" />
+          <TradingViewMiniWidget symbol="COCOA" />
           <TradingViewMiniWidget symbol="FX_IDC:USDBRL" />
         </div>
       </div>
