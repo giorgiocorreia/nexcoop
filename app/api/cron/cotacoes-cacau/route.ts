@@ -118,9 +118,9 @@ async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | nu
   // Padrão esperado: célula com dd/mm/yyyy seguida de célula com valor em BRL
   const patterns = [
     // Formato: "12/06/2026" ... "1.456,78"
-    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]{1,2}\.[\d]{3},\d{2})/s,
+    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]{1,2}\.[\d]{3},\d{2})/,
     // Formato sem ponto de milhar: "456,78"
-    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]+,\d{2})/s,
+    /(\d{2}\/\d{2}\/\d{4})[^<]{0,200}?([\d]+,\d{2})/,
   ]
 
   for (const pattern of patterns) {
