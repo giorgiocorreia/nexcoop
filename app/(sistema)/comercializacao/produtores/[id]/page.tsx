@@ -375,7 +375,7 @@ export default function PerfilProdutorPage() {
             Registrar entrega
           </Btn>
           <Btn
-            variante="marrom-outline"
+            variante="cinza"
             icone="ti-arrow-up"
             onClick={() => irParaCaixa('receber')}
           >
@@ -391,7 +391,7 @@ export default function PerfilProdutorPage() {
           </Btn>
           {!produtor.cooperado_id ? (
             ehAdmin ? (
-              <Btn variante="azul" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
+              <Btn variante="cinza" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
                 {/* TODO: terminologia dinâmica via tipos_org */}
                 Promover a cooperado
               </Btn>
@@ -463,50 +463,75 @@ export default function PerfilProdutorPage() {
           </div>
         </div>
 
-        {/* LEITURA */}
+        {/* LEITURA — campos e blocos ocultos quando vazios */}
         {!editando && (
           <div>
-            {/* Bloco principal — 4 colunas */}
+            {/* Bloco principal — Nome, CPF, Tipo sempre visíveis; E-mail e Telefone só se preenchidos */}
             <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
               <div style={span2}><Campo label="Nome" valor={produtor.nome} /></div>
               <Campo label="CPF" valor={exibirCPF(produtor.cpf)} />
               <Campo label="Tipo" valor={produtor.tipo === 'cooperado' ? 'Cooperado' : 'Não membro'} />
-              <div style={span2}><Campo label="E-mail" valor={produtor.email} /></div>
-              <Campo label="Telefone" valor={exibirTelefone(produtor.telefone)} />
-            </div>
-
-            {/* Bloco Propriedade — 4 colunas */}
-            <BlocoHeader>Propriedade</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
-              <div style={span2}><Campo label="Nome da propriedade" valor={produtor.nome_propriedade} /></div>
-              <Campo label="Município" valor={produtor.municipio} />
-              {/* col 4 vazia */}
-              <div />
-              <Campo label="Área total (ha)" valor={produtor.area_total_ha !== null ? `${produtor.area_total_ha} ha` : null} />
-              <Campo label="Área cacau (ha)" valor={produtor.area_cacau_ha !== null ? `${produtor.area_cacau_ha} ha` : null} />
-              <Campo label="Tipo de posse" valor={produtor.tipo_posse ? (TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse) : null} />
-              <Campo label="IE Produtor Rural" valor={produtor.ie_produtor_rural} />
-              <div style={spanAll}><Campo label="Endereço" valor={produtor.endereco} /></div>
-            </div>
-
-            {/* Bloco Certificação — 4 colunas */}
-            <BlocoHeader>Certificação</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
-              <Campo label="Possui certificação" valor={produtor.tem_certificacao ? 'Sim' : 'Não'} />
-              {produtor.tem_certificacao && (
-                <Campo label="Tipo de certificação" valor={produtor.tipo_certificacao} />
+              {produtor.email && (
+                <div style={span2}><Campo label="E-mail" valor={produtor.email} /></div>
+              )}
+              {produtor.telefone && (
+                <Campo label="Telefone" valor={exibirTelefone(produtor.telefone)} />
               )}
             </div>
 
-            {/* Bloco Dados bancários — 4 colunas */}
-            <BlocoHeader>Dados bancários</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px' }}>
-              <Campo label="Banco" valor={produtor.banco} />
-              <Campo label="Agência" valor={produtor.agencia} />
-              <Campo label="Conta" valor={produtor.conta_bancaria} />
-              <Campo label="Tipo de conta" valor={produtor.tipo_conta ? (TIPO_CONTA_LABEL[produtor.tipo_conta] ?? produtor.tipo_conta) : null} />
-              <div style={span2}><Campo label="Chave Pix" valor={produtor.chave_pix} /></div>
-            </div>
+            {/* Bloco Propriedade — oculto se todos os campos estiverem vazios */}
+            {(produtor.nome_propriedade || produtor.municipio || produtor.area_total_ha !== null ||
+              produtor.area_cacau_ha !== null || produtor.tipo_posse || produtor.ie_produtor_rural ||
+              produtor.endereco) && (
+              <>
+                <BlocoHeader>Propriedade</BlocoHeader>
+                <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
+                  {produtor.nome_propriedade && (
+                    <div style={span2}><Campo label="Nome da propriedade" valor={produtor.nome_propriedade} /></div>
+                  )}
+                  {produtor.municipio && <Campo label="Município" valor={produtor.municipio} />}
+                  {produtor.area_total_ha !== null && <Campo label="Área total (ha)" valor={`${produtor.area_total_ha} ha`} />}
+                  {produtor.area_cacau_ha !== null && <Campo label="Área cacau (ha)" valor={`${produtor.area_cacau_ha} ha`} />}
+                  {produtor.tipo_posse && <Campo label="Tipo de posse" valor={TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse} />}
+                  {produtor.ie_produtor_rural && <Campo label="IE Produtor Rural" valor={produtor.ie_produtor_rural} />}
+                  {produtor.endereco && (
+                    <div style={spanAll}><Campo label="Endereço" valor={produtor.endereco} /></div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Bloco Certificação — oculto se não tem certificação */}
+            {produtor.tem_certificacao && (
+              <>
+                <BlocoHeader>Certificação</BlocoHeader>
+                <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
+                  <Campo label="Possui certificação" valor="Sim" />
+                  {produtor.tipo_certificacao && (
+                    <Campo label="Tipo de certificação" valor={produtor.tipo_certificacao} />
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Bloco Dados bancários — oculto se todos os campos estiverem vazios */}
+            {(produtor.banco || produtor.agencia || produtor.conta_bancaria ||
+              produtor.tipo_conta || produtor.chave_pix) && (
+              <>
+                <BlocoHeader>Dados bancários</BlocoHeader>
+                <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px' }}>
+                  {produtor.banco && <Campo label="Banco" valor={produtor.banco} />}
+                  {produtor.agencia && <Campo label="Agência" valor={produtor.agencia} />}
+                  {produtor.conta_bancaria && <Campo label="Conta" valor={produtor.conta_bancaria} />}
+                  {produtor.tipo_conta && (
+                    <Campo label="Tipo de conta" valor={TIPO_CONTA_LABEL[produtor.tipo_conta] ?? produtor.tipo_conta} />
+                  )}
+                  {produtor.chave_pix && (
+                    <div style={span2}><Campo label="Chave Pix" valor={produtor.chave_pix} /></div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
