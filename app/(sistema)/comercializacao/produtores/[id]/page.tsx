@@ -8,6 +8,7 @@ import { getContextoUsuario } from '@/lib/cooperados/actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
 import ModalPromoverCooperado from '@/components/cooperados/ModalPromoverCooperado'
+import ModalCaixaFechado from '@/components/comercializacao/ModalCaixaFechado'
 
 const COR = '#92400e'
 
@@ -241,6 +242,7 @@ export default function PerfilProdutorPage() {
   const [organizacaoId, setOrganizacaoId] = useState<string | null>(null)
   const [modalPromoverAberto, setModalPromoverAberto] = useState(false)
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null)
+  const [modalCaixaAcao, setModalCaixaAcao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
 
   const [isMobile, setIsMobile] = useState(false)
 
@@ -340,6 +342,10 @@ export default function PerfilProdutorPage() {
   }
 
   function irParaCaixa(acao: 'entrega' | 'receber' | 'saque') {
+    if (!sessao) {
+      setModalCaixaAcao(acao)
+      return
+    }
     router.push(`/comercializacao/caixa?produtor_id=${id}&acao=${acao}`)
   }
 
@@ -769,6 +775,14 @@ export default function PerfilProdutorPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Caixa Fechado */}
+      <ModalCaixaFechado
+        aberto={modalCaixaAcao !== null}
+        onClose={() => setModalCaixaAcao(null)}
+        produtorId={id}
+        acao={modalCaixaAcao ?? 'entrega'}
+      />
 
       {/* Modal Promover Cooperado */}
       {modalPromoverAberto && organizacaoId && (
