@@ -4,9 +4,10 @@
  * componentes; importe e use as funções abaixo.
  */
 
-// membro_id: preenchido quando a query de carregamento faz left join com membros.
-// TODO: incluir membro_id nas queries que montam este objeto (via left join membros on usuario_id).
-type UsuarioPermissao = { role: string; funcoes: string[]; membro_id?: string | null }
+// cooperado_id: preenchido quando a query de carregamento expõe o vínculo com cooperados.
+// TODO: incluir cooperado_id nas queries que montam este objeto
+//       (via produtores.usuario_id -> produtores.cooperado_id).
+type UsuarioPermissao = { role: string; funcoes: string[]; cooperado_id?: string | null }
 
 export function temFuncao(usuario: UsuarioPermissao, funcao: string): boolean {
   if (usuario.role === 'super_admin') return true
@@ -34,6 +35,6 @@ export function isContadorAtivo(usuario: UsuarioPermissao, orgId: string): boole
   return isContador(usuario) && (usuario as any).org_id === orgId
 }
 
-export function isMembro(usuario: UsuarioPermissao): boolean {
-  return !!usuario.membro_id
+export function isCooperado(usuario: UsuarioPermissao): boolean {
+  return !!usuario.cooperado_id
 }
