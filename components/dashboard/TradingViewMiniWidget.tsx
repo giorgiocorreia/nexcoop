@@ -4,10 +4,9 @@ import { useEffect, useRef } from 'react'
 
 interface Props {
   symbol: string
-  height?: number
 }
 
-export function TradingViewMiniWidget({ symbol, height = 220 }: Props) {
+export function TradingViewMiniWidget({ symbol }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -15,26 +14,23 @@ export function TradingViewMiniWidget({ symbol, height = 220 }: Props) {
     if (!container) return
     container.innerHTML = ''
     const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js'
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js'
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
       symbol,
       width: '100%',
-      height,
-      locale: 'br',
-      dateRange: '1M',
-      colorTheme: 'light',
       isTransparent: true,
-      autosize: true,
+      colorTheme: 'light',
+      locale: 'br',
     })
     container.appendChild(script)
-  }, [symbol, height])
+  }, [symbol])
 
   return (
     <div
       ref={containerRef}
-      style={{ height, width: '100%', overflow: 'hidden' }}
+      style={{ width: '100%', minHeight: '60px', overflow: 'hidden' }}
     />
   )
 }
