@@ -242,6 +242,15 @@ export default function PerfilProdutorPage() {
   const [modalPromoverAberto, setModalPromoverAberto] = useState(false)
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null)
 
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   useEffect(() => { carregar() }, [id])
 
   async function carregar() {
@@ -349,55 +358,65 @@ export default function PerfilProdutorPage() {
   const f = formEdit
   const setF = (update: Partial<FormEdit>) => setFormEdit(prev => ({ ...prev, ...update }))
 
+  const cols4 = isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr'
+  const span2: React.CSSProperties = { gridColumn: '1 / 3' }
+  const spanAll: React.CSSProperties = { gridColumn: '1 / -1' }
+
   return (
     <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      {/* PARTE 1: Barra de botões */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '24px' }}>
+      {/* PARTE 1: Barra de botões — Voltar à esquerda, ações à direita */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.back()}>
           Voltar
         </Btn>
-        <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
-          Registrar entrega
-        </Btn>
-        <Btn
-          variante="cinza"
-          icone="ti-arrow-up"
-          style={{ background: COR, border: `1.5px solid ${COR}`, color: '#fff' }}
-          onClick={() => irParaCaixa('receber')}
-        >
-          Pagar produtor
-        </Btn>
-        <Btn
-          variante="cinza"
-          icone="ti-cash"
-          onClick={() => saldoFinanceiro > 0 ? irParaCaixa('saque') : undefined}
-          disabled={saldoFinanceiro <= 0}
-        >
-          Saque financeiro
-        </Btn>
-        {!produtor.cooperado_id ? (
-          ehAdmin ? (
-            <Btn variante="azul" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
-              {/* TODO: terminologia dinâmica via tipos_org */}
-              Promover a cooperado
-            </Btn>
-          ) : null
-        ) : (
-          <span style={{
-            fontSize: '12px', padding: '4px 12px', borderRadius: '20px',
-            background: '#dbeafe', color: '#1e40af', fontWeight: 600,
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-          }}>
-            <i className="ti ti-user-check" style={{ fontSize: 13 }} aria-hidden="true" />
-            Cooperado
-          </span>
-        )}
-        {!sessao && (
-          <Btn variante="cinza" icone="ti-lock" disabled>
-            Caixa fechado
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
+            Registrar entrega
           </Btn>
-        )}
+          <Btn
+            variante="marrom-outline"
+            icone="ti-arrow-up"
+            onClick={() => irParaCaixa('receber')}
+          >
+            Pagar produtor
+          </Btn>
+          <Btn
+            variante="cinza"
+            icone="ti-cash"
+            onClick={() => saldoFinanceiro > 0 ? irParaCaixa('saque') : undefined}
+            disabled={saldoFinanceiro <= 0}
+          >
+            Saque financeiro
+          </Btn>
+          {!produtor.cooperado_id ? (
+            ehAdmin ? (
+              <Btn variante="azul" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
+                {/* TODO: terminologia dinâmica via tipos_org */}
+                Promover a cooperado
+              </Btn>
+            ) : null
+          ) : (
+            <span style={{
+              fontSize: '12px', padding: '4px 12px', borderRadius: '20px',
+              background: '#dbeafe', color: '#1e40af', fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+            }}>
+              <i className="ti ti-user-check" style={{ fontSize: 13 }} aria-hidden="true" />
+              Cooperado
+            </span>
+          )}
+          {!sessao && (
+            <Btn
+              variante="cinza"
+              icone="ti-alert-triangle"
+              disabled
+              style={{ background: '#fef3c7', border: '1px solid #fbbf24', color: '#92400e', opacity: 1 }}
+            >
+              Caixa fechado
+            </Btn>
+          )}
+        </div>
       </div>
 
       {/* Mensagens globais */}
@@ -447,46 +466,46 @@ export default function PerfilProdutorPage() {
         {/* LEITURA */}
         {!editando && (
           <div>
-            {/* Bloco principal */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
-              <Campo label="Nome" valor={produtor.nome} />
-              <Campo label="Tipo" valor={produtor.tipo === 'cooperado' ? 'Cooperado' : 'Não membro'} />
+            {/* Bloco principal — 4 colunas */}
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
+              <div style={span2}><Campo label="Nome" valor={produtor.nome} /></div>
               <Campo label="CPF" valor={exibirCPF(produtor.cpf)} />
-              <Campo label="E-mail" valor={produtor.email} />
+              <Campo label="Tipo" valor={produtor.tipo === 'cooperado' ? 'Cooperado' : 'Não membro'} />
+              <div style={span2}><Campo label="E-mail" valor={produtor.email} /></div>
               <Campo label="Telefone" valor={exibirTelefone(produtor.telefone)} />
             </div>
 
-            {/* Bloco Propriedade */}
+            {/* Bloco Propriedade — 4 colunas */}
             <BlocoHeader>Propriedade</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
-              <Campo label="Nome da propriedade" valor={produtor.nome_propriedade} />
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
+              <div style={span2}><Campo label="Nome da propriedade" valor={produtor.nome_propriedade} /></div>
               <Campo label="Município" valor={produtor.municipio} />
+              {/* col 4 vazia */}
+              <div />
               <Campo label="Área total (ha)" valor={produtor.area_total_ha !== null ? `${produtor.area_total_ha} ha` : null} />
               <Campo label="Área cacau (ha)" valor={produtor.area_cacau_ha !== null ? `${produtor.area_cacau_ha} ha` : null} />
               <Campo label="Tipo de posse" valor={produtor.tipo_posse ? (TIPO_POSSE_LABEL[produtor.tipo_posse] ?? produtor.tipo_posse) : null} />
               <Campo label="IE Produtor Rural" valor={produtor.ie_produtor_rural} />
-              <div style={{ gridColumn: '1 / -1' }}>
-                <Campo label="Endereço" valor={produtor.endereco} />
-              </div>
+              <div style={spanAll}><Campo label="Endereço" valor={produtor.endereco} /></div>
             </div>
 
-            {/* Bloco Certificação */}
+            {/* Bloco Certificação — 4 colunas */}
             <BlocoHeader>Certificação</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
               <Campo label="Possui certificação" valor={produtor.tem_certificacao ? 'Sim' : 'Não'} />
               {produtor.tem_certificacao && (
                 <Campo label="Tipo de certificação" valor={produtor.tipo_certificacao} />
               )}
             </div>
 
-            {/* Bloco Dados bancários */}
+            {/* Bloco Dados bancários — 4 colunas */}
             <BlocoHeader>Dados bancários</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px' }}>
               <Campo label="Banco" valor={produtor.banco} />
               <Campo label="Agência" valor={produtor.agencia} />
               <Campo label="Conta" valor={produtor.conta_bancaria} />
               <Campo label="Tipo de conta" valor={produtor.tipo_conta ? (TIPO_CONTA_LABEL[produtor.tipo_conta] ?? produtor.tipo_conta) : null} />
-              <Campo label="Chave Pix" valor={produtor.chave_pix} />
+              <div style={span2}><Campo label="Chave Pix" valor={produtor.chave_pix} /></div>
             </div>
           </div>
         )}
@@ -494,11 +513,15 @@ export default function PerfilProdutorPage() {
         {/* EDIÇÃO */}
         {editando && (
           <div>
-            {/* Bloco principal */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* Bloco principal — 4 colunas */}
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
+              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome completo</label>
                 <input value={f.nome} onChange={e => setF({ nome: e.target.value })} style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
+                <input value={exibirCPF(produtor.cpf) ?? ''} disabled style={{ ...inp, background: '#f8f7f4', color: '#9a9a9a', cursor: 'not-allowed' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
@@ -507,11 +530,7 @@ export default function PerfilProdutorPage() {
                   <option value="cooperado">Cooperado</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
-                <input value={exibirCPF(produtor.cpf) ?? ''} disabled style={{ ...inp, background: '#f8f7f4', color: '#9a9a9a', cursor: 'not-allowed' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
                 <input type="email" value={f.email} onChange={e => setF({ email: e.target.value })} style={inp} />
               </div>
@@ -521,10 +540,10 @@ export default function PerfilProdutorPage() {
               </div>
             </div>
 
-            {/* Bloco Propriedade */}
+            {/* Bloco Propriedade — 4 colunas */}
             <BlocoHeader>Propriedade</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
+              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome da propriedade</label>
                 <input value={f.nome_propriedade} onChange={e => setF({ nome_propriedade: e.target.value })} style={inp} />
               </div>
@@ -532,6 +551,8 @@ export default function PerfilProdutorPage() {
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
                 <input value={f.municipio} onChange={e => setF({ municipio: e.target.value })} style={inp} />
               </div>
+              {/* col 4 vazia */}
+              <div />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área total (ha)</label>
                 <input type="number" step="0.01" min="0" value={f.area_total_ha} onChange={e => setF({ area_total_ha: e.target.value })} style={inp} />
@@ -553,15 +574,15 @@ export default function PerfilProdutorPage() {
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>IE Produtor Rural</label>
                 <input value={f.ie_produtor_rural} onChange={e => setF({ ie_produtor_rural: e.target.value })} style={inp} />
               </div>
-              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ ...spanAll, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
                 <input value={f.endereco} onChange={e => setF({ endereco: e.target.value })} style={inp} />
               </div>
             </div>
 
-            {/* Bloco Certificação */}
+            {/* Bloco Certificação — 4 colunas */}
             <BlocoHeader>Certificação</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', padding: '6px 0' }}>
                   <input type="checkbox" checked={f.tem_certificacao} onChange={e => setF({ tem_certificacao: e.target.checked })} />
@@ -576,9 +597,9 @@ export default function PerfilProdutorPage() {
               )}
             </div>
 
-            {/* Bloco Dados bancários */}
+            {/* Bloco Dados bancários — 4 colunas */}
             <BlocoHeader>Dados bancários</BlocoHeader>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
                 <input value={f.banco} onChange={e => setF({ banco: e.target.value })} style={inp} />
@@ -600,7 +621,7 @@ export default function PerfilProdutorPage() {
                   <option value="pix">Pix</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
                 <input value={f.chave_pix} onChange={e => setF({ chave_pix: e.target.value })} placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
               </div>
