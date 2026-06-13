@@ -6,6 +6,7 @@ import {
   salvarConfigPrecosSugeridos,
   aplicarCotacaoSugerida,
 } from '@/lib/dashboard/cotacoes-mercado-actions'
+import { TradingViewMiniWidget } from '@/components/dashboard/TradingViewMiniWidget'
 import type { CotacaoMercadoExterno, ConfigPrecosSugeridos } from '@/types/database'
 
 interface Props {
@@ -116,6 +117,7 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
       ) : (
         <>
           {/* Preços de mercado */}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             {/* CEPEA */}
             <div style={fonteCardStyle('#E6F1FB', '#B5D4F4')}>
@@ -239,6 +241,17 @@ export function CardCotacaoCacau({ cepea, iceNy, tendencia, config }: Props) {
           </div>
         </>
       )}
+
+      {/* Referência de mercado */}
+      <div style={{ borderTop: '1px solid #f0eeea', marginTop: '16px', paddingTop: '14px' }}>
+        <div style={{ fontSize: '10px', fontWeight: '600', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
+          Referência de mercado (TradingView)
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+          <TradingViewMiniWidget symbol="ICEUS:CC1!" />
+          <TradingViewMiniWidget symbol="FX_IDC:USDBRL" />
+        </div>
+      </div>
     </div>
   )
 }
