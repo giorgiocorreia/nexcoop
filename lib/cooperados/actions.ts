@@ -191,7 +191,7 @@ export async function criarUsuarioComCooperadoOpcional(
   revalidatePath('/cooperados')
   revalidatePath('/dashboard')
 
-  return { success: true, usuarioId: authUserId, cooperadoId, produtorId }
+  return { success: true, usuarioId: authUserId, cooperadoId, produtorId, senhaTemporaria }
 }
 
 // ── Fluxo 2: Criar cooperado (sempre cria usuario + cooperado + produtor) ──────

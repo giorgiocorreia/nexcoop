@@ -88,6 +88,7 @@ export default async function UsuariosPage() {
       funcoes={funcoes}
       usuarioAtualId={user.id}
       isSuperAdmin={isSuperAdmin(usuarioAtual)}
+      organizacaoId={orgId}
     />
   )
 }

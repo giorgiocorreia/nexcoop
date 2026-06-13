@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database'
 import type { UsuarioPendente } from './page'
 import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite } from './actions'
+import { Btn } from '@/components/ui/Btn'
+import ModalCadastrarUsuario from '@/components/usuarios/ModalCadastrarUsuario'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
@@ -31,10 +33,11 @@ interface Props {
   funcoes: FuncaoDisponivel[]
   usuarioAtualId: string
   isSuperAdmin: boolean
+  organizacaoId: string | null
   embeddedMode?: boolean
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, embeddedMode }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, embeddedMode }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
   const [pendentes, setPendentes] = useState(pendentesInit)
@@ -68,6 +71,9 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   const [senhaAtivar, setSenhaAtivar] = useState('')
   const [erroSenha, setErroSenha] = useState('')
   const [salvandoAtivar, setSalvandoAtivar] = useState(false)
+
+  // Modal de cadastro
+  const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
 
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -254,6 +260,16 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
         </div>
       )}
 
+      {/* Modal de cadastro */}
+      {modalCadastrarAberto && organizacaoId && (
+        <ModalCadastrarUsuario
+          organizacaoId={organizacaoId}
+          funcoes={funcoes}
+          onClose={() => setModalCadastrarAberto(false)}
+          onSucesso={() => { setModalCadastrarAberto(false); router.refresh() }}
+        />
+      )}
+
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -264,18 +280,23 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
             {pendentes.length > 0 && ` · ${pendentes.length} aguardando aceite`}
           </p>
         </div>
-        <button
-          onClick={() => { setConviteAberto(v => !v); setErroConvite(''); setOkConvite('') }}
-          style={{
-            padding: '8px 16px',
-            background: conviteAberto ? '#f0eeea' : GREEN,
-            color: conviteAberto ? '#555' : '#fff',
-            border: conviteAberto ? '1px solid #d5d3cc' : 'none',
-            borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-          }}
-        >
-          {conviteAberto ? 'Cancelar' : '+ Convidar usuário'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Btn
+            variante="azul"
+            icone="ti-user-plus"
+            onClick={() => setModalCadastrarAberto(true)}
+            disabled={!organizacaoId}
+          >
+            + Cadastrar usuário
+          </Btn>
+          <Btn
+            variante={conviteAberto ? 'cinza' : 'azul'}
+            icone={conviteAberto ? undefined : 'ti-mail'}
+            onClick={() => { setConviteAberto(v => !v); setErroConvite(''); setOkConvite('') }}
+          >
+            {conviteAberto ? 'Cancelar' : '+ Convidar usuário'}
+          </Btn>
+        </div>
       </div>
 
       {/* Erros globais */}
@@ -456,33 +477,23 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                         </span>
                         {podeEditar && (
                           <>
-                            <button
+                            <Btn
+                              tamanho="sm"
+                              variante="cinza"
+                              icone={u.ativo ? 'ti-ban' : 'ti-check'}
                               onClick={() => handleToggleAtivo(u.id, u.ativo)}
                               disabled={toggling}
-                              style={{
-                                padding: '5px 10px', border: '1px solid #d5d3cc',
-                                borderRadius: '6px', background: '#fff',
-                                fontSize: '11px', color: '#555',
-                                cursor: toggling ? 'not-allowed' : 'pointer',
-                                opacity: toggling ? 0.6 : 1, whiteSpace: 'nowrap',
-                              }}
                             >
                               {toggling ? '...' : u.ativo ? 'Desativar' : 'Ativar'}
-                            </button>
-                            <button
+                            </Btn>
+                            <Btn
+                              tamanho="sm"
+                              variante="cinza"
+                              icone={editando ? undefined : 'ti-pencil'}
                               onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
-                              style={{
-                                padding: '5px 10px',
-                                border: `1px solid ${editando ? '#d5d3cc' : GREEN}`,
-                                borderRadius: '6px',
-                                background: editando ? '#f0eeea' : '#fff',
-                                fontSize: '11px',
-                                color: editando ? '#555' : GREEN,
-                                cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap',
-                              }}
                             >
                               {editando ? 'Cancelar' : 'Editar'}
-                            </button>
+                            </Btn>
                           </>
                         )}
                       </div>

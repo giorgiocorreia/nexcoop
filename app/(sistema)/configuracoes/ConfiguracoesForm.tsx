@@ -153,6 +153,7 @@ export default function ConfiguracoesForm(props: Props) {
           funcoes={props.funcoes}
           usuarioAtualId={props.usuario.id}
           isSuperAdmin={props.isSuperAdmin}
+          organizacaoId={props.org?.id ?? null}
           embeddedMode
         />
       )}
