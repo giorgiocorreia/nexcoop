@@ -978,6 +978,24 @@ export interface ConfigPrecosSugeridos {
   updated_at:           string
 }
 
+// ── Endereços Centralizada (031) ─────────────────────────────────────────────
+
+export interface Enderecos {
+  id:             string
+  organizacao_id: string
+  cep:            string | null
+  logradouro:     string | null
+  numero:         string | null
+  complemento:    string | null
+  bairro:         string | null
+  municipio:      string | null
+  estado:         string | null
+  latitude:       number | null
+  longitude:      number | null
+  created_at:     string
+  updated_at:     string
+}
+
 export interface ChangelogEntry {
   id:         string
   data:       string
@@ -1099,6 +1117,8 @@ export type Database = {
       // ── Dashboard (032) ───────────────────────────────────────────────
       cotacoes_mercado_externo:    TableDef<CotacaoMercadoExterno>
       config_precos_sugeridos:     TableDef<ConfigPrecosSugeridos>
+      // ── Endereços (031) ───────────────────────────────────────────────
+      enderecos:                   TableDef<Enderecos>
       // ── Admin (033) ────────────────────────────────────────────────────
       changelog_entries:           TableDef<ChangelogEntry>
     }
