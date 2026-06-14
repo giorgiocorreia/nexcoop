@@ -1,5 +1,68 @@
 # NexCoop — Changelog
 
+## [13/06/2026] — Sessão: Modelo Unificado + Ficha do Produtor + UI Usuários
+
+### Modelo Membro/Produtor/Usuário
+- Migration 033: adicionadas colunas `usuario_id`, `dados_fiscais`, `is_consumidor_final` em `produtores`
+- Migration 034/035: criada e revertida tabela `membros` (conceito já existia como `cooperados`)
+- `lib/cooperados/actions.ts`: 3 server actions implementadas:
+  - `criarUsuarioComCooperadoOpcional` — usuário com checkbox "é cooperado?"
+  - `criarCooperado` — cadeia completa usuario+cooperado+produtor
+  - `promoverProdutorACooperado` — promoção de produtor externo
+- `lib/permissoes.ts`: adicionada função `isCooperado()`
+- Modelo final: `produtores` = identidade cadastral, `cooperados` = vínculo societário 1:1
+
+### Ficha do Produtor (Comercialização)
+- Tela unificada `/comercializacao/produtores/[id]`: botões → dados cadastrais → extrato → saldos
+- "Voltar" à esquerda, demais botões à direita — todos padrão `Btn`
+- Dados cadastrais: leitura por padrão (campos vazios ocultos), editar ao clicar (todos visíveis)
+- Card "Saldos" no fim: kg × cotação atual (estimativa), saldo financeiro, total estimado
+- Botão "Promover a cooperado" visível apenas se `cooperado_id === null`
+- Modal `ModalPromoverCooperado`: promove produtor existente, cria login, exibe senha temporária
+- "Ver perfil" removido da listagem — fica só "Ver ficha"
+- Modal "Caixa fechado": intercepta ações com caixa fechado → 2 etapas (aviso → saldo inicial) → abre caixa → redireciona com `produtor_id+acao`
+
+### Configurações → Usuários
+- Botão "+ Cadastrar usuário" adicionado ao lado de "+ Convidar usuário"
+- Modal `ModalCadastrarUsuario`: dados de acesso + checkbox "é cooperado?" + campos societários
+- Exibe senha temporária ao final com botão "Copiar credenciais"
+- Todos os botões da tela padronizados para componente `Btn`
+
+### Banco de dados (aplicar manualmente via SQL Editor)
+- Migration 033 (colunas produtores): `usuario_id`, `dados_fiscais`, `is_consumidor_final`
+- Migration 035 (drop membros): `drop table if exists membros cascade`
+
+### Correções
+- Cast `as Json` em todos os campos jsonb das server actions (fix build TS)
+- Dados cadastrais da ficha em grid 4 colunas (responsivo para 2 em mobile)
+
+---
+
+## [12/06/2026] — Sessão: NF-e Entrada + Dashboard Cotação Cacau
+
+### NF-e de Entrada via Focus NFe
+- Integração completa em homologação (série 2)
+- `lib/focusnfe/client.ts`, `lib/focusnfe/emitir-nfe-entrada.ts`
+- `lib/comercializacao/nfe.actions.ts`: `emitirNfeEntradaAction`, `getNfeStatus`
+- `components/comercializacao/ModalNfeEntrada.tsx`: modal pós-entrega + botão dinâmico no diário
+- Migration 029b: ajustes em `notas_entrega` (produtor_id→produtores, status expandido, colunas fiscais)
+- Fix `data_emissao`: cálculo correto UTC-3 sem `.toISOString()` ingênuo
+- Parâmetros: NCM 18010000, CFOP 1102/1159, ICMS CST 41, PIS/COFINS CST 72, frete '9'
+
+### Dashboard Admin — Cotação Cacau
+- Migration 032: `cotacoes_mercado_externo` + `config_precos_sugeridos`
+- Cron `/api/cron/cotacoes-cacau` (1x/dia 08:00): precodocacau.com.br + Yahoo Finance
+- Card "Cotação do Cacau": cotações, tendência 7d, sugestão de preços, botão "Aplicar cotação"
+- Widgets TradingView ao vivo: COCOA + FX_IDC:USDBRL
+- Card visível apenas para `organizacoes.tipo === 'cooperativa'`
+
+### Infraestrutura
+- Fix: schedule Vercel Hobby — apenas 1x/dia ("0 8 * * *")
+- Fix: CRON_SECRET — Vercel usa secret interno próprio para autenticação de crons
+- Fix: deploys travados via `vercel --prod --yes`
+
+---
+
 ## [Em desenvolvimento]
 
 ### Pendente
