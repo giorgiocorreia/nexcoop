@@ -88,7 +88,14 @@ export async function criarUsuarioComCooperadoOpcional(
     email_confirm: true,
   })
   if (authError || !authData.user) {
-    throw new Error(`Erro ao criar usuário no Auth: ${authError?.message}`)
+    if (
+      authError?.message?.toLowerCase().includes('already registered') ||
+      authError?.message?.toLowerCase().includes('already exists') ||
+      (authError as any)?.status === 422
+    ) {
+      return { success: false as const, error: 'Este e-mail já está cadastrado no sistema. Informe um e-mail diferente.' }
+    }
+    return { success: false as const, error: `Erro ao criar acesso: ${authError?.message}` }
   }
   const authUserId = authData.user.id
 
@@ -106,7 +113,7 @@ export async function criarUsuarioComCooperadoOpcional(
   })
   if (usuarioError) {
     await admin.auth.admin.deleteUser(authUserId).catch(() => null)
-    throw new Error(`Erro ao inserir usuário: ${usuarioError.message}`)
+    return { success: false as const, error: `Erro ao criar usuário: ${usuarioError.message}` }
   }
 
   let cooperadoId: string | undefined
@@ -149,7 +156,7 @@ export async function criarUsuarioComCooperadoOpcional(
       .select('id')
       .single()
     if (cooperadoError || !cooperado) {
-      throw new Error(`Erro ao criar cooperado: ${cooperadoError?.message}`)
+      return { success: false as const, error: `Erro ao criar cooperado: ${cooperadoError?.message}` }
     }
     cooperadoId = cooperado.id
 
@@ -172,7 +179,7 @@ export async function criarUsuarioComCooperadoOpcional(
       .select('id')
       .single()
     if (produtorError || !produtor) {
-      throw new Error(`Erro ao criar produtor: ${produtorError?.message}`)
+      return { success: false as const, error: `Erro ao criar produtor: ${produtorError?.message}` }
     }
     produtorId = produtor.id
   }
@@ -240,7 +247,14 @@ export async function criarCooperado(
     email_confirm: true,
   })
   if (authError || !authData.user) {
-    throw new Error(`Erro ao criar usuário no Auth: ${authError?.message}`)
+    if (
+      authError?.message?.toLowerCase().includes('already registered') ||
+      authError?.message?.toLowerCase().includes('already exists') ||
+      (authError as any)?.status === 422
+    ) {
+      return { success: false as const, error: 'Este e-mail já está cadastrado no sistema. Informe um e-mail diferente.' }
+    }
+    return { success: false as const, error: `Erro ao criar acesso: ${authError?.message}` }
   }
   const authUserId = authData.user.id
 
@@ -260,7 +274,7 @@ export async function criarCooperado(
   })
   if (usuarioError) {
     await admin.auth.admin.deleteUser(authUserId).catch(() => null)
-    throw new Error(`Erro ao inserir usuário: ${usuarioError.message}`)
+    return { success: false as const, error: `Erro ao criar usuário: ${usuarioError.message}` }
   }
 
   // 3. Criar cooperado (colunas estruturadas 1:1 com a tabela)
@@ -300,7 +314,7 @@ export async function criarCooperado(
     .single()
   if (cooperadoError || !cooperado) {
     await admin.auth.admin.deleteUser(authUserId).catch(() => null)
-    throw new Error(`Erro ao criar cooperado: ${cooperadoError?.message}`)
+    return { success: false as const, error: `Erro ao criar cooperado: ${cooperadoError?.message}` }
   }
 
   // 4. Criar produtor espelho vinculado ao cooperado
@@ -322,7 +336,7 @@ export async function criarCooperado(
     .select('id')
     .single()
   if (produtorError || !produtor) {
-    throw new Error(`Erro ao criar produtor: ${produtorError?.message}`)
+    return { success: false as const, error: `Erro ao criar produtor: ${produtorError?.message}` }
   }
 
   // 5. Log (non-blocking)
@@ -395,13 +409,13 @@ export async function promoverProdutorACooperado(
     .eq('id', input.produtorId)
     .single()
   if (produtorError || !produtor) {
-    throw new Error('Produtor não encontrado')
+    return { success: false as const, error: 'Produtor não encontrado.' }
   }
   if ((produtor as any).organizacao_id !== organizacaoId) {
-    throw new Error('Produtor não pertence a esta organização')
+    return { success: false as const, error: 'Produtor não pertence a esta organização.' }
   }
   if ((produtor as any).cooperado_id) {
-    throw new Error('Este produtor já é cooperado. Não é possível promover novamente.')
+    return { success: false as const, error: 'Este produtor já é cooperado. Não é possível promover novamente.' }
   }
 
   let usuarioId: string = (produtor as any).usuario_id
@@ -416,7 +430,14 @@ export async function promoverProdutorACooperado(
       email_confirm: true,
     })
     if (authError || !authData.user) {
-      throw new Error(`Erro ao criar usuário no Auth: ${authError?.message}`)
+      if (
+        authError?.message?.toLowerCase().includes('already registered') ||
+        authError?.message?.toLowerCase().includes('already exists') ||
+        (authError as any)?.status === 422
+      ) {
+        return { success: false as const, error: 'Este e-mail já está cadastrado no sistema. Informe um e-mail diferente.' }
+      }
+      return { success: false as const, error: `Erro ao criar acesso: ${authError?.message}` }
     }
     usuarioId = authData.user.id
 
@@ -435,7 +456,7 @@ export async function promoverProdutorACooperado(
     })
     if (usuarioInsertError) {
       await admin.auth.admin.deleteUser(usuarioId).catch(() => null)
-      throw new Error(`Erro ao inserir usuário: ${usuarioInsertError.message}`)
+      return { success: false as const, error: `Erro ao criar usuário: ${usuarioInsertError.message}` }
     }
   }
 
@@ -475,7 +496,7 @@ export async function promoverProdutorACooperado(
     .select('id')
     .single()
   if (cooperadoError || !cooperado) {
-    throw new Error(`Erro ao criar cooperado: ${cooperadoError?.message}`)
+    return { success: false as const, error: `Erro ao criar cooperado: ${cooperadoError?.message}` }
   }
 
   // 4. Atualizar produtor: vincular cooperado_id + usuario_id
@@ -488,7 +509,7 @@ export async function promoverProdutorACooperado(
     } as any)
     .eq('id', input.produtorId)
   if (updateError) {
-    throw new Error(`Erro ao atualizar produtor: ${updateError.message}`)
+    return { success: false as const, error: `Erro ao atualizar produtor: ${updateError.message}` }
   }
 
   // 5. Log (non-blocking)

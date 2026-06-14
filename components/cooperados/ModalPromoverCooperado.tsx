@@ -81,6 +81,10 @@ export default function ModalPromoverCooperado({
             dap_numero:       dapNumero   || undefined,
           },
         })
+        if (!result.success) {
+          setErro(result.error ?? 'Erro ao promover produtor.')
+          return
+        }
         onSucesso(result.senhaTemporaria, email.trim())
       } catch (e: any) {
         setErro(e.message ?? 'Erro ao promover produtor.')

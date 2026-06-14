@@ -116,6 +116,10 @@ export default function ModalCadastrarUsuario({ organizacaoId, funcoes, nomeOrg,
             area_total_ha: areaTotalHa ? parseFloat(areaTotalHa) : undefined,
           } : undefined,
         })
+        if (!result.success) {
+          setErro(result.error ?? 'Erro ao cadastrar usuário.')
+          return
+        }
         setCredenciais({ email: email.trim(), senha: result.senhaTemporaria })
       } catch (e: unknown) {
         setErro(e instanceof Error ? e.message : 'Erro ao cadastrar usuário.')
