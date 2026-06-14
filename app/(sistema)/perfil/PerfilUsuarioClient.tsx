@@ -36,6 +36,15 @@ type Dados = {
   atividades: Atividade[]
 }
 
+type FormFields = {
+  nome_completo: string
+  cpf:           string
+  telefone:      string
+  endereco:      string
+  municipio:     string
+  estado:        string
+}
+
 function formatarData(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
@@ -89,13 +98,34 @@ function iconeAtividade(acao: string) {
   return { icon: 'ti-activity', bg: '#F1EFE8', color: '#5F5E5A' }
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box',
+  border: '1px solid #e5e3dc', borderRadius: 8,
+  padding: '6px 10px', fontSize: 14,
+  background: 'white', color: 'var(--color-text-primary)',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, color: '#888780', marginBottom: 4,
+}
+
+const campos: { label: string; campo: keyof FormFields; colSpan?: boolean }[] = [
+  { label: 'Nome completo', campo: 'nome_completo' },
+  { label: 'CPF',           campo: 'cpf' },
+  { label: 'Telefone',      campo: 'telefone' },
+  { label: 'Endereço',      campo: 'endereco', colSpan: true },
+  { label: 'Município',     campo: 'municipio' },
+  { label: 'Estado',        campo: 'estado' },
+]
+
 export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
   const { usuario, atividades } = dados
   const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState<string | null>(null)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormFields>({
     nome_completo: usuario.nome_completo ?? '',
+    cpf:           usuario.cpf           ?? '',
     telefone:      usuario.telefone      ?? '',
     endereco:      usuario.endereco      ?? '',
     municipio:     usuario.municipio     ?? '',
@@ -117,40 +147,17 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
     }
   }
 
-  function Campo({
-    label,
-    valor,
-    campo,
-  }: {
-    label: string
-    valor: string | null
-    campo?: keyof typeof form
-  }) {
-    return (
-      <div>
-        <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>{label}</div>
-        {editando && campo ? (
-          <input
-            value={form[campo]}
-            onChange={e => setForm(f => ({ ...f, [campo]: e.target.value }))}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              border: '1px solid #e5e3dc', borderRadius: 8,
-              padding: '6px 10px', fontSize: 14,
-              background: 'white', color: 'var(--color-text-primary)',
-            }}
-          />
-        ) : (
-          <div style={{
-            fontSize: 14,
-            color: valor ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-            fontStyle: valor ? 'normal' : 'italic',
-          }}>
-            {valor || 'Não informado'}
-          </div>
-        )}
-      </div>
-    )
+  function cancelar() {
+    setForm({
+      nome_completo: usuario.nome_completo ?? '',
+      cpf:           usuario.cpf           ?? '',
+      telefone:      usuario.telefone      ?? '',
+      endereco:      usuario.endereco      ?? '',
+      municipio:     usuario.municipio     ?? '',
+      estado:        usuario.estado        ?? '',
+    })
+    setErro(null)
+    setEditando(false)
   }
 
   const subtitulo = [
@@ -221,7 +228,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    onClick={() => { setEditando(false); setErro(null) }}
+                    onClick={cancelar}
                     style={{
                       background: 'none', border: '1px solid #e5e3dc', borderRadius: 8,
                       padding: '6px 12px', fontSize: 13, color: 'var(--color-text-secondary)', cursor: 'pointer',
@@ -262,27 +269,55 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
               }}>
                 Dados pessoais
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <Campo label="Nome completo" valor={usuario.nome_completo} campo="nome_completo" />
-                <div>
-                  <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>CPF</div>
-                  <div style={{ fontSize: 14, color: usuario.cpf ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', fontStyle: usuario.cpf ? 'normal' : 'italic' }}>
-                    {usuario.cpf ?? 'Não informado'}
+
+              {editando ? (
+                // MODO EDIÇÃO — todos os campos como inputs
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {campos.map(({ label, campo, colSpan }) => (
+                    <div key={campo} style={colSpan ? { gridColumn: '1 / -1' } : {}}>
+                      <div style={labelStyle}>{label}</div>
+                      <input
+                        value={form[campo]}
+                        onChange={e => setForm(f => ({ ...f, [campo]: e.target.value }))}
+                        style={inputStyle}
+                      />
+                    </div>
+                  ))}
+                  {/* E-mail: nunca editável (vem do auth) */}
+                  <div>
+                    <div style={labelStyle}>E-mail</div>
+                    <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                      {usuario.email ?? 'Não informado'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
+                      Não editável — vinculado à autenticação
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>E-mail</div>
-                  <div style={{ fontSize: 14, color: usuario.email ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', fontStyle: usuario.email ? 'normal' : 'italic' }}>
-                    {usuario.email ?? 'Não informado'}
-                  </div>
+              ) : (
+                // MODO LEITURA — só campos com valor
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {campos
+                    .filter(({ campo }) => !!form[campo])
+                    .map(({ label, campo, colSpan }) => (
+                      <div key={campo} style={colSpan ? { gridColumn: '1 / -1' } : {}}>
+                        <div style={labelStyle}>{label}</div>
+                        <div style={{ fontSize: 14, color: 'var(--color-text-primary)' }}>
+                          {form[campo]}
+                        </div>
+                      </div>
+                    ))
+                  }
+                  {usuario.email && (
+                    <div>
+                      <div style={labelStyle}>E-mail</div>
+                      <div style={{ fontSize: 14, color: 'var(--color-text-primary)' }}>
+                        {usuario.email}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <Campo label="Telefone"  valor={usuario.telefone}  campo="telefone" />
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <Campo label="Endereço" valor={usuario.endereco} campo="endereco" />
-                </div>
-                <Campo label="Município" valor={usuario.municipio} campo="municipio" />
-                <Campo label="Estado"    valor={usuario.estado}    campo="estado" />
-              </div>
+              )}
             </div>
           </div>
 

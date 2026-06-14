@@ -63,6 +63,7 @@ export async function buscarPerfilCompleto() {
 
 export async function salvarPerfil(dados: {
   nome_completo: string
+  cpf:           string
   telefone:      string
   endereco:      string
   municipio:     string
@@ -82,6 +83,7 @@ export async function salvarPerfil(dados: {
     .from('usuarios')
     .update({
       nome_completo: dados.nome_completo,
+      cpf:           dados.cpf       || null,
       telefone:      dados.telefone  || null,
       endereco:      dados.endereco  || null,
       municipio:     dados.municipio || null,
