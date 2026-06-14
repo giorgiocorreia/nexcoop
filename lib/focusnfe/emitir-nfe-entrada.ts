@@ -63,7 +63,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         produtor_id,
         produtores!produtor_id(
           id, nome, cpf, municipio, endereco, tipo,
-          ie_produtor_rural, tipo_posse
+          cooperado_id, ie_produtor_rural, tipo_posse
         )
       )
     `)
@@ -84,7 +84,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   if (!produtor.cpf) return { sucesso: false, erro: 'CPF do produtor não cadastrado. Atualize o cadastro.' }
 
   // 2. Determinar CFOP e preço conforme tipo do produtor
-  const isCooperado = produtor.tipo === 'cooperado'
+  const isCooperado = !!produtor.cooperado_id || produtor.tipo === 'cooperado'
   const cfop = isCooperado ? '1159' : '1102'
 
   // 3. Buscar cotação vigente na data da movimentação
