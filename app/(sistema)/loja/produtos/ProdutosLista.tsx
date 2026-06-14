@@ -150,7 +150,7 @@ export default function ProdutosLista({ produtos, fornecedores, produtosComVenci
                 <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Produto</th>
                 <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Categoria</th>
                 <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Preço normal</th>
-                <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Preço cooperado</th>
+                <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Desc. coop.</th>
                 <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Estoque</th>
                 <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '600', color: '#888', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Status</th>
               </tr>
@@ -193,8 +193,10 @@ export default function ProdutosLista({ produtos, fornecedores, produtosComVenci
                     <td style={{ padding: '12px 16px', fontSize: '13px', color: '#555', textAlign: 'right' }}>
                       {formatBRL(p.preco_normal)}
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', color: VERDE, fontWeight: '500', textAlign: 'right' }}>
-                      {formatBRL(p.preco_cooperado)}
+                    <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '500', textAlign: 'right', color: p.desconto_cooperado ? VERDE : '#aaa' }}>
+                      {p.desconto_cooperado
+                        ? p.desconto_cooperado_pct != null ? `${p.desconto_cooperado_pct}%` : 'Sim'
+                        : '—'}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <span style={{ fontSize: '13px', fontWeight: '600', color: eBaixo ? '#dc2626' : '#1a1a1a' }}>

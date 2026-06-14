@@ -51,3 +51,21 @@ export function orgTemModulo(
 ): boolean {
   return temModulo(modulos_ativos, modulo)
 }
+
+// ── Permissões da Loja Agropecuária ──────────────────────────────────────────
+
+export function podeGerenciarLoja(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['admin', 'gerente_loja'])
+}
+
+export function podeVenderLoja(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['admin', 'gerente_loja', 'caixa_loja'])
+}
+
+export function podeVerEstoqueLoja(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['admin', 'gerente_loja', 'estoquista_loja'])
+}
+
+export function podeAutorizarDescontoExtra(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['admin', 'gerente_loja'])
+}

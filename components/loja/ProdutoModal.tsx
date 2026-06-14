@@ -24,13 +24,14 @@ const CATEGORIAS = [
 type Mode = 'create' | 'edit' | 'view'
 
 interface FormValues {
-  nome:            string
-  categoria:       string
-  unidade:         LojaUnidade
-  preco_normal:    string
-  preco_cooperado: string
-  estoque_minimo:  string
-  fornecedor_id:   string
+  nome:                   string
+  categoria:              string
+  unidade:                LojaUnidade
+  preco_normal:           string
+  desconto_cooperado:     boolean
+  desconto_cooperado_pct: string
+  estoque_minimo:         string
+  fornecedor_id:          string
 }
 
 interface Props {
@@ -93,44 +94,48 @@ export default function ProdutoModal({ mode: initialMode, produto, fornecedores,
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
-      nome:            produto?.nome            ?? '',
-      categoria:       produto?.categoria       ?? '',
-      unidade:         produto?.unidade         ?? 'unidade',
-      preco_normal:    produto?.preco_normal    != null ? String(produto.preco_normal).replace('.', ',') : '',
-      preco_cooperado: produto?.preco_cooperado != null ? String(produto.preco_cooperado).replace('.', ',') : '',
-      estoque_minimo:  produto?.estoque_minimo  != null ? String(produto.estoque_minimo).replace('.', ',') : '',
-      fornecedor_id:   produto?.fornecedor_id   ?? '',
+      nome:                   produto?.nome            ?? '',
+      categoria:              produto?.categoria       ?? '',
+      unidade:                produto?.unidade         ?? 'unidade',
+      preco_normal:           produto?.preco_normal    != null ? String(produto.preco_normal).replace('.', ',') : '',
+      desconto_cooperado:     produto?.desconto_cooperado     ?? false,
+      desconto_cooperado_pct: produto?.desconto_cooperado_pct != null ? String(produto.desconto_cooperado_pct).replace('.', ',') : '',
+      estoque_minimo:         produto?.estoque_minimo  != null ? String(produto.estoque_minimo).replace('.', ',') : '',
+      fornecedor_id:          produto?.fornecedor_id   ?? '',
     },
   })
 
   useEffect(() => {
     reset({
-      nome:            produto?.nome            ?? '',
-      categoria:       produto?.categoria       ?? '',
-      unidade:         produto?.unidade         ?? 'unidade',
-      preco_normal:    produto?.preco_normal    != null ? String(produto.preco_normal).replace('.', ',') : '',
-      preco_cooperado: produto?.preco_cooperado != null ? String(produto.preco_cooperado).replace('.', ',') : '',
-      estoque_minimo:  produto?.estoque_minimo  != null ? String(produto.estoque_minimo).replace('.', ',') : '',
-      fornecedor_id:   produto?.fornecedor_id   ?? '',
+      nome:                   produto?.nome            ?? '',
+      categoria:              produto?.categoria       ?? '',
+      unidade:                produto?.unidade         ?? 'unidade',
+      preco_normal:           produto?.preco_normal    != null ? String(produto.preco_normal).replace('.', ',') : '',
+      desconto_cooperado:     produto?.desconto_cooperado     ?? false,
+      desconto_cooperado_pct: produto?.desconto_cooperado_pct != null ? String(produto.desconto_cooperado_pct).replace('.', ',') : '',
+      estoque_minimo:         produto?.estoque_minimo  != null ? String(produto.estoque_minimo).replace('.', ',') : '',
+      fornecedor_id:          produto?.fornecedor_id   ?? '',
     })
   }, [produto, reset])
 
   async function onSubmit(values: FormValues) {
-    const precoNormal    = parseBRL(values.preco_normal)
-    const precoCooperado = parseBRL(values.preco_cooperado)
-    if (precoNormal == null)    { setErro('Informe um preço normal válido.'); return }
-    if (precoCooperado == null) { setErro('Informe um preço cooperado válido.'); return }
+    const precoNormal = parseBRL(values.preco_normal)
+    if (precoNormal == null) { setErro('Informe um preço normal válido.'); return }
+
+    const pct = values.desconto_cooperado ? parseBRL(values.desconto_cooperado_pct) : null
+    if (values.desconto_cooperado && pct == null) { setErro('Informe o percentual de desconto cooperado.'); return }
 
     setSalvando(true)
     setErro('')
     const dados = {
-      nome:            values.nome.trim(),
-      categoria:       values.categoria.trim() || null,
-      unidade:         values.unidade,
-      preco_normal:    precoNormal,
-      preco_cooperado: precoCooperado,
-      estoque_minimo:  parseBRL(values.estoque_minimo),
-      fornecedor_id:   values.fornecedor_id || null,
+      nome:                   values.nome.trim(),
+      categoria:              values.categoria.trim() || null,
+      unidade:                values.unidade,
+      preco_normal:           precoNormal,
+      desconto_cooperado:     values.desconto_cooperado,
+      desconto_cooperado_pct: values.desconto_cooperado ? pct : null,
+      estoque_minimo:         parseBRL(values.estoque_minimo),
+      fornecedor_id:          values.fornecedor_id || null,
     }
     const res = mode === 'create'
       ? await criarProduto(dados)
@@ -237,8 +242,12 @@ export default function ProdutoModal({ mode: initialMode, produto, fornecedores,
                   <div style={{ fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>{formatBRL(produto.preco_normal)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>Preço cooperado</div>
-                  <div style={{ fontSize: '16px', fontWeight: '600', color: VERDE }}>{formatBRL(produto.preco_cooperado)}</div>
+                  <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>Desc. cooperado</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: produto.desconto_cooperado ? VERDE : '#aaa' }}>
+                    {produto.desconto_cooperado
+                      ? produto.desconto_cooperado_pct != null ? `${produto.desconto_cooperado_pct}%` : 'Sim'
+                      : '—'}
+                  </div>
                 </div>
               </div>
 
@@ -294,13 +303,18 @@ export default function ProdutoModal({ mode: initialMode, produto, fornecedores,
                     {errors.preco_normal && <p style={{ fontSize: '11px', color: '#dc2626', margin: '4px 0 0' }}>{errors.preco_normal.message}</p>}
                   </div>
                   <div>
-                    <label style={labelStyle}>Preço cooperado (R$) *</label>
+                    <label style={labelStyle}>Desconto cooperado</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <input type="checkbox" id="desconto_cooperado" {...register('desconto_cooperado')} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                      <label htmlFor="desconto_cooperado" style={{ fontSize: '13px', color: '#555', cursor: 'pointer', margin: 0 }}>Tem desconto</label>
+                    </div>
                     <input
-                      style={{ ...input, borderColor: errors.preco_cooperado ? '#fca5a5' : '#d5d3cc' }}
-                      placeholder="0,00"
-                      {...register('preco_cooperado', { required: 'Obrigatório' })}
+                      style={{ ...input, borderColor: errors.desconto_cooperado_pct ? '#fca5a5' : '#d5d3cc' }}
+                      placeholder="% ex: 5"
+                      inputMode="decimal"
+                      {...register('desconto_cooperado_pct')}
                     />
-                    {errors.preco_cooperado && <p style={{ fontSize: '11px', color: '#dc2626', margin: '4px 0 0' }}>{errors.preco_cooperado.message}</p>}
+                    {errors.desconto_cooperado_pct && <p style={{ fontSize: '11px', color: '#dc2626', margin: '4px 0 0' }}>{errors.desconto_cooperado_pct.message}</p>}
                   </div>
                 </div>
 

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { traduzirErro } from '@/lib/utils/erros'
-import type { LojaFornecedor, LojaProduto } from '@/types/database'
+import type { LojaFornecedor, LojaProduto, LojaLote } from '@/types/database'
 
 async function getCtx() {
   const supabase = await createClient()
@@ -131,8 +131,75 @@ export async function listarProdutos() {
   }
 }
 
+export async function getProduto(id: string) {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data, error } = await supabase
+      .from('loja_produtos')
+      .select('*, loja_fornecedores(nome)')
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .single()
+    if (error) return { error: traduzirErro(error.message) }
+    return { data: data as unknown as LojaProdutoComFornecedor }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+export async function listarProdutosCriticos() {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data, error } = await supabase
+      .from('loja_produtos')
+      .select('*')
+      .eq('org_id', orgId)
+      .eq('ativo', true)
+      .not('estoque_minimo', 'is', null)
+    if (error) return { error: traduzirErro(error.message) }
+    const criticos = (data ?? []).filter(
+      (p) => p.estoque_minimo !== null && p.estoque_atual < p.estoque_minimo
+    )
+    return { data: criticos as LojaProduto[] }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+export async function getPosicaoEstoque(produtoId: string) {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data: produto, error: errProd } = await supabase
+      .from('loja_produtos')
+      .select('estoque_atual, estoque_minimo')
+      .eq('id', produtoId)
+      .eq('org_id', orgId)
+      .single()
+    if (errProd) return { error: traduzirErro(errProd.message) }
+
+    const { data: lotes, error: errLotes } = await supabase
+      .from('loja_lotes')
+      .select('*')
+      .eq('produto_id', produtoId)
+      .eq('org_id', orgId)
+      .gt('quantidade_atual', 0)
+      .order('data_validade', { ascending: true })
+    if (errLotes) return { error: traduzirErro(errLotes.message) }
+
+    return {
+      data: {
+        estoque_atual:  produto?.estoque_atual ?? 0,
+        estoque_minimo: produto?.estoque_minimo ?? null,
+        lotes:          (lotes ?? []) as LojaLote[],
+      },
+    }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
 export async function criarProduto(
-  dados: Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'preco_cooperado' | 'estoque_minimo' | 'fornecedor_id'>
+  dados: Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id'>
 ) {
   try {
     const { supabase, orgId } = await getCtx()
@@ -152,7 +219,7 @@ export async function criarProduto(
 
 export async function atualizarProduto(
   id: string,
-  dados: Partial<Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'preco_cooperado' | 'estoque_minimo' | 'fornecedor_id' | 'ativo'>>
+  dados: Partial<Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id' | 'ativo'>>
 ) {
   try {
     const { supabase } = await getCtx()

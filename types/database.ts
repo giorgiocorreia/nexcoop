@@ -369,9 +369,10 @@ export interface LojaProduto {
   nome:            string
   categoria:       string | null
   unidade:         LojaUnidade
-  preco_normal:    number
-  preco_cooperado: number
-  estoque_atual:   number
+  preco_normal:           number
+  desconto_cooperado:     boolean
+  desconto_cooperado_pct: number | null
+  estoque_atual:          number
   estoque_minimo:  number | null
   fornecedor_id:   string | null
   ativo:           boolean
