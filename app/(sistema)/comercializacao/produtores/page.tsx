@@ -291,18 +291,8 @@ export default function ProdutoresPage() {
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
                 <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))} style={inp}>
                   <option value="externo">Externo</option>
-                  <option value="cooperado">Cooperado</option>
                 </select>
               </div>
-              {form.tipo === 'cooperado' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Cooperado vinculado</label>
-                  <select value={form.cooperado_id} onChange={e => setForm(f => ({ ...f, cooperado_id: e.target.value }))} style={inp}>
-                    <option value="">Selecionar...</option>
-                    {cooperados.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                </div>
-              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
                 <input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))} placeholder="000.000.000-00" style={inp} />

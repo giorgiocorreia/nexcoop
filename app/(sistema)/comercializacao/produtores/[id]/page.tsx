@@ -602,7 +602,6 @@ export default function PerfilProdutorPage() {
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
                 <select value={f.tipo} onChange={e => setF({ tipo: e.target.value })} style={inp}>
                   <option value="externo">Não membro</option>
-                  <option value="cooperado">Cooperado</option>
                 </select>
               </div>
               <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
