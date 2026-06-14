@@ -37,12 +37,13 @@ export default async function UsuariosPage() {
   let usuarios: Usuario[] = []
   let funcoes: FuncaoDisponivel[] = []
   let pendentes: UsuarioPendente[] = []
+  let nomeOrg: string | null = null
 
   if (orgId) {
     const db = ctx!.supabase
     const admin = createAdminClient()
 
-    const [usersRes, funcoesRes, authRes] = await Promise.all([
+    const [usersRes, funcoesRes, authRes, orgRes] = await Promise.all([
       db
         .from('usuarios')
         .select('*')
@@ -54,7 +55,9 @@ export default async function UsuariosPage() {
         .or(`organizacao_id.is.null,organizacao_id.eq.${orgId}`)
         .order('nome'),
       admin.auth.admin.listUsers({ perPage: 1000 }),
+      db.from('organizacoes').select('nome').eq('id', orgId).single(),
     ])
+    nomeOrg = (orgRes.data as any)?.nome ?? null
 
     usuarios = (usersRes.data ?? []) as Usuario[]
     funcoes  = (funcoesRes.data ?? []) as FuncaoDisponivel[]
@@ -89,6 +92,7 @@ export default async function UsuariosPage() {
       usuarioAtualId={user.id}
       isSuperAdmin={isSuperAdmin(usuarioAtual)}
       organizacaoId={orgId}
+      nomeOrg={nomeOrg}
     />
   )
 }

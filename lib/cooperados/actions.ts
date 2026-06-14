@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { registrarLog } from '@/lib/audit/logger'
 import { isAdmin } from '@/lib/permissoes'
 import { randomBytes } from 'crypto'
+import { enviarEmail } from '@/lib/email'
 import type { RoleUsuario, StatusCooperado, VinculoUsuario } from '@/types/database'
 
 function gerarSenhaTemporaria(): string {
@@ -510,22 +511,125 @@ export async function promoverProdutorACooperado(
 
 // ── Utilitário: contexto do usuário atual (para client components) ─────────────
 
-export async function getContextoUsuario(): Promise<{ ehAdmin: boolean; organizacaoId: string | null }> {
+export async function getContextoUsuario(): Promise<{ ehAdmin: boolean; organizacaoId: string | null; nomeOrg: string | null }> {
   try {
     const serverClient = await createClient()
     const { data: { user } } = await serverClient.auth.getUser()
-    if (!user) return { ehAdmin: false, organizacaoId: null }
+    if (!user) return { ehAdmin: false, organizacaoId: null, nomeOrg: null }
     const { data } = await serverClient
       .from('usuarios')
-      .select('role, funcoes, organizacao_id')
+      .select('role, funcoes, organizacao_id, organizacoes(nome)')
       .eq('id', user.id)
       .single()
-    if (!data) return { ehAdmin: false, organizacaoId: null }
+    if (!data) return { ehAdmin: false, organizacaoId: null, nomeOrg: null }
     return {
       ehAdmin: isAdmin(data as any),
       organizacaoId: (data as any).organizacao_id as string | null,
+      nomeOrg: ((data as any).organizacoes as any)?.nome as string | null ?? null,
     }
   } catch {
-    return { ehAdmin: false, organizacaoId: null }
+    return { ehAdmin: false, organizacaoId: null, nomeOrg: null }
+  }
+}
+
+// ── Envio de e-mail de boas-vindas ────────────────────────────────────────────
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+interface EnviarEmailBoasVindasInput {
+  nomeCooperado: string
+  emailCooperado: string
+  senhaTemporaria: string
+  nomeOrg: string
+  tipoMembro: string
+}
+
+export async function enviarEmailBoasVindas(
+  input: EnviarEmailBoasVindasInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const nome  = escapeHtml(input.nomeCooperado)
+    const org   = escapeHtml(input.nomeOrg)
+    const tipo  = escapeHtml(input.tipoMembro)
+    const email = escapeHtml(input.emailCooperado)
+    const senha = escapeHtml(input.senhaTemporaria)
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background:#f8f7f4;font-family:system-ui,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;padding:40px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #e5e3dc;overflow:hidden;">
+        <tr>
+          <td style="background:#0D2B5E;padding:28px 40px;text-align:center;">
+            <img src="https://nexcoop.com.br/images/logo-nexcoop-horizontal.png" alt="NexCoop" style="height:36px;width:auto;display:inline-block;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            <h2 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#0D2B5E;">Bem-vindo(a) à ${org}!</h2>
+            <p style="margin:0 0 8px;font-size:15px;color:#444;line-height:1.6;">Olá, ${nome}!</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#444;line-height:1.6;">Você foi cadastrado(a) como <strong>${tipo}</strong> da <strong>${org}</strong>. Abaixo estão suas credenciais de acesso à plataforma NexCoop:</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+              <tr>
+                <td style="background:#f8f7f4;border:1px solid #e5e3dc;border-radius:12px;padding:20px 24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding-bottom:14px;border-bottom:1px solid #e5e3dc;">
+                        <div style="font-size:11px;font-weight:600;color:#9a9a9a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">E-mail de acesso</div>
+                        <div style="font-size:14px;font-weight:600;color:#1a1a1a;">${email}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:14px;">
+                        <div style="font-size:11px;font-weight:600;color:#9a9a9a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Senha temporária</div>
+                        <div style="display:inline-block;background:#FFF8E1;border:1px solid #FDE68A;border-radius:8px;padding:10px 18px;font-size:17px;font-weight:700;color:#1a1a1a;font-family:Courier New,monospace;letter-spacing:0.12em;">${senha}</div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:#FFF8E1;border:1px solid #FDE68A;border-radius:8px;padding:12px 16px;">
+                  <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">⚠️ Por segurança, você será solicitado(a) a trocar sua senha no primeiro acesso.</p>
+                </td>
+              </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr><td align="center" style="padding-bottom:8px;">
+                <a href="https://nexcoop.com.br/login" style="display:inline-block;background:linear-gradient(135deg,#1565C0,#06B6D4);color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">Acessar minha área</a>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8f7f4;padding:20px 40px;border-top:1px solid #e5e3dc;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaa;">© 2026 NexCoop · nexcoop.com.br</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+    await enviarEmail({
+      to: input.emailCooperado,
+      subject: `Bem-vindo(a) à ${input.nomeOrg} — Suas credenciais de acesso`,
+      html,
+    })
+
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message ?? 'Erro ao enviar e-mail.' }
   }
 }

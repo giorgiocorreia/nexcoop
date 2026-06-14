@@ -34,10 +34,11 @@ interface Props {
   usuarioAtualId: string
   isSuperAdmin: boolean
   organizacaoId: string | null
+  nomeOrg: string | null
   embeddedMode?: boolean
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, embeddedMode }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, nomeOrg, embeddedMode }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
   const [pendentes, setPendentes] = useState(pendentesInit)
@@ -265,6 +266,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
         <ModalCadastrarUsuario
           organizacaoId={organizacaoId}
           funcoes={funcoes}
+          nomeOrg={nomeOrg}
           onClose={() => setModalCadastrarAberto(false)}
           onSucesso={() => { setModalCadastrarAberto(false); router.refresh() }}
         />

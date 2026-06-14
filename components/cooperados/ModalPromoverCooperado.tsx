@@ -12,7 +12,7 @@ interface Props {
   emailAtual: string | null
   organizacaoId: string
   onClose: () => void
-  onSucesso: (senhaTemporaria?: string) => void
+  onSucesso: (senhaTemporaria?: string, emailLogin?: string) => void
 }
 
 const inp: React.CSSProperties = {
@@ -81,7 +81,7 @@ export default function ModalPromoverCooperado({
             dap_numero:       dapNumero   || undefined,
           },
         })
-        onSucesso(result.senhaTemporaria)
+        onSucesso(result.senhaTemporaria, email.trim())
       } catch (e: any) {
         setErro(e.message ?? 'Erro ao promover produtor.')
       }

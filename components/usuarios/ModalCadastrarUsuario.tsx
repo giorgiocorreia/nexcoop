@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import { Btn } from '@/components/ui/Btn'
-import { criarUsuarioComCooperadoOpcional } from '@/lib/cooperados/actions'
+import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
 import type { FuncaoDisponivel } from '@/types/database'
 
 interface Props {
   organizacaoId: string
   funcoes: FuncaoDisponivel[]
+  nomeOrg: string | null
   onClose: () => void
   onSucesso: () => void
 }
@@ -47,7 +48,7 @@ const secaoTitulo: React.CSSProperties = {
 
 const AZUL = '#378ADD'
 
-export default function ModalCadastrarUsuario({ organizacaoId, funcoes, onClose, onSucesso }: Props) {
+export default function ModalCadastrarUsuario({ organizacaoId, funcoes, nomeOrg, onClose, onSucesso }: Props) {
   const hoje = new Date().toISOString().split('T')[0]
 
   // Seção 1
@@ -72,6 +73,9 @@ export default function ModalCadastrarUsuario({ organizacaoId, funcoes, onClose,
   const [erro, setErro] = useState('')
   const [credenciais, setCredenciais] = useState<{ email: string; senha: string } | null>(null)
   const [copiado, setCopiado] = useState(false)
+  const [enviandoEmail, setEnviandoEmail] = useState(false)
+  const [emailEnviado, setEmailEnviado] = useState(false)
+  const [erroEmail, setErroEmail] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function toggleFuncao(nome: string) {
@@ -117,6 +121,30 @@ export default function ModalCadastrarUsuario({ organizacaoId, funcoes, onClose,
         setErro(e instanceof Error ? e.message : 'Erro ao cadastrar usuário.')
       }
     })
+  }
+
+  async function handleEnviarEmail() {
+    if (!credenciais) return
+    setEnviandoEmail(true)
+    setErroEmail(null)
+    try {
+      const result = await enviarEmailBoasVindas({
+        nomeCooperado: nome.trim(),
+        emailCooperado: credenciais.email,
+        senhaTemporaria: credenciais.senha,
+        nomeOrg: nomeOrg ?? 'sua cooperativa',
+        tipoMembro: ehCooperado ? 'cooperado' : (vinculo || 'membro'),
+      })
+      if (result.success) {
+        setEmailEnviado(true)
+      } else {
+        setErroEmail(result.error ?? 'Erro ao enviar e-mail.')
+      }
+    } catch (e: unknown) {
+      setErroEmail(e instanceof Error ? e.message : 'Erro ao enviar e-mail.')
+    } finally {
+      setEnviandoEmail(false)
+    }
   }
 
   async function copiarCredenciais() {
@@ -203,14 +231,28 @@ export default function ModalCadastrarUsuario({ organizacaoId, funcoes, onClose,
             ⚠️ Anote e repasse pessoalmente — esta senha não será exibida novamente.
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <Btn variante="cinza" icone="ti-copy" onClick={copiarCredenciais}>
               {copiado ? 'Copiado!' : 'Copiar credenciais'}
             </Btn>
+            {emailEnviado ? (
+              <span style={{ fontSize: '12px', color: '#166534', fontWeight: 500, alignSelf: 'center' }}>
+                ✓ E-mail enviado
+              </span>
+            ) : (
+              <Btn variante="cinza" icone="ti-mail" onClick={handleEnviarEmail} disabled={enviandoEmail}>
+                {enviandoEmail ? 'Enviando...' : 'Enviar por e-mail'}
+              </Btn>
+            )}
             <Btn variante="azul" onClick={onSucesso}>
               Fechar
             </Btn>
           </div>
+          {erroEmail && (
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#991b1b', textAlign: 'right' }}>
+              {erroEmail}
+            </div>
+          )}
         </div>
       </div>
     )
