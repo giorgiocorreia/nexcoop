@@ -111,9 +111,21 @@ export async function getContaProdutor(produtor_id: string) {
     .from('contas_produtor')
     .select(`
       *,
-      saldos_produto(*, produtos(nome, unidade))
+      saldos_produto(*, produtos(nome, unidade)),
+      produtores(nome, cpf, telefone, tipo, chave_pix)
     `)
     .eq('produtor_id', produtor_id)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getProdutorPorId(produtor_id: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('produtores')
+    .select('id, nome, cpf, telefone, tipo, chave_pix')
+    .eq('id', produtor_id)
     .maybeSingle()
   if (error) throw new Error(error.message)
   return data

@@ -10,6 +10,7 @@ import {
   listarSolicitacoesPendentes, getProdutorParaRateio,
   getOperacoesHoje, listarAdminsDaOrg,
   registrarAporteSangria, getAportesESangriasDaSessao,
+  getProdutorPorId,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
@@ -221,22 +222,37 @@ export default function CaixaPage() {
 
   async function carregarProdutorPorId(produtorId: string, acao: 'entrega' | 'receber' | 'saque' | null) {
     const c = await getContaProdutor(produtorId)
-    if (!c) return
-    const p: ProdutorBusca = {
-      id: produtorId,
-      nome: (c as any).produtores?.nome ?? '',
-      cpf: (c as any).produtores?.cpf ?? null,
-      telefone: (c as any).produtores?.telefone ?? null,
-      tipo: (c as any).produtores?.tipo ?? 'externo',
-      chave_pix: (c as any).produtores?.chave_pix ?? null,
+    let p: ProdutorBusca
+    if (c) {
+      p = {
+        id: produtorId,
+        nome: (c as any).produtores?.nome ?? '',
+        cpf: (c as any).produtores?.cpf ?? null,
+        telefone: (c as any).produtores?.telefone ?? null,
+        tipo: (c as any).produtores?.tipo ?? 'externo',
+        chave_pix: (c as any).produtores?.chave_pix ?? null,
+      }
+      setConta(c as unknown as Conta)
+      const ext = await getExtrato((c as any).id)
+      setExtrato((ext ?? []) as unknown as Movimentacao[])
+    } else {
+      const prod = await getProdutorPorId(produtorId)
+      if (!prod) return
+      p = {
+        id: produtorId,
+        nome: (prod as any).nome ?? '',
+        cpf: (prod as any).cpf ?? null,
+        telefone: (prod as any).telefone ?? null,
+        tipo: (prod as any).tipo ?? 'externo',
+        chave_pix: (prod as any).chave_pix ?? null,
+      }
+      setConta(null)
+      setExtrato([])
     }
     setProdutorSelecionado(p)
-    setConta(c as unknown as Conta)
-    const ext = await getExtrato((c as any).id)
-    setExtrato((ext ?? []) as unknown as Movimentacao[])
     if (acao) setOperacao(acao)
-    if (acao === 'receber' && (c as any).produtores?.chave_pix) {
-      setFormReceber(f => ({ ...f, chave_pix: (c as any).produtores?.chave_pix ?? '' }))
+    if (acao === 'receber' && p.chave_pix) {
+      setFormReceber(f => ({ ...f, chave_pix: p.chave_pix ?? '' }))
     }
   }
 

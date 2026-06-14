@@ -38,9 +38,16 @@ export default function ModalCaixaFechado({ aberto, onClose, produtorId, acao }:
     return parseFloat(v.replace(/\./g, '').replace(',', '.')) || 0
   }
 
+  function mascararMoeda(input: string): string {
+    const raw = input.replace(/\D/g, '').replace(/^0+/, '') || '0'
+    const padded = raw.padStart(3, '0')
+    const cents = padded.slice(-2)
+    const reais = padded.slice(0, -2) || '0'
+    return reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + cents
+  }
+
   function handleSaldoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/[^\d,]/g, '')
-    setSaldoInicial(raw)
+    setSaldoInicial(mascararMoeda(e.target.value))
   }
 
   function handleSubmit() {
@@ -102,9 +109,10 @@ export default function ModalCaixaFechado({ aberto, onClose, produtorId, acao }:
             </label>
             <input
               type="text"
-              inputMode="decimal"
+              inputMode="numeric"
               value={saldoInicial}
               onChange={handleSaldoChange}
+              onFocus={e => e.target.select()}
               placeholder="0,00"
               style={{
                 padding: '8px 12px',
