@@ -1,3 +1,5 @@
+import { temModulo } from '@/lib/org'
+
 /**
  * PONTO CENTRAL DE PERMISSÕES — toda verificação de acesso no sistema
  * deve passar por aqui. Nunca compare role ou funcoes diretamente nos
@@ -37,4 +39,15 @@ export function isContadorAtivo(usuario: UsuarioPermissao, orgId: string): boole
 
 export function isCooperado(usuario: UsuarioPermissao): boolean {
   return !!usuario.cooperado_id
+}
+
+/**
+ * Verifica se a org tem um módulo ativo.
+ * Para uso dentro de server actions junto com verificações de permissão.
+ */
+export function orgTemModulo(
+  modulos_ativos: string[] | null | undefined,
+  modulo: string
+): boolean {
+  return temModulo(modulos_ativos, modulo)
 }

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Usuario, Organizacao } from '@/types/database'
+import { temModulo } from '@/lib/org'
 
 interface NavItem {
   label: string
@@ -90,8 +91,8 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
   if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
     agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
-  if (isAdmin)
-    agroItens.push({ label: 'Loja', href: '/loja', icone: '🏪', em_breve: true })
+  if (isAdmin && temModulo(usuario?.organizacao?.modulos_ativos, 'loja'))
+    agroItens.push({ label: 'Loja', href: '/loja', icone: '🏪' })
   if (agroItens.length > 0)
     grupos.push({ grupo: 'Agro', itens: agroItens })
 

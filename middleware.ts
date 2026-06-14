@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
     if (usuario?.role !== 'super_admin' && usuario?.organizacao_id) {
       const { data: org } = await supabase
         .from('organizacoes')
-        .select('onboarding_concluido')
+        .select('onboarding_concluido, modulos_ativos')
         .eq('id', usuario.organizacao_id)
         .single()
 
@@ -68,6 +68,10 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/onboarding'
         return NextResponse.redirect(url)
+      }
+
+      if (pathname.startsWith('/loja') && !org?.modulos_ativos?.includes('loja')) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     }
   }
