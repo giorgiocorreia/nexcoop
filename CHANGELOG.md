@@ -38,6 +38,30 @@
 
 ---
 
+## [13/06/2026 — tarde] — E-mail boas-vindas + fixes UI
+
+### E-mail de boas-vindas ao cooperado
+- `lib/email.ts`: transporter nodemailer com Zoho SMTP (smtp.zoho.com:465)
+- `lib/cooperados/actions.ts`: nova função `enviarEmailBoasVindas()`
+  com template HTML idêntico aos 6 templates existentes
+- Botão "Enviar por e-mail" na ficha do produtor (banner pós-promoção)
+- Botão "Enviar por e-mail" no modal "Cadastrar usuário" (painel credenciais)
+- Variáveis de ambiente: SMTP_USER + SMTP_PASS (Vercel + .env.local)
+- Obs: Hotmail/Outlook bloqueia — pendente configuração DMARC no Zoho
+
+### Fixes e melhorias
+- `lib/cooperados/actions.ts`: tratamento de erro "e-mail já em uso"
+  nas 3 actions (promoverProdutorACooperado, criarCooperado,
+  criarUsuarioComCooperadoOpcional) — exibe mensagem amigável no modal
+- Listagem de produtores: botão "Ver ficha" padronizado para Btn
+- Cadastro de produtor: opção "Cooperado" removida do select de tipo
+  (tipo cooperado é definido exclusivamente via "Promover a cooperado")
+- tsconfig.json: target atualizado para ES2018 (fix regex flag /s)
+- Migration 031 aplicada: tabela `enderecos` centralizada
+- types/database.ts: tipo Enderecos adicionado
+
+---
+
 ## [12/06/2026] — Sessão: NF-e Entrada + Dashboard Cotação Cacau
 
 ### NF-e de Entrada via Focus NFe

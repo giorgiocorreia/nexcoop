@@ -126,10 +126,11 @@
 - Botão "+ Cadastrar usuário" (novo) — admin preenche tudo + senha temporária gerada
   - Modal com checkbox "é cooperado?" → chama `criarUsuarioComCooperadoOpcional()`
   - Exibe senha temporária ao final (destacada, botão "Copiar credenciais")
-- Botão "Enviar e-mail de boas-vindas" (pendente) — após promoção de produtor a cooperado
-  - Envia: credenciais + link /login + instrução troca senha primeiro acesso
-  - Template: mesmo padrão dos 6 templates existentes
-  - Link: /login (provisório — /login?org=slug quando Portal do Filiado existir)
+- Botão "Enviar e-mail de boas-vindas" disponível após promoção
+  (ficha do produtor) e após cadastro (modal cadastrar usuário)
+- Tratamento de erro "e-mail já em uso" com mensagem amigável no modal
+- SMTP: Zoho Mail via nodemailer (SMTP_USER + SMTP_PASS no env)
+- Hotmail/Outlook bloqueando — pendente DMARC (próximo chat)
 
 ---
 
@@ -214,24 +215,22 @@ const dataEmissao = agoraBrasilia.toISOString().replace('Z','-03:00')
 ---
 
 ## Backlog priorizado
-1. Modal caixa fechado (em andamento)
-2. Botão "Enviar e-mail de boas-vindas" ao cooperado (após promoção)
-3. Flag `somente_leitura` em usuarios (presidente COOPAIBI)
-4. Migration 031 (enderecos centralizada)
-5. Testar NF-e cooperado (CFOP 1159)
-6. Fluxo fiscal completo: NF-e saída + ZIP XMLs + comprovante térmico 80mm
-7. Portal do Filiado (chat dedicado): /filiado mobile-first, login CPF+senha, /login?org=slug
-8. tipos_org configurável (super_admin sem deploy)
-9. Renomear cooperados → membros (terminologia genérica)
-10. Níveis de acesso parceiro contábil (responsavel/operador/consultor)
-11. Remover "Mensalidades" sidebar para cooperativas
-12. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
-13. Btn.tsx variantes marrom/verde/roxo com cores reais
-14. Loja Agropecuária (retomar após Comercialização estável)
-15. Captação — Radar avançado, alertas, geração de MI
-16. Stripe live, 2FA, Sobras/REFAC
-17. Fluxo convite contador (embolado — chat separado)
+1. Flag `somente_leitura` em usuarios (presidente COOPAIBI)
+2. Hotmail/Outlook DMARC — configurar no Zoho para e-mails não caírem em spam
+3. Testar NF-e cooperado (CFOP 1159)
+4. Fluxo fiscal completo: NF-e saída + ZIP XMLs + comprovante térmico 80mm
+5. Portal do Filiado (chat dedicado): /filiado mobile-first, login CPF+senha, /login?org=slug
+6. tipos_org configurável (super_admin sem deploy)
+7. Renomear cooperados → membros (terminologia genérica)
+8. Níveis de acesso parceiro contábil (responsavel/operador/consultor)
+9. Remover "Mensalidades" sidebar para cooperativas
+10. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
+11. Btn.tsx variantes marrom/verde/roxo com cores reais
+12. Loja Agropecuária (retomar após Comercialização estável)
+13. Captação — Radar avançado, alertas, geração de MI
+14. Stripe live, 2FA, Sobras/REFAC
+15. Fluxo convite contador (embolado — chat separado)
 
 ---
 
-*Última atualização: 13/06/2026*
+*Última atualização: 13/06/2026 — tarde*
