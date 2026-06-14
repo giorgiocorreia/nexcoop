@@ -14,7 +14,7 @@ export interface DadosComprovante {
     nome: string
     cnpj: string
     endereco: string
-    municipio: string
+    telefone: string
   }
   operador: {
     nome: string
@@ -40,6 +40,10 @@ export interface DadosComprovante {
     percentual: number
     quantidade_kg: number
   }>
+  saldo_atual: number
+  saldo_anterior: number
+  cotacao_atual: number
+  estimativa_valor: number
 }
 
 export async function emitirComprovante(movimentacao_id: string): Promise<{ nota_id: string; numero: number }> {
@@ -141,13 +145,11 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
 
   const { data: org, error: orgErr } = await adminClient
     .from('organizacoes')
-    .select('nome, cnpj')
+    .select('nome, cnpj, endereco, municipio, telefone')
     .eq('id', nota.organizacao_id)
     .single()
 
-  console.error('[comprovante] org result:', JSON.stringify({ org, orgErr }))
-
-  if (!org) throw new Error('Organização não encontrada: ' + nota.organizacao_id)
+  if (!org) throw new Error('Organização não encontrada: ' + orgErr?.message)
 
   const { data: operador } = nota.emitida_por
     ? await adminClient.from('usuarios').select('nome_completo').eq('id', nota.emitida_por).maybeSingle()
@@ -157,12 +159,14 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     .from('movimentacoes_conta')
     .select(`
       id,
+      conta_id,
+      produto_id,
       quantidade_produto,
       observacoes,
       created_at,
       contas_produtor!conta_id(
         produtor_id,
-        produtores!produtor_id(nome, cpf, municipio)
+        produtores!produtor_id(nome, cpf, municipio, cooperado_id)
       ),
       produtos!produto_id(nome, unidade)
     `)
@@ -178,6 +182,40 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
   const produtorFinal = Array.isArray(produtorData) ? produtorData[0] : produtorData
   const produtoData = (mov as any)?.produtos
   const produtoFinal = Array.isArray(produtoData) ? produtoData[0] : produtoData
+
+  // Saldo atual do produtor para este produto
+  const contaId = (mov as any)?.conta_id as string | null
+  const produtoId = (mov as any)?.produto_id as string | null
+  let saldo_atual = 0
+  if (contaId && produtoId) {
+    const { data: saldoProd } = await adminClient
+      .from('saldos_produto')
+      .select('quantidade')
+      .eq('conta_id', contaId)
+      .eq('produto_id', produtoId)
+      .maybeSingle()
+    saldo_atual = Number((saldoProd as any)?.quantidade ?? 0)
+  }
+  const quantidade_entrega = mov?.quantidade_produto ?? 0
+  const saldo_anterior = Math.max(0, saldo_atual - quantidade_entrega)
+
+  // Cotação vigente
+  const isCooperado = !!(produtorFinal as any)?.cooperado_id
+  let cotacao_atual = 0
+  if (produtoId) {
+    const { data: cotacao } = await adminClient
+      .from('cotacoes')
+      .select('preco_cooperado, preco_externo')
+      .eq('organizacao_id', nota.organizacao_id)
+      .eq('produto_id', produtoId)
+      .order('data', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    cotacao_atual = isCooperado
+      ? Number((cotacao as any)?.preco_cooperado ?? 0)
+      : Number((cotacao as any)?.preco_externo ?? 0)
+  }
+  const estimativa_valor = saldo_atual * cotacao_atual
 
   const { data: rateioRows } = await adminClient
     .from('rateio_entrega')
@@ -198,6 +236,11 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     }
   })
 
+  const enderecoOrg = [
+    (org as any).endereco,
+    (org as any).municipio,
+  ].filter(Boolean).join(', ')
+
   return {
     nota: {
       id: nota.id,
@@ -208,8 +251,8 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
     organizacao: {
       nome: org.nome,
       cnpj: org.cnpj ?? '',
-      endereco: '',
-      municipio: '',
+      endereco: enderecoOrg,
+      telefone: (org as any).telefone ?? '',
     },
     operador: { nome: operador?.nome_completo || 'Operador' },
     produtor: {
@@ -228,5 +271,9 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       created_at: mov?.created_at ?? nota.emitida_em ?? new Date().toISOString(),
     },
     rateio,
+    saldo_atual,
+    saldo_anterior,
+    cotacao_atual,
+    estimativa_valor,
   }
 }

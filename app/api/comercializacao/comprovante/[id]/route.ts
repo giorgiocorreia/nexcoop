@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib'
 import { buscarDadosComprovante } from '@/lib/comercializacao/notas'
+
+// 80mm térmico: 80mm × 2.8346 ≈ 227 pts
+const PAGE_W = 227
+const MARGIN = 8
+const CONTENT_W = PAGE_W - MARGIN * 2
+const BLACK = rgb(0, 0, 0)
 
 function formatarCPF(cpf: string): string {
   const s = cpf.replace(/\D/g, '')
@@ -12,18 +18,68 @@ function formatarCNPJ(cnpj: string): string {
   return s.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
 }
 
-function formatarKg(valor: number): string {
-  if (Number.isInteger(valor)) return `${valor} kg`
-  return `${valor.toFixed(3).replace('.', ',')} kg`
+function formatarReal(v: number): string {
+  const [intPart, decPart] = v.toFixed(2).split('.')
+  return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + decPart
 }
 
-function formatarData(iso: string): string {
+function formatarKgNum(v: number): string {
+  if (Number.isInteger(v)) return `${v} kg`
+  return `${v.toFixed(3).replace('.', ',')} kg`
+}
+
+// Por extenso apenas para 1-9 inteiros; demais usam numeral
+const UNIDADES = ['zero', 'um', 'dois', 'tres', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove']
+function kgPorExtenso(kg: number): string {
+  if (Number.isInteger(kg) && kg >= 1 && kg <= 9) {
+    return `${UNIDADES[kg]} ${kg === 1 ? 'quilo' : 'quilos'}`
+  }
+  return formatarKgNum(kg)
+}
+
+const MESES = [
+  'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+]
+function dataPorExtenso(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleDateString('pt-BR', {
+  const br = new Date(d.getTime() - 3 * 60 * 60 * 1000)
+  return `${br.getUTCDate()} de ${MESES[br.getUTCMonth()]} de ${br.getUTCFullYear()}`
+}
+
+function formatarDataHora(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
     timeZone: 'America/Sao_Paulo',
   })
+}
+
+// Quebra texto em linhas que cabem em maxWidth pts
+function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let line = ''
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word
+    if (font.widthOfTextAtSize(test, size) > maxWidth && line) {
+      lines.push(line)
+      line = word
+    } else {
+      line = test
+    }
+  }
+  if (line) lines.push(line)
+  return lines
+}
+
+function centeredX(text: string, font: PDFFont, size: number): number {
+  return Math.max(MARGIN, (PAGE_W - font.widthOfTextAtSize(text, size)) / 2)
+}
+
+function rightX(text: string, font: PDFFont, size: number): number {
+  return PAGE_W - MARGIN - font.widthOfTextAtSize(text, size)
 }
 
 export async function GET(
@@ -35,156 +91,152 @@ export async function GET(
     const dados = await buscarDadosComprovante(id)
 
     const pdfDoc = await PDFDocument.create()
-    const page = pdfDoc.addPage([595, 842]) // A4
-    const { width, height } = page.getSize()
+    // Altura generosa — conteúdo fica no topo; espaço em branco na base é ignorado pela impressora
+    const page = pdfDoc.addPage([PAGE_W, 600])
+    const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const fontB = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    let y = 590
 
-    const marrom = rgb(0.573, 0.251, 0.055)
-    const cinzaEscuro = rgb(0.2, 0.2, 0.2)
-    const cinzaMedio = rgb(0.5, 0.5, 0.5)
-    const cinzaClaro = rgb(0.93, 0.93, 0.93)
-
-    let y = height - 40
-
-    // Barra de cor no topo
-    page.drawRectangle({ x: 0, y: height - 60, width, height: 60, color: marrom })
-
-    page.drawText(dados.organizacao.nome.toUpperCase(), {
-      x: 30, y: height - 30,
-      size: 10, font: fontBold, color: rgb(1, 1, 1),
-      maxWidth: width - 180,
-    })
-    page.drawText(`CNPJ: ${formatarCNPJ(dados.organizacao.cnpj)}`, {
-      x: 30, y: height - 46,
-      size: 8, font: fontRegular, color: rgb(0.9, 0.9, 0.9),
-    })
-
-    const numText = `Nº ${String(dados.nota.numero_sequencial).padStart(6, '0')}`
-    const numW = fontBold.widthOfTextAtSize(numText, 18)
-    page.drawText(numText, {
-      x: width - numW - 30, y: height - 35,
-      size: 18, font: fontBold, color: rgb(1, 1, 1),
-    })
-    page.drawText('COMPROVANTE DE ENTREGA', {
-      x: width - 175, y: height - 50,
-      size: 7, font: fontRegular, color: rgb(0.85, 0.85, 0.85),
-    })
-
-    y = height - 80
-
-    page.drawText(`Emitido em: ${formatarData(dados.nota.emitida_em)}`, {
-      x: 30, y, size: 9, font: fontRegular, color: cinzaMedio,
-    })
-    page.drawText(`Operador: ${dados.operador.nome}`, {
-      x: 300, y, size: 9, font: fontRegular, color: cinzaMedio,
-    })
-
-    y -= 24
-
-    // Seção Produtor
-    page.drawRectangle({ x: 30, y: y - 2, width: width - 60, height: 14, color: cinzaClaro })
-    page.drawText('PRODUTOR', { x: 34, y, size: 8, font: fontBold, color: marrom })
-    y -= 20
-
-    page.drawText(dados.produtor.nome, {
-      x: 30, y, size: 11, font: fontBold, color: cinzaEscuro,
-    })
-    y -= 16
-    page.drawText(`CPF: ${formatarCPF(dados.produtor.cpf)}   |   Município: ${dados.produtor.municipio || '—'}`, {
-      x: 30, y, size: 9, font: fontRegular, color: cinzaMedio,
-    })
-
-    y -= 28
-
-    // Seção Produto
-    page.drawRectangle({ x: 30, y: y - 2, width: width - 60, height: 14, color: cinzaClaro })
-    page.drawText('PRODUTO ENTREGUE', { x: 34, y, size: 8, font: fontBold, color: marrom })
-    y -= 22
-
-    page.drawRectangle({
-      x: 30, y: y - 10, width: width - 60, height: 44,
-      color: rgb(0.99, 0.97, 0.94),
-      borderColor: marrom, borderWidth: 1,
-    })
-    page.drawText(dados.produto.nome, {
-      x: 42, y: y + 16, size: 13, font: fontBold, color: cinzaEscuro,
-    })
-    const kgText = formatarKg(dados.movimentacao.quantidade_produto)
-    const kgW = fontBold.widthOfTextAtSize(kgText, 20)
-    page.drawText(kgText, {
-      x: width - kgW - 42, y: y + 14, size: 20, font: fontBold, color: marrom,
-    })
-    page.drawText(dados.produto.unidade || 'kg', {
-      x: width - kgW - 42, y: y - 4, size: 8, font: fontRegular, color: cinzaMedio,
-    })
-
-    y -= 50
-
-    // Rateio
-    if (dados.rateio.length > 0) {
-      y -= 6
-      page.drawRectangle({ x: 30, y: y - 2, width: width - 60, height: 14, color: cinzaClaro })
-      page.drawText('RATEIO DA ENTREGA', { x: 34, y, size: 8, font: fontBold, color: marrom })
-      y -= 20
-
-      page.drawText('Participante', { x: 30, y, size: 8, font: fontBold, color: cinzaEscuro })
-      page.drawText('CPF', { x: 250, y, size: 8, font: fontBold, color: cinzaEscuro })
-      page.drawText('%', { x: 380, y, size: 8, font: fontBold, color: cinzaEscuro })
-      page.drawText('Quantidade', { x: 430, y, size: 8, font: fontBold, color: cinzaEscuro })
-      y -= 4
-      page.drawLine({ start: { x: 30, y }, end: { x: width - 30, y }, thickness: 0.5, color: cinzaClaro })
-      y -= 14
-
-      for (const p of dados.rateio) {
-        page.drawText(p.nome, { x: 30, y, size: 8, font: fontRegular, color: cinzaEscuro, maxWidth: 210 })
-        page.drawText(formatarCPF(p.cpf), { x: 250, y, size: 8, font: fontRegular, color: cinzaEscuro })
-        page.drawText(`${p.percentual}%`, { x: 380, y, size: 8, font: fontRegular, color: cinzaEscuro })
-        page.drawText(formatarKg(p.quantidade_kg), { x: 430, y, size: 8, font: fontRegular, color: cinzaEscuro })
-        y -= 16
-      }
-    }
-
-    // Observações
-    if (dados.movimentacao.observacoes) {
-      y -= 10
-      page.drawRectangle({ x: 30, y: y - 2, width: width - 60, height: 14, color: cinzaClaro })
-      page.drawText('OBSERVAÇÕES', { x: 34, y, size: 8, font: fontBold, color: marrom })
-      y -= 18
-      page.drawText(dados.movimentacao.observacoes, {
-        x: 30, y, size: 9, font: fontRegular, color: cinzaEscuro, maxWidth: width - 60,
+    // Linha separadora horizontal
+    function sep() {
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_W - MARGIN, y },
+        thickness: 0.5,
+        color: BLACK,
       })
-      y -= 20
     }
 
-    // Assinaturas
-    y = Math.min(y - 30, 200)
+    function txtC(text: string, font: PDFFont, size: number) {
+      page.drawText(text, { x: centeredX(text, font, size), y, size, font, color: BLACK })
+    }
+    function txtL(text: string, font: PDFFont, size: number) {
+      page.drawText(text, { x: MARGIN, y, size, font, color: BLACK })
+    }
+    function txtR(text: string, font: PDFFont, size: number) {
+      page.drawText(text, { x: rightX(text, font, size), y, size, font, color: BLACK })
+    }
 
-    page.drawLine({ start: { x: 60, y }, end: { x: 250, y }, thickness: 0.8, color: cinzaMedio })
-    page.drawText('Assinatura do Produtor', {
-      x: 80, y: y - 14, size: 8, font: fontRegular, color: cinzaMedio,
+    // ── CABEÇALHO ──────────────────────────────────────────
+    const nomeLines = wrapText(dados.organizacao.nome.toUpperCase(), fontB, 11, CONTENT_W)
+    for (const line of nomeLines) { txtC(line, fontB, 11); y -= 14 }
+
+    const cnpjStr = `CNPJ: ${formatarCNPJ(dados.organizacao.cnpj)}`
+    txtC(cnpjStr, fontR, 8); y -= 11
+
+    if (dados.organizacao.endereco) {
+      const endLines = wrapText(dados.organizacao.endereco, fontR, 8, CONTENT_W)
+      for (const line of endLines) { txtC(line, fontR, 8); y -= 11 }
+    }
+
+    if (dados.organizacao.telefone) {
+      txtC(`Tel: ${dados.organizacao.telefone}`, fontR, 8); y -= 11
+    }
+
+    y -= 4; sep(); y -= 13
+
+    txtC('COMPROVANTE DE ENTREGA', fontB, 11); y -= 14
+
+    const numStr = `N\xBA ${String(dados.nota.numero_sequencial).padStart(6, '0')}`
+    txtC(numStr, fontR, 8); y -= 11
+
+    sep(); y -= 13
+
+    // ── META ───────────────────────────────────────────────
+    txtL(`Data: ${formatarDataHora(dados.movimentacao.created_at)}`, fontR, 8); y -= 12
+    txtL(`Operador: ${dados.operador.nome}`, fontR, 8); y -= 16
+
+    // ── CORPO ──────────────────────────────────────────────
+    const qtdExtenso = kgPorExtenso(dados.movimentacao.quantidade_produto)
+    const qtdNum = formatarKgNum(dados.movimentacao.quantidade_produto)
+    const dataExtenso = dataPorExtenso(dados.movimentacao.created_at)
+    const numPedido = String(dados.nota.numero_sequencial).padStart(6, '0')
+    const municipioStr = dados.produtor.municipio
+      ? `${dados.produtor.municipio} - BA`
+      : 'municipio nao informado'
+
+    const textoCorrido =
+      `Recebemos de ${dados.produtor.nome}, CPF ${formatarCPF(dados.produtor.cpf)},` +
+      ` residente em ${municipioStr}, a quantia de ${qtdExtenso} (${qtdNum})` +
+      ` de ${dados.produto.nome}, referente a pesada n\xBA ${numPedido}, em ${dataExtenso}.`
+
+    const textoLines = wrapText(textoCorrido, fontR, 8, CONTENT_W)
+    for (const line of textoLines) { txtL(line, fontR, 8); y -= 11 }
+    y -= 5
+
+    sep(); y -= 13
+
+    // ── SALDOS ─────────────────────────────────────────────
+    txtL('SALDOS APOS ENTREGA', fontB, 8); y -= 13
+
+    const saldoAntStr = formatarKgNum(dados.saldo_anterior)
+    txtL('Saldo anterior:', fontR, 8); txtR(saldoAntStr, fontR, 8); y -= 12
+
+    const entregaStr = `+ ${formatarKgNum(dados.movimentacao.quantidade_produto)}`
+    txtL('Esta entrega:', fontR, 8); txtR(entregaStr, fontR, 8); y -= 10
+
+    // Mini separador lado direito (abaixo das linhas de entrega)
+    page.drawLine({
+      start: { x: PAGE_W / 2, y },
+      end: { x: PAGE_W - MARGIN, y },
+      thickness: 0.5,
+      color: BLACK,
     })
+    y -= 11
+
+    const saldoAtualStr = formatarKgNum(dados.saldo_atual)
+    txtL('Saldo atual:', fontB, 8); txtR(saldoAtualStr, fontB, 8); y -= 16
+
+    if (dados.cotacao_atual > 0) {
+      txtL('Estimativa a cotacao vigente:', fontR, 8); y -= 12
+      const estimStr = `aprox. R$ ${formatarReal(dados.estimativa_valor)} (@ R$ ${formatarReal(dados.cotacao_atual)}/kg)`
+      txtL(estimStr, fontB, 8); y -= 12
+      txtL('* Estimativa. Nao representa valor confirmado.', fontR, 7); y -= 12
+    }
+
+    sep(); y -= 14
+
+    // ── ASSINATURAS ────────────────────────────────────────
+    y -= 32  // espaço para assinatura manuscrita
+
+    const midX = MARGIN + Math.floor(CONTENT_W / 2) - 4
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: midX, y }, thickness: 0.5, color: BLACK })
+    page.drawLine({ start: { x: midX + 8, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.5, color: BLACK })
+    y -= 10
+
+    const halfW = (CONTENT_W - 8) / 2
+
+    // Nome produtor (esquerda)
+    const nomeProdW = fontR.widthOfTextAtSize(dados.produtor.nome, 7)
+    const nomeProdX = Math.max(MARGIN, MARGIN + halfW / 2 - nomeProdW / 2)
     page.drawText(dados.produtor.nome, {
-      x: 62, y: y - 24, size: 7, font: fontRegular, color: cinzaMedio, maxWidth: 180,
+      x: nomeProdX, y, size: 7, font: fontR, color: BLACK, maxWidth: halfW,
     })
 
-    page.drawLine({ start: { x: 340, y }, end: { x: 540, y }, thickness: 0.8, color: cinzaMedio })
-    page.drawText('Assinatura do Operador', {
-      x: 358, y: y - 14, size: 8, font: fontRegular, color: cinzaMedio,
-    })
+    // Nome operador (direita)
+    const nomeOperW = fontR.widthOfTextAtSize(dados.operador.nome, 7)
+    const nomeOperX = Math.max(midX + 8, midX + 8 + halfW / 2 - nomeOperW / 2)
     page.drawText(dados.operador.nome, {
-      x: 342, y: y - 24, size: 7, font: fontRegular, color: cinzaMedio, maxWidth: 180,
+      x: nomeOperX, y, size: 7, font: fontR, color: BLACK, maxWidth: halfW,
     })
+    y -= 10
 
-    // Rodapé
-    page.drawLine({ start: { x: 30, y: 40 }, end: { x: width - 30, y: 40 }, thickness: 0.5, color: cinzaClaro })
-    page.drawText('Documento de uso interno. Não tem validade fiscal.', {
-      x: 30, y: 28, size: 7, font: fontRegular, color: cinzaMedio,
-    })
-    page.drawText('NexCoop — nexcoop.com.br', {
-      x: width - 145, y: 28, size: 7, font: fontRegular, color: cinzaMedio,
-    })
+    const prodRoleStr = 'Produtor(a)'
+    const operRoleStr = 'Operador(a)'
+    const prodRoleX = Math.max(MARGIN, MARGIN + halfW / 2 - fontR.widthOfTextAtSize(prodRoleStr, 7) / 2)
+    const operRoleX = Math.max(midX + 8, midX + 8 + halfW / 2 - fontR.widthOfTextAtSize(operRoleStr, 7) / 2)
+    page.drawText(prodRoleStr, { x: prodRoleX, y, size: 7, font: fontR, color: BLACK })
+    page.drawText(operRoleStr, { x: operRoleX, y, size: 7, font: fontR, color: BLACK })
+    y -= 14
+
+    sep(); y -= 12
+
+    // ── RODAPÉ ─────────────────────────────────────────────
+    const footer1 = 'Documento de uso interno. Nao tem validade fiscal.'
+    const footer1Lines = wrapText(footer1, fontR, 7, CONTENT_W)
+    for (const line of footer1Lines) { txtC(line, fontR, 7); y -= 9 }
+    txtC('NexCoop - nexcoop.com.br', fontR, 7)
 
     const pdfBytes = await pdfDoc.save()
 
@@ -196,9 +248,7 @@ export async function GET(
       },
     })
   } catch (err) {
-    console.error('[comprovante] Erro detalhado:', JSON.stringify(err, null, 2))
-    console.error('[comprovante] Message:', (err as any)?.message)
-    console.error('[comprovante] Stack:', (err as any)?.stack)
+    console.error('[comprovante] Erro:', (err as any)?.message, (err as any)?.stack)
     return NextResponse.json({ error: 'Erro ao gerar comprovante' }, { status: 500 })
   }
 }
