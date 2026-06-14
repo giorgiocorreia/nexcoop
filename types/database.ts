@@ -58,6 +58,7 @@ export interface Organizacao {
   isento_ate: string | null
   trial_ends_at: string | null
   subscription_ends_at: string | null
+  modulos_ativos: string[]
   criado_em: string
   atualizado_em: string
 }

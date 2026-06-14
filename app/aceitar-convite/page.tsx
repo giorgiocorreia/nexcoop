@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CampoSenha } from '@/components/CampoSenha'
 
+export const dynamic = 'force-dynamic'
+
 const PURPLE = '#635BFF'
 
 export default function AceitarConvitePage() {
