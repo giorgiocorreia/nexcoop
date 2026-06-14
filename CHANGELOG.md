@@ -62,6 +62,35 @@
 
 ---
 
+## [14/06/2026] — Fixes modal caixa + NF-e cooperado
+
+### Modal Caixa Fechado
+- `components/comercializacao/ModalCaixaFechado.tsx`: máscara de moeda
+  pt-BR no campo "Saldo inicial" (formato ATM, inputMode="numeric")
+- `lib/comercializacao/caixa.actions.ts`: `abrirCaixa()` convertida
+  para padrão `return { success, error }` (fix "Failed to fetch")
+- `app/(sistema)/comercializacao/caixa/page.tsx`: `handleAbrirCaixa`
+  verifica `result.success` antes de chamar `init()`
+- Pré-seleção automática do produtor ao chegar na tela do caixa com
+  `?produtor_id=` na URL — incluindo produtor sem movimentação prévia
+
+### NF-e Entrada — CFOP Cooperado
+- `lib/focusnfe/emitir-nfe-entrada.ts`: adicionado `cooperado_id` ao
+  select do produtor na query
+- Lógica de CFOP atualizada: `!!produtor.cooperado_id || tipo === 'cooperado'`
+  → garante CFOP 1159 para produtores promovidos via `cooperado_id`
+- **Testado e aprovado pela SEFAZ em homologação:**
+  - CFOP 1102 (externo) ✅ — NF-e nº 1, série 2
+  - CFOP 1159 (cooperado) ✅ — NF-e nº 3, série 2
+
+### Fix e-mail boas-vindas
+- `lib/cooperados/actions.ts`: tratamento de erro "e-mail já em uso"
+  nas 3 actions — retorna mensagem amigável em vez de quebrar
+- Opção "Cooperado" removida do select de tipo no cadastro de produtor
+  (tipo cooperado definido exclusivamente via "Promover a cooperado")
+
+---
+
 ## [12/06/2026] — Sessão: NF-e Entrada + Dashboard Cotação Cacau
 
 ### NF-e de Entrada via Focus NFe

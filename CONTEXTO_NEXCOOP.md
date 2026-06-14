@@ -157,8 +157,17 @@ const agoraBrasilia = new Date(Date.now() - 3*60*60*1000)
 const dataEmissao = agoraBrasilia.toISOString().replace('Z','-03:00')
 ```
 
+### isCooperado
+```ts
+const isCooperado = !!produtor.cooperado_id || produtor.tipo === 'cooperado'
+```
+Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` não é atualizado na promoção).
+
+### Testado em homologação
+- CFOP 1102 (externo) ✅ — NF-e nº 1, série 2
+- CFOP 1159 (cooperado) ✅ — NF-e nº 3, série 2
+
 ### Pendente
-- Testar CFOP 1159 (cooperado) — só testado 1102 (externo)
 - NF-e de saída (venda moageira)
 - Aguardando dados do contador Marcos (Contabahia, mrogerio@contabahia.com.br): regime tributário, certificado A1, série/número inicial, CFOP produtor rural sem IE, CST/CSOSN, FUNRURAL, NCMs com ST
 
@@ -217,20 +226,19 @@ const dataEmissao = agoraBrasilia.toISOString().replace('Z','-03:00')
 ## Backlog priorizado
 1. Flag `somente_leitura` em usuarios (presidente COOPAIBI)
 2. Hotmail/Outlook DMARC — configurar no Zoho para e-mails não caírem em spam
-3. Testar NF-e cooperado (CFOP 1159)
-4. Fluxo fiscal completo: NF-e saída + ZIP XMLs + comprovante térmico 80mm
-5. Portal do Filiado (chat dedicado): /filiado mobile-first, login CPF+senha, /login?org=slug
-6. tipos_org configurável (super_admin sem deploy)
-7. Renomear cooperados → membros (terminologia genérica)
-8. Níveis de acesso parceiro contábil (responsavel/operador/consultor)
-9. Remover "Mensalidades" sidebar para cooperativas
-10. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
-11. Btn.tsx variantes marrom/verde/roxo com cores reais
-12. Loja Agropecuária (retomar após Comercialização estável)
-13. Captação — Radar avançado, alertas, geração de MI
-14. Stripe live, 2FA, Sobras/REFAC
-15. Fluxo convite contador (embolado — chat separado)
+3. Fluxo fiscal completo: NF-e saída + ZIP XMLs + comprovante térmico 80mm
+4. Portal do Filiado (chat dedicado): /filiado mobile-first, login CPF+senha, /login?org=slug
+5. tipos_org configurável (super_admin sem deploy)
+6. Renomear cooperados → membros (terminologia genérica)
+7. Níveis de acesso parceiro contábil (responsavel/operador/consultor)
+8. Remover "Mensalidades" sidebar para cooperativas
+9. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
+10. Btn.tsx variantes marrom/verde/roxo com cores reais
+11. Loja Agropecuária (retomar após Comercialização estável)
+12. Captação — Radar avançado, alertas, geração de MI
+13. Stripe live, 2FA, Sobras/REFAC
+14. Fluxo convite contador (embolado — chat separado)
 
 ---
 
-*Última atualização: 13/06/2026 — tarde*
+*Última atualização: 14/06/2026*
