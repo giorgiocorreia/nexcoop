@@ -46,13 +46,13 @@ export default function ModalCaixaFechado({ aberto, onClose, produtorId, acao }:
   function handleSubmit() {
     setErro('')
     startTransition(async () => {
-      try {
-        await abrirCaixa(parseSaldo(saldoInicial))
-        handleFechar()
-        router.push(`/comercializacao/caixa?produtor_id=${produtorId}&acao=${acao}`)
-      } catch (e: unknown) {
-        setErro(e instanceof Error ? e.message : 'Erro ao abrir caixa.')
+      const result = await abrirCaixa(parseSaldo(saldoInicial))
+      if (!result.success) {
+        setErro(result.error ?? 'Erro ao abrir caixa.')
+        return
       }
+      handleFechar()
+      router.push(`/comercializacao/caixa?produtor_id=${produtorId}&acao=${acao}`)
     })
   }
 

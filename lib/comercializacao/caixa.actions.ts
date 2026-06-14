@@ -17,34 +17,41 @@ export async function getSessaoAberta() {
   return data
 }
 
-export async function abrirCaixa(saldo_inicial_especie: number) {
-  const usuario = await getUsuarioLogado()
-  const supabase = createAdminClient()
+export async function abrirCaixa(
+  saldo_inicial_especie: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const usuario = await getUsuarioLogado()
+    const supabase = createAdminClient()
 
-  const { data: estoqueAtual } = await supabase
-    .from('estoque_fisico')
-    .select('produto_id, quantidade, produtos(nome, unidade)')
-    .eq('organizacao_id', usuario.organizacao_id as string)
+    const { data: estoqueAtual } = await supabase
+      .from('estoque_fisico')
+      .select('produto_id, quantidade, produtos(nome, unidade)')
+      .eq('organizacao_id', usuario.organizacao_id as string)
 
-  const snapshot = (estoqueAtual ?? []).map((e: any) => ({
-    produto_id: e.produto_id,
-    nome: e.produtos?.nome ?? '',
-    unidade: e.produtos?.unidade ?? 'kg',
-    quantidade: e.quantidade
-  }))
+    const snapshot = (estoqueAtual ?? []).map((e: any) => ({
+      produto_id: e.produto_id,
+      nome: e.produtos?.nome ?? '',
+      unidade: e.produtos?.unidade ?? 'kg',
+      quantidade: e.quantidade
+    }))
 
-  const { error } = await supabase
-    .from('sessoes_caixa')
-    .insert({
-      organizacao_id: usuario.organizacao_id as string,
-      usuario_id: usuario.id,
-      data: new Date().toISOString().split('T')[0],
-      saldo_inicial_especie,
-      saldo_especie_calculado: saldo_inicial_especie,
-      snapshot_estoque: snapshot,
-      status: 'aberta'
-    })
-  if (error) throw new Error(error.message)
+    const { error } = await supabase
+      .from('sessoes_caixa')
+      .insert({
+        organizacao_id: usuario.organizacao_id as string,
+        usuario_id: usuario.id,
+        data: new Date().toISOString().split('T')[0],
+        saldo_inicial_especie,
+        saldo_especie_calculado: saldo_inicial_especie,
+        snapshot_estoque: snapshot,
+        status: 'aberta'
+      })
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message ?? 'Erro ao abrir caixa.' }
+  }
 }
 
 export async function fecharCaixa(sessao_id: string, saldo_final_especie: number, observacoes?: string) {

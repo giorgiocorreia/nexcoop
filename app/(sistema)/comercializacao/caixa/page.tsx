@@ -345,8 +345,10 @@ export default function CaixaPage() {
   async function handleAbrirCaixa() {
     if (!saldoInicial) return
     setAbrindo(true)
-    try { await abrirCaixa(parseFloat(saldoInicial)); await init() }
-    finally { setAbrindo(false) }
+    try {
+      const result = await abrirCaixa(parseFloat(saldoInicial))
+      if (result.success) await init()
+    } finally { setAbrindo(false) }
   }
 
   async function selecionarProdutor(p: ProdutorBusca) {
