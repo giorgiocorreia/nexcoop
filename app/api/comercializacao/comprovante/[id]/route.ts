@@ -82,6 +82,23 @@ function rightX(text: string, font: PDFFont, size: number): number {
   return PAGE_W - MARGIN - font.widthOfTextAtSize(text, size)
 }
 
+const ACENTO_MAP: Record<string, string> = {
+  'á':'a','à':'a','ã':'a','â':'a','ä':'a',
+  'Á':'A','À':'A','Ã':'A','Â':'A','Ä':'A',
+  'é':'e','è':'e','ê':'e','ë':'e',
+  'É':'E','È':'E','Ê':'E','Ë':'E',
+  'í':'i','ì':'i','î':'i','ï':'i',
+  'Í':'I','Ì':'I','Î':'I','Ï':'I',
+  'ó':'o','ò':'o','õ':'o','ô':'o','ö':'o',
+  'Ó':'O','Ò':'O','Õ':'O','Ô':'O','Ö':'O',
+  'ú':'u','ù':'u','û':'u','ü':'u',
+  'Ú':'U','Ù':'U','Û':'U','Ü':'U',
+  'ç':'c','Ç':'C','ñ':'n','Ñ':'N',
+}
+function semAcento(str: string): string {
+  return str.split('').map(c => ACENTO_MAP[c] ?? c).join('')
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -119,14 +136,14 @@ export async function GET(
     }
 
     // ── CABEÇALHO ──────────────────────────────────────────
-    const nomeLines = wrapText(dados.organizacao.nome.toUpperCase(), fontB, 11, CONTENT_W)
+    const nomeLines = wrapText(semAcento(dados.organizacao.nome).toUpperCase(), fontB, 11, CONTENT_W)
     for (const line of nomeLines) { txtC(line, fontB, 11); y -= 14 }
 
     const cnpjStr = `CNPJ: ${formatarCNPJ(dados.organizacao.cnpj)}`
     txtC(cnpjStr, fontR, 8); y -= 11
 
     if (dados.organizacao.endereco) {
-      const endLines = wrapText(dados.organizacao.endereco, fontR, 8, CONTENT_W)
+      const endLines = wrapText(semAcento(dados.organizacao.endereco), fontR, 8, CONTENT_W)
       for (const line of endLines) { txtC(line, fontR, 8); y -= 11 }
     }
 
@@ -145,21 +162,20 @@ export async function GET(
 
     // ── META ───────────────────────────────────────────────
     txtL(`Data: ${formatarDataHora(dados.movimentacao.created_at)}`, fontR, 8); y -= 12
-    txtL(`Operador: ${dados.operador.nome}`, fontR, 8); y -= 16
+    txtL(`Operador: ${semAcento(dados.operador.nome)}`, fontR, 8); y -= 16
 
     // ── CORPO ──────────────────────────────────────────────
     const qtdExtenso = kgPorExtenso(dados.movimentacao.quantidade_produto)
     const qtdNum = formatarKgNum(dados.movimentacao.quantidade_produto)
     const dataExtenso = dataPorExtenso(dados.movimentacao.created_at)
     const numPedido = String(dados.nota.numero_sequencial).padStart(6, '0')
-    const municipioStr = dados.produtor.municipio
-      ? `${dados.produtor.municipio} - BA`
-      : 'municipio nao informado'
+    const cidadeFallback = dados.organizacao.cidade || 'Ibirataia'
+    const municipioStr = semAcento(dados.produtor.municipio || cidadeFallback) + ' - BA'
 
     const textoCorrido =
-      `Recebemos de ${dados.produtor.nome}, CPF ${formatarCPF(dados.produtor.cpf)},` +
+      `Recebemos de ${semAcento(dados.produtor.nome)}, CPF ${formatarCPF(dados.produtor.cpf)},` +
       ` residente em ${municipioStr}, a quantia de ${qtdExtenso} (${qtdNum})` +
-      ` de ${dados.produto.nome}, referente a pesada n\xBA ${numPedido}, em ${dataExtenso}.`
+      ` de ${semAcento(dados.produto.nome)}, referente a pesada n\xBA ${numPedido}, em ${dataExtenso}.`
 
     const textoLines = wrapText(textoCorrido, fontR, 8, CONTENT_W)
     for (const line of textoLines) { txtL(line, fontR, 8); y -= 11 }
@@ -198,36 +214,25 @@ export async function GET(
     sep(); y -= 14
 
     // ── ASSINATURAS ────────────────────────────────────────
-    y -= 32  // espaço para assinatura manuscrita
+    y -= 35  // espaço para assinatura manuscrita
 
-    const midX = MARGIN + Math.floor(CONTENT_W / 2) - 4
-    page.drawLine({ start: { x: MARGIN, y }, end: { x: midX, y }, thickness: 0.5, color: BLACK })
-    page.drawLine({ start: { x: midX + 8, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.5, color: BLACK })
-    y -= 10
+    const colLeftX = 10
+    const colRightX = 115
+    const colW = 90
 
-    const halfW = (CONTENT_W - 8) / 2
+    // Linhas de assinatura
+    page.drawLine({ start: { x: colLeftX, y }, end: { x: colLeftX + colW, y }, thickness: 0.5, color: BLACK })
+    page.drawLine({ start: { x: colRightX, y }, end: { x: colRightX + colW, y }, thickness: 0.5, color: BLACK })
+    y -= 13
 
-    // Nome produtor (esquerda)
-    const nomeProdW = fontR.widthOfTextAtSize(dados.produtor.nome, 7)
-    const nomeProdX = Math.max(MARGIN, MARGIN + halfW / 2 - nomeProdW / 2)
-    page.drawText(dados.produtor.nome, {
-      x: nomeProdX, y, size: 7, font: fontR, color: BLACK, maxWidth: halfW,
-    })
+    // Nomes (8pt)
+    page.drawText(semAcento(dados.produtor.nome), { x: colLeftX, y, size: 8, font: fontR, color: BLACK, maxWidth: colW })
+    page.drawText(semAcento(dados.operador.nome), { x: colRightX, y, size: 8, font: fontR, color: BLACK, maxWidth: colW })
+    y -= 11
 
-    // Nome operador (direita)
-    const nomeOperW = fontR.widthOfTextAtSize(dados.operador.nome, 7)
-    const nomeOperX = Math.max(midX + 8, midX + 8 + halfW / 2 - nomeOperW / 2)
-    page.drawText(dados.operador.nome, {
-      x: nomeOperX, y, size: 7, font: fontR, color: BLACK, maxWidth: halfW,
-    })
-    y -= 10
-
-    const prodRoleStr = 'Produtor(a)'
-    const operRoleStr = 'Operador(a)'
-    const prodRoleX = Math.max(MARGIN, MARGIN + halfW / 2 - fontR.widthOfTextAtSize(prodRoleStr, 7) / 2)
-    const operRoleX = Math.max(midX + 8, midX + 8 + halfW / 2 - fontR.widthOfTextAtSize(operRoleStr, 7) / 2)
-    page.drawText(prodRoleStr, { x: prodRoleX, y, size: 7, font: fontR, color: BLACK })
-    page.drawText(operRoleStr, { x: operRoleX, y, size: 7, font: fontR, color: BLACK })
+    // Funções (7pt)
+    page.drawText('Produtor(a)', { x: colLeftX, y, size: 7, font: fontR, color: BLACK })
+    page.drawText('Operador(a)', { x: colRightX, y, size: 7, font: fontR, color: BLACK })
     y -= 14
 
     sep(); y -= 12

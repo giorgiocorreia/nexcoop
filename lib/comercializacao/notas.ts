@@ -15,6 +15,7 @@ export interface DadosComprovante {
     cnpj: string
     endereco: string
     telefone: string
+    cidade: string
   }
   operador: {
     nome: string
@@ -171,12 +172,22 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
         produtor_id,
         produtores!inner(nome, cpf, municipio, cooperado_id)
       ),
-      produtos!inner(nome, unidade)
+      produtos!inner(nome, unidade),
+      sessoes_caixa!sessao_caixa_id(
+        usuario_id,
+        usuarios!usuario_id(nome_completo)
+      )
     `)
     .eq('id', nota.movimentacao_id)
     .single()
 
   if (movErr) console.error('[buscarDadosComprovante] mov error:', movErr?.message, 'movimentacao_id:', nota.movimentacao_id)
+
+  // Operador: pegar da sessão de caixa (quem estava logado), fallback para nota.emitida_por
+  const sessaoCaixa = (mov as any)?.sessoes_caixa
+  const sessaoUsuariosRaw = sessaoCaixa?.usuarios
+  const sessaoUsuario = Array.isArray(sessaoUsuariosRaw) ? sessaoUsuariosRaw[0] : sessaoUsuariosRaw
+  const nomeOperSessao: string | undefined = sessaoUsuario?.nome_completo
 
   const contaProdutor = (mov as any)?.contas_produtor
   const produtorData = Array.isArray(contaProdutor)
@@ -256,8 +267,9 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       cnpj: org.cnpj ?? '',
       endereco: enderecoOrg,
       telefone: (org as any).telefone ?? '',
+      cidade: (org as any).cidade ?? '',
     },
-    operador: { nome: operador?.nome_completo || 'Operador' },
+    operador: { nome: nomeOperSessao || operador?.nome_completo || 'Operador' },
     produtor: {
       nome: produtorFinal?.nome ?? snap.produtor_nome ?? '',
       cpf: produtorFinal?.cpf ?? snap.produtor_cpf ?? '',
