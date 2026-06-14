@@ -1,23 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { buscarPerfilCompleto } from '@/lib/perfil/actions'
 import PerfilUsuarioClient from './PerfilUsuarioClient'
+import { redirect } from 'next/navigation'
 
 export default async function PerfilPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  const { data: org } = usuario?.organizacao_id ? await supabase
-    .from('organizacoes')
-    .select('nome')
-    .eq('id', usuario.organizacao_id)
-    .single() : { data: null }
-
-  return <PerfilUsuarioClient usuario={usuario} email={user.email || ''} orgNome={org?.nome ?? ''} />
+  const dados = await buscarPerfilCompleto()
+  if (!dados) redirect('/login')
+  return <PerfilUsuarioClient dados={dados} />
 }
