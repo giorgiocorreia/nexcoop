@@ -5,14 +5,16 @@ import { registrarLog } from '@/lib/audit/logger'
 
 export async function buscarPerfilCompleto() {
   const supabase = await createClient()
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: raw } = await supabase
+  const { data: usuario, error } = await supabase
     .from('usuarios')
     .select(`
-      id, nome_completo, cpf, email, telefone, endereco, municipio, estado,
-      funcoes, vinculo, criado_em, organizacao_id,
+      id, nome_completo, cpf, email, telefone, avatar_url,
+      endereco, municipio, estado,
+      funcoes, vinculo, ativo, criado_em,
       organizacoes (
         id, nome, tipo
       )
@@ -20,9 +22,7 @@ export async function buscarPerfilCompleto() {
     .eq('id', user.id)
     .single()
 
-  if (!raw) return null
-
-  const r = raw as Record<string, any>
+  if (error || !usuario) return null
 
   const { data: atividades } = await supabase
     .from('audit_logs')
@@ -31,42 +31,42 @@ export async function buscarPerfilCompleto() {
     .order('created_at', { ascending: false })
     .limit(5)
 
-  const org = Array.isArray(r.organizacoes) ? r.organizacoes[0] : r.organizacoes
+  // Normaliza organizacoes (PostgREST pode retornar objeto ou array)
+  const org = usuario.organizacoes as any
+  const orgNorm = Array.isArray(org) ? (org[0] ?? null) : (org ?? null)
 
   return {
     usuario: {
-      id:           r.id            as string,
-      nome:         r.nome_completo as string,
-      cpf:          r.cpf           as string | null,
-      email:        r.email         as string | null,
-      telefone:     r.telefone      as string | null,
-      endereco:     r.endereco      as string | null,
-      municipio:    r.municipio     as string | null,
-      estado:       r.estado        as string | null,
-      funcoes:      r.funcoes       as string[] | null,
-      vinculo:      r.vinculo       as string | null,
-      created_at:   r.criado_em     as string,
-      organizacoes: org ? {
-        id:   org.id   as string,
-        nome: org.nome as string,
-        tipo: org.tipo as string,
-      } : null,
+      id:           usuario.id,
+      nome_completo: usuario.nome_completo,
+      cpf:          usuario.cpf,
+      email:        usuario.email,
+      telefone:     usuario.telefone,
+      avatar_url:   usuario.avatar_url,
+      endereco:     (usuario as any).endereco    as string | null,
+      municipio:    (usuario as any).municipio   as string | null,
+      estado:       (usuario as any).estado      as string | null,
+      funcoes:      usuario.funcoes              as string[] | null,
+      vinculo:      usuario.vinculo,
+      ativo:        usuario.ativo,
+      criado_em:    usuario.criado_em,
+      organizacoes: orgNorm as { id: string; nome: string; tipo: string } | null,
     },
     atividades: (atividades ?? []) as Array<{
-      id:          string
-      acao:        string
-      descricao:   string | null
-      created_at:  string
+      id: string
+      acao: string
+      descricao: string | null
+      created_at: string
     }>,
   }
 }
 
 export async function salvarPerfil(dados: {
-  nome:      string
-  telefone:  string
-  endereco:  string
-  municipio: string
-  estado:    string
+  nome_completo: string
+  telefone:      string
+  endereco:      string
+  municipio:     string
+  estado:        string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -81,7 +81,7 @@ export async function salvarPerfil(dados: {
   const { error } = await supabase
     .from('usuarios')
     .update({
-      nome_completo: dados.nome,
+      nome_completo: dados.nome_completo,
       telefone:      dados.telefone  || null,
       endereco:      dados.endereco  || null,
       municipio:     dados.municipio || null,
@@ -96,7 +96,7 @@ export async function salvarPerfil(dados: {
     modulo:        'perfil',
     descricao:     'Usuário atualizou seus dados pessoais',
     usuario_id:    user.id,
-    org_id:        usuarioAtual?.organizacao_id ?? null,
     usuario_email: user.email,
+    org_id:        usuarioAtual?.organizacao_id ?? null,
   })
 }

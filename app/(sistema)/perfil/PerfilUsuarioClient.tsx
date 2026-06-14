@@ -10,25 +10,29 @@ type Atividade = {
   created_at: string
 }
 
-type Dados = {
-  usuario: {
+type Usuario = {
+  id: string
+  nome_completo: string
+  cpf: string | null
+  email: string | null
+  telefone: string | null
+  avatar_url: string | null
+  endereco: string | null
+  municipio: string | null
+  estado: string | null
+  funcoes: string[] | null
+  vinculo: string | null
+  ativo: boolean
+  criado_em: string
+  organizacoes: {
     id: string
     nome: string
-    cpf: string | null
-    email: string | null
-    telefone: string | null
-    endereco: string | null
-    municipio: string | null
-    estado: string | null
-    funcoes: string[] | null
-    vinculo: string | null
-    created_at: string
-    organizacoes: {
-      id: string
-      nome: string
-      tipo: string
-    } | null
-  }
+    tipo: string
+  } | null
+}
+
+type Dados = {
+  usuario: Usuario
   atividades: Atividade[]
 }
 
@@ -40,7 +44,10 @@ function formatarData(iso: string) {
 }
 
 function formatarMembroDesde(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  const d = new Date(iso)
+  const mes = d.toLocaleDateString('pt-BR', { month: 'long' })
+  const ano = d.getFullYear()
+  return `${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${ano}`
 }
 
 function iniciais(nome: string) {
@@ -50,14 +57,14 @@ function iniciais(nome: string) {
 function labelFuncao(funcoes: string[] | null) {
   if (!funcoes || funcoes.length === 0) return 'Membro'
   const mapa: Record<string, string> = {
-    admin: 'Administrador',
-    financeiro: 'Financeiro',
-    tecnico: 'Técnico',
-    captador: 'Captador',
+    admin:           'Administrador',
+    financeiro:      'Financeiro',
+    tecnico:         'Técnico',
+    captador:        'Captador',
     conselho_fiscal: 'Conselho Fiscal',
-    caixa_cacau: 'Atendente',
-    gerente_loja: 'Gerente de Loja',
-    caixa_loja: 'Caixa',
+    caixa_cacau:     'Atendente',
+    gerente_loja:    'Gerente de Loja',
+    caixa_loja:      'Caixa',
     estoquista_loja: 'Estoquista',
   }
   return mapa[funcoes[0]] ?? funcoes[0]
@@ -65,34 +72,34 @@ function labelFuncao(funcoes: string[] | null) {
 
 function labelVinculo(vinculo: string | null) {
   const mapa: Record<string, string> = {
-    cooperado: 'Cooperado',
+    cooperado:   'Cooperado',
     funcionario: 'Funcionário',
-    diretoria: 'Diretoria',
-    externo: 'Externo',
+    diretoria:   'Diretoria',
+    externo:     'Externo',
   }
   return vinculo ? (mapa[vinculo] ?? vinculo) : ''
 }
 
 function iconeAtividade(acao: string) {
-  if (acao.includes('login'))                              return { icon: 'ti-login',        bg: '#E6F1FB', color: '#185FA5' }
-  if (acao.includes('nf') || acao.includes('nota'))       return { icon: 'ti-file-invoice', bg: '#EAF3DE', color: '#3B6D11' }
-  if (acao.includes('caixa') || acao.includes('sessao'))  return { icon: 'ti-cash',         bg: '#FAEEDA', color: '#854F0B' }
-  if (acao.includes('cooperado') || acao.includes('produtor')) return { icon: 'ti-users',   bg: '#EEEDFE', color: '#3C3489' }
-  if (acao.includes('perfil'))                            return { icon: 'ti-user',         bg: '#E6F1FB', color: '#185FA5' }
+  if (acao.includes('login'))                               return { icon: 'ti-login',        bg: '#E6F1FB', color: '#185FA5' }
+  if (acao.includes('nf') || acao.includes('nota'))        return { icon: 'ti-file-invoice', bg: '#EAF3DE', color: '#3B6D11' }
+  if (acao.includes('caixa') || acao.includes('sessao'))   return { icon: 'ti-cash',         bg: '#FAEEDA', color: '#854F0B' }
+  if (acao.includes('cooperado') || acao.includes('produtor')) return { icon: 'ti-users',    bg: '#EEEDFE', color: '#3C3489' }
+  if (acao.includes('perfil'))                             return { icon: 'ti-user',          bg: '#E6F1FB', color: '#185FA5' }
   return { icon: 'ti-activity', bg: '#F1EFE8', color: '#5F5E5A' }
 }
 
 export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
   const { usuario, atividades } = dados
-  const [editando, setEditando]   = useState(false)
-  const [salvando, setSalvando]   = useState(false)
-  const [erro, setErro]           = useState<string | null>(null)
+  const [editando, setEditando] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro]         = useState<string | null>(null)
   const [form, setForm] = useState({
-    nome:      usuario.nome      ?? '',
-    telefone:  usuario.telefone  ?? '',
-    endereco:  usuario.endereco  ?? '',
-    municipio: usuario.municipio ?? '',
-    estado:    usuario.estado    ?? '',
+    nome_completo: usuario.nome_completo ?? '',
+    telefone:      usuario.telefone      ?? '',
+    endereco:      usuario.endereco      ?? '',
+    municipio:     usuario.municipio     ?? '',
+    estado:        usuario.estado        ?? '',
   })
 
   const org = usuario.organizacoes
@@ -110,25 +117,33 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
     }
   }
 
-  function campo(label: string, valor: string | null, chave?: keyof typeof form) {
+  function Campo({
+    label,
+    valor,
+    campo,
+  }: {
+    label: string
+    valor: string | null
+    campo?: keyof typeof form
+  }) {
     return (
       <div>
         <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>{label}</div>
-        {editando && chave ? (
+        {editando && campo ? (
           <input
-            value={form[chave]}
-            onChange={e => setForm(f => ({ ...f, [chave]: e.target.value }))}
+            value={form[campo]}
+            onChange={e => setForm(f => ({ ...f, [campo]: e.target.value }))}
             style={{
               width: '100%', boxSizing: 'border-box',
               border: '1px solid #e5e3dc', borderRadius: 8,
               padding: '6px 10px', fontSize: 14,
-              background: 'white', color: '#1a1a1a',
+              background: 'white', color: 'var(--color-text-primary)',
             }}
           />
         ) : (
           <div style={{
             fontSize: 14,
-            color: valor ? '#1a1a1a' : '#bbb',
+            color: valor ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
             fontStyle: valor ? 'normal' : 'italic',
           }}>
             {valor || 'Não informado'}
@@ -137,6 +152,12 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
       </div>
     )
   }
+
+  const subtitulo = [
+    labelVinculo(usuario.vinculo),
+    org?.nome,
+    `Membro desde ${formatarMembroDesde(usuario.criado_em)}`,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div style={{ padding: '2rem 1.5rem', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -154,14 +175,17 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                 width: 56, height: 56, borderRadius: '50%',
                 background: '#E6F1FB', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', fontSize: 18, fontWeight: 500,
-                color: '#185FA5', flexShrink: 0,
+                color: '#185FA5', flexShrink: 0, overflow: 'hidden',
               }}>
-                {iniciais(usuario.nome)}
+                {usuario.avatar_url
+                  ? <img src={usuario.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : iniciais(usuario.nome_completo)
+                }
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 17, fontWeight: 500, color: '#1a1a1a' }}>
-                    {usuario.nome}
+                  <span style={{ fontSize: 17, fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                    {usuario.nome_completo}
                   </span>
                   <span style={{
                     background: '#EAF3DE', color: '#3B6D11',
@@ -169,27 +193,26 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                   }}>
                     {labelFuncao(usuario.funcoes)}
                   </span>
-                  <span style={{
-                    background: '#E6F1FB', color: '#185FA5',
-                    fontSize: 11, padding: '2px 8px', borderRadius: 6,
-                  }}>
-                    ● Conta ativa
-                  </span>
+                  {usuario.ativo && (
+                    <span style={{
+                      background: '#E6F1FB', color: '#185FA5',
+                      fontSize: 11, padding: '2px 8px', borderRadius: 6,
+                    }}>
+                      ● Conta ativa
+                    </span>
+                  )}
                 </div>
-                <div style={{ fontSize: 13, color: '#6b6b6b', marginTop: 3 }}>
-                  {[
-                    labelVinculo(usuario.vinculo),
-                    org?.nome,
-                    `Membro desde ${formatarMembroDesde(usuario.created_at)}`,
-                  ].filter(Boolean).join(' · ')}
+                <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 3 }}>
+                  {subtitulo}
                 </div>
               </div>
+
               {!editando ? (
                 <button
                   onClick={() => setEditando(true)}
                   style={{
                     background: 'none', border: '1px solid #e5e3dc', borderRadius: 8,
-                    padding: '6px 12px', fontSize: 13, color: '#555',
+                    padding: '6px 12px', fontSize: 13, color: 'var(--color-text-secondary)',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
                   }}
                 >
@@ -201,7 +224,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                     onClick={() => { setEditando(false); setErro(null) }}
                     style={{
                       background: 'none', border: '1px solid #e5e3dc', borderRadius: 8,
-                      padding: '6px 12px', fontSize: 13, color: '#555', cursor: 'pointer',
+                      padding: '6px 12px', fontSize: 13, color: 'var(--color-text-secondary)', cursor: 'pointer',
                     }}
                   >
                     Cancelar
@@ -212,8 +235,8 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                     style={{
                       background: '#378ADD', border: '1px solid #378ADD', borderRadius: 8,
                       padding: '6px 14px', fontSize: 13, color: 'white',
-                      cursor: salvando ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
-                      opacity: salvando ? 0.7 : 1,
+                      cursor: salvando ? 'not-allowed' : 'pointer',
+                      opacity: salvando ? 0.7 : 1, whiteSpace: 'nowrap',
                     }}
                   >
                     {salvando ? 'Salvando...' : 'Salvar'}
@@ -240,25 +263,25 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                 Dados pessoais
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {campo('Nome completo', usuario.nome, 'nome')}
+                <Campo label="Nome completo" valor={usuario.nome_completo} campo="nome_completo" />
                 <div>
                   <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>CPF</div>
-                  <div style={{ fontSize: 14, color: usuario.cpf ? '#1a1a1a' : '#bbb', fontStyle: usuario.cpf ? 'normal' : 'italic' }}>
+                  <div style={{ fontSize: 14, color: usuario.cpf ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', fontStyle: usuario.cpf ? 'normal' : 'italic' }}>
                     {usuario.cpf ?? 'Não informado'}
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: 12, color: '#888780', marginBottom: 4 }}>E-mail</div>
-                  <div style={{ fontSize: 14, color: usuario.email ? '#1a1a1a' : '#bbb', fontStyle: usuario.email ? 'normal' : 'italic' }}>
+                  <div style={{ fontSize: 14, color: usuario.email ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', fontStyle: usuario.email ? 'normal' : 'italic' }}>
                     {usuario.email ?? 'Não informado'}
                   </div>
                 </div>
-                {campo('Telefone', usuario.telefone, 'telefone')}
+                <Campo label="Telefone"  valor={usuario.telefone}  campo="telefone" />
                 <div style={{ gridColumn: '1 / -1' }}>
-                  {campo('Endereço', usuario.endereco, 'endereco')}
+                  <Campo label="Endereço" valor={usuario.endereco} campo="endereco" />
                 </div>
-                {campo('Município', usuario.municipio, 'municipio')}
-                {campo('Estado', usuario.estado, 'estado')}
+                <Campo label="Município" valor={usuario.municipio} campo="municipio" />
+                <Campo label="Estado"    valor={usuario.estado}    campo="estado" />
               </div>
             </div>
           </div>
@@ -272,7 +295,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
               Atividades recentes
             </div>
             {atividades.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#bbb', fontStyle: 'italic' }}>
+              <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', fontStyle: 'italic' }}>
                 Nenhuma atividade registrada ainda.
               </div>
             ) : (
@@ -295,10 +318,10 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                         <i className={`ti ${icon}`} style={{ fontSize: 15, color }} aria-hidden="true" />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, color: '#1a1a1a' }}>
+                        <div style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
                           {a.descricao ?? a.acao}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6b6b6b' }}>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                           {formatarData(a.created_at)}
                         </div>
                       </div>
@@ -352,7 +375,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
             <div style={{
               marginTop: 12, paddingTop: 12,
               borderTop: '1px solid #f0ede8',
-              fontSize: 12, color: '#bbb',
+              fontSize: 12, color: 'var(--color-text-tertiary)',
             }}>
               Acesso gerenciado pelo administrador.
             </div>
@@ -368,12 +391,12 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { label: 'E-mail de assembleias', ativo: true },
-                { label: 'Alertas de captação',   ativo: true },
+                { label: 'E-mail de assembleias', ativo: true  },
+                { label: 'Alertas de captação',   ativo: true  },
                 { label: 'Novidades do sistema',  ativo: false },
               ].map(n => (
                 <div key={n.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
-                  <span style={{ color: '#1a1a1a' }}>{n.label}</span>
+                  <span style={{ color: 'var(--color-text-primary)' }}>{n.label}</span>
                   <div style={{
                     width: 36, height: 20,
                     background: n.ativo ? '#635BFF' : '#e5e3dc',
@@ -402,7 +425,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
               style={{
                 width: '100%', background: 'none', border: '1px solid #e5e3dc',
                 borderRadius: 8, padding: '8px 12px', fontSize: 13,
-                color: '#555', cursor: 'pointer',
+                color: 'var(--color-text-secondary)', cursor: 'pointer',
                 textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
               }}
             >
