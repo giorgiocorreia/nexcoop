@@ -145,11 +145,14 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
 
   const { data: org, error: orgErr } = await adminClient
     .from('organizacoes')
-    .select('nome, cnpj, endereco, municipio, telefone')
+    .select('nome, cnpj, logradouro, bairro, cidade, estado, telefone')
     .eq('id', nota.organizacao_id)
     .single()
 
-  if (!org) throw new Error('Organização não encontrada: ' + orgErr?.message)
+  if (!org) {
+    console.error('[buscarDadosComprovante] org error:', orgErr?.message, 'nota.organizacao_id:', nota.organizacao_id)
+    throw new Error('Organização não encontrada: ' + orgErr?.message)
+  }
 
   const { data: operador } = nota.emitida_por
     ? await adminClient.from('usuarios').select('nome_completo').eq('id', nota.emitida_por).maybeSingle()
@@ -164,16 +167,16 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       quantidade_produto,
       observacoes,
       created_at,
-      contas_produtor!conta_id(
+      contas_produtor!inner(
         produtor_id,
-        produtores!produtor_id(nome, cpf, municipio, cooperado_id)
+        produtores!inner(nome, cpf, municipio, cooperado_id)
       ),
-      produtos!produto_id(nome, unidade)
+      produtos!inner(nome, unidade)
     `)
     .eq('id', nota.movimentacao_id)
     .single()
 
-  if (movErr) console.error('[buscarDadosComprovante] mov error:', movErr)
+  if (movErr) console.error('[buscarDadosComprovante] mov error:', movErr?.message, 'movimentacao_id:', nota.movimentacao_id)
 
   const contaProdutor = (mov as any)?.contas_produtor
   const produtorData = Array.isArray(contaProdutor)
@@ -237,9 +240,9 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
   })
 
   const enderecoOrg = [
-    (org as any).endereco,
-    (org as any).municipio,
-  ].filter(Boolean).join(', ')
+    [(org as any).logradouro, (org as any).bairro].filter(Boolean).join(', '),
+    [(org as any).cidade, (org as any).estado].filter(Boolean).join('/'),
+  ].filter(Boolean).join(' — ')
 
   return {
     nota: {
