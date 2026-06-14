@@ -214,25 +214,21 @@ export async function GET(
     sep(); y -= 14
 
     // ── ASSINATURAS ────────────────────────────────────────
-    y -= 35  // espaço para assinatura manuscrita
+    y -= 35  // espaço vazio para assinatura manuscrita
 
-    const colLeftX = 10
-    const colRightX = 115
-    const colW = 90
+    // Traços: coluna esquerda x=10..100, coluna direita x=115..205
+    page.drawLine({ start: { x: 10, y }, end: { x: 100, y }, thickness: 0.5, color: BLACK })
+    page.drawLine({ start: { x: 115, y }, end: { x: 205, y }, thickness: 0.5, color: BLACK })
 
-    // Linhas de assinatura
-    page.drawLine({ start: { x: colLeftX, y }, end: { x: colLeftX + colW, y }, thickness: 0.5, color: BLACK })
-    page.drawLine({ start: { x: colRightX, y }, end: { x: colRightX + colW, y }, thickness: 0.5, color: BLACK })
-    y -= 13
+    // Nome: +4pts abaixo da linha
+    y -= 12
+    page.drawText(semAcento(dados.produtor.nome), { x: 10, y, size: 8, font: fontR, color: BLACK })
+    page.drawText(semAcento(dados.operador.nome), { x: 115, y, size: 8, font: fontR, color: BLACK })
 
-    // Nomes (8pt)
-    page.drawText(semAcento(dados.produtor.nome), { x: colLeftX, y, size: 8, font: fontR, color: BLACK, maxWidth: colW })
-    page.drawText(semAcento(dados.operador.nome), { x: colRightX, y, size: 8, font: fontR, color: BLACK, maxWidth: colW })
-    y -= 11
-
-    // Funções (7pt)
-    page.drawText('Produtor(a)', { x: colLeftX, y, size: 7, font: fontR, color: BLACK })
-    page.drawText('Operador(a)', { x: colRightX, y, size: 7, font: fontR, color: BLACK })
+    // Função: +12pts abaixo do nome
+    y -= 12
+    page.drawText('Produtor(a)', { x: 10, y, size: 7, font: fontR, color: BLACK })
+    page.drawText('Operador(a)', { x: 115, y, size: 7, font: fontR, color: BLACK })
     y -= 14
 
     sep(); y -= 12
