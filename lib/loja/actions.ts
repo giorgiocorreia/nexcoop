@@ -794,28 +794,31 @@ export async function finalizarVenda(
     cooperado_id?: string
     tipo_cliente: LojaTipoCliente
     total: number
-    desconto_total: number
+    desconto_total?: number
     pago_especie: number
     pago_pix: number
-    pago_conta: number
+    pago_conta?: number
   },
   itens: ItemCarrinho[]
 ): Promise<ResultadoFinalizarVenda | { error: string }> {
   const admin = createAdminClient()
 
   // 1. Insere loja_vendas
+  const tipoClienteValido = venda.tipo_cliente === 'cooperado' ? 'cooperado' : 'externo'
+
   const { data: vendaData, error: errVenda } = await admin
     .from('loja_vendas')
     .insert({
       org_id: orgId,
       caixa_id: caixaId,
       cooperado_id: venda.cooperado_id ?? null,
-      tipo_cliente: venda.tipo_cliente,
+      tipo_cliente: tipoClienteValido,
+      canal: 'presencial',
+      status: 'concluida',
       total: venda.total,
-      desconto_total: venda.desconto_total,
       pago_especie: venda.pago_especie,
       pago_pix: venda.pago_pix,
-      criado_em: new Date().toISOString(),
+      pago_cartao: 0,
     })
     .select('id')
     .single()
