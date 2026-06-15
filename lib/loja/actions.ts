@@ -874,7 +874,7 @@ export async function finalizarVenda(
   }
 
   // 3. Débito em conta corrente
-  if (venda.pago_conta > 0 && venda.cooperado_id) {
+  if ((venda.pago_conta ?? 0) > 0 && venda.cooperado_id) {
     const { data: contaData } = await admin
       .from('contas_produtor')
       .select('id, saldo_financeiro')
