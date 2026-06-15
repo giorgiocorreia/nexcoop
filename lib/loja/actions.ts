@@ -731,16 +731,17 @@ export async function buscarCooperadoPorCPF(
     .select(`
       id,
       produtor_id,
-      produtores!inner ( nome, cpf ),
+      produtores:produtor_id ( nome, cpf ),
       contas_produtor ( saldo_financeiro )
     `)
     .eq('organizacao_id', orgId)
-    .eq('produtores.cpf', cpfLimpo)
     .maybeSingle()
 
   if (!data) return null
+  const cpfProdutor = ((data.produtores as any)?.cpf ?? '').replace(/\D/g, '')
+  if (cpfProdutor !== cpfLimpo) return null
 
-  const produtor = data.produtores as { nome: string; cpf: string }
+  const produtor = data.produtores as unknown as { nome: string; cpf: string }
   const conta = Array.isArray(data.contas_produtor) ? data.contas_produtor[0] : data.contas_produtor
 
   return {
