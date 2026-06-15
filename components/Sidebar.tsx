@@ -308,7 +308,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         onMouseEnter={e => (e.currentTarget.style.background = '#e5e3dc')}
         onMouseLeave={e => (e.currentTarget.style.background = '#f5f5f2')}
       >
-        {collapsed ? '›' : '‹'}
+        <i className={`ti ${collapsed ? 'ti-layout-sidebar-left-expand' : 'ti-layout-sidebar-left-collapse'}`} style={{ fontSize: 15 }} />
       </button>
     )
   }
