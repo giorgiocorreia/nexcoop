@@ -883,12 +883,12 @@ export async function finalizarVenda(
       .maybeSingle()
 
     if (contaData) {
-      const novoSaldo = contaData.saldo_financeiro - venda.pago_conta
+      const novoSaldo = contaData.saldo_financeiro - (venda.pago_conta ?? 0)
       await admin.from('movimentacoes_conta').insert({
         organizacao_id: orgId,
         conta_id: contaData.id,
         tipo: 'compra_loja',
-        valor: -venda.pago_conta,
+        valor: -(venda.pago_conta ?? 0),
         saldo_apos: novoSaldo,
         descricao: `Compra na Loja — Venda #${vendaId.slice(-6).toUpperCase()}`,
         criado_em: new Date().toISOString(),
@@ -897,7 +897,7 @@ export async function finalizarVenda(
     }
   }
 
-  await registrarLog({ orgId, usuarioId: operadorId, modulo: 'loja', acao: 'loja_venda_finalizada', dados_depois: { venda_id: vendaId, total: venda.total } })
+  await registrarLog({ org_id: orgId, usuario_id:operadorId, modulo: 'loja', acao: 'loja_venda_finalizada', dados_depois: { venda_id: vendaId, total: venda.total } })
 
   return { vendaId }
 }
@@ -928,8 +928,8 @@ export async function cancelarVenda(
     .eq('tipo', 'saida_venda')
 
   for (const mov of movimentos ?? []) {
-    const { data: lote } = await admin.from('loja_lotes').select('quantidade_atual').eq('id', mov.lote_id).single()
-    if (lote) await admin.from('loja_lotes').update({ quantidade_atual: lote.quantidade_atual + mov.quantidade }).eq('id', mov.lote_id)
+    const { data: lote } = await admin.from('loja_lotes').select('quantidade_atual').eq('id', mov.lote_id as string).single()
+    if (lote) await admin.from('loja_lotes').update({ quantidade_atual: lote.quantidade_atual + mov.quantidade }).eq('id', mov.lote_id as string)
 
     const { data: prod } = await admin.from('loja_produtos').select('estoque_atual').eq('id', mov.produto_id).single()
     if (prod) await admin.from('loja_produtos').update({ estoque_atual: prod.estoque_atual + mov.quantidade }).eq('id', mov.produto_id)
@@ -938,7 +938,7 @@ export async function cancelarVenda(
       org_id: orgId,
       produto_id: mov.produto_id,
       lote_id: mov.lote_id,
-      tipo: 'entrada_estorno',
+      tipo: 'entrada' as const,
       quantidade: mov.quantidade,
       referencia_id: vendaId,
       criado_em: new Date().toISOString(),
@@ -956,12 +956,12 @@ export async function cancelarVenda(
   if (movConta) {
     const { data: conta } = await admin.from('contas_produtor').select('saldo_financeiro').eq('id', movConta.conta_id).single()
     if (conta) {
-      const novoSaldo = conta.saldo_financeiro + Math.abs(movConta.valor)
+      const novoSaldo = conta.saldo_financeiro + Math.abs(movConta.valor as number)
       await admin.from('movimentacoes_conta').insert({
         organizacao_id: orgId,
         conta_id: movConta.conta_id,
-        tipo: 'estorno_compra_loja',
-        valor: Math.abs(movConta.valor),
+        tipo: 'estorno' as const,
+        valor: Math.abs(movConta.valor as number),
         saldo_apos: novoSaldo,
         descricao: `Estorno — Venda cancelada #${vendaId.slice(-6).toUpperCase()}`,
         criado_em: new Date().toISOString(),
@@ -971,7 +971,7 @@ export async function cancelarVenda(
   }
 
   await admin.from('loja_vendas').update({ status: 'cancelada' }).eq('id', vendaId)
-  await registrarLog({ orgId, usuarioId: operadorId, modulo: 'loja', acao: 'loja_venda_cancelada', dados_depois: { venda_id: vendaId } })
+  await registrarLog({ org_id: orgId, usuario_id:operadorId, modulo: 'loja', acao: 'loja_venda_cancelada', dados_depois: { venda_id: vendaId } })
 
   return { ok: true }
 }
@@ -989,7 +989,7 @@ export async function registrarSangriaLoja(
 ): Promise<{ ok: boolean } | { error: string }> {
   const admin = createAdminClient()
 
-  const { error } = await admin.from('loja_sangrias').insert({
+  const { error } = await (admin as any).from('loja_sangrias').insert({
     org_id: orgId,
     caixa_id: caixaId,
     tipo,
@@ -1002,7 +1002,7 @@ export async function registrarSangriaLoja(
 
   if (error) return { error: 'Erro ao registrar sangria.' }
 
-  await registrarLog({ orgId, usuarioId: executado_por, modulo: 'loja', acao: 'loja_sangria', dados_depois: { tipo, valor, caixa_id: caixaId, autorizado_por } })
+  await registrarLog({ org_id: orgId, usuario_id:executado_por, modulo: 'loja', acao: 'loja_sangria', dados_depois: { tipo, valor, caixa_id: caixaId, autorizado_por } })
 
   return { ok: true }
 }
