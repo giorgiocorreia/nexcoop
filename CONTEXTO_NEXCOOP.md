@@ -46,7 +46,7 @@
 - 001–007: base (organizacoes, usuarios, cooperados, financeiro, assembleias, documentos, mensalidades)
 - 008: captacao (oportunidades, oportunidade_logs, perfil_captacao)
 - 009–013: captacao continuação
-- 014: loja (schema apenas, 0% telas)
+- 014: loja (schema inicial)
 - 015–024: módulo contábil completo
 - 025–029b: comercialização (produtores, contas, caixa, safras, lotes, vendas, NF-e entrada)
 - 030: solicitacoes_aporte (pendente aplicar)
@@ -54,8 +54,10 @@
 - 032: cotacoes_mercado_externo + config_precos_sugeridos
 - 033: colunas em produtores (usuario_id, dados_fiscais, is_consumidor_final)
 - 034/035: drop tabela membros (criada e revertida — conceito já existia como cooperados)
+- 036: perfil de usuário (dados pessoais, atividades recentes)
+- 037: loja_compras expandida (numero_nf, data_compra, valor_frete, outros_custos_valor, outros_custos_descricao, observacoes)
 
-**Próxima migration:** 036
+**Próxima migration:** 038
 
 ---
 
@@ -103,7 +105,7 @@
 | Audit logs | ✅ |
 | Gestão de usuários (Configurações → Usuários) | ✅ (convidar + cadastrar) |
 | Portal do Filiado | ❌ (planejado, chat dedicado) |
-| Loja Agropecuária | ⏸ (migration 014, 0% telas) |
+| Loja Agropecuária | ✅ fases 0–3 (infra, catálogo, compras/estoque) |
 | Super Admin — Módulos/Usuários/Planos | ❌ |
 | Captação — Alertas, MI, Perfil org | ❌ |
 
@@ -192,6 +194,54 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 
 ---
 
+## Loja Agropecuária (15/06/2026)
+
+### Controle de módulos por org (Passo 0)
+- `organizacoes.modulos_ativos` (text[]): lista de módulos habilitados por org (`'loja'`, `'comercializacao'`, etc.)
+- `lib/org.ts` → `getModulosAtivos()`: lê os módulos ativos da org do usuário logado
+- Sidebar condicional: itens de Loja e Comercialização ocultos se módulo inativo
+- Middleware: bloqueia rotas `/loja/*` e `/comercializacao/*` conforme `modulos_ativos`
+
+### Fase 1 ✅ — Tipos e actions base
+- `lib/loja/types.ts`: tipos TypeScript para todos os modelos (produto, categoria, compra, lote de estoque)
+- `lib/loja/actions.ts`: server actions CRUD para produtos, categorias, compras, ajuste de estoque
+- `lib/permissoes.ts`: permissões `loja_admin`, `loja_operador`, `loja_caixa`
+
+### Fase 2 ✅ — Catálogo de produtos e categorias
+- `/loja` — dashboard da Loja (resumo estoque, compras recentes)
+- `/loja/produtos` — listagem de produtos com busca e filtros
+- `/loja/produtos/novo` — cadastro de produto (nome, categoria, preço, desconto cooperado)
+- `/loja/produtos/[id]` — detalhes e edição do produto
+- `/loja/categorias` — gestão de categorias
+
+### Fase 3 ✅ — Compras e controle de estoque
+- `/loja/estoque` — visão geral do estoque (por lote, FIFO)
+- `/loja/estoque/ajuste` — ajuste manual de estoque com motivo
+- `/loja/compras` — listagem de compras/notas de entrada
+- `/loja/compras/nova` — registro de compra com rateio proporcional de frete e outros custos ao valor de cada item
+- `/loja/compras/[id]` — detalhes da compra e itens
+
+### Fase 4 ⏳ — PDV (próximo chat)
+- Tela de venda balcão: busca de produto, quantidade, desconto, forma de pagamento
+- Fechamento de venda: baixa de estoque FIFO, registro em tabela de vendas
+
+### Decisões consolidadas
+
+| Decisão | Detalhe |
+|---|---|
+| Desconto por produto | `desconto_cooperado` boolean + `desconto_cooperado_pct` decimal |
+| Desconto acima do padrão | exige senha de gerente/admin (mesmo fluxo do aporte/sangria) |
+| Formas de pagamento PDV | dinheiro, Pix, conta corrente |
+| Conta corrente | só cooperado identificado + saldo suficiente + módulo comercializacao ativo |
+| Conta corrente — tabelas | `contas_produtor` / `movimentacoes_conta` tipo `'compra_loja'` |
+| Nomenclatura UI | "Conta corrente" e "Saldo em conta corrente" — nunca "fiado" ou "crédito cooperado" |
+| Baixa de estoque | FIFO (lote mais antigo primeiro) |
+| Entrada de mercadoria | por compra completa (`loja_compras` + `loja_compra_itens`) com rateio proporcional |
+| Sangria | exige senha de gerente/admin (mesmo fluxo do desconto extra) |
+| Controle de acesso | `modulos_ativos text[]` em `organizacoes` controla acesso à Loja por org |
+
+---
+
 ## Regras críticas de arquitetura
 - **NUNCA usar `auth_org_id()`** — sempre subquery: `(select organizacao_id from usuarios where id = auth.uid())`
 - **Writes de nível org via `createAdminClient()`** (bypassa RLS)
@@ -234,11 +284,11 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 8. Remover "Mensalidades" sidebar para cooperativas
 9. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
 10. Btn.tsx variantes marrom/verde/roxo com cores reais
-11. Loja Agropecuária (retomar após Comercialização estável)
+11. Loja Agropecuária — Fase 4: PDV (chat separado)
 12. Captação — Radar avançado, alertas, geração de MI
 13. Stripe live, 2FA, Sobras/REFAC
 14. Fluxo convite contador (embolado — chat separado)
 
 ---
 
-*Última atualização: 14/06/2026*
+*Última atualização: 15/06/2026*

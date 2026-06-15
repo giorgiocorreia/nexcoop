@@ -1,5 +1,42 @@
 # NexCoop — Changelog
 
+## [15/06/2026] — Loja Agropecuária: Fases 0–3 + Controle de Módulos
+
+### Infraestrutura (Passo 0)
+- `feat(org)`: `modulos_ativos` (text[]) em `organizacoes` — controle de acesso por módulo por org
+- `lib/org.ts`: função `getModulosAtivos()` para leitura server-side dos módulos habilitados
+- Sidebar condicional: itens de Loja e Comercialização ocultos se módulo inativo
+- Middleware: bloqueio de rotas `/loja/*` e `/comercializacao/*` conforme `modulos_ativos`
+
+### Fase 1 — Tipos e actions base
+- `lib/loja/types.ts`: tipos TypeScript para todos os modelos da Loja (produto, categoria, compra, lote)
+- `lib/loja/actions.ts`: server actions CRUD (produtos, categorias, compras, estoque)
+- `lib/permissoes.ts`: permissões `loja_admin`, `loja_operador`, `loja_caixa`
+
+### Fase 2 — Catálogo de produtos e categorias
+- `/loja` — dashboard com resumo de estoque e compras recentes
+- `/loja/produtos` — listagem com busca e filtros
+- `/loja/produtos/novo` — cadastro (nome, categoria, preço, desconto cooperado)
+- `/loja/produtos/[id]` — detalhes e edição
+- `/loja/categorias` — gestão de categorias
+
+### Fase 3 — Compras, rateio de custos e controle de estoque
+- `/loja/estoque` — visão geral por lote (FIFO)
+- `/loja/estoque/ajuste` — ajuste manual com motivo
+- `/loja/compras` — listagem de compras/notas de entrada
+- `/loja/compras/nova` — registro de compra com rateio proporcional de frete e outros custos
+- `/loja/compras/[id]` — detalhes e itens da compra
+
+### Migrations
+- Migration 036: perfil de usuário (dados pessoais, atividades recentes)
+- Migration 037: `loja_compras` expandida — `numero_nf`, `data_compra`, `valor_frete`, `outros_custos_valor`, `outros_custos_descricao`, `observacoes`
+
+### Correções
+- `app/(sistema)/aceitar-convite/page.tsx`: `export const dynamic = 'force-dynamic'` para evitar erro de prerender
+- `types/database.ts`: `modulos_ativos` adicionado ao tipo `Organizacao`; tipo `LojaCompra` atualizado com novos campos
+
+---
+
 ## [13/06/2026] — Sessão: Modelo Unificado + Ficha do Produtor + UI Usuários
 
 ### Modelo Membro/Produtor/Usuário
@@ -234,6 +271,7 @@
 | Super Admin | ✅ parcial | — |
 | Captação de Recursos | ✅ | 008 |
 | Módulo Contábil | ✅ | 015–024 |
-| Loja Agropecuária | ⏸ pausada | 014 |
+| Loja Agropecuária — Fases 0–3 | ✅ | 014, 037 |
+| Loja Agropecuária — Fase 4 PDV | ⏳ próximo chat | — |
 | Comercialização — Tesouraria | ✅ | 025–028 |
-| Comercialização — Notas/NF-e | 🔜 próximo | 029–030 |
+| Comercialização — Notas/NF-e | ✅ | 029–030 |
