@@ -59,20 +59,11 @@ export default async function LojaPage() {
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1a1a1a' }}>
-            Loja Agropecuária
-          </h1>
-          <span style={{
-            background: '#E07B30', color: '#fff', fontSize: '11px', fontWeight: '700',
-            padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.5px',
-          }}>
-            LOJA
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+          <span>NexCoop</span>
+          <span>/</span>
+          <span>Loja</span>
         </div>
-        <p style={{ margin: 0, color: '#888', fontSize: '13px' }}>
-          Gerencie produtos, estoque e vendas da cooperativa.
-        </p>
       </div>
 
       {/* Alerta estoque crítico */}

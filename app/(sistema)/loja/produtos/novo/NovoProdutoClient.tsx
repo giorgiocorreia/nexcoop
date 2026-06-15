@@ -83,7 +83,13 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.75rem' }}>
-        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+          <span>NexCoop</span>
+          <span>/</span>
+          <span>Loja</span>
+          <span>/</span>
+          <span>Novo Produto</span>
+        </div>
         <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>
       </div>
 

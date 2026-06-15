@@ -99,7 +99,13 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
     <div style={{ maxWidth: '800px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+          <span>NexCoop</span>
+          <span>/</span>
+          <span>Loja</span>
+          <span>/</span>
+          <span>Ajuste de Estoque</span>
+        </div>
         <Link href="/loja/estoque" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>← Estoque</Link>
       </div>
 

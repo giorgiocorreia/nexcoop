@@ -86,7 +86,13 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
-          <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+            <span>NexCoop</span>
+            <span>/</span>
+            <span>Loja</span>
+            <span>/</span>
+            <span>Categorias</span>
+          </div>
           <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>
         </div>
         <Btn onClick={() => setModal({ open: true, mode: 'nova' })} style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
