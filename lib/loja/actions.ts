@@ -704,7 +704,7 @@ export async function abrirCaixaLoja(
 
   if (error || !data) return { error: 'Erro ao abrir caixa.' }
 
-  await registrarLog({ org_id: orgId, usuario_id: usuarioId, acao: 'loja_caixa_aberto', detalhes: { caixa_id: data.id, valor_abertura: valorAbertura } })
+  await registrarLog({ org_id: orgId, usuario_id: usuarioId, modulo: 'loja', acao: 'loja_caixa_aberto', dados_depois: { caixa_id: data.id, valor_abertura: valorAbertura } })
 
   return { caixaId: data.id }
 }
@@ -893,7 +893,7 @@ export async function finalizarVenda(
     }
   }
 
-  await registrarLog({ orgId, usuarioId: operadorId, acao: 'loja_venda_finalizada', detalhes: { venda_id: vendaId, total: venda.total } })
+  await registrarLog({ orgId, usuarioId: operadorId, modulo: 'loja', acao: 'loja_venda_finalizada', dados_depois: { venda_id: vendaId, total: venda.total } })
 
   return { vendaId }
 }
@@ -967,7 +967,7 @@ export async function cancelarVenda(
   }
 
   await admin.from('loja_vendas').update({ status: 'cancelada' }).eq('id', vendaId)
-  await registrarLog({ orgId, usuarioId: operadorId, acao: 'loja_venda_cancelada', detalhes: { venda_id: vendaId } })
+  await registrarLog({ orgId, usuarioId: operadorId, modulo: 'loja', acao: 'loja_venda_cancelada', dados_depois: { venda_id: vendaId } })
 
   return { ok: true }
 }
@@ -998,7 +998,7 @@ export async function registrarSangriaLoja(
 
   if (error) return { error: 'Erro ao registrar sangria.' }
 
-  await registrarLog({ orgId, usuarioId: executado_por, acao: 'loja_sangria', detalhes: { tipo, valor, caixa_id: caixaId, autorizado_por } })
+  await registrarLog({ orgId, usuarioId: executado_por, modulo: 'loja', acao: 'loja_sangria', dados_depois: { tipo, valor, caixa_id: caixaId, autorizado_por } })
 
   return { ok: true }
 }
