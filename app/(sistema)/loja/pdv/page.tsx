@@ -306,9 +306,18 @@ export default function PDVPage() {
                 <input
                   type="text"
                   value={cpfBusca}
-                  onChange={e => { setCpfBusca(e.target.value); setErroCpf('') }}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                    const mask = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                      .replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3')
+                      .replace(/(\d{3})(\d{0,3})/, '$1.$2')
+                    setCpfBusca(mask)
+                    setErroCpf('')
+                  }}
                   onKeyDown={e => e.key === 'Enter' && handleBuscarCooperado()}
                   placeholder="CPF do cooperado"
+                  autoComplete="off"
+                  name="pdv_cpf_cooperado"
                   style={{ flex: 1, padding: '7px 10px', border: `1.5px solid ${erroCpf ? '#ef4444' : '#d1d5db'}`, borderRadius: 8, fontSize: 13, outline: 'none' }}
                 />
                 <Btn tamanho="sm" variante="cinza" onClick={handleBuscarCooperado} disabled={buscandoCpf}>

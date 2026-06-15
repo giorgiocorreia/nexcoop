@@ -728,26 +728,22 @@ export async function buscarCooperadoPorCPF(
 
   const { data } = await supabase
     .from('cooperados')
-    .select(`
-      id,
-      produtor_id,
-      produtores:produtor_id ( nome, cpf ),
-      contas_produtor ( saldo_financeiro )
-    `)
+    .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
     .eq('organizacao_id', orgId)
+    .eq('cpf', cpfLimpo)
+    .eq('status', 'ativo')
     .maybeSingle()
 
   if (!data) return null
-  const cpfProdutor = ((data.produtores as any)?.cpf ?? '').replace(/\D/g, '')
-  if (cpfProdutor !== cpfLimpo) return null
 
-  const produtor = data.produtores as unknown as { nome: string; cpf: string }
-  const conta = Array.isArray(data.contas_produtor) ? data.contas_produtor[0] : data.contas_produtor
+  const conta = Array.isArray(data.contas_produtor)
+    ? data.contas_produtor[0]
+    : data.contas_produtor as any
 
   return {
     cooperado_id: data.id as string,
-    produtor_id: data.produtor_id as string,
-    nome: produtor.nome,
+    produtor_id: data.id as string,
+    nome: data.nome_completo as string,
     saldo_financeiro: conta?.saldo_financeiro ?? 0,
     tem_conta_corrente: temComercializacao,
   }
