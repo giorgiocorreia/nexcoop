@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { atualizarProduto } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
 import type { LojaFornecedor, LojaUnidade, LojaLote } from '@/types/database'
@@ -109,11 +110,11 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-          <span>NexCoop</span>
+          <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <span>Loja</span>
+          <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <span>Produto</span>
+          <span style={{ color: '#1a1a1a' }}>Produto</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
           <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>

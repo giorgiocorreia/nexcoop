@@ -63,11 +63,11 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-            <span>NexCoop</span>
+            <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Loja</span>
+            <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Estoque</span>
+            <span style={{ color: '#1a1a1a' }}>Estoque</span>
           </div>
           <p style={{ margin: 0, color: '#888', fontSize: '13px', marginTop: '3px' }}>Posição atual, lotes e movimentações</p>
         </div>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { LojaFornecedor } from '@/types/database'
 import FornecedorModal from '@/components/loja/FornecedorModal'
 import { Btn } from '@/components/ui/Btn'
@@ -79,13 +80,12 @@ export default function FornecedoresLista({ fornecedores }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-            <span>NexCoop</span>
+            <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Loja</span>
+            <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Fornecedores</span>
+            <span style={{ color: '#1a1a1a' }}>Fornecedores</span>
           </div>
-          <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja')}>← Loja</Btn>
         </div>
         <Btn onClick={abrirCriar} style={{ background: VERDE, color: '#fff', border: `1.5px solid ${VERDE}` }}>
           + Novo Fornecedor

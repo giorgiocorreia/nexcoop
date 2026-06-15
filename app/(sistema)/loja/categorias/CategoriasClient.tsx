@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { renomearCategoria } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
 
@@ -87,11 +88,11 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-            <span>NexCoop</span>
+            <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Loja</span>
+            <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
             <span style={{ color: '#d1d5db' }}>/</span>
-            <span>Categorias</span>
+            <span style={{ color: '#1a1a1a' }}>Categorias</span>
           </div>
           <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>
         </div>

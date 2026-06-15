@@ -100,11 +100,11 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
 
       <div style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-          <span>NexCoop</span>
+          <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <span>Loja</span>
+          <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <span>Ajuste de Estoque</span>
+          <span style={{ color: '#1a1a1a' }}>Ajuste de Estoque</span>
         </div>
         <Link href="/loja/estoque" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>← Estoque</Link>
       </div>
