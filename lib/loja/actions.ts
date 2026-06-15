@@ -704,7 +704,7 @@ export async function abrirCaixaLoja(
 
   if (error || !data) return { error: 'Erro ao abrir caixa.' }
 
-  await registrarLog({ orgId, usuarioId, acao: 'loja_caixa_aberto', detalhes: { caixa_id: data.id, valor_abertura: valorAbertura } })
+  await registrarLog({ org_id: orgId, usuario_id: usuarioId, acao: 'loja_caixa_aberto', detalhes: { caixa_id: data.id, valor_abertura: valorAbertura } })
 
   return { caixaId: data.id }
 }
