@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { registrarCompra } from '@/lib/loja/actions'
+import { Btn } from '@/components/ui/Btn'
 
 interface Produto { id: string; nome: string; unidade: string }
 interface Fornecedor { id: string; nome: string }
@@ -183,9 +184,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   return (
     <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
         <Link href="/loja/compras" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>← Compras</Link>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Nova compra</h1>
       </div>
 
       {erro && (
@@ -259,17 +260,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
             <label style={labelStyle}>Validade</label>
             <input type="date" value={dataValidade} onChange={e => setDataValidade(e.target.value)} style={inputStyle} />
           </div>
-          <button
-            type="button"
-            onClick={adicionarItem}
-            style={{
-              background: LARANJA, color: '#fff', border: 'none', borderRadius: '8px',
-              padding: '9px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-              height: '38px', whiteSpace: 'nowrap',
-            }}
-          >
+          <Btn onClick={adicionarItem} style={{ background: LARANJA, color: '#fff', border: `1.5px solid ${LARANJA}`, height: '38px' }}>
             + Adicionar
-          </button>
+          </Btn>
         </div>
 
         {itens.length > 0 && (
@@ -291,7 +284,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                   <td style={{ padding: '8px', color: '#555' }}>{item.numero_lote || '—'}</td>
                   <td style={{ padding: '8px', color: '#555' }}>{item.data_validade ? (() => { const [y,m,d] = item.data_validade.split('-'); return `${d}/${m}/${y}` })() : '—'}</td>
                   <td style={{ padding: '8px' }}>
-                    <button onClick={() => removerItem(idx)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                    <Btn variante="cinza" tamanho="sm" onClick={() => removerItem(idx)} style={{ color: '#dc2626' }}>✕</Btn>
                   </td>
                 </tr>
               ))}
@@ -352,17 +345,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
         }}>
           Cancelar
         </Link>
-        <button
-          onClick={handleSubmit}
-          disabled={salvando || itens.length === 0 || !fornecedorId}
-          style={{
-            background: LARANJA, color: '#fff', border: 'none', borderRadius: '8px',
-            padding: '10px 24px', fontSize: '14px', fontWeight: '700', cursor: salvando ? 'not-allowed' : 'pointer',
-            opacity: (salvando || itens.length === 0 || !fornecedorId) ? 0.6 : 1,
-          }}
-        >
+        <Btn onClick={handleSubmit} disabled={salvando || itens.length === 0 || !fornecedorId} style={{ background: LARANJA, color: '#fff', border: `1.5px solid ${LARANJA}` }}>
           {salvando ? 'Registrando...' : 'Confirmar compra'}
-        </button>
+        </Btn>
       </div>
 
     </div>

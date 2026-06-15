@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { LojaCompra, LojaFornecedor } from '@/types/database'
+import { Btn } from '@/components/ui/Btn'
 
 type CompraComFornecedor = LojaCompra & { loja_fornecedores: { nome: string } | null }
 
@@ -64,7 +65,7 @@ export default function ComprasLista({ compras, fornecedores, sucesso }: Props) 
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Compras</h1>
+          <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:4}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
           <p style={{ margin: 0, color: '#888', fontSize: '13px', marginTop: '3px' }}>Histórico de entradas de mercadoria</p>
         </div>
         <Link href="/loja/compras/nova" style={{
@@ -89,12 +90,9 @@ export default function ComprasLista({ compras, fornecedores, sucesso }: Props) 
         <span style={{ color: '#888', fontSize: '13px' }}>até</span>
         <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={inputStyle} title="Data fim" />
         {(filtroForn || dataInicio || dataFim) && (
-          <button
-            onClick={() => { setFiltroForn(''); setDataInicio(''); setDataFim('') }}
-            style={{ background: 'none', border: 'none', color: '#888', fontSize: '13px', cursor: 'pointer' }}
-          >
+          <Btn variante="cinza" tamanho="sm" onClick={() => { setFiltroForn(''); setDataInicio(''); setDataFim('') }}>
             Limpar filtros
-          </button>
+          </Btn>
         )}
       </div>
 

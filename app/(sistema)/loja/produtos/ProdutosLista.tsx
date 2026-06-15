@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { LojaFornecedor } from '@/types/database'
 import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
+import { Btn } from '@/components/ui/Btn'
 
 const VERDE   = '#1D9E75'
 const LARANJA = '#d97706'
@@ -81,13 +82,8 @@ export default function ProdutosLista({ produtos, fornecedores, produtosComVenci
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
-          <button
-            onClick={() => router.push('/loja')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#888', padding: '0 0 4px', display: 'block' }}
-          >
-            ← Loja
-          </button>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Produtos</h1>
+          <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
+          <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja')}>← Loja</Btn>
         </div>
         {podeGerenciar && (
           <Link

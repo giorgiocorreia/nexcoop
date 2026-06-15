@@ -48,13 +48,11 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
     <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
         <Link href="/loja/compras" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>
           ← Compras
         </Link>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>
-          Compra — {compra.fornecedor_nome}
-        </h1>
       </div>
 
       {/* Cabeçalho da compra */}

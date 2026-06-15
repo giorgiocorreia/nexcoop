@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ajusteEstoque } from '@/lib/loja/actions'
+import { Btn } from '@/components/ui/Btn'
 
 interface Produto { id: string; nome: string; unidade: string; estoque_atual: number }
 
@@ -97,9 +98,9 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
   return (
     <div style={{ maxWidth: '800px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
         <Link href="/loja/estoque" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>← Estoque</Link>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Ajuste / Inventário</h1>
       </div>
 
       {sucesso && (
@@ -167,18 +168,9 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
         </div>
 
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="submit"
-            disabled={salvando || !produtoSel || !contagem}
-            style={{
-              background: LARANJA, color: '#fff', border: 'none', borderRadius: '8px',
-              padding: '10px 24px', fontSize: '14px', fontWeight: '700',
-              cursor: salvando ? 'not-allowed' : 'pointer',
-              opacity: (salvando || !produtoSel || !contagem) ? 0.6 : 1,
-            }}
-          >
+          <Btn type="submit" disabled={salvando || !produtoSel || !contagem} style={{ background: LARANJA, color: '#fff', border: `1.5px solid ${LARANJA}` }}>
             {salvando ? 'Salvando...' : 'Confirmar ajuste'}
-          </button>
+          </Btn>
         </div>
       </form>
 

@@ -272,7 +272,7 @@ export default function PDVPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <i className="ti ti-shopping-bag" style={{ fontSize: 22, color: '#E07B30' }} />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>PDV - Loja Agropecuaria</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>PDV - Loja Agropecuaria</div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>Caixa aberto - {new Date(caixa.aberto_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
         </div>

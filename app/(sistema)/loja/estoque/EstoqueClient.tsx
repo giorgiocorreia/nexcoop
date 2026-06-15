@@ -62,7 +62,7 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Estoque</h1>
+          <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:4}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
           <p style={{ margin: 0, color: '#888', fontSize: '13px', marginTop: '3px' }}>Posição atual, lotes e movimentações</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>

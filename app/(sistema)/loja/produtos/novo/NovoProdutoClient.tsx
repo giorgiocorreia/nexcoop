@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { criarProduto } from '@/lib/loja/actions'
+import { Btn } from '@/components/ui/Btn'
 import type { LojaFornecedor, LojaUnidade } from '@/types/database'
 
 interface Props {
@@ -82,13 +83,8 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.75rem' }}>
-        <button
-          onClick={() => router.push('/loja/produtos')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#888', padding: '0 0 4px', display: 'block' }}
-        >
-          ← Produtos
-        </button>
-        <h1 style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>Novo produto</h1>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
+        <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -216,20 +212,10 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
         )}
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={() => router.push('/loja/produtos')}
-            style={{ padding: '9px 18px', background: '#f5f3ef', color: '#555', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={salvando}
-            style={{ padding: '9px 18px', background: '#E07B30', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}
-          >
+          <Btn variante="cinza" onClick={() => router.push('/loja/produtos')}>Cancelar</Btn>
+          <Btn type="submit" disabled={salvando} style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
             {salvando ? 'Salvando…' : 'Criar produto'}
-          </button>
+          </Btn>
         </div>
 
       </form>

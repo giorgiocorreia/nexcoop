@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { atualizarProduto } from '@/lib/loja/actions'
+import { Btn } from '@/components/ui/Btn'
 import type { LojaFornecedor, LojaUnidade, LojaLote } from '@/types/database'
 import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
 import type { PosicaoEstoque } from '@/lib/loja/types'
@@ -107,16 +108,9 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.75rem' }}>
-        <button
-          onClick={() => router.push('/loja/produtos')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#888', padding: '0 0 4px', display: 'block' }}
-        >
-          ← Produtos
-        </button>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}><i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>
-            {produto.nome}
-          </h1>
+          <Btn variante="cinza" tamanho="sm" onClick={() => router.push('/loja/produtos')}>← Produtos</Btn>
           {!podeGerenciar && (
             <span style={{ fontSize: '12px', color: '#888', background: '#f5f3ef', padding: '4px 10px', borderRadius: '20px' }}>
               Somente visualização
@@ -268,20 +262,10 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
 
         {podeGerenciar && (
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '24px' }}>
-            <button
-              type="button"
-              onClick={() => router.push('/loja/produtos')}
-              style={{ padding: '9px 18px', background: '#f5f3ef', color: '#555', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando}
-              style={{ padding: '9px 18px', background: '#E07B30', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}
-            >
+            <Btn variante="cinza" onClick={() => router.push('/loja/produtos')}>Cancelar</Btn>
+            <Btn type="submit" disabled={salvando} style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
               {salvando ? 'Salvando…' : 'Salvar alterações'}
-            </button>
+            </Btn>
           </div>
         )}
 
