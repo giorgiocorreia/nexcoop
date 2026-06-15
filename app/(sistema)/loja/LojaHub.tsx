@@ -124,12 +124,13 @@ export default function LojaHub({ totalProdutos, totalFornecedores, estoqueBaixo
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#9ca3af',marginBottom:8}}>
-          <i className="ti ti-shopping-bag" style={{fontSize:14}}/> Loja Agropecuária
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+          <span>NexCoop</span>
+          <span>/</span>
+          <span>Loja</span>
+          <span>/</span>
+          <span>Gerenciamento de produtos, estoque e vendas</span>
         </div>
-        <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>
-          Gerencie vendas, estoque, compras e cadastros da loja.
-        </p>
       </div>
 
       {/* Abas */}
