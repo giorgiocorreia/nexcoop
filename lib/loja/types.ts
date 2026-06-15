@@ -55,3 +55,57 @@ export interface DashboardEstoque {
   proximos_vencimentos: (LojaLote & { produto_nome: string; dias_restantes: number })[]
   sem_movimento: (ProdutoLoja & { dias_sem_movimento: number })[]
 }
+
+// ─── PDV ────────────────────────────────────────────────────────────────────
+
+export type LojaTipoCliente = 'cooperado' | 'externo' | 'avulso'
+
+export type LojaTipoPagamento = 'dinheiro' | 'pix' | 'conta_corrente'
+
+export interface ItemCarrinho {
+  produto:                 ProdutoLoja
+  quantidade:              number
+  preco_unitario:          number
+  desconto_pct:            number
+  subtotal:                number
+  desconto_autorizado_por: string | null
+}
+
+export interface CooperadoIdentificado {
+  cooperado_id:       string
+  produtor_id:        string
+  nome:               string
+  saldo_financeiro:   number
+  tem_conta_corrente: boolean
+}
+
+export interface PagamentoVenda {
+  dinheiro:       number
+  pix:            number
+  conta_corrente: number
+  valor_recebido: number
+}
+
+export interface EstadoCaixa {
+  id:             string
+  usuario_id:     string
+  valor_abertura: number
+  aberto_em:      string
+  status:         'aberto' | 'fechado'
+}
+
+export interface PendenciaAutorizacao {
+  tipo:         'desconto_extra' | 'sangria'
+  descricao:    string
+  onAutorizado: (autorizadorId: string, nome: string) => void
+}
+
+export interface ResultadoFinalizarVenda {
+  vendaId: string
+}
+
+export interface ResultadoValidarSenha {
+  valido:          boolean
+  autorizador_id?: string
+  nome?:           string
+}

@@ -663,3 +663,342 @@ export async function getDashboardEstoque() {
     return { error: String(e) }
   }
 }
+
+// ─── PDV ────────────────────────────────────────────────────────────────────
+
+import { registrarLog } from '@/lib/audit/logger'
+import { podeAutorizarDescontoExtra } from '@/lib/permissoes'
+import type {
+  ItemCarrinho,
+  LojaTipoCliente,
+  PagamentoVenda,
+  CooperadoIdentificado,
+  ResultadoFinalizarVenda,
+  ResultadoValidarSenha,
+  EstadoCaixa,
+} from '@/lib/loja/types'
+
+// ── 1. Abrir Caixa ──────────────────────────────────────────────────────────
+
+export async function abrirCaixaLoja(
+  orgId: string,
+  usuarioId: string,
+  valorAbertura: number
+): Promise<{ caixaId: string } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { data: aberto } = await admin
+    .from('loja_caixas')
+    .select('id')
+    .eq('org_id', orgId)
+    .eq('status', 'aberto')
+    .maybeSingle()
+
+  if (aberto) return { error: 'Já existe um caixa aberto para esta organização.' }
+
+  const { data, error } = await admin
+    .from('loja_caixas')
+    .insert({ org_id: orgId, usuario_id: usuarioId, valor_abertura: valorAbertura, status: 'aberto', aberto_em: new Date().toISOString() })
+    .select('id')
+    .single()
+
+  if (error || !data) return { error: 'Erro ao abrir caixa.' }
+
+  await registrarLog({ orgId, usuarioId, acao: 'loja_caixa_aberto', detalhes: { caixa_id: data.id, valor_abertura: valorAbertura } })
+
+  return { caixaId: data.id }
+}
+
+// ── 2. Buscar Cooperado por CPF ──────────────────────────────────────────────
+
+export async function buscarCooperadoPorCPF(
+  orgId: string,
+  cpf: string
+): Promise<CooperadoIdentificado | null> {
+  const supabase = await createClient()
+  const cpfLimpo = cpf.replace(/\D/g, '')
+
+  const { data: org } = await supabase
+    .from('organizacoes')
+    .select('modulos_ativos')
+    .eq('id', orgId)
+    .single()
+
+  const temComercializacao = (org?.modulos_ativos ?? []).includes('comercializacao')
+
+  const { data } = await supabase
+    .from('cooperados')
+    .select(`
+      id,
+      produtor_id,
+      produtores!inner ( nome, cpf ),
+      contas_produtor ( saldo_financeiro )
+    `)
+    .eq('organizacao_id', orgId)
+    .eq('produtores.cpf', cpfLimpo)
+    .maybeSingle()
+
+  if (!data) return null
+
+  const produtor = data.produtores as { nome: string; cpf: string }
+  const conta = Array.isArray(data.contas_produtor) ? data.contas_produtor[0] : data.contas_produtor
+
+  return {
+    cooperado_id: data.id,
+    produtor_id: data.produtor_id,
+    nome: produtor.nome,
+    saldo_financeiro: conta?.saldo_financeiro ?? 0,
+    tem_conta_corrente: temComercializacao,
+  }
+}
+
+// ── 3. Validar Senha do Autorizador ─────────────────────────────────────────
+
+export async function validarSenhaAutorizador(
+  orgId: string,
+  senha: string
+): Promise<ResultadoValidarSenha> {
+  const admin = createAdminClient()
+
+  const { data: usuariosOrg } = await admin
+    .from('usuarios')
+    .select('id, nome_completo, funcoes')
+    .eq('organizacao_id', orgId)
+    .eq('ativo', true)
+
+  if (!usuariosOrg) return { valido: false }
+
+  const autorizadores = usuariosOrg.filter(u => podeAutorizarDescontoExtra(u.funcoes ?? []))
+
+  for (const autorizador of autorizadores) {
+    const { data: authData } = await admin.auth.admin.getUserById(autorizador.id)
+    if (!authData?.user?.email) continue
+
+    const { error } = await admin.auth.signInWithPassword({ email: authData.user.email, password: senha })
+    if (!error) {
+      return { valido: true, autorizador_id: autorizador.id, nome: autorizador.nome_completo ?? '' }
+    }
+  }
+
+  return { valido: false }
+}
+
+// ── 4. Finalizar Venda ───────────────────────────────────────────────────────
+
+export async function finalizarVenda(
+  orgId: string,
+  operadorId: string,
+  caixaId: string,
+  venda: {
+    cooperado_id?: string
+    tipo_cliente: LojaTipoCliente
+    total: number
+    desconto_total: number
+    pago_especie: number
+    pago_pix: number
+    pago_conta: number
+  },
+  itens: ItemCarrinho[]
+): Promise<ResultadoFinalizarVenda | { error: string }> {
+  const admin = createAdminClient()
+
+  // 1. Insere loja_vendas
+  const { data: vendaData, error: errVenda } = await admin
+    .from('loja_vendas')
+    .insert({
+      org_id: orgId,
+      caixa_id: caixaId,
+      cooperado_id: venda.cooperado_id ?? null,
+      tipo_cliente: venda.tipo_cliente,
+      total: venda.total,
+      desconto_total: venda.desconto_total,
+      pago_especie: venda.pago_especie,
+      pago_pix: venda.pago_pix,
+      criado_em: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+
+  if (errVenda || !vendaData) return { error: 'Erro ao registrar venda.' }
+
+  const vendaId = vendaData.id
+
+  // 2. Insere itens + baixa FIFO por item
+  for (const item of itens) {
+    await admin.from('loja_venda_itens').insert({
+      venda_id: vendaId,
+      produto_id: item.produto.id,
+      quantidade: item.quantidade,
+      preco_unitario: item.preco_unitario,
+      desconto_pct: item.desconto_pct,
+      desconto_autorizado_por: item.desconto_autorizado_por ?? null,
+      subtotal: item.subtotal,
+    })
+
+    // Baixa FIFO
+    let qtdRestante = item.quantidade
+
+    const { data: lotes } = await admin
+      .from('loja_lotes')
+      .select('id, quantidade_atual')
+      .eq('produto_id', item.produto.id)
+      .gt('quantidade_atual', 0)
+      .order('data_validade', { ascending: true })
+
+    for (const lote of lotes ?? []) {
+      if (qtdRestante <= 0) break
+      const usar = Math.min(lote.quantidade_atual, qtdRestante)
+
+      await admin.from('loja_lotes').update({ quantidade_atual: lote.quantidade_atual - usar }).eq('id', lote.id)
+      await admin.from('loja_estoque_movimentos').insert({
+        org_id: orgId,
+        produto_id: item.produto.id,
+        lote_id: lote.id,
+        tipo: 'saida_venda',
+        quantidade: usar,
+        referencia_id: vendaId,
+        criado_em: new Date().toISOString(),
+      })
+
+      qtdRestante -= usar
+    }
+
+    await admin
+      .from('loja_produtos')
+      .update({ estoque_atual: item.produto.estoque_atual - item.quantidade })
+      .eq('id', item.produto.id)
+  }
+
+  // 3. Débito em conta corrente
+  if (venda.pago_conta > 0 && venda.cooperado_id) {
+    const { data: contaData } = await admin
+      .from('contas_produtor')
+      .select('id, saldo_financeiro')
+      .eq('organizacao_id', orgId)
+      .eq('produtor_id', venda.cooperado_id)
+      .maybeSingle()
+
+    if (contaData) {
+      const novoSaldo = contaData.saldo_financeiro - venda.pago_conta
+      await admin.from('movimentacoes_conta').insert({
+        organizacao_id: orgId,
+        conta_id: contaData.id,
+        tipo: 'compra_loja',
+        valor: -venda.pago_conta,
+        saldo_apos: novoSaldo,
+        descricao: `Compra na Loja — Venda #${vendaId.slice(-6).toUpperCase()}`,
+        criado_em: new Date().toISOString(),
+      })
+      await admin.from('contas_produtor').update({ saldo_financeiro: novoSaldo }).eq('id', contaData.id)
+    }
+  }
+
+  await registrarLog({ orgId, usuarioId: operadorId, acao: 'loja_venda_finalizada', detalhes: { venda_id: vendaId, total: venda.total } })
+
+  return { vendaId }
+}
+
+// ── 5. Cancelar Venda ────────────────────────────────────────────────────────
+
+export async function cancelarVenda(
+  orgId: string,
+  vendaId: string,
+  operadorId: string
+): Promise<{ ok: boolean } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { data: venda } = await admin
+    .from('loja_vendas')
+    .select('id, cooperado_id, pago_especie, pago_pix, total')
+    .eq('id', vendaId)
+    .eq('org_id', orgId)
+    .single()
+
+  if (!venda) return { error: 'Venda não encontrada.' }
+
+  // Estorna movimentos de estoque
+  const { data: movimentos } = await admin
+    .from('loja_estoque_movimentos')
+    .select('id, produto_id, lote_id, quantidade')
+    .eq('referencia_id', vendaId)
+    .eq('tipo', 'saida_venda')
+
+  for (const mov of movimentos ?? []) {
+    const { data: lote } = await admin.from('loja_lotes').select('quantidade_atual').eq('id', mov.lote_id).single()
+    if (lote) await admin.from('loja_lotes').update({ quantidade_atual: lote.quantidade_atual + mov.quantidade }).eq('id', mov.lote_id)
+
+    const { data: prod } = await admin.from('loja_produtos').select('estoque_atual').eq('id', mov.produto_id).single()
+    if (prod) await admin.from('loja_produtos').update({ estoque_atual: prod.estoque_atual + mov.quantidade }).eq('id', mov.produto_id)
+
+    await admin.from('loja_estoque_movimentos').insert({
+      org_id: orgId,
+      produto_id: mov.produto_id,
+      lote_id: mov.lote_id,
+      tipo: 'entrada_estorno',
+      quantidade: mov.quantidade,
+      referencia_id: vendaId,
+      criado_em: new Date().toISOString(),
+    })
+  }
+
+  // Estorna conta corrente se havia débito
+  const { data: movConta } = await admin
+    .from('movimentacoes_conta')
+    .select('id, conta_id, valor')
+    .eq('referencia_id', vendaId)
+    .eq('tipo', 'compra_loja')
+    .maybeSingle()
+
+  if (movConta) {
+    const { data: conta } = await admin.from('contas_produtor').select('saldo_financeiro').eq('id', movConta.conta_id).single()
+    if (conta) {
+      const novoSaldo = conta.saldo_financeiro + Math.abs(movConta.valor)
+      await admin.from('movimentacoes_conta').insert({
+        organizacao_id: orgId,
+        conta_id: movConta.conta_id,
+        tipo: 'estorno_compra_loja',
+        valor: Math.abs(movConta.valor),
+        saldo_apos: novoSaldo,
+        descricao: `Estorno — Venda cancelada #${vendaId.slice(-6).toUpperCase()}`,
+        criado_em: new Date().toISOString(),
+      })
+      await admin.from('contas_produtor').update({ saldo_financeiro: novoSaldo }).eq('id', movConta.conta_id)
+    }
+  }
+
+  await admin.from('loja_vendas').update({ status: 'cancelada' }).eq('id', vendaId)
+  await registrarLog({ orgId, usuarioId: operadorId, acao: 'loja_venda_cancelada', detalhes: { venda_id: vendaId } })
+
+  return { ok: true }
+}
+
+// ── 6. Registrar Sangria ─────────────────────────────────────────────────────
+
+export async function registrarSangriaLoja(
+  orgId: string,
+  caixaId: string,
+  tipo: 'aporte' | 'sangria',
+  valor: number,
+  autorizado_por: string,
+  executado_por: string,
+  observacoes?: string
+): Promise<{ ok: boolean } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { error } = await admin.from('loja_sangrias').insert({
+    org_id: orgId,
+    caixa_id: caixaId,
+    tipo,
+    valor,
+    autorizado_por,
+    executado_por,
+    observacoes: observacoes ?? null,
+    created_at: new Date().toISOString(),
+  })
+
+  if (error) return { error: 'Erro ao registrar sangria.' }
+
+  await registrarLog({ orgId, usuarioId: executado_por, acao: 'loja_sangria', detalhes: { tipo, valor, caixa_id: caixaId, autorizado_por } })
+
+  return { ok: true }
+}
