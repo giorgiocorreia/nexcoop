@@ -25,6 +25,8 @@ const VINCULO_LABEL: Record<string, string> = {
 const FUNCAO_LABEL: Record<string, string> = {
   admin: 'Administrador', financeiro: 'Financeiro', tecnico: 'Técnico',
   conselho_fiscal: 'Conselho Fiscal', captador: 'Captador',
+  caixa_cacau: 'Caixa Cacau', gerente_loja: 'Gerente Loja',
+  caixa_loja: 'Operador de Caixa (Loja)', estoquista_loja: 'Estoquista Loja',
 }
 
 interface Props {

@@ -8,7 +8,7 @@
 | Fase 1 | lib/loja/types.ts, actions.ts, permissões | ✅ Concluído |
 | Fase 2 | /loja, /loja/produtos, /loja/categorias | ✅ Concluído |
 | Fase 3 | /loja/estoque, /loja/compras | ✅ Concluído — migration 037 aplicada |
-| Fase 4 | PDV — Ponto de Venda | ⬜ Próxima |
+| Fase 4 | PDV — Ponto de Venda | ✅ Concluído |
 | Fase 5 | Dashboard e Relatórios | ⬜ Planejada |
 
 ---
