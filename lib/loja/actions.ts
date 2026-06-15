@@ -769,7 +769,7 @@ export async function validarSenhaAutorizador(
 
   if (!usuariosOrg) return { valido: false }
 
-  const autorizadores = usuariosOrg.filter(u => podeAutorizarDescontoExtra(u.funcoes ?? []))
+  const autorizadores = usuariosOrg.filter(u => podeAutorizarDescontoExtra({ role: u.role ?? '', funcoes: u.funcoes ?? [] }))
 
   for (const autorizador of autorizadores) {
     const { data: authData } = await admin.auth.admin.getUserById(autorizador.id)
