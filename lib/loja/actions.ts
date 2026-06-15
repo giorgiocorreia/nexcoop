@@ -763,7 +763,7 @@ export async function validarSenhaAutorizador(
 
   const { data: usuariosOrg } = await admin
     .from('usuarios')
-    .select('id, nome_completo, funcoes')
+    .select('id, nome_completo, funcoes, role')
     .eq('organizacao_id', orgId)
     .eq('ativo', true)
 
