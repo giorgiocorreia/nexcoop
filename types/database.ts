@@ -446,13 +446,18 @@ export interface LojaVendaItem {
 }
 
 export interface LojaCompra {
-  id:            string
-  org_id:        string
-  fornecedor_id: string
-  usuario_id:    string
-  numero_nota:   string | null
-  total:         number
-  criado_em:     string
+  id:                      string
+  org_id:                  string
+  fornecedor_id:           string
+  usuario_id:              string
+  numero_nf:               string | null
+  data_compra:             string
+  valor_frete:             number
+  outros_custos_valor:     number
+  outros_custos_descricao: string | null
+  observacoes:             string | null
+  total:                   number
+  criado_em:               string
 }
 
 export interface LojaCompraItem {
