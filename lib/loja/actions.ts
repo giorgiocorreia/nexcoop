@@ -271,3 +271,45 @@ export async function excluirProduto(id: string) {
     return { error: String(e) }
   }
 }
+
+// ── Categorias ────────────────────────────────────────────────────────────────
+
+export async function listarCategorias() {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data, error } = await supabase
+      .from('loja_produtos')
+      .select('categoria')
+      .eq('org_id', orgId)
+      .not('categoria', 'is', null)
+    if (error) return { error: traduzirErro(error.message) }
+
+    const counts: Record<string, number> = {}
+    for (const p of data ?? []) {
+      if (p.categoria) counts[p.categoria] = (counts[p.categoria] ?? 0) + 1
+    }
+    const cats = Object.entries(counts)
+      .map(([nome, total]) => ({ nome, total }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    return { data: cats }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+export async function renomearCategoria(oldName: string, newName: string) {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { error } = await supabase
+      .from('loja_produtos')
+      .update({ categoria: newName.trim() })
+      .eq('org_id', orgId)
+      .eq('categoria', oldName)
+    if (error) return { error: traduzirErro(error.message) }
+    revalidatePath('/loja/categorias')
+    revalidatePath('/loja/produtos')
+    return { ok: true }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
