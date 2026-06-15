@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Btn } from '@/components/ui/Btn'
 import type { DashboardEstoque, ProdutoLoja } from '@/lib/loja/types'
 
 interface ProdutoEstoque extends ProdutoLoja {
@@ -40,6 +42,7 @@ const cardStyle: React.CSSProperties = {
 }
 
 export default function EstoqueClient({ dashboard, produtos }: Props) {
+  const router = useRouter()
   const [filtro, setFiltro] = useState<'todos' | 'criticos' | 'ok'>('todos')
   const [busca, setBusca] = useState('')
 
@@ -72,18 +75,12 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
           <p style={{ margin: 0, color: '#888', fontSize: '13px', marginTop: '3px' }}>Posição atual, lotes e movimentações</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/loja/compras/nova" style={{
-            background: LARANJA, color: '#fff', padding: '9px 18px',
-            borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none',
-          }}>
-            + Nova compra
-          </Link>
-          <Link href="/loja/estoque/ajuste" style={{
-            background: '#fff', color: '#1a1a1a', padding: '9px 18px',
-            border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none',
-          }}>
+          <Btn icone="ti-plus" onClick={() => router.push('/loja/compras/nova')} style={{ background: LARANJA, color: '#fff', border: `1.5px solid ${LARANJA}` }}>
+            Nova compra
+          </Btn>
+          <Btn icone="ti-adjustments" onClick={() => router.push('/loja/estoque/ajuste')} variante="cinza">
             Ajuste / Inventário
-          </Link>
+          </Btn>
         </div>
       </div>
 
@@ -139,11 +136,12 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
                 {['Produto', 'Unidade', 'Saldo atual', 'Mínimo', 'Valor em estoque', 'Status'].map(h => (
                   <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#888', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
+                <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#888' }}>Ação</th>
               </tr>
             </thead>
             <tbody>
               {filtrados.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>Nenhum produto encontrado</td></tr>
+                <tr><td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>Nenhum produto encontrado</td></tr>
               ) : filtrados.map(p => {
                 const critico = p.estoque_minimo != null && p.estoque_atual < p.estoque_minimo
                 return (
@@ -165,6 +163,11 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
                       }}>
                         {critico ? 'Crítico' : 'OK'}
                       </span>
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      <Btn tamanho="sm" variante="cinza" icone="ti-shopping-cart" onClick={() => router.push(`/loja/compras/nova?produto=${p.id}`)}>
+                        Comprar
+                      </Btn>
                     </td>
                   </tr>
                 )
