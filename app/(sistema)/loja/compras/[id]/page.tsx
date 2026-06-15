@@ -49,11 +49,11 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
           <span>NexCoop</span>
-          <span>/</span>
+          <span style={{ color: '#d1d5db' }}>/</span>
           <span>Loja</span>
-          <span>/</span>
+          <span style={{ color: '#d1d5db' }}>/</span>
           <span>Detalhe da Compra</span>
         </div>
         <Link href="/loja/compras" style={{ color: '#888', fontSize: '13px', textDecoration: 'none' }}>
