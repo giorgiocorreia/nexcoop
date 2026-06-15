@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Sidebar from '@/components/Sidebar'
+import MainContent from '@/app/(sistema)/MainContent'
 import { sairDaOrg } from '@/app/actions/impersonation'
 import { sairDaOrgParceiro } from '@/app/actions/parceiro'
 import { isParceiro } from '@/lib/parceiros/actions'
@@ -129,7 +130,7 @@ export default async function SistemaLayout({
         isParceiroAcessandoOrg={isParceiroAcessandoOrg}
         modulosAcesso={modulosAcessoParceiro}
       />
-      <div style={{ flex: 1, marginLeft: '240px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <MainContent>
 
         {/* Banner parceiro acessando org */}
         {isParceiroAcessandoOrg && organizacao && (
@@ -198,7 +199,7 @@ export default async function SistemaLayout({
         }}>
           {children}
         </main>
-      </div>
+      </MainContent>
     </div>
   )
 }

@@ -30,45 +30,44 @@ const NAV_ADMIN: NavGrupo[] = [
   {
     grupo: 'Plataforma',
     itens: [
-      { label: 'Organizações', href: '/admin',          icone: '🏢', exact: true },
-      { label: 'Usuários',     href: '/admin/usuarios', icone: '👥', em_breve: true },
-      { label: 'Módulos',      href: '/admin/modulos',  icone: '🧩', em_breve: true },
-      { label: 'Planos',       href: '/admin/planos',   icone: '💳', em_breve: true },
-      { label: 'Manuais',      href: '/admin/manuais',    icone: '📚' },
-      { label: 'Logs',         href: '/admin/logs',       icone: '📋' },
-      { label: 'Novidades',    href: '/admin/changelog',  icone: '🕐' },
+      { label: 'Organizações', href: '/admin',           icone: '🏢', exact: true },
+      { label: 'Usuários',     href: '/admin/usuarios',  icone: '👥', em_breve: true },
+      { label: 'Módulos',      href: '/admin/modulos',   icone: '🧩', em_breve: true },
+      { label: 'Planos',       href: '/admin/planos',    icone: '💳', em_breve: true },
+      { label: 'Manuais',      href: '/admin/manuais',   icone: '📚' },
+      { label: 'Logs',         href: '/admin/logs',      icone: '📋' },
+      { label: 'Novidades',    href: '/admin/changelog', icone: '🕐' },
     ],
   },
 ]
 
 const CONTABIL_ITENS: NavItem[] = [
-  { label: 'Plano de Contas',     href: '/contabil/plano-de-contas', icone: '📋' },
-  { label: 'Escrituração',        href: '/contabil/escrituracao',    icone: '✏️' },
-  { label: 'Balancete',           href: '/contabil/balancete',       icone: '⚖️' },
-  { label: 'DRE',                 href: '/contabil/dre',             icone: '📈' },
-  { label: 'Balanço Patrimonial', href: '/contabil/balanco',         icone: '🏦' },
-  { label: 'Livro Razão',         href: '/contabil/razao',           icone: '📖' },
-  { label: 'Livro Diário',        href: '/contabil/diario',          icone: '📒' },
+  { label: 'Plano de Contas',      href: '/contabil/plano-de-contas', icone: '📋' },
+  { label: 'Escrituração',         href: '/contabil/escrituracao',    icone: '✏️' },
+  { label: 'Balancete',            href: '/contabil/balancete',       icone: '⚖️' },
+  { label: 'DRE',                  href: '/contabil/dre',             icone: '📈' },
+  { label: 'Balanço Patrimonial',  href: '/contabil/balanco',         icone: '🏦' },
+  { label: 'Livro Razão',          href: '/contabil/razao',           icone: '📖' },
+  { label: 'Livro Diário',         href: '/contabil/diario',          icone: '📒' },
   { label: 'Resultado & Destinações', href: '/contabil/sobras',       icone: '💰' },
-  { label: 'Conciliação Bancária', href: '/contabil/conciliacao',    icone: '🏦' },
-  { label: 'Calendário',           href: '/contabil/calendario',     icone: '📅' },
-  { label: 'NF-e',                href: '/contabil/nfe',             icone: '🧾' },
-  { label: 'Exportações',         href: '/contabil/exportacoes',     icone: '📤' },
+  { label: 'Conciliação Bancária', href: '/contabil/conciliacao',     icone: '🏦' },
+  { label: 'Calendário',           href: '/contabil/calendario',      icone: '📅' },
+  { label: 'NF-e',                 href: '/contabil/nfe',             icone: '🧾' },
+  { label: 'Exportações',          href: '/contabil/exportacoes',     icone: '📤' },
 ]
 
 function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null, isParceiro?: boolean): NavGrupo[] {
   const funcoes = (usuario?.funcoes ?? []) as string[]
-  const isAdmin         = funcoes.includes('admin')
-  const isContador      = funcoes.includes('contador') || funcoes.includes('contador_aux')
-  const isFinanceiro    = funcoes.includes('financeiro')
-  const isTecnico       = funcoes.includes('tecnico')
-  const isCaptador      = funcoes.includes('captador')
+  const isAdmin          = funcoes.includes('admin')
+  const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
+  const isFinanceiro     = funcoes.includes('financeiro')
+  const isTecnico        = funcoes.includes('tecnico')
+  const isCaptador       = funcoes.includes('captador')
   const isConselhoFiscal = funcoes.includes('conselho_fiscal')
-  const isCaixaCacau    = funcoes.includes('caixa_cacau')
+  const isCaixaCacau     = funcoes.includes('caixa_cacau')
 
   const grupos: NavGrupo[] = []
 
-  // ── PRINCIPAL ─────────────────────────────────────────────────────────────
   const principalItens: NavItem[] = []
   if (isAdmin || isFinanceiro || isTecnico || isConselhoFiscal)
     principalItens.push({ label: 'Dashboard',    href: '/dashboard',    icone: '📊' })
@@ -85,7 +84,6 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (principalItens.length > 0)
     grupos.push({ grupo: 'Principal', itens: principalItens })
 
-  // ── AGRO ──────────────────────────────────────────────────────────────────
   const agroItens: NavItem[] = []
   if (isAdmin || isTecnico)
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
@@ -94,12 +92,11 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin && temModulo(usuario?.organizacao?.modulos_ativos, 'loja'))
     agroItens.push(
       { label: 'Loja', href: '/loja', icone: '🏪' },
-      { label: 'PDV', href: '/loja/pdv', icone: '🛒' },
+      { label: 'PDV',  href: '/loja/pdv', icone: '🛒' },
     )
   if (agroItens.length > 0)
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
-  // ── PROJETOS ──────────────────────────────────────────────────────────────
   const projetosItens: NavItem[] = []
   if (isAdmin || isCaptador)
     projetosItens.push({ label: 'Captação', href: '/captacao', icone: '🎯' })
@@ -112,22 +109,19 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (projetosItens.length > 0)
     grupos.push({ grupo: 'Projetos', itens: projetosItens })
 
-  // ── CONTÁBIL ──────────────────────────────────────────────────────────────
   if (isAdmin || isContador)
     grupos.push({ grupo: 'Contábil', itens: CONTABIL_ITENS })
 
-  // ── ESCRITÓRIO (parceiros e contadores) ──────────────────────────────────
   if (isParceiro || isContador)
     grupos.push({
       grupo: 'Escritório',
       itens: [
-        { label: 'Painel',          href: '/escritorio',                     icone: '🏦' },
-        { label: 'Equipe',          href: '/escritorio/equipe',               icone: '👥' },
-        { label: 'Plano de Contas', href: '/escritorio/plano-de-contas',      icone: '📋' },
+        { label: 'Painel',          href: '/escritorio',                 icone: '🏦' },
+        { label: 'Equipe',          href: '/escritorio/equipe',          icone: '👥' },
+        { label: 'Plano de Contas', href: '/escritorio/plano-de-contas', icone: '📋' },
       ],
     })
 
-  // ── CONTA (Configurações somente admin — Sair fica no footer) ─────────────
   if (isAdmin)
     grupos.push({
       grupo: 'Conta',
@@ -156,6 +150,8 @@ interface Props {
   orgNome?: string
   isParceiroAcessandoOrg?: boolean
   modulosAcesso?: string[]
+  collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 function labelUsuario(usuario: { role: string; funcoes: string[] } | null | undefined): string {
@@ -165,12 +161,27 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
   return FUNCAO_LABEL[usuario.funcoes[0]] || usuario.funcoes[0]
 }
 
+const SIDEBAR_KEY = 'nexcoop_sidebar_collapsed'
+
 export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg, modulosAcesso }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
   const supabase = createClient()
 
+  const [collapsed, setCollapsed] = useState(false)
   const [nomeDisplay, setNomeDisplay] = useState(usuario?.nome_completo || '')
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SIDEBAR_KEY)
+    if (saved === 'true') setCollapsed(true)
+  }, [])
+
+  function toggleCollapsed() {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem(SIDEBAR_KEY, String(next))
+    window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: next } }))
+  }
 
   useEffect(() => {
     if (isParceiro && !nomeDisplay) {
@@ -192,13 +203,36 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
   const isSuperAdmin = usuario?.role === 'super_admin'
   const org = usuario?.organizacao
+  const W = collapsed ? 56 : 240
 
   function renderItem(item: NavItem) {
     const ativo = item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(item.href + '/')
+
+    if (collapsed) {
+      return (
+        <button
+          key={item.href}
+          onClick={() => !item.em_breve && router.push(item.href)}
+          title={item.label}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '8px 0', background: ativo ? '#EEEDFE' : 'transparent',
+            border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
+            opacity: item.em_breve ? 0.4 : 1,
+          }}
+          onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+          onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+        >
+          <span style={{ fontSize: '18px' }}>{item.icone}</span>
+        </button>
+      )
+    }
+
     return (
-      <button key={item.href}
+      <button
+        key={item.href}
         onClick={() => !item.em_breve && router.push(item.href)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
@@ -224,13 +258,17 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
   function renderGrupo(label: string, itens: NavItem[]) {
     const sorted = [...itens.filter(i => !i.em_breve), ...itens.filter(i => i.em_breve)]
+    if (collapsed) {
+      return (
+        <div key={label} style={{ marginBottom: '0.25rem' }}>
+          <div style={{ height: 1, background: '#f0eeea', margin: '4px 8px' }} />
+          {sorted.map(renderItem)}
+        </div>
+      )
+    }
     return (
       <div key={label} style={{ marginBottom: '0.5rem' }}>
-        <div style={{
-          fontSize: '10px', fontWeight: '600', color: '#aaa',
-          textTransform: 'uppercase', letterSpacing: '0.8px',
-          padding: '0.5rem 1rem 0.25rem',
-        }}>
+        <div style={{ fontSize: '10px', fontWeight: '600', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0.5rem 1rem 0.25rem' }}>
           {label}
         </div>
         {sorted.map(renderItem)}
@@ -254,139 +292,151 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
     return buildNav(usuario, isParceiro).map(g => renderGrupo(g.grupo, g.itens))
   }
 
-  // Para parceiros: topo sempre "NexCoop"; empresa fica no link abaixo
-  const orgNome = isParceiro
-    ? 'NexCoop'
-    : isSuperAdmin
-    ? 'NexCoop'
-    : (org?.nome_curto || org?.nome || 'NexCoop')
-
-  const orgTipo = isSuperAdmin
-    ? 'Plataforma'
-    : org?.tipo === 'cooperativa' ? 'Cooperativa'
-    : org?.tipo === 'associacao'  ? 'Associação'
-    : org?.tipo === 'central'     ? 'Central'
-    : ''
+  function ToggleBtn() {
+    return (
+      <button
+        onClick={toggleCollapsed}
+        title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+        style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: '#f5f5f2', border: '1px solid #e5e3dc',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 13, color: '#888',
+          transition: 'background 0.15s',
+          flexShrink: 0,
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#e5e3dc')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#f5f5f2')}
+      >
+        {collapsed ? '›' : '‹'}
+      </button>
+    )
+  }
 
   return (
     <aside style={{
-      width: '240px', height: '100vh', background: '#ffffff',
+      width: `${W}px`, height: '100vh', background: '#ffffff',
       borderRight: '1px solid #e5e3dc', position: 'fixed', top: 0, left: 0,
       display: 'flex', flexDirection: 'column',
       fontFamily: 'system-ui, -apple-system, sans-serif', zIndex: 100,
+      transition: 'width 0.2s ease',
+      overflow: 'hidden',
     }}>
+
       {/* Cabeçalho */}
-      {isParceiro ? (
+      {collapsed ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 8px', borderBottom: '1px solid #e5e3dc', gap: 8 }}>
+          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <ToggleBtn />
+        </div>
+      ) : isParceiro ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem', borderBottom: '1px solid #e5e3dc', marginBottom: '1rem' }}>
-          <img
-            src="/images/logo-nexcoop-vertical.png"
-            alt="NexCoop"
-            style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }}
-          />
-          <div style={{ minWidth: 0 }}>
+          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {orgNomeProp}
             </div>
-            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>
-              Escritório Parceiro
-            </div>
+            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>Escritório Parceiro</div>
           </div>
+          <ToggleBtn />
         </div>
       ) : isSuperAdmin ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
-          <img
-            src="/images/logo-nexcoop-horizontal.png"
-            alt="NexCoop"
-            style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
+          <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <ToggleBtn />
         </div>
       ) : (
-        <Link
-          href="/configuracoes"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', borderBottom: '1px solid #e5e3dc', cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          title="Configurações da organização"
-        >
-          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-          <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
-          {org?.logo_url ? (
-            <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 100, objectFit: 'contain', flexShrink: 0 }} />
-          ) : (
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
-          )}
-          <SettingsIconHover />
-        </Link>
+        <div style={{ position: 'relative', borderBottom: '1px solid #e5e3dc' }}>
+          <Link
+            href="/configuracoes"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            title="Configurações da organização"
+          >
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
+            {org?.logo_url ? (
+              <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 80, objectFit: 'contain', flexShrink: 0 }} />
+            ) : (
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
+            )}
+            <SettingsIconHover />
+          </Link>
+          <div style={{ position: 'absolute', right: 10, bottom: 8 }}>
+            <ToggleBtn />
+          </div>
+        </div>
       )}
 
       {/* Navegação */}
-      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto', overflowX: 'hidden' }}>
         {renderNav()}
       </nav>
 
-      {/* Rodapé usuário */}
-      <div style={{ borderTop: '1px solid #e5e3dc', padding: '0.75rem 1rem' }}>
-        {isParceiro ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
-              background: '#EEEDFE',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '13px', fontWeight: '600', color: '#4840CC', flexShrink: 0,
-            }}>
-              {nomeDisplay?.charAt(0).toUpperCase() || 'U'}
+      {/* Rodapé */}
+      {!collapsed && (
+        <div style={{ borderTop: '1px solid #e5e3dc', padding: '0.75rem 1rem' }}>
+          {isParceiro ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
+                {nomeDisplay?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDisplay || 'Usuário'}</div>
+                  <div style={{ fontSize: 11, color: '#0F766E' }}>Parceiro</div>
+                </Link>
+              </div>
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
-                <div style={{ fontSize: '12px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {nomeDisplay || 'Usuário'}
-                </div>
-                <div style={{ fontSize: '11px', color: '#0F766E' }}>Parceiro</div>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <Link
-            href="/perfil"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s', margin: '0 4px 8px' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            title="Meu perfil"
+          ) : (
+            <Link
+              href="/perfil"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s', margin: '0 4px 8px' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              title="Meu perfil"
+            >
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: isSuperAdmin ? '#1a1a1a' : '#635BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff', flexShrink: 0 }}>
+                {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{usuario?.nome_completo || 'Usuário'}</div>
+                <div style={{ fontSize: 11, color: '#94A3B8' }}>{labelUsuario(usuario)}</div>
+              </div>
+              <UserEditIconHover />
+            </Link>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{ width: '100%', padding: '7px', background: 'transparent', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '12px', color: '#666', cursor: 'pointer' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fef2f2'; (e.currentTarget as HTMLButtonElement).style.color = '#dc2626' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#666' }}
           >
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: isSuperAdmin ? '#1a1a1a' : '#635BFF',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13, fontWeight: 600, color: '#fff', flexShrink: 0,
-            }}>
+            Sair da conta
+          </button>
+        </div>
+      )}
+
+      {/* Rodapé colapsado: só avatar + logout */}
+      {collapsed && (
+        <div style={{ borderTop: '1px solid #e5e3dc', padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <Link href="/perfil" title={usuario?.nome_completo || 'Perfil'} style={{ textDecoration: 'none' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: isSuperAdmin ? '#1a1a1a' : '#635BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
               {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {usuario?.nome_completo || 'Usuário'}
-              </div>
-              <div style={{ fontSize: 11, color: '#94A3B8' }}>{labelUsuario(usuario)}</div>
-            </div>
-            <UserEditIconHover />
           </Link>
-        )}
-        <button onClick={handleLogout} style={{
-          width: '100%', padding: '7px', background: 'transparent',
-          border: '1px solid #e5e3dc', borderRadius: '8px',
-          fontSize: '12px', color: '#666', cursor: 'pointer',
-        }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = '#fef2f2'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#dc2626'
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#666'
-          }}
-        >
-          Sair da conta
-        </button>
-      </div>
+          <button
+            onClick={handleLogout}
+            title="Sair da conta"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa', padding: '2px' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#aaa')}
+          >
+            ⏻
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
