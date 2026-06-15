@@ -85,9 +85,9 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-          <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>NexCoop</Link>
+          <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }}>NexCoop</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#1a1a1a')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>Loja</Link>
+          <Link href="/loja" style={{ color: '#6b7280', textDecoration: 'none' }}>Loja</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
           <span style={{ color: '#1a1a1a' }}>Novo Produto</span>
         </div>
