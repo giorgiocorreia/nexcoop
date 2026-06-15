@@ -92,7 +92,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
     agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
   if (isAdmin && temModulo(usuario?.organizacao?.modulos_ativos, 'loja'))
-    agroItens.push({ label: 'Loja', href: '/loja', icone: '🏪' })
+    agroItens.push(
+      { label: 'Loja', href: '/loja', icone: '🏪' },
+      { label: 'PDV', href: '/loja/pdv', icone: '🛒' },
+    )
   if (agroItens.length > 0)
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
