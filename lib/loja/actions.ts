@@ -1002,3 +1002,94 @@ export async function registrarSangriaLoja(
 
   return { ok: true }
 }
+
+// ── 7. Fechar Caixa ──────────────────────────────────────────────────────────
+
+export interface ResumoFechamento {
+  caixa_id: string
+  aberto_em: string
+  fechado_em: string
+  valor_abertura: number
+  total_vendas: number
+  total_especie: number
+  total_pix: number
+  total_sangrias: number
+  total_aportes: number
+  saldo_final_especie: number
+  qtd_vendas: number
+}
+
+export async function fecharCaixaLoja(
+  orgId: string,
+  caixaId: string,
+  operadorId: string
+): Promise<{ ok: boolean; resumo: ResumoFechamento } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { data: vendas } = await admin
+    .from('loja_vendas')
+    .select('total, pago_especie, pago_pix, status')
+    .eq('caixa_id', caixaId)
+    .eq('org_id', orgId)
+
+  const vendasConcluidas = (vendas ?? []).filter(v => v.status !== 'cancelada')
+  const totalVendas = vendasConcluidas.reduce((s, v) => s + (v.total ?? 0), 0)
+  const totalEspecie = vendasConcluidas.reduce((s, v) => s + (v.pago_especie ?? 0), 0)
+  const totalPix = vendasConcluidas.reduce((s, v) => s + (v.pago_pix ?? 0), 0)
+
+  const { data: sangriasRaw } = await (admin as any)
+    .from('loja_sangrias')
+    .select('tipo, valor')
+    .eq('caixa_id', caixaId)
+    .eq('org_id', orgId)
+
+  const sangrias = (sangriasRaw ?? []) as { tipo: string; valor: number | null }[]
+  const totalSangrias = sangrias.filter(s => s.tipo === 'sangria').reduce((acc, v) => acc + (v.valor ?? 0), 0)
+  const totalAportes = sangrias.filter(s => s.tipo === 'aporte').reduce((acc, v) => acc + (v.valor ?? 0), 0)
+
+  const { data: caixaData } = await admin
+    .from('loja_caixas')
+    .select('valor_abertura, aberto_em')
+    .eq('id', caixaId)
+    .single()
+
+  const valorAbertura = caixaData?.valor_abertura ?? 0
+  const saldoFinalEspecie = valorAbertura + totalEspecie + totalAportes - totalSangrias
+
+  const resumo: ResumoFechamento = {
+    caixa_id: caixaId,
+    aberto_em: caixaData?.aberto_em ?? new Date().toISOString(),
+    fechado_em: new Date().toISOString(),
+    valor_abertura: valorAbertura,
+    total_vendas: totalVendas,
+    total_especie: totalEspecie,
+    total_pix: totalPix,
+    total_sangrias: totalSangrias,
+    total_aportes: totalAportes,
+    saldo_final_especie: saldoFinalEspecie,
+    qtd_vendas: vendasConcluidas.length,
+  }
+
+  const { error } = await admin
+    .from('loja_caixas')
+    .update({
+      status: 'fechado',
+      fechado_em: resumo.fechado_em,
+      valor_fechamento: totalVendas,
+      total_especie: totalEspecie,
+      total_pix: totalPix,
+    })
+    .eq('id', caixaId)
+
+  if (error) return { error: 'Erro ao fechar caixa.' }
+
+  await registrarLog({
+    org_id: orgId,
+    usuario_id: operadorId,
+    modulo: 'loja',
+    acao: 'loja_caixa_fechado',
+    dados_depois: { caixa_id: caixaId, total_vendas: totalVendas },
+  })
+
+  return { ok: true, resumo }
+}

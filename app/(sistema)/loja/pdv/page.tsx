@@ -7,7 +7,9 @@ import {
   buscarCooperadoPorCPF,
   finalizarVenda,
   registrarSangriaLoja,
+  fecharCaixaLoja,
 } from '@/lib/loja/actions'
+import type { ResumoFechamento } from '@/lib/loja/actions'
 import { podeVenderLoja, orgTemModulo } from '@/lib/permissoes'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
@@ -18,6 +20,7 @@ import ModalQuantidade from './components/ModalQuantidade'
 import ModalAutorizacao from './components/ModalAutorizacao'
 import ModalPagamento from './components/ModalPagamento'
 import ModalComprovante from './components/ModalComprovante'
+import ModalFechamentoCaixa from './components/ModalFechamentoCaixa'
 import type {
   ProdutoLoja,
   ItemCarrinho,
@@ -42,9 +45,11 @@ export default function PDVPage() {
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
 
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoLoja | null>(null)
-  const [modal, setModal] = useState<'quantidade' | 'autorizacao' | 'pagamento' | 'comprovante' | 'sangria' | null>(null)
+  const [modal, setModal] = useState<'quantidade' | 'autorizacao' | 'pagamento' | 'comprovante' | 'sangria' | 'fechamento' | null>(null)
   const [pendencia, setPendencia] = useState<PendenciaAutorizacao | null>(null)
   const [vendaIdFinalizada, setVendaIdFinalizada] = useState<string | null>(null)
+  const [resumoFechamento, setResumoFechamento] = useState<ResumoFechamento | null>(null)
+  const [fechandoCaixa, setFechandoCaixa] = useState(false)
 
   const [cpfBusca, setCpfBusca] = useState('')
   const [buscandoCpf, setBuscandoCpf] = useState(false)
@@ -238,6 +243,16 @@ export default function PDVPage() {
     setModal('autorizacao')
   }
 
+  async function handleFecharCaixa() {
+    if (!orgId || !usuarioId || !caixa) return
+    setFechandoCaixa(true)
+    const res = await fecharCaixaLoja(orgId, caixa.id, usuarioId)
+    setFechandoCaixa(false)
+    if ('error' in res) { setErro(res.error); return }
+    setResumoFechamento(res.resumo)
+    setModal('fechamento' as any)
+  }
+
   if (carregando) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#6b7280', fontSize: 15 }}>
       Carregando PDV...
@@ -276,9 +291,15 @@ export default function PDVPage() {
             <div style={{ fontSize: 12, color: '#6b7280' }}>Caixa aberto - {new Date(caixa.aberto_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
         </div>
-        <Btn icone="ti-arrows-transfer-down" variante="cinza" tamanho="sm" onClick={() => setModal('sangria')}>
-          Sangria / Aporte
-        </Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn icone="ti-arrows-transfer-down" variante="cinza" tamanho="sm" onClick={() => setModal('sangria')}>
+            Sangria / Aporte
+          </Btn>
+          <Btn icone="ti-lock" tamanho="sm" onClick={handleFecharCaixa} disabled={fechandoCaixa}
+            style={{ background: '#1a1a2e', color: '#fff', border: '1.5px solid #1a1a2e' }}>
+            {fechandoCaixa ? 'Fechando...' : 'Fechar Caixa'}
+          </Btn>
+        </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -308,9 +329,10 @@ export default function PDVPage() {
                   value={cpfBusca}
                   onChange={e => {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11)
-                    const mask = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-                      .replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3')
-                      .replace(/(\d{3})(\d{0,3})/, '$1.$2')
+                    let mask = v
+                    if (v.length > 9) mask = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+                    else if (v.length > 6) mask = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+                    else if (v.length > 3) mask = v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
                     setCpfBusca(mask)
                     setErroCpf('')
                   }}
@@ -406,6 +428,16 @@ export default function PDVPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {modal === 'fechamento' && resumoFechamento && (
+        <ModalFechamentoCaixa
+          resumo={resumoFechamento}
+          confirmando={false}
+          onImprimir={() => window.open(`/api/loja/fechamento/${resumoFechamento.caixa_id}`, '_blank')}
+          onConfirmar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
+          onCancelar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
+        />
       )}
     </div>
   )
