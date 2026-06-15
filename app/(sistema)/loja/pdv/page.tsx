@@ -21,6 +21,7 @@ import ModalAutorizacao from './components/ModalAutorizacao'
 import ModalPagamento from './components/ModalPagamento'
 import ModalComprovante from './components/ModalComprovante'
 import ModalFechamentoCaixa from './components/ModalFechamentoCaixa'
+import { useToast } from '@/components/ui/Toast'
 import type {
   ProdutoLoja,
   ItemCarrinho,
@@ -33,6 +34,7 @@ import type {
 
 export default function PDVPage() {
   const supabase = createClient()
+  const { toast } = useToast()
 
   const [orgId, setOrgId] = useState<string | null>(null)
   const [usuarioId, setUsuarioId] = useState<string | null>(null)
@@ -86,13 +88,13 @@ export default function PDVPage() {
       setModulos(modulosOrg)
 
       if (!orgTemModulo(modulosOrg, 'loja')) {
-        setErro('Modulo Loja nao ativo para esta organizacao.')
+        toast('error', 'Módulo Loja não ativo para esta organização.')
         setCarregando(false)
         return
       }
 
       if (!podeVenderLoja(usuario)) {
-        setErro('Voce nao tem permissao para acessar o PDV.')
+        toast('error', 'Você não tem permissão para acessar o PDV.')
         setCarregando(false)
         return
       }
@@ -192,9 +194,10 @@ export default function PDVPage() {
     setAbrindoCaixa(true)
     const res = await abrirCaixaLoja(orgId, usuarioId, parseFloat(valorAbertura.replace(',', '.')) || 0)
     setAbrindoCaixa(false)
-    if ('error' in res) { setErro(res.error); return }
+    if ('error' in res) { toast('error', res.error); return }
     setCaixa({ id: res.caixaId, usuario_id: usuarioId, valor_abertura: parseFloat(valorAbertura) || 0, aberto_em: new Date().toISOString(), status: 'aberto' })
     setValorAbertura('')
+    toast('info', 'Caixa aberto com sucesso.')
   }
 
   async function handleFinalizarVenda(pagamento: PagamentoVenda) {
@@ -217,7 +220,7 @@ export default function PDVPage() {
       snap
     )
 
-    if ('error' in res) { setErro(res.error); return }
+    if ('error' in res) { toast('error', 'Erro ao finalizar venda.'); return }
     setVendaIdFinalizada(res.vendaId)
     setModal('comprovante')
     setCarrinho([])
@@ -248,7 +251,7 @@ export default function PDVPage() {
     setFechandoCaixa(true)
     const res = await fecharCaixaLoja(orgId, caixa.id, usuarioId)
     setFechandoCaixa(false)
-    if ('error' in res) { setErro(res.error); return }
+    if ('error' in res) { toast('error', res.error); return }
     setResumoFechamento(res.resumo)
     setModal('fechamento' as any)
   }

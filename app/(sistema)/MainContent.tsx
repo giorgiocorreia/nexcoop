@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const SIDEBAR_KEY = 'nexcoop_sidebar_collapsed'
 
@@ -20,15 +21,17 @@ export default function MainContent({ children }: { children: React.ReactNode })
   }, [])
 
   return (
-    <div style={{
-      flex: 1,
-      marginLeft: collapsed ? '56px' : '240px',
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      transition: 'margin-left 0.2s ease',
-    }}>
-      {children}
-    </div>
+    <ToastProvider>
+      <div style={{
+        flex: 1,
+        marginLeft: collapsed ? '56px' : '240px',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        transition: 'margin-left 0.2s ease',
+      }}>
+        {children}
+      </div>
+    </ToastProvider>
   )
 }

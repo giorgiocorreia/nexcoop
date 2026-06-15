@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { ItemCarrinho, CooperadoIdentificado } from '@/lib/loja/types'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   itens: ItemCarrinho[]
@@ -21,6 +22,7 @@ export default function PainelCarrinho({
   itens, cooperado, onAlterarDesconto, onRemoverItem, onFinalizar, onLimpar,
   totalBruto, totalDesconto, totalLiquido,
 }: Props) {
+  const { toast } = useToast()
   const [descontosEditando, setDescontosEditando] = useState<Record<number, string>>({})
 
   function handleDescontoBlur(index: number, item: ItemCarrinho) {
@@ -95,7 +97,14 @@ export default function PainelCarrinho({
         <div style={{ display: 'flex', gap: 8 }}>
           <Btn variante="cinza" onClick={onLimpar} style={{ flex: 1 }}>Limpar</Btn>
           <Btn
-            onClick={onFinalizar}
+            onClick={() => {
+              const semEstoque = itens.find(i => i.quantidade > i.produto.estoque_atual)
+              if (semEstoque) {
+                toast('warning', 'Estoque insuficiente')
+                return
+              }
+              onFinalizar()
+            }}
             disabled={itens.length === 0}
             style={{ flex: 2, background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30', justifyContent: 'center' }}
           >
