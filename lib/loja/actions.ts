@@ -745,8 +745,8 @@ export async function buscarCooperadoPorCPF(
   const conta = Array.isArray(data.contas_produtor) ? data.contas_produtor[0] : data.contas_produtor
 
   return {
-    cooperado_id: data.id,
-    produtor_id: data.produtor_id,
+    cooperado_id: data.id as string,
+    produtor_id: data.produtor_id as string,
     nome: produtor.nome,
     saldo_financeiro: conta?.saldo_financeiro ?? 0,
     tem_conta_corrente: temComercializacao,
