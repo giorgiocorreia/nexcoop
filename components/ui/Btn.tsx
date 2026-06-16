@@ -19,7 +19,7 @@ const CORES: Record<BtnVariante, CorVariante> = {
   verde:          { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
   roxo:           { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
   cinza:          { texto: '#374151', borda: '#d1d5db', bg: 'transparent', hoverBg: '#e5e7eb', hoverBorda: '#9ca3af' },
-  azul:           { texto: '#ffffff', borda: '#378ADD', bg: '#378ADD',     hoverBg: '#185FA5', hoverBorda: '#185FA5' },
+  azul:           { texto: '#374151', borda: '#378ADD', bg: 'transparent', hoverBg: '#378ADD', hoverBorda: '#378ADD' },
   'marrom-outline': { texto: '#92400e', borda: '#92400e', bg: 'transparent', hoverBg: '#92400e', hoverBorda: '#92400e', hoverTexto: '#ffffff' },
 }
 
