@@ -726,21 +726,15 @@ export async function buscarCooperadoPorCPF(
 
   const temComercializacao = (org?.modulos_ativos ?? []).includes('comercializacao')
 
-  console.log('[buscarCooperadoPorCPF] orgId:', orgId, 'cpfLimpo:', cpfLimpo)
-
-  // Busca todos os cooperados ativos da org e filtra por CPF em memória,
-  // evitando problemas de formato (com/sem máscara) e RLS
-  const { data: lista, error } = await admin
+  const { data, error } = await admin
     .from('cooperados')
-    .select('id, nome_completo, cpf, status, contas_produtor(id, saldo_financeiro)')
+    .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
     .eq('organizacao_id', orgId)
-    .not('status', 'in', '(demitido,excluido)')
+    .eq('cpf', cpfLimpo)
+    .eq('status', 'ativo')
+    .maybeSingle()
 
-  const data = (lista ?? []).find(
-    c => (c.cpf ?? '').replace(/\D/g, '') === cpfLimpo
-  ) ?? null
-
-  console.log('[buscarCooperadoPorCPF] lista.length:', lista?.length ?? 0, 'data:', data, 'error:', error)
+  console.log('[buscarCooperadoPorCPF] cpfLimpo:', cpfLimpo, 'data:', data, 'error:', error)
 
   if (!data) return null
 
