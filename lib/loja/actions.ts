@@ -728,7 +728,7 @@ export async function buscarCooperadoPorCPF(
 
   const { data, error } = await admin
     .from('cooperados')
-    .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
+    .select('id, nome_completo, cpf, usuario_id')
     .eq('organizacao_id', orgId)
     .eq('cpf', cpfLimpo)
     .eq('status', 'ativo')
@@ -738,15 +738,27 @@ export async function buscarCooperadoPorCPF(
 
   if (!data) return null
 
-  const conta = Array.isArray(data.contas_produtor)
-    ? data.contas_produtor[0]
-    : data.contas_produtor as any
+  // Busca saldo via produtor vinculado ao cooperado
+  let saldoFinanceiro = 0
+  if (temComercializacao) {
+    const { data: produtor } = await admin
+      .from('produtores')
+      .select('id, contas_produtor(saldo_financeiro)')
+      .eq('cooperado_id', data.id)
+      .eq('organizacao_id', orgId)
+      .maybeSingle()
+
+    const conta = Array.isArray((produtor as any)?.contas_produtor)
+      ? (produtor as any).contas_produtor[0]
+      : (produtor as any)?.contas_produtor
+    saldoFinanceiro = conta?.saldo_financeiro ?? 0
+  }
 
   return {
     cooperado_id: data.id as string,
     produtor_id: data.id as string,
     nome: data.nome_completo as string,
-    saldo_financeiro: conta?.saldo_financeiro ?? 0,
+    saldo_financeiro: saldoFinanceiro,
     tem_conta_corrente: temComercializacao,
   }
 }
