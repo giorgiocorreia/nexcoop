@@ -215,6 +215,7 @@ export default function PDVPage() {
         desconto_total: totalDesconto,
         pago_especie: pagamento.dinheiro,
         pago_pix: pagamento.pix,
+        pago_cartao: pagamento.cartao,
         pago_conta: pagamento.conta_corrente,
       },
       snap

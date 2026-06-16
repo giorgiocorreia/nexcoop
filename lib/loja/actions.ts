@@ -807,6 +807,7 @@ export async function finalizarVenda(
     desconto_total?: number
     pago_especie: number
     pago_pix: number
+    pago_cartao?: number
     pago_conta?: number
   },
   itens: ItemCarrinho[]
@@ -828,7 +829,7 @@ export async function finalizarVenda(
       total: venda.total,
       pago_especie: venda.pago_especie,
       pago_pix: venda.pago_pix,
-      pago_cartao: 0,
+      pago_cartao: venda.pago_cartao ?? 0,
       pago_saldo: venda.pago_conta ?? 0,
     })
     .select('id')

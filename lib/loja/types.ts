@@ -80,10 +80,14 @@ export interface CooperadoIdentificado {
 }
 
 export interface PagamentoVenda {
-  dinheiro:       number
-  pix:            number
-  conta_corrente: number
-  valor_recebido: number
+  dinheiro:          number
+  pix:               number
+  conta_corrente:    number
+  cartao:            number
+  tipo_cartao:       'debito' | 'credito' | null
+  nsu:               string
+  autorizacao:       string
+  valor_recebido:    number
 }
 
 export interface EstadoCaixa {
