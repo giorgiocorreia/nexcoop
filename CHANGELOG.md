@@ -1,5 +1,29 @@
 # NexCoop — Changelog
 
+## [15/06/2026] — Loja Agropecuária Fase 4 + Melhorias UI
+
+### Loja — PDV (Fase 4)
+- Migration 038: tabela `loja_sangrias`
+- 6 actions PDV: `abrirCaixaLoja`, `buscarCooperadoPorCPF`, `validarSenhaAutorizador`, `finalizarVenda` (FIFO), `cancelarVenda`, `registrarSangriaLoja`
+- 7 componentes PDV: `ModalAutorizacao`, `ModalQuantidade`, `BadgeCooperado`, `PainelProdutos`, `PainelCarrinho`, `ModalPagamento`, `ModalComprovante`
+- `ModalFechamentoCaixa` com resumo financeiro e opção de imprimir relatório
+- API routes: `/api/loja/comprovante/[id]` e `/api/loja/fechamento/[id]` (80mm térmico)
+- Validação de estoque insuficiente no `PainelCarrinho`
+- Máscara CPF no campo de busca de cooperado
+- `buscarCooperadoPorCPF` corrigida: busca em `cooperados.cpf` diretamente
+- Funções da loja inseridas em `funcoes_disponiveis`: `gerente_loja`, `caixa_loja`, `estoquista_loja`
+- Módulo `'loja'` ativo no COOPAIBI
+
+### UI Global
+- Sidebar colapsável: 56px (ícones) / 240px (expandido), persiste em `localStorage`, toggle com ícone Tabler
+- Toast system global (`ToastProvider` em `MainContent.tsx`): `success` (5s), `error` (manual), `warning` (5s), `info` (manual)
+- Breadcrumb clicável NexCoop/Loja/SubPágina em todas as páginas da loja
+- Hub `/loja` redesenhada: KPIs + acesso rápido + últimas compras + alerta estoque crítico
+- Botões padronizados com `<Btn>` em todas as páginas da loja
+- Títulos garrafais removidos, substituídos por breadcrumb estilo NexCoop
+
+---
+
 ## [15/06/2026] — Loja Agropecuária: Fases 0–3 + Controle de Módulos
 
 ### Infraestrutura (Passo 0)
@@ -272,6 +296,6 @@
 | Captação de Recursos | ✅ | 008 |
 | Módulo Contábil | ✅ | 015–024 |
 | Loja Agropecuária — Fases 0–3 | ✅ | 014, 037 |
-| Loja Agropecuária — Fase 4 PDV | ⏳ próximo chat | — |
+| Loja Agropecuária — Fase 4 PDV | ✅ | 038 |
 | Comercialização — Tesouraria | ✅ | 025–028 |
 | Comercialização — Notas/NF-e | ✅ | 029–030 |
