@@ -17,7 +17,7 @@ export default function ModalComprovante({ vendaId, onNovaVenda }: Props) {
           Venda <strong>#{vendaId.slice(-6).toUpperCase()}</strong> concluida com sucesso.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Btn icone="ti-printer" onClick={() => window.open(`/api/loja/comprovante/${vendaId}`, '_blank')}
+          <Btn icone="ti-printer" onClick={() => { window.open(`/api/loja/comprovante/${vendaId}`, '_blank'); onNovaVenda() }}
             style={{ justifyContent: 'center', background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30', width: '100%' }}>
             Imprimir comprovante
           </Btn>
