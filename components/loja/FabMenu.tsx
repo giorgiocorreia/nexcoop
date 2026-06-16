@@ -55,14 +55,14 @@ export default function FabMenu() {
               <Link href={a.href} onClick={() => setOpen(false)} style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: a.destaque ? "#fff" : "#374151",
-                background: a.destaque ? "#E07B30" : "#fff",
+                color: "#374151",
+                background: a.destaque ? "#378ADD" : "#fff",
                 padding: a.destaque ? "8px 18px" : "4px 12px",
                 borderRadius: 99,
                 border: a.destaque ? "none" : "1px solid #e5e3dc",
                 whiteSpace: "nowrap",
                 boxShadow: a.destaque
-                  ? "0 4px 12px rgba(224,123,48,0.35)"
+                  ? "0 4px 12px rgba(55,138,221,0.35)"
                   : "0 2px 6px rgba(0,0,0,0.06)",
                 textDecoration: "none",
                 display: "inline-block",
