@@ -1,5 +1,17 @@
 # NexCoop — Changelog
 
+## [16/06/2026] — Correções PDV Loja
+
+- fix: busca cooperado por CPF usando adminClient e tabela cooperados diretamente
+- fix: campos corretos em loja_vendas (pago_saldo, sem desconto_total)
+- fix: loja_venda_itens sem campos inexistentes
+- fix: comprovante PDF com queries separadas sem joins
+- feat: pagamento cartão débito/crédito com NSU e código de autorização
+- fix: modal comprovante fecha após imprimir
+- fix: máscara CPF corrigida
+
+---
+
 ## [15/06/2026] — Loja Agropecuária Fase 4 + Melhorias UI
 
 ### Loja — PDV (Fase 4)

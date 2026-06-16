@@ -73,8 +73,6 @@ export async function GET(
       .eq('id', id)
       .single()
 
-    console.log('[comprovante] venda:', venda, 'erro:', errVenda)
-
     if (!venda) return NextResponse.json({ error: 'Venda nao encontrada' }, { status: 404 })
 
     // 2. Busca itens separado

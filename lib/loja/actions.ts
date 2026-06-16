@@ -734,8 +734,6 @@ export async function buscarCooperadoPorCPF(
     .eq('status', 'ativo')
     .maybeSingle()
 
-  console.log('[buscarCooperadoPorCPF] cpfLimpo:', cpfLimpo, 'data:', data, 'error:', error)
-
   if (!data) return null
 
   // Busca saldo via produtor vinculado ao cooperado
@@ -834,8 +832,6 @@ export async function finalizarVenda(
     })
     .select('id')
     .single()
-
-  if (errVenda) console.error('[finalizarVenda] erro insert loja_vendas:', errVenda)
 
   if (errVenda || !vendaData) return { error: 'Erro ao registrar venda.' }
 
