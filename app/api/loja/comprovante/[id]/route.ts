@@ -23,17 +23,14 @@ const ACENTO_MAP: Record<string, string> = {
 function semAcento(str: string): string {
   return str.split('').map(c => ACENTO_MAP[c] ?? c).join('')
 }
-
 function formatarReal(v: number): string {
   const [i, d] = v.toFixed(2).split('.')
   return 'R$ ' + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + d
 }
-
 function formatarCNPJ(cnpj: string): string {
   const s = cnpj.replace(/\D/g, '')
   return s.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
 }
-
 function formatarDataHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -41,7 +38,6 @@ function formatarDataHora(iso: string): string {
     timeZone: 'America/Sao_Paulo',
   })
 }
-
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = text.split(' ')
   const lines: string[] = []
@@ -55,11 +51,9 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   if (line) lines.push(line)
   return lines
 }
-
 function centeredX(text: string, font: PDFFont, size: number): number {
   return Math.max(MARGIN, (PAGE_W - font.widthOfTextAtSize(text, size)) / 2)
 }
-
 function rightX(text: string, font: PDFFont, size: number): number {
   return PAGE_W - MARGIN - font.widthOfTextAtSize(text, size)
 }
@@ -72,12 +66,12 @@ export async function GET(
     const { id } = await params
     const admin = createAdminClient()
 
+    // Busca venda sem campos que não existem no schema
     const { data: venda } = await admin
       .from('loja_vendas')
       .select(`
-        id, org_id, total, desconto_total, pago_especie, pago_pix, criado_em,
-        tipo_cliente, cooperado_id,
-        loja_caixas ( usuario_id, usuarios ( nome_completo ) ),
+        id, org_id, total, pago_especie, pago_pix, criado_em,
+        tipo_cliente, cooperado_id, caixa_id,
         loja_venda_itens (
           quantidade, preco_unitario, desconto_pct, subtotal,
           loja_produtos ( nome, unidade )
@@ -88,24 +82,33 @@ export async function GET(
 
     if (!venda) return NextResponse.json({ error: 'Venda nao encontrada' }, { status: 404 })
 
+    // Busca operador via caixa
+    const { data: caixaData } = await admin
+      .from('loja_caixas')
+      .select('usuario_id, usuarios(nome_completo)')
+      .eq('id', venda.caixa_id)
+      .single()
+
+    const nomeOperador = (caixaData?.usuarios as any)?.nome_completo ?? 'Operador'
+
+    // Busca org
     const { data: org } = await admin
       .from('organizacoes')
       .select('nome, cnpj')
       .eq('id', venda.org_id)
       .single()
 
+    // Busca nome do cooperado se houver
     let nomeCooperado = ''
     if (venda.cooperado_id) {
       const { data: coop } = await admin
         .from('cooperados')
-        .select('produtores ( nome )')
+        .select('nome_completo')
         .eq('id', venda.cooperado_id)
         .single()
-      nomeCooperado = (coop?.produtores as any)?.nome ?? ''
+      nomeCooperado = coop?.nome_completo ?? ''
     }
 
-    const caixa = venda.loja_caixas as any
-    const nomeOperador = caixa?.usuarios?.nome_completo ?? 'Operador'
     const itens = (venda.loja_venda_itens ?? []) as unknown as any[]
 
     const pdfDoc = await PDFDocument.create()
@@ -128,9 +131,11 @@ export async function GET(
       page.drawText(text, { x: rightX(text, font, size), y, size, font, color: BLACK })
     }
 
+    // Cabeçalho
     txtC('LOJA AGROPECUARIA', fontB, 11); y -= 14
-    const nomeOrgLines = wrapText(semAcento((org as any)?.nome ?? '').toUpperCase(), fontB, 9, CONTENT_W)
-    for (const l of nomeOrgLines) { txtC(l, fontB, 9); y -= 12 }
+    for (const l of wrapText(semAcento((org as any)?.nome ?? '').toUpperCase(), fontB, 9, CONTENT_W)) {
+      txtC(l, fontB, 9); y -= 12
+    }
     if ((org as any)?.cnpj) { txtC(`CNPJ: ${formatarCNPJ((org as any).cnpj)}`, fontR, 8); y -= 11 }
 
     y -= 4; sep(); y -= 12
@@ -142,38 +147,29 @@ export async function GET(
     sep(); y -= 12
 
     txtL(`Operador: ${semAcento(nomeOperador)}`, fontR, 8); y -= 12
-    if (nomeCooperado) {
-      txtL(`Cooperado: ${semAcento(nomeCooperado)}`, fontR, 8); y -= 12
-    }
+    if (nomeCooperado) { txtL(`Cooperado: ${semAcento(nomeCooperado)}`, fontR, 8); y -= 12 }
 
     y -= 4; sep(); y -= 12
 
+    // Itens
     for (const item of itens) {
       const nomeProd = semAcento(item.loja_produtos?.nome ?? '')
-      const nomeLines = wrapText(nomeProd, fontR, 8, CONTENT_W)
-      for (const l of nomeLines) { txtL(l, fontR, 8); y -= 11 }
+      for (const l of wrapText(nomeProd, fontR, 8, CONTENT_W)) { txtL(l, fontR, 8); y -= 11 }
       const qtdStr = `${item.quantidade} ${item.loja_produtos?.unidade ?? ''}`
       const descStr = item.desconto_pct > 0 ? ` (-${item.desconto_pct}%)` : ''
-      const precoStr = `${qtdStr} x ${formatarReal(item.preco_unitario)}${descStr}`
-      txtL(precoStr, fontR, 7); txtR(formatarReal(item.subtotal), fontR, 8); y -= 13
+      txtL(`${qtdStr} x ${formatarReal(item.preco_unitario)}${descStr}`, fontR, 7)
+      txtR(formatarReal(item.subtotal), fontR, 8); y -= 13
     }
 
     sep(); y -= 12
 
-    const descontoTotal = (venda.desconto_total as number) ?? 0
-    if (descontoTotal > 0) {
-      txtL('Subtotal:', fontR, 8); txtR(formatarReal(venda.total + descontoTotal), fontR, 8); y -= 12
-      txtL('Desconto:', fontR, 8); txtR(`- ${formatarReal(descontoTotal)}`, fontR, 8); y -= 12
-    }
     txtL('TOTAL:', fontB, 9); txtR(formatarReal(venda.total), fontB, 9); y -= 14
 
     sep(); y -= 12
 
     if (venda.pago_especie > 0) { txtL('Dinheiro:', fontR, 8); txtR(formatarReal(venda.pago_especie), fontR, 8); y -= 12 }
     if (venda.pago_pix > 0) { txtL('Pix:', fontR, 8); txtR(formatarReal(venda.pago_pix), fontR, 8); y -= 12 }
-    const pagoConta = (venda as any).pago_conta ?? 0
-    if (pagoConta > 0) { txtL('Conta corrente:', fontR, 8); txtR(formatarReal(pagoConta), fontR, 8); y -= 12 }
-    const troco = Math.max(0, venda.pago_especie - (venda.total - venda.pago_pix - pagoConta))
+    const troco = Math.max(0, venda.pago_especie - venda.total + venda.pago_pix)
     if (troco > 0) { txtL('Troco:', fontR, 8); txtR(formatarReal(troco), fontR, 8); y -= 12 }
 
     y -= 4; sep(); y -= 14

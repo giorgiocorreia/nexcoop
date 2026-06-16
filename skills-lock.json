@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "image-handling": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": "skills/image-handling/SKILL.md",
+      "computedHash": ""
+    },
     "brainstorming": {
       "source": "obra/superpowers",
       "sourceType": "github",
