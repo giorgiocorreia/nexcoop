@@ -844,8 +844,6 @@ export async function finalizarVenda(
       produto_id: item.produto.id,
       quantidade: item.quantidade,
       preco_unitario: item.preco_unitario,
-      desconto_pct: item.desconto_pct,
-      desconto_autorizado_por: item.desconto_autorizado_por ?? null,
       subtotal: item.subtotal,
     })
 
