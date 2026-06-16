@@ -829,9 +829,12 @@ export async function finalizarVenda(
       pago_especie: venda.pago_especie,
       pago_pix: venda.pago_pix,
       pago_cartao: 0,
+      pago_saldo: venda.pago_conta ?? 0,
     })
     .select('id')
     .single()
+
+  if (errVenda) console.error('[finalizarVenda] erro insert loja_vendas:', errVenda)
 
   if (errVenda || !vendaData) return { error: 'Erro ao registrar venda.' }
 
@@ -883,11 +886,18 @@ export async function finalizarVenda(
 
   // 3. Débito em conta corrente
   if ((venda.pago_conta ?? 0) > 0 && venda.cooperado_id) {
+    const { data: produtor } = await admin
+      .from('produtores')
+      .select('id')
+      .eq('cooperado_id', venda.cooperado_id)
+      .eq('organizacao_id', orgId)
+      .maybeSingle()
+
     const { data: contaData } = await admin
       .from('contas_produtor')
       .select('id, saldo_financeiro')
       .eq('organizacao_id', orgId)
-      .eq('produtor_id', venda.cooperado_id)
+      .eq('produtor_id', produtor?.id ?? '')
       .maybeSingle()
 
     if (contaData) {
