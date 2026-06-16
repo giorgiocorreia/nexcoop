@@ -1,208 +1,430 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { temModulo } from '@/lib/org'
-import { podeVerEstoqueLoja, podeVenderLoja } from '@/lib/permissoes'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+import { temModulo } from "@/lib/org";
+import { podeVerEstoqueLoja, podeVenderLoja } from "@/lib/permissoes";
+import GraficoFaturamento from "@/components/loja/GraficoFaturamento";
+import {
+  getHubKpis,
+  getAlertasEstoque,
+  getTopProdutos,
+  getUltimasVendas,
+} from "@/lib/loja/hub-actions";
 
-export const metadata = { title: 'Loja — NexCoop' }
+export const metadata = { title: "Loja — NexCoop" };
 
-export default async function LojaPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function fmt(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function fmtLabel(forma: string) {
+  const map: Record<string, string> = {
+    dinheiro:  "Dinheiro",
+    pix:       "PIX",
+    cartao:    "Cartão",
+    pago_saldo: "Conta Coop.",
+  };
+  return map[forma] ?? forma;
+}
+
+async function getFaturamentoDiario(orgId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
+  const inicio = new Date();
+  inicio.setDate(inicio.getDate() - 29);
+  inicio.setHours(0, 0, 0, 0);
+
+  const { data } = await supabase
+    .from("loja_vendas")
+    .select("total, criado_em")
+    .eq("org_id", orgId)
+    .eq("status", "concluida")
+    .gte("criado_em", inicio.toISOString());
+
+  const mapa: Record<string, number> = {};
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(inicio);
+    d.setDate(d.getDate() + i);
+    const key = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    mapa[key] = 0;
+  }
+  for (const v of data ?? []) {
+    const key = new Date(v.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    if (key in mapa) mapa[key] += Number(v.total);
+  }
+
+  return Object.entries(mapa).map(([label, valor]) => ({ label, valor }));
+}
+
+// ── page ─────────────────────────────────────────────────────────────────────
+
+export default async function LojaHubPage() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('funcoes, role, organizacoes(modulos_ativos)')
-    .eq('id', user.id)
-    .single()
+    .from("usuarios")
+    .select("organizacao_id, nome_completo, role, funcoes, organizacoes(modulos_ativos)")
+    .eq("id", user.id)
+    .single();
 
-  const orgRaw = usuario?.organizacoes as any
-  const org = Array.isArray(orgRaw) ? orgRaw[0] : orgRaw
-  if (!temModulo(org?.modulos_ativos, 'loja')) redirect('/dashboard')
+  if (!usuario) redirect("/login");
 
-  const up = { role: usuario?.role ?? '', funcoes: (usuario?.funcoes ?? []) as string[] }
-  if (!podeVerEstoqueLoja(up) && !podeVenderLoja(up)) redirect('/dashboard')
+  const orgRaw = usuario.organizacoes as any;
+  const org = Array.isArray(orgRaw) ? orgRaw[0] : orgRaw;
+  if (!temModulo(org?.modulos_ativos, "loja")) redirect("/dashboard");
 
-  const [
-    { count: totalProdutos },
-    { count: totalFornecedores },
-    { count: totalCompras },
-    { data: produtosBaixos },
-    { data: ultimasCompras },
-  ] = await Promise.all([
-    supabase.from('loja_produtos').select('*', { count: 'exact', head: true }).eq('ativo', true),
-    supabase.from('loja_fornecedores').select('*', { count: 'exact', head: true }).eq('ativo', true),
-    supabase.from('loja_compras').select('*', { count: 'exact', head: true }),
-    supabase.from('loja_produtos').select('estoque_atual, estoque_minimo, nome').eq('ativo', true).not('estoque_minimo', 'is', null),
-    supabase.from('loja_compras').select('id, data_compra, total, loja_fornecedores(nome)').order('data_compra', { ascending: false }).limit(3),
-  ])
+  const up = { role: usuario.role ?? "", funcoes: (usuario.funcoes ?? []) as string[] };
+  if (!podeVerEstoqueLoja(up) && !podeVenderLoja(up)) redirect("/dashboard");
 
-  const criticos = (produtosBaixos ?? []).filter(
-    p => p.estoque_minimo != null && p.estoque_atual < p.estoque_minimo
-  )
-  const qtdCriticos = criticos.length
+  const orgId = usuario.organizacao_id as string;
 
-  function fmtReal(v: number) {
-    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  }
+  const [kpis, alertas, topProdutos, ultimasVendas, faturamentoDiario] = await Promise.all([
+    getHubKpis(orgId),
+    getAlertasEstoque(orgId),
+    getTopProdutos(orgId),
+    getUltimasVendas(orgId),
+    getFaturamentoDiario(orgId, supabase),
+  ]);
 
-  function fmtData(iso: string) {
-    return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
+  const hoje = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  const accentColor = (alert?: boolean, success?: boolean) =>
+    alert ? "#DC2626" : success ? "#16A34A" : "#E07B30";
 
   return (
-    <div style={{ maxWidth: '1000px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
 
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280', marginBottom: '12px', fontWeight: 500 }}>
-        <Link href="/dashboard" style={{ color: '#6b7280', textDecoration: 'none' }}>NexCoop</Link>
-        <span style={{ color: '#d1d5db' }}>/</span>
-        <span style={{ color: '#1a1a1a' }}>Loja Agropecuária</span>
+      {/* Breadcrumb + status do caixa */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 24, flexWrap: "wrap", gap: 8,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Link href="/dashboard" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>NexCoop</Link>
+          <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
+          <span style={{ fontSize: 13, color: "#E07B30", fontWeight: 600 }}>Loja Agropecuária</span>
+          <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
+          <span style={{ fontSize: 13, color: "#78716c", textTransform: "capitalize" }}>{hoje}</span>
+        </div>
+
+        {kpis.caixaAberto && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 7,
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            borderRadius: 7, padding: "6px 12px",
+          }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: "50%",
+              background: "#16A34A", display: "inline-block",
+              boxShadow: "0 0 0 3px rgba(22,163,74,0.2)",
+            }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>
+              Caixa aberto · {usuario.nome_completo}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Alerta estoque crítico */}
-      {qtdCriticos > 0 && (
-        <div style={{
-          background: '#fff8f2', border: '1px solid #E07B30', borderRadius: '12px',
-          padding: '14px 20px', marginBottom: '24px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <i className="ti ti-alert-triangle" style={{ fontSize: '22px', color: '#E07B30' }} />
-            <div>
-              <div style={{ fontWeight: '600', fontSize: '14px', color: '#c2611a' }}>
-                {qtdCriticos} produto{qtdCriticos !== 1 ? 's' : ''} com estoque crítico
-              </div>
-              <div style={{ fontSize: '12px', color: '#92400e', marginTop: '2px' }}>
-                {criticos.slice(0, 3).map(p => p.nome).join(', ')}{qtdCriticos > 3 ? ` e mais ${qtdCriticos - 3}` : ''}
-              </div>
-            </div>
-          </div>
-          <Link href="/loja/estoque" style={{ fontSize: '13px', fontWeight: '600', color: '#E07B30', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Ver estoque →
-          </Link>
-        </div>
-      )}
-
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 14, marginBottom: 24,
+      }}>
         {[
-          { label: 'Produtos ativos', valor: totalProdutos ?? 0, icone: 'ti-package', href: '/loja/produtos' },
-          { label: 'Fornecedores', valor: totalFornecedores ?? 0, icone: 'ti-truck', href: '/loja/fornecedores' },
-          { label: 'Compras realizadas', valor: totalCompras ?? 0, icone: 'ti-receipt', href: '/loja/compras' },
-        ].map(kpi => (
-          <Link key={kpi.href} href={kpi.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: 44, height: 44, borderRadius: '10px', background: '#fff8f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className={`ti ${kpi.icone}`} style={{ fontSize: '22px', color: '#E07B30' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a', lineHeight: 1 }}>{kpi.valor}</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>{kpi.label}</div>
-              </div>
-            </div>
-          </Link>
+          {
+            label: "Faturamento hoje",
+            value: fmt(kpis.fatHoje),
+            sub: `${kpis.transacoesHoje} transações hoje`,
+          },
+          {
+            label: "Faturamento do mês",
+            value: fmt(kpis.fatMes),
+            sub: "Mês corrente",
+          },
+          {
+            label: "Ticket médio",
+            value: fmt(kpis.ticketMedio),
+            sub: "Mês corrente",
+          },
+          {
+            label: "Saldo em caixa",
+            value: fmt(kpis.saldoCaixa),
+            sub: "Estimado (fundo + entradas)",
+            success: true,
+          },
+          {
+            label: "Estoque crítico",
+            value: `${alertas.length} ${alertas.length === 1 ? "item" : "itens"}`,
+            sub: "Abaixo do mínimo",
+            alert: alertas.length > 0,
+          },
+          {
+            label: "Vendas em conta",
+            value: fmt(kpis.totalContaMes),
+            sub: "Conta corrente no mês",
+          },
+        ].map((card) => (
+          <div key={card.label} style={{
+            background: "#fff", border: "1px solid #e5e3dc",
+            borderRadius: 12, padding: "18px 20px",
+            borderLeft: `4px solid ${accentColor(card.alert, card.success)}`,
+            display: "flex", flexDirection: "column", gap: 6,
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 600,
+              textTransform: "uppercase", letterSpacing: "0.07em", color: "#78716c",
+            }}>{card.label}</div>
+            <div style={{
+              fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1,
+              color: card.alert ? "#DC2626" : "#1c1917",
+            }}>{card.value}</div>
+            {card.sub && <div style={{ fontSize: 12, color: "#78716c" }}>{card.sub}</div>}
+          </div>
         ))}
       </div>
 
-      {/* Acesso rápido + Últimas compras */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-        {/* Acesso rápido */}
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <i className="ti ti-layout-grid" style={{ fontSize: '16px', color: '#E07B30' }} />
-            Acesso rápido
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {[
-              { label: 'PDV — Ponto de Venda',  href: '/loja/pdv',          icone: 'ti-shopping-cart',      destaque: true  },
-              { label: 'Produtos',               href: '/loja/produtos',     icone: 'ti-package'                              },
-              { label: 'Estoque',                href: '/loja/estoque',      icone: 'ti-building-warehouse'                   },
-              { label: 'Compras',                href: '/loja/compras',      icone: 'ti-receipt'                              },
-              { label: 'Fornecedores',           href: '/loja/fornecedores', icone: 'ti-truck'                                },
-              { label: 'Categorias',             href: '/loja/categorias',   icone: 'ti-tag'                                  },
-            ].map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '9px 12px', borderRadius: '8px', textDecoration: 'none',
-                  background: item.destaque ? '#fff8f2' : 'transparent',
-                  border: item.destaque ? '1px solid #fde8d4' : '1px solid transparent',
-                }}
-              >
-                <i className={`ti ${item.icone}`} style={{ fontSize: '16px', color: item.destaque ? '#E07B30' : '#9ca3af', flexShrink: 0 }} />
-                <span style={{ fontSize: '13px', color: item.destaque ? '#92400e' : '#374151', fontWeight: item.destaque ? '600' : '400' }}>
-                  {item.label}
-                </span>
-                {item.destaque && (
-                  <i className="ti ti-chevron-right" style={{ fontSize: '14px', color: '#E07B30', marginLeft: 'auto' }} />
-                )}
-              </Link>
-            ))}
-          </div>
+      {/* Gráfico + Alertas */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 300px",
+        gap: 20, marginBottom: 24, alignItems: "start",
+      }}>
+        <div style={{
+          background: "#fff", border: "1px solid #e5e3dc",
+          borderRadius: 12, padding: "20px 20px 12px",
+        }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Faturamento diário</div>
+          <div style={{ fontSize: 12, color: "#78716c", marginBottom: 16 }}>Últimos 30 dias</div>
+          <GraficoFaturamento dados={faturamentoDiario} />
         </div>
 
-        {/* Últimas compras */}
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <i className="ti ti-clock-hour-4" style={{ fontSize: '16px', color: '#E07B30' }} />
-              Últimas compras
+        {alertas.length > 0 ? (
+          <div style={{
+            background: "#fff8f1", border: "1px solid #fed7aa",
+            borderLeft: "4px solid #DC2626", borderRadius: 12, padding: "18px 16px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 16 }}>⚠️</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#9a3412" }}>Estoque crítico</div>
+                <div style={{ fontSize: 11, color: "#c2410c" }}>
+                  {alertas.length} produto{alertas.length > 1 ? "s" : ""} abaixo do mínimo
+                </div>
+              </div>
             </div>
-            <Link href="/loja/compras" style={{ fontSize: '12px', color: '#E07B30', textDecoration: 'none', fontWeight: '500' }}>
-              Ver todas →
-            </Link>
+            {alertas.map((a, i) => (
+              <div key={a.produto_id} style={{
+                padding: "10px 0",
+                borderTop: i === 0 ? "none" : "1px solid #fed7aa",
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3, marginBottom: 4 }}>
+                  {a.nome}
+                </div>
+                <div style={{ display: "flex", gap: 12, fontSize: 11 }}>
+                  <span style={{ color: "#DC2626", fontWeight: 700 }}>
+                    Atual: {Number(a.estoque_atual).toFixed(a.unidade === "unidade" ? 0 : 2)} {a.unidade}
+                  </span>
+                  <span style={{ color: "#78716c" }}>
+                    Mín: {Number(a.estoque_minimo).toFixed(a.unidade === "unidade" ? 0 : 2)} {a.unidade}
+                  </span>
+                </div>
+              </div>
+            ))}
+            <Link href="/loja/estoque" style={{
+              display: "block", marginTop: 14, padding: "8px",
+              background: "#DC2626", color: "#fff",
+              borderRadius: 7, fontSize: 12, fontWeight: 700,
+              textAlign: "center", textDecoration: "none",
+            }}>Ver estoque →</Link>
+          </div>
+        ) : (
+          <div style={{
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            borderLeft: "4px solid #16A34A", borderRadius: 12, padding: "18px 16px",
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <span style={{ fontSize: 24 }}>✅</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#15803d" }}>Estoque ok</div>
+              <div style={{ fontSize: 12, color: "#166534" }}>
+                Nenhum produto abaixo do mínimo
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Top Produtos + Últimas Vendas */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 1fr",
+        gap: 20, marginBottom: 24,
+      }}>
+        {/* Top 5 */}
+        <div style={{
+          background: "#fff", border: "1px solid #e5e3dc",
+          borderRadius: 12, padding: "20px",
+        }}>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            alignItems: "center", marginBottom: 16,
+          }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.06em", color: "#78716c",
+            }}>Top 5 produtos do mês</span>
+            <Link href="/loja/estoque" style={{
+              fontSize: 12, color: "#E07B30", fontWeight: 600, textDecoration: "none",
+            }}>Ver estoque →</Link>
           </div>
 
-          {!ultimasCompras || ultimasCompras.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: '#aaa', fontSize: '13px' }}>
-              <i className="ti ti-receipt-off" style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }} />
-              Nenhuma compra registrada
+          {topProdutos.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#78716c", textAlign: "center", padding: "24px 0" }}>
+              Nenhuma venda registrada neste mês.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {ultimasCompras.map((c: any) => (
-                <Link
-                  key={c.id}
-                  href={`/loja/compras/${c.id}`}
-                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}
-                >
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
-                      {(c.loja_fornecedores as any)?.nome ?? 'Fornecedor'}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {topProdutos.map((p, i) => {
+                const pct = topProdutos[0].total > 0
+                  ? (p.total / topProdutos[0].total) * 100
+                  : 0;
+                return (
+                  <div key={p.produto_id}>
+                    <div style={{
+                      display: "flex", justifyContent: "space-between",
+                      marginBottom: 5, alignItems: "baseline",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#78716c", width: 16 }}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 500 }}>{p.nome}</span>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{fmt(p.total)}</div>
+                        <div style={{ fontSize: 10, color: "#78716c" }}>
+                          {Number(p.qtd).toFixed(0)} un
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                      {fmtData(c.data_compra)}
+                    <div style={{ height: 5, background: "#f5f5f4", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        background: i === 0 ? "#E07B30" : `rgba(224,123,48,${0.7 - i * 0.1})`,
+                        borderRadius: 99,
+                      }} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>
-                    {fmtReal(c.total)}
-                  </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
+        </div>
 
-          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f3f4f6' }}>
-            <Link
-              href="/loja/compras/nova"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '9px', borderRadius: '8px', textDecoration: 'none',
-                background: '#f8f7f4', border: '1px solid #e5e3dc',
-                fontSize: '13px', fontWeight: '500', color: '#374151',
-              }}
-            >
-              <i className="ti ti-plus" style={{ fontSize: '15px' }} />
-              Nova compra
-            </Link>
+        {/* Últimas vendas */}
+        <div style={{
+          background: "#fff", border: "1px solid #e5e3dc",
+          borderRadius: 12, padding: "20px",
+        }}>
+          <div style={{
+            display: "flex", justifyContent: "space-between",
+            alignItems: "center", marginBottom: 16,
+          }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.06em", color: "#78716c",
+            }}>Últimas vendas hoje</span>
+            <Link href="/loja/compras" style={{
+              fontSize: 12, color: "#E07B30", fontWeight: 600, textDecoration: "none",
+            }}>Ver compras →</Link>
           </div>
+
+          {ultimasVendas.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#78716c", textAlign: "center", padding: "24px 0" }}>
+              Nenhuma venda registrada hoje.
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  {["Hora", "Nº", "Operador", "Forma", "Total"].map(h => (
+                    <th key={h} style={{
+                      fontSize: 10, fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.05em",
+                      color: "#78716c",
+                      textAlign: h === "Total" ? "right" : "left",
+                      padding: "0 6px 8px",
+                      borderBottom: "1px solid #e5e3dc",
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ultimasVendas.map((v, i) => (
+                  <tr key={v.id} style={{ background: i % 2 === 0 ? "transparent" : "#fafaf9" }}>
+                    <td style={{ padding: "9px 6px", fontSize: 12, color: "#78716c", fontFamily: "monospace" }}>
+                      {v.hora}
+                    </td>
+                    <td style={{ padding: "9px 6px", fontSize: 12, fontWeight: 600, color: "#E07B30" }}>
+                      {v.num}
+                    </td>
+                    <td style={{ padding: "9px 6px", fontSize: 12 }}>{v.operador}</td>
+                    <td style={{ padding: "9px 6px", fontSize: 11 }}>
+                      <span style={{
+                        background: v.forma === "pago_saldo" ? "#e0f2fe" : "#f5f5f4",
+                        color: v.forma === "pago_saldo" ? "#0369a1" : "#78716c",
+                        padding: "2px 7px", borderRadius: 5, fontWeight: 600, whiteSpace: "nowrap",
+                      }}>{fmtLabel(v.forma)}</span>
+                    </td>
+                    <td style={{ padding: "9px 6px", fontSize: 13, fontWeight: 700, textAlign: "right" }}>
+                      {fmt(v.total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
+
+      {/* Ações rápidas */}
+      <div style={{
+        background: "#fff", border: "1px solid #e5e3dc",
+        borderRadius: 12, padding: "18px 20px",
+      }}>
+        <div style={{
+          fontSize: 13, fontWeight: 700,
+          textTransform: "uppercase", letterSpacing: "0.06em",
+          color: "#78716c", marginBottom: 12,
+        }}>Ações rápidas</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {[
+            { label: "Abrir PDV", icon: "🛒", href: "/loja/pdv", primary: true },
+            { label: "Nova Compra", icon: "📥", href: "/loja/compras/nova", primary: false },
+            { label: "Compras", icon: "📊", href: "/loja/compras", primary: false },
+            { label: "Produtos", icon: "📦", href: "/loja/produtos", primary: false },
+            { label: "Estoque", icon: "🏪", href: "/loja/estoque", primary: false },
+            { label: "Fornecedores", icon: "🚚", href: "/loja/fornecedores", primary: false },
+          ].map((a) => (
+            <Link key={a.label} href={a.href} style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 16px", borderRadius: 8,
+              border: a.primary ? "none" : "1px solid #e5e3dc",
+              background: a.primary ? "#E07B30" : "#fff",
+              color: a.primary ? "#fff" : "#1c1917",
+              fontSize: 13, fontWeight: 600,
+              textDecoration: "none",
+            }}>
+              <span>{a.icon}</span>{a.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
     </div>
-  )
+  );
 }
