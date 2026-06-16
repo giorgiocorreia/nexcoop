@@ -6,216 +6,71 @@
 |------|--------|--------|
 | Passo 0 | modulos_ativos, sidebar, middleware | ✅ Concluído |
 | Fase 1 | lib/loja/types.ts, actions.ts, permissões | ✅ Concluído |
-| Fase 2 | /loja, /loja/produtos, /loja/categorias | ✅ Concluído |
+| Fase 2 | /loja/produtos, /loja/categorias, /loja/fornecedores | ✅ Concluído |
 | Fase 3 | /loja/estoque, /loja/compras | ✅ Concluído — migration 037 aplicada |
-| Fase 4 | PDV — Ponto de Venda | ✅ Concluído |
-| Fase 5 | Dashboard e Relatórios | ⬜ Planejada |
+| Fase 4 | PDV — Ponto de Venda | ✅ Concluído — migration 038 aplicada |
+| Fase 5 | Dashboard e Relatórios | ⬜ Próxima |
 
 ---
 
-## Fase 4 — PDV (Ponto de Venda)
+## Fase 4 — PDV (Concluído)
 
-### Migration necessária
+### Migration aplicada
+- 038: loja_sangrias (tipo aporte|sangria, autorizado_por, executado_por)
 
-Migration 038 — loja_sangrias (aplicar no SQL Editor Supabase antes de codar):
+### Actions implementadas (lib/loja/actions.ts)
+- abrirCaixaLoja — verifica caixa duplicado + insere via adminClient + log
+- buscarCooperadoPorCPF — busca direto em cooperados.cpf (não em produtores)
+- validarSenhaAutorizador — percorre autorizadores da org + signInWithPassword
+- finalizarVenda — insere venda + itens + baixa FIFO lote a lote + débito conta corrente + log
+- cancelarVenda — estorna estoque, estorna conta corrente se havia débito, marca status cancelada + log
+- registrarSangriaLoja — insere em loja_sangrias via adminClient + log
+- fecharCaixaLoja — calcula totais (vendas/espécie/pix/sangrias/aportes), fecha caixa, retorna ResumoFechamento
 
-CREATE TABLE IF NOT EXISTS loja_sangrias (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id uuid NOT NULL REFERENCES organizacoes(id),
-  caixa_id uuid NOT NULL REFERENCES loja_caixas(id),
-  tipo text NOT NULL CHECK (tipo IN ('aporte','sangria')),
-  valor numeric(12,2) NOT NULL,
-  autorizado_por uuid NOT NULL REFERENCES usuarios(id),
-  executado_por uuid NOT NULL REFERENCES usuarios(id),
-  observacoes text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE loja_sangrias ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "org members" ON loja_sangrias
-  FOR ALL USING (
-    org_id = (SELECT organizacao_id FROM usuarios WHERE id = auth.uid())
-  );
+### Componentes (app/(sistema)/loja/pdv/components/)
+- ModalAutorizacao — senha do gerente/admin, reutilizável para desconto extra e sangria
+- ModalQuantidade — input numérico com +/- , suporte a decimais (kg/l), subtotal em tempo real
+- BadgeCooperado — exibe nome + saldo conta corrente se módulo comercializacao ativo
+- PainelProdutos — grid com busca, badge desconto cooperado, badge esgotado
+- PainelCarrinho — lista itens, desconto por item, validação de estoque antes de finalizar
+- ModalPagamento — dinheiro (troco), pix (chave org), conta corrente (saldo/saldo após), misto
+- ModalComprovante — sucesso com botão imprimir + nova venda
+- ModalFechamentoCaixa — resumo financeiro (abertura/vendas/espécie/pix/sangrias/aportes/saldo final) + imprimir relatório + confirmar
 
-### Arquivos a criar/modificar
-
-lib/loja/
-  types.ts          ← adicionar ItemCarrinho, CooperadoIdentificado, EstadoCaixa
-  actions.ts        ← adicionar 6 actions
-
-app/(sistema)/loja/
-  pdv/
-    page.tsx
-    components/
-      PainelProdutos.tsx
-      PainelCarrinho.tsx
-      ModalQuantidade.tsx
-      ModalAutorizacao.tsx
-      ModalPagamento.tsx
-      ModalComprovante.tsx
-      BadgeCooperado.tsx
-
-app/api/loja/
-  comprovante/[id]/route.ts
-
-### Actions (lib/loja/actions.ts)
-
-abrirCaixaLoja(orgId, usuarioId, valorAbertura)
-- Verifica se já existe caixa aberto para a org (bloqueia se sim)
-- Insere em loja_caixas status 'aberto' via createAdminClient()
-- registrarLog('loja_caixa_aberto')
-
-buscarCooperadoPorCPF(orgId, cpf)
-- Join: cooperados → produtores → contas_produtor
-- tem_conta_corrente: true só se org tem 'comercializacao' em modulos_ativos
-- CPF normalizado (só dígitos)
-- Retorna: cooperado_id, produtor_id, nome, saldo_financeiro, tem_conta_corrente
-
-validarSenhaAutorizador(orgId, senha)
-- Busca usuários da org com podeAutorizarDescontoExtra via createAdminClient()
-- Valida via signInWithPassword
-- Nunca loga o usuário atual
-- Retorna: { valido, autorizador_id?, nome? }
-
-finalizarVenda(orgId, operadorId, caixaId, venda, itens)
-Sequência:
-1. Insere loja_vendas
-2. Insere loja_venda_itens por item
-3. Baixa FIFO: lotes ordenados por data_validade ASC
-   - Decrementa loja_lotes.quantidade_atual lote a lote
-   - Insere loja_estoque_movimentos tipo 'saida_venda'
-   - Decrementa loja_produtos.estoque_atual
-4. Se pago_conta > 0: insere movimentacoes_conta tipo 'compra_loja' (débito) via createAdminClient()
-5. registrarLog('loja_venda_finalizada')
-
-cancelarVenda(orgId, vendaId)
-- Atualiza loja_vendas.status = 'cancelada'
-- Estorna movimentos de estoque (saida_venda → entrada_estorno)
-- Se tinha pago_conta: insere movimentacoes_conta tipo 'estorno_compra_loja'
-- registrarLog('loja_venda_cancelada')
-
-registrarSangriaLoja(orgId, caixaId, tipo, valor, autorizado_por, executado_por, obs?)
-- Insere em loja_sangrias via createAdminClient()
+### API Routes
+- /api/loja/comprovante/[id] — comprovante de venda 80mm (pdf-lib)
+- /api/loja/fechamento/[id] — relatório de fechamento de caixa 80mm (pdf-lib)
 
 ### Tela PDV (app/(sistema)/loja/pdv/page.tsx)
-
-'use client' — guards: orgTemModulo('loja') + podeVenderLoja(funcoes)
-
-Estado:
-- caixaAtual: LojaCaixa | null
-- cooperado: CooperadoIdentificado | null
-- carrinho: ItemCarrinho[]
-- modalAberto: 'quantidade'|'autorizacao'|'pagamento'|'comprovante'|'sangria'|null
-- produtoSelecionado: ProdutoLoja | null
-- pendenciaAutorizacao: PendenciaAuth | null
-
-Layout dois painéis (inline styles):
-- Esquerda 60%: busca por nome (foco automático) + grid produtos
-  - Badge #E07B30 com % se desconto_cooperado=true
-  - Badge cinza "Esgotado" se estoque_atual=0 (desabilita clique)
-  - Clique → ModalQuantidade → adicionarAoCarrinho
-- Direita 40%: carrinho + identificação cooperado + formas de pagamento
-
-Identificação cooperado:
-- Botão "Identificar cooperado" → input CPF → buscarCooperadoPorCPF
-- Se identificado: BadgeCooperado (nome + "Cooperado") + saldo conta corrente
-- desconto_cooperado_pct aplicado automaticamente nos itens elegíveis
-
-Desconto adicional por item:
-- Se > desconto_cooperado_pct → abre ModalAutorizacao
-- Registra autorizador_id em loja_venda_itens
-
-ModalAutorizacao (reutilizável):
-- Props: titulo, descricao, onAutorizado(autorizadorId, nome), onCancelar
-- Chama validarSenhaAutorizador no submit
-- Spinner durante validação, erro em vermelho se inválida
-- Usado para: desconto extra + sangria
-
-ModalPagamento:
-- Dinheiro: valor recebido + troco calculado em tempo real
-- Pix: exibe chave Pix da org (campo em organizacoes)
-- Conta corrente: só se cooperado identificado + tem_conta_corrente=true
-  - Exibe: saldo disponível, valor a debitar, saldo após
-  - Combinável com dinheiro ou Pix (soma deve = total)
-  - Alerta vermelho se saldo insuficiente
-
-ModalComprovante:
-- Resumo da venda finalizada
-- Botão "Imprimir" → /api/loja/comprovante/[id] (nova aba)
-- Botão "Nova venda" → limpa carrinho e estado
-
-Sangria:
-- Botão no header do PDV
-- Modal valor + tipo (aporte/sangria) + ModalAutorizacao
-- registrarSangriaLoja
-
-### API Route — Comprovante 80mm
-
-app/api/loja/comprovante/[id]/route.ts
-Padrão: igual a app/api/comercializacao/comprovante/[id]/route.ts
-
-Layout:
-================================
-      LOJA AGROPECUÁRIA
-   [NOME DA ORG]
-   CNPJ: XX.XXX.XXX/XXXX-XX
-================================
-Venda #00042
-15/06/2026  14:32
-Operador: João Silva
---------------------------------
-Cooperado: Maria Oliveira (se identificado)
-Conta corrente aplicada (se pago_conta > 0)
---------------------------------
-[itens com qtd, preço, desconto%, subtotal]
---------------------------------
-Subtotal:     R$ XXX,XX
-Desconto:     R$  XX,XX
-TOTAL:        R$ XXX,XX
---------------------------------
-Dinheiro:     R$ XXX,XX
-Pix:          R$ XXX,XX
-Conta:        R$ XXX,XX
-Troco:        R$  XX,XX
-================================
-   OBRIGADO PELA PREFERÊNCIA
-================================
-
-### Checklist de implementação (ordem)
-
-- [ ] Migration 038 — loja_sangrias (SQL Editor Supabase)
-- [ ] lib/loja/types.ts — ItemCarrinho, CooperadoIdentificado, EstadoCaixa
-- [ ] lib/loja/actions.ts — 6 novas actions
-- [ ] app/api/loja/comprovante/[id]/route.ts
-- [ ] ModalAutorizacao
-- [ ] ModalQuantidade
-- [ ] BadgeCooperado
-- [ ] PainelProdutos
-- [ ] PainelCarrinho
-- [ ] ModalPagamento
-- [ ] ModalComprovante
-- [ ] app/(sistema)/loja/pdv/page.tsx
-- [ ] Link /loja/pdv no sidebar da Loja
-- [ ] Teste COOPAIBI: cooperado com saldo + produto com desconto
+- Guards: orgTemModulo('loja') + podeVenderLoja(funcoes)
+- Abertura de caixa: modal com fundo inicial
+- Layout dois painéis: 60% produtos / 40% carrinho
+- Identificação cooperado por CPF com máscara (busca em cooperados.cpf)
+- Desconto cooperado automático + desconto extra com ModalAutorizacao
+- Sangria/Aporte com ModalAutorizacao
+- Botão Fechar Caixa no header → ModalFechamentoCaixa
+- Toast system: success(5s), error(manual), warning(5s) para estoque insuficiente
 
 ### Regras críticas
-
 - NUNCA usar auth_org_id() — sempre subquery (SELECT organizacao_id FROM usuarios WHERE id = auth.uid())
 - orgTemModulo(org.modulos_ativos, 'loja') em toda tela e action
 - createAdminClient() para escritas em loja_caixas, movimentacoes_conta, loja_sangrias
-- registrarLog() em: abertura caixa, venda finalizada, venda cancelada, sangria
-- Validação de senha do autorizador: nunca loga o operador atual
+- registrarLog() em: abertura caixa, venda finalizada, venda cancelada, sangria, fechamento caixa
+- buscarCooperadoPorCPF busca em cooperados.cpf, não em produtores
+- Validação de estoque no PainelCarrinho antes de chamar onFinalizar
 
 ---
 
-## Fase 5 — Dashboard e Relatórios (planejada)
+## Fase 5 — Dashboard e Relatórios (próxima)
 
-Escopo a definir. Candidatos:
-- Vendas do dia / período
+### Escopo planejado
+- Vendas do dia / período com filtros
 - Produtos mais vendidos
-- Faturamento por forma de pagamento
-- Histórico de caixas
+- Faturamento por forma de pagamento (dinheiro/pix/conta corrente)
+- Histórico de caixas com totais
 - Extrato conta corrente cooperado
 - Alertas de estoque mínimo
+- Exportação CSV/PDF
 
 ---
 
@@ -228,3 +83,33 @@ Escopo a definir. Candidatos:
 - Componente <Btn> em components/ui/Btn.tsx
 - fmtReal() em lib/comercializacao/fmt.ts
 - Ícones Tabler via CDN
+- Breadcrumb clicável: NexCoop / Loja / SubPágina em todas as páginas
+- Toast global via useToast() de components/ui/Toast.tsx
+
+---
+
+## Hub da Loja (/loja)
+
+Redesenhada em 15/06/2026:
+- Breadcrumb NexCoop / Loja Agropecuária
+- Alerta estoque crítico (lista nomes dos produtos críticos)
+- 3 KPIs clicáveis: Produtos ativos, Fornecedores, Compras realizadas
+- Acesso rápido: PDV (destaque âmbar), Produtos, Estoque, Compras, Fornecedores, Categorias
+- Últimas 3 compras com fornecedor, data, valor + botão Nova compra
+
+---
+
+## Funcoes disponíveis (funcoes_disponiveis)
+
+Inseridas via SQL em 15/06/2026:
+- gerente_loja: Gerência a loja, autoriza descontos e sangrias
+- caixa_loja: Opera o PDV
+- estoquista_loja: Gerencia estoque
+
+Permissões em lib/permissoes.ts:
+- podeGerenciarLoja: admin, gerente_loja
+- podeVenderLoja: admin, gerente_loja, caixa_loja
+- podeVerEstoqueLoja: admin, gerente_loja, estoquista_loja
+- podeAutorizarDescontoExtra: admin, gerente_loja
+</content>
+</invoke>
