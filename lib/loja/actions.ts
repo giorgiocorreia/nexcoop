@@ -717,9 +717,6 @@ export async function buscarCooperadoPorCPF(
 ): Promise<CooperadoIdentificado | null> {
   const supabase = await createClient()
   const cpfLimpo = cpf.replace(/\D/g, '')
-  const cpfMascarado = cpfLimpo.length === 11
-    ? cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-    : cpfLimpo
 
   const { data: org } = await supabase
     .from('organizacoes')
@@ -729,13 +726,23 @@ export async function buscarCooperadoPorCPF(
 
   const temComercializacao = (org?.modulos_ativos ?? []).includes('comercializacao')
 
-  const { data } = await supabase
-    .from('cooperados')
-    .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
-    .eq('organizacao_id', orgId)
-    .or(`cpf.eq.${cpfLimpo},cpf.eq.${cpfMascarado}`)
-    .not('status', 'in', '("demitido","excluido")')
-    .maybeSingle()
+  const buscar = (cpfValor: string) =>
+    supabase
+      .from('cooperados')
+      .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
+      .eq('organizacao_id', orgId)
+      .eq('cpf', cpfValor)
+      .neq('status', 'demitido')
+      .neq('status', 'excluido')
+      .maybeSingle()
+
+  let { data } = await buscar(cpfLimpo)
+
+  if (!data && cpfLimpo.length === 11) {
+    const cpfMascarado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+    const { data: data2 } = await buscar(cpfMascarado)
+    data = data2
+  }
 
   if (!data) return null
 
