@@ -715,10 +715,10 @@ export async function buscarCooperadoPorCPF(
   orgId: string,
   cpf: string
 ): Promise<CooperadoIdentificado | null> {
-  const supabase = await createClient()
+  const admin = createAdminClient()
   const cpfLimpo = cpf.replace(/\D/g, '')
 
-  const { data: org } = await supabase
+  const { data: org } = await admin
     .from('organizacoes')
     .select('modulos_ativos')
     .eq('id', orgId)
@@ -726,23 +726,17 @@ export async function buscarCooperadoPorCPF(
 
   const temComercializacao = (org?.modulos_ativos ?? []).includes('comercializacao')
 
-  const buscar = (cpfValor: string) =>
-    supabase
-      .from('cooperados')
-      .select('id, nome_completo, cpf, contas_produtor(id, saldo_financeiro)')
-      .eq('organizacao_id', orgId)
-      .eq('cpf', cpfValor)
-      .neq('status', 'demitido')
-      .neq('status', 'excluido')
-      .maybeSingle()
+  // Busca todos os cooperados ativos da org e filtra por CPF em memória,
+  // evitando problemas de formato (com/sem máscara) e RLS
+  const { data: lista } = await admin
+    .from('cooperados')
+    .select('id, nome_completo, cpf, status, contas_produtor(id, saldo_financeiro)')
+    .eq('organizacao_id', orgId)
+    .not('status', 'in', '(demitido,excluido)')
 
-  let { data } = await buscar(cpfLimpo)
-
-  if (!data && cpfLimpo.length === 11) {
-    const cpfMascarado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-    const { data: data2 } = await buscar(cpfMascarado)
-    data = data2
-  }
+  const data = (lista ?? []).find(
+    c => (c.cpf ?? '').replace(/\D/g, '') === cpfLimpo
+  ) ?? null
 
   if (!data) return null
 
