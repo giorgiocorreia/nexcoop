@@ -50,7 +50,7 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
             font-family: monospace;
             font-size: 11px;
             color: #000;
-            padding: 4mm;
+            padding: 4mm 4mm 0 4mm;
           }
           .linha { border-top: 1px dashed #000; margin: 3px 0; }
           .row { display: flex; justify-content: space-between; margin: 2px 0; }
@@ -117,6 +117,11 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
 
       <div className="center" style={{ marginTop: 4, fontSize: 10 }}>
         Impresso em {new Date().toLocaleString("pt-BR")}
+      </div>
+      <div style={{ marginTop: 8 }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i}>&nbsp;</div>
+        ))}
       </div>
     </div>
   );

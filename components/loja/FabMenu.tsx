@@ -44,8 +44,6 @@ export default function FabMenu() {
           gap: 10,
           zIndex: 200,
         }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {/* Itens do menu */}
         <div style={{
@@ -110,6 +108,8 @@ export default function FabMenu() {
         {/* FAB principal */}
         <button
           onClick={() => setOpen(!open)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           aria-label="Ações rápidas"
           style={{
             width: 56,
