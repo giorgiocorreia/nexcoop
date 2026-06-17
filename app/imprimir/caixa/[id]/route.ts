@@ -45,9 +45,9 @@ export async function GET(
   <meta charset="UTF-8"/>
   <title>Relatório de Caixa</title>
   <style>
-    @page { size: 80mm auto; margin: 0; }
+    @page { size: 80mm auto; margin: 0 0 30mm 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { width: 80mm; font-family: monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 3mm 4mm 40mm 4mm; }
+    body { width: 80mm; font-family: monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 3mm 4mm; }
     .linha { border-top: 1px dashed #000; margin: 4px 0; }
     .row { display: flex; justify-content: space-between; margin: 1px 0; }
     .center { text-align: center; }
@@ -83,7 +83,6 @@ export async function GET(
   <div class="center" style="font-size:10px;margin-top:4px">
     Impresso em ${new Date().toLocaleString("pt-BR")}
   </div>
-  <div style="margin-top:80px;">&nbsp;</div>
 </body>
 </html>`;
 
