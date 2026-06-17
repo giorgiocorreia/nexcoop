@@ -46,6 +46,17 @@ export default function RelatorioCaixaClient({
   const [apenasDivergentes, setApenasDivergentes] = useState(false);
   const [hoveredFiltro, setHoveredFiltro]         = useState<string | null>(null);
 
+  const handleImprimir = (id: string) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
+    document.body.appendChild(iframe);
+    iframe.src = `/imprimir/caixa/${id}`;
+    iframe.onload = () => {
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 2000);
+    };
+  };
+
   const filtradas = sessoes.filter(s => {
     if (filtroOperador && s.operador !== filtroOperador) return false;
     if (filtroInicio && s.aberto_em < filtroInicio) return false;
@@ -152,17 +163,16 @@ export default function RelatorioCaixaClient({
                     {temDif ? (s.diferenca > 0 ? "+" : "") + fmt(s.diferenca) : "—"}
                   </td>
                   <td style={{ padding: "11px 14px" }}>
-                    <a
-                      href={`/imprimir/caixa/${s.id}`}
+                    <button
+                      onClick={() => handleImprimir(s.id)}
                       style={{
                         padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                         cursor: "pointer", background: "transparent", color: "#374151",
-                        border: "1px solid #d1d5db", textDecoration: "none",
-                        display: "inline-block",
+                        border: "1px solid #d1d5db",
                       }}
                     >
                       🖨 Imprimir
-                    </a>
+                    </button>
                   </td>
                 </tr>
               );
