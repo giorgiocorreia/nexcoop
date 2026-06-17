@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import FabMenu from "@/components/loja/FabMenu";
-import { getDetalhesSessao } from "@/lib/loja/caixa-relatorio-actions";
 
 interface Sessao {
   id: string;
@@ -34,106 +33,6 @@ function fmtDT(iso: string) {
   });
 }
 
-function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any }) {
-  return (
-    <div id="conteudo-impressao" style={{ display: "none" }}>
-      <style>{`
-        @media print {
-          @page {
-            width: 80mm;
-            margin: 0mm;
-          }
-          html, body {
-            width: 80mm;
-            margin: 0;
-            padding: 0;
-          }
-          body * { visibility: hidden; }
-          #conteudo-impressao,
-          #conteudo-impressao * { visibility: visible; }
-          #conteudo-impressao {
-            display: block !important;
-            position: relative;
-            width: 80mm;
-            padding: 3mm 4mm 0 4mm;
-            font-family: monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #000;
-          }
-          .linha { border-top: 1px dashed #000; margin: 4px 0; }
-          .row { display: flex; justify-content: space-between; margin: 2px 0; }
-          .center { text-align: center; }
-          .bold { font-weight: bold; }
-          .danger { font-weight: bold; }
-        }
-      `}</style>
-
-      <div className="center bold" style={{ fontSize: 13, marginBottom: 4 }}>
-        RELATÓRIO DE CAIXA
-      </div>
-      <div className="center" style={{ marginBottom: 2 }}>COOPAIBI</div>
-      <div className="linha" />
-
-      <div className="row"><span>Operador:</span><span>{sessao.operador}</span></div>
-      <div className="row"><span>Abertura:</span><span>{fmtDT(sessao.aberto_em)}</span></div>
-      <div className="row"><span>Fechamento:</span><span>{fmtDT(sessao.fechado_em)}</span></div>
-      <div className="linha" />
-
-      <div className="row"><span>Fundo inicial:</span><span>{fmt(sessao.valor_abertura)}</span></div>
-      <div className="row"><span>Total vendas:</span><span>{fmt(sessao.totalVendas)}</span></div>
-      <div className="row"><span>  Dinheiro:</span><span>{fmt(sessao.total_especie)}</span></div>
-      <div className="row"><span>  PIX:</span><span>{fmt(sessao.total_pix)}</span></div>
-      <div className="row"><span>  Cartão:</span><span>{fmt(sessao.total_cartao)}</span></div>
-      <div className="row"><span>Sangrias:</span><span>- {fmt(sessao.totalSangrias)}</span></div>
-      <div className="linha" />
-
-      <div className="row bold"><span>Saldo esperado:</span><span>{fmt(sessao.saldoEsperado)}</span></div>
-      <div className="row bold"><span>Saldo informado:</span><span>{fmt(sessao.saldoInformado)}</span></div>
-      {Math.abs(sessao.diferenca) > 0.01 && (
-        <div className="row danger">
-          <span>DIFERENÇA:</span>
-          <span>{sessao.diferenca > 0 ? "+" : ""}{fmt(sessao.diferenca)}</span>
-        </div>
-      )}
-      <div className="linha" />
-
-      {detalhes?.vendas?.length > 0 && (
-        <>
-          <div className="bold center" style={{ marginBottom: 2 }}>VENDAS</div>
-          {detalhes.vendas.map((v: any) => (
-            <div key={v.id} className="row">
-              <span>{v.hora} {v.num}</span>
-              <span>{v.forma} {fmt(v.total)}</span>
-            </div>
-          ))}
-          <div className="linha" />
-        </>
-      )}
-
-      {detalhes?.sangrias?.length > 0 && (
-        <>
-          <div className="bold center" style={{ marginBottom: 2 }}>SANGRIAS</div>
-          {detalhes.sangrias.map((s: any) => (
-            <div key={s.id} className="row">
-              <span>{s.hora} {s.tipo}</span>
-              <span>{fmt(s.valor)}</span>
-            </div>
-          ))}
-          <div className="linha" />
-        </>
-      )}
-
-      <div className="center" style={{ marginTop: 4, fontSize: 10 }}>
-        Impresso em {new Date().toLocaleString("pt-BR")}
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <br/><br/><br/><br/><br/><br/><br/><br/>
-      </div>
-    </div>
-  );
-}
-
 export default function RelatorioCaixaClient({
   sessoes, operadores,
 }: {
@@ -145,9 +44,6 @@ export default function RelatorioCaixaClient({
   const [filtroInicio, setFiltroInicio]           = useState("");
   const [filtroFim, setFiltroFim]                 = useState("");
   const [apenasDivergentes, setApenasDivergentes] = useState(false);
-  const [sessaoAtiva, setSessaoAtiva]             = useState<Sessao | null>(null);
-  const [detalhes, setDetalhes]                   = useState<any>(null);
-  const [loadingId, setLoadingId]                 = useState<string | null>(null);
   const [hoveredFiltro, setHoveredFiltro]         = useState<string | null>(null);
 
   const filtradas = sessoes.filter(s => {
@@ -157,21 +53,6 @@ export default function RelatorioCaixaClient({
     if (apenasDivergentes && Math.abs(s.diferenca) <= 0.01) return false;
     return true;
   });
-
-  const handleImprimir = async (sessao: Sessao) => {
-    setLoadingId(sessao.id);
-    try {
-      const det = await getDetalhesSessao(sessao.id);
-      setSessaoAtiva(sessao);
-      setDetalhes(det);
-      setTimeout(() => window.print(), 100);
-    } catch (err) {
-      console.error("Erro ao carregar detalhes da sessão:", err);
-      alert("Erro ao carregar dados para impressão. Tente novamente.");
-    } finally {
-      setLoadingId(null);
-    }
-  };
 
   const btnStyle = (ativo: boolean, hovered: boolean) => ({
     padding: "8px 16px", borderRadius: 8,
@@ -271,18 +152,19 @@ export default function RelatorioCaixaClient({
                     {temDif ? (s.diferenca > 0 ? "+" : "") + fmt(s.diferenca) : "—"}
                   </td>
                   <td style={{ padding: "11px 14px" }}>
-                    <button
-                      onClick={() => handleImprimir(s)}
-                      disabled={loadingId === s.id}
+                    <a
+                      href={`/loja/relatorios/caixa/imprimir/${s.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       style={{
                         padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                         cursor: "pointer", background: "transparent", color: "#374151",
-                        border: "1px solid #d1d5db",
-                        opacity: loadingId === s.id ? 0.5 : 1,
+                        border: "1px solid #d1d5db", textDecoration: "none",
+                        display: "inline-block",
                       }}
                     >
-                      {loadingId === s.id ? "..." : "🖨 Imprimir"}
-                    </button>
+                      🖨 Imprimir
+                    </a>
                   </td>
                 </tr>
               );
@@ -305,8 +187,6 @@ export default function RelatorioCaixaClient({
           <span>Total período: {fmt(filtradas.reduce((a, s) => a + s.totalVendas, 0))}</span>
         </div>
       </div>
-
-      {sessaoAtiva && <ConteudoImpressao sessao={sessaoAtiva} detalhes={detalhes} />}
 
       <FabMenu />
     </div>
