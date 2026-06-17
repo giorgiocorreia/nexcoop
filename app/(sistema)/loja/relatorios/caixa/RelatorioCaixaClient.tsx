@@ -41,7 +41,8 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
         @media print {
           @page {
             width: 80mm;
-            margin: 0;
+            height: auto;
+            margin: 0mm;
           }
           html, body {
             width: 80mm;
