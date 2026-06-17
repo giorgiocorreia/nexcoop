@@ -47,7 +47,7 @@ export async function GET(
   <style>
     @page { size: 80mm auto; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { width: 80mm; font-family: monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 3mm 4mm; }
+    body { width: 80mm; font-family: monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 3mm 4mm 40mm 4mm; }
     .linha { border-top: 1px dashed #000; margin: 4px 0; }
     .row { display: flex; justify-content: space-between; margin: 1px 0; }
     .center { text-align: center; }
