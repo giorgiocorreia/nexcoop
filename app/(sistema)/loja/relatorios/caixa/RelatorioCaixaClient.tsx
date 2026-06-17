@@ -39,20 +39,31 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
     <div id="conteudo-impressao" style={{ display: "none" }}>
       <style>{`
         @media print {
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page {
+            width: 80mm;
+            margin: 0;
+          }
+          html, body {
+            width: 80mm;
+            margin: 0;
+            padding: 0;
+          }
           body * { visibility: hidden; }
-          #conteudo-impressao, #conteudo-impressao * { visibility: visible; }
+          #conteudo-impressao,
+          #conteudo-impressao * { visibility: visible; }
           #conteudo-impressao {
             display: block !important;
             position: fixed;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             width: 80mm;
+            padding: 3mm 4mm 0 4mm;
             font-family: monospace;
-            font-size: 11px;
+            font-size: 12px;
+            line-height: 1.5;
             color: #000;
-            padding: 4mm 4mm 0 4mm;
           }
-          .linha { border-top: 1px dashed #000; margin: 3px 0; }
+          .linha { border-top: 1px dashed #000; margin: 4px 0; }
           .row { display: flex; justify-content: space-between; margin: 2px 0; }
           .center { text-align: center; }
           .bold { font-weight: bold; }
@@ -119,9 +130,7 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
         Impresso em {new Date().toLocaleString("pt-BR")}
       </div>
       <div style={{ marginTop: 8 }}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i}>&nbsp;</div>
-        ))}
+        <br/><br/><br/><br/><br/><br/><br/><br/>
       </div>
     </div>
   );
