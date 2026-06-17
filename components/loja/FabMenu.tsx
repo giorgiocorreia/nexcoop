@@ -1,17 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 
 const acoes = [
-  { label: "Fechar Caixa",        icon: "🔒", href: "/loja/pdv/fechar",        destaque: false },
-  { label: "Produtos",            icon: "📦", href: "/loja/produtos",           destaque: false },
-  { label: "Relatório de Vendas", icon: "📊", href: "/loja/relatorios/vendas",  destaque: false },
-  { label: "Entrada NF-e",        icon: "📥", href: "/loja/entradas/nova",      destaque: false },
-  { label: "Abrir PDV",           icon: "🛒", href: "/loja/pdv",                destaque: true  },
+  { label: "Fechar Caixa",        icon: "🔒", href: "/loja/pdv/fechar",       destaque: false },
+  { label: "Produtos",            icon: "📦", href: "/loja/produtos",          destaque: false },
+  { label: "Relatório de Vendas", icon: "📊", href: "/loja/relatorios/vendas", destaque: false },
+  { label: "Entrada NF-e",        icon: "📥", href: "/loja/entradas/nova",     destaque: false },
+  { label: "Abrir PDV",           icon: "🛒", href: "/loja/pdv",               destaque: true  },
 ];
 
 export default function FabMenu() {
   const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200);
+  };
 
   return (
     <>
@@ -22,16 +32,20 @@ export default function FabMenu() {
         />
       )}
 
-      <div style={{
-        position: "fixed",
-        bottom: 32,
-        right: 32,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 10,
-        zIndex: 200,
-      }}>
+      <div
+        style={{
+          position: "fixed",
+          bottom: 32,
+          right: 32,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 10,
+          zIndex: 200,
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {/* Itens do menu */}
         <div style={{
           display: "flex",
@@ -59,7 +73,7 @@ export default function FabMenu() {
                 background: a.destaque ? "#378ADD" : "#fff",
                 padding: a.destaque ? "8px 18px" : "4px 12px",
                 borderRadius: 99,
-                border: a.destaque ? "none" : "1px solid #e5e3dc",
+                border: a.destaque ? "1px solid #378ADD" : "1px solid #e5e3dc",
                 whiteSpace: "nowrap",
                 boxShadow: a.destaque
                   ? "0 4px 12px rgba(55,138,221,0.35)"

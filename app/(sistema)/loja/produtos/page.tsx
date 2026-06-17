@@ -1,51 +1,42 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import ProdutosLista from './ProdutosLista'
-import type { LojaFornecedor } from '@/types/database'
-import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
-import { podeGerenciarLoja } from '@/lib/permissoes'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import ProdutosClient from "./ProdutosClient";
 
-export const metadata = { title: 'Produtos — Loja | NexCoop' }
+export const metadata = { title: "Produtos — Loja | NexCoop" };
 
 export default async function ProdutosPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('funcoes, role')
-    .eq('id', user.id)
-    .single()
+    .from("usuarios")
+    .select("organizacao_id")
+    .eq("id", user.id)
+    .single();
 
-  const up = { role: usuario?.role ?? '', funcoes: (usuario?.funcoes ?? []) as string[] }
-  const podeGerenciar = podeGerenciarLoja(up)
+  if (!usuario) redirect("/login");
 
-  const hoje     = new Date().toISOString().split('T')[0]
-  const em30Dias = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const { data: produtos } = await supabase
+    .from("loja_produtos")
+    .select(`
+      id, nome, unidade, preco_normal, estoque_minimo, ativo,
+      loja_lotes ( quantidade_atual )
+    `)
+    .eq("org_id", usuario.organizacao_id as string)
+    .order("nome");
 
-  const [
-    { data: produtos, error },
-    { data: fornecedores },
-    { data: lotesVencendo },
-  ] = await Promise.all([
-    supabase.from('loja_produtos').select('*, loja_fornecedores(nome)').order('nome'),
-    supabase.from('loja_fornecedores').select('id, nome').eq('ativo', true).order('nome'),
-    supabase.from('loja_lotes').select('produto_id').gte('data_validade', hoje).lte('data_validade', em30Dias).gt('quantidade_atual', 0),
-  ])
+  const produtosComEstoque = (produtos ?? []).map(p => ({
+    id: p.id,
+    nome: p.nome,
+    unidade: p.unidade,
+    preco: Number(p.preco_normal),
+    estoque: ((p as any).loja_lotes as any[] ?? []).reduce(
+      (s: number, l: any) => s + Number(l.quantidade_atual ?? 0), 0
+    ),
+    minimo: Number(p.estoque_minimo ?? 0),
+    ativo: p.ativo ?? true,
+  }));
 
-  if (error) console.error('Erro ao buscar produtos:', error.message)
-
-  const produtosComVencimento = new Set(
-    (lotesVencendo ?? []).map(l => (l as { produto_id: string }).produto_id)
-  )
-
-  return (
-    <ProdutosLista
-      produtos={(produtos ?? []) as unknown as LojaProdutoComFornecedor[]}
-      fornecedores={(fornecedores ?? []) as Pick<LojaFornecedor, 'id' | 'nome'>[]}
-      produtosComVencimento={produtosComVencimento}
-      podeGerenciar={podeGerenciar}
-    />
-  )
+  return <ProdutosClient produtos={produtosComEstoque} />;
 }
