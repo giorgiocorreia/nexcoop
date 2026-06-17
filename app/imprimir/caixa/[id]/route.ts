@@ -4,8 +4,9 @@ import { getDetalhesSessao } from "@/lib/loja/caixa-relatorio-actions";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
@@ -13,12 +14,12 @@ export async function GET(
   const { data: caixa } = await supabase
     .from("loja_caixas")
     .select("id, valor_abertura, valor_fechamento, total_especie, total_cartao, total_pix, aberto_em, fechado_em, usuarios(nome_completo)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!caixa) return new NextResponse("Não encontrado", { status: 404 });
 
-  const detalhes = await getDetalhesSessao(params.id);
+  const detalhes = await getDetalhesSessao(id);
 
   const fmt = (v: number) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   const fmtDT = (iso: string) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
