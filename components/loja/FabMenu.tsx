@@ -3,12 +3,12 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 
 const acoes = [
-  { label: "Fechar Caixa",          icon: "🔒", href: "/loja/pdv/fechar",          destaque: false },
-  { label: "Produtos",              icon: "📦", href: "/loja/produtos",             destaque: false },
-  { label: "Relatório de Vendas",   icon: "📊", href: "/loja/relatorios/vendas",   destaque: false },
-  { label: "Relatório de Caixa",    icon: "🗃", href: "/loja/relatorios/caixa",    destaque: false },
-  { label: "Entrada NF-e",          icon: "📥", href: "/loja/entradas/nova",       destaque: false },
-  { label: "Abrir PDV",             icon: "🛒", href: "/loja/pdv",                 destaque: true  },
+  { label: "Fechar Caixa",          icon: "🔒", href: "/loja/pdv/fechar",                destaque: false },
+  { label: "Rel. Estoque",          icon: "📦", href: "/loja/relatorios/estoque",         destaque: false },
+  { label: "Rel. Vendas",           icon: "📊", href: "/loja/relatorios/vendas",          destaque: false },
+  { label: "Rel. Caixa",            icon: "🗃", href: "/loja/relatorios/caixa",           destaque: false },
+  { label: "Entrada NF-e",          icon: "📥", href: "/loja/entradas/nova",              destaque: false },
+  { label: "Abrir PDV",             icon: "🛒", href: "/loja/pdv",                        destaque: true  },
 ];
 
 export default function FabMenu() {
