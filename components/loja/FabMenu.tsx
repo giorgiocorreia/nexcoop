@@ -43,6 +43,7 @@ export default function FabMenu() {
           alignItems: "flex-end",
           gap: 10,
           zIndex: 200,
+          pointerEvents: open ? "all" : "none",
         }}
       >
         {/* Itens do menu */}
@@ -125,6 +126,7 @@ export default function FabMenu() {
             boxShadow: "0 4px 16px rgba(55,138,221,0.4)",
             transform: open ? "rotate(45deg)" : "rotate(0deg)",
             transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            pointerEvents: "all",
           }}
         >
           {open ? "✕" : "⚡"}
