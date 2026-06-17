@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 const acoes = [
@@ -13,16 +13,6 @@ const acoes = [
 
 export default function FabMenu() {
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleMouseEnter = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 200);
-  };
 
   return (
     <>
@@ -109,8 +99,6 @@ export default function FabMenu() {
         {/* FAB principal */}
         <button
           onClick={() => setOpen(!open)}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
           aria-label="Ações rápidas"
           style={{
             width: 56,
