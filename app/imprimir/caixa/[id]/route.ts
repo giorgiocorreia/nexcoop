@@ -84,7 +84,7 @@ export async function GET(
     Impresso em ${new Date().toLocaleString("pt-BR")}
   </div>
   <div style="margin-top:4px;line-height:24px">
-    <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+    <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
   </div>
 </body>
 </html>`;
