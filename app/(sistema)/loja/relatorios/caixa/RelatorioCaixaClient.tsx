@@ -153,7 +153,7 @@ export default function RelatorioCaixaClient({
                   </td>
                   <td style={{ padding: "11px 14px" }}>
                     <a
-                      href={`/loja/relatorios/caixa/imprimir/${s.id}`}
+                      href={`/imprimir/caixa/${s.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
