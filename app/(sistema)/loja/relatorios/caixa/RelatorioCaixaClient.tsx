@@ -154,8 +154,6 @@ export default function RelatorioCaixaClient({
                   <td style={{ padding: "11px 14px" }}>
                     <a
                       href={`/imprimir/caixa/${s.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       style={{
                         padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                         cursor: "pointer", background: "transparent", color: "#374151",

@@ -45,7 +45,7 @@ export async function GET(
   <meta charset="UTF-8"/>
   <title>Relatório de Caixa</title>
   <style>
-    @page { width: 80mm; margin: 0; }
+    @page { size: 80mm auto; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { width: 80mm; font-family: monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 3mm 4mm; }
     .linha { border-top: 1px dashed #000; margin: 4px 0; }
