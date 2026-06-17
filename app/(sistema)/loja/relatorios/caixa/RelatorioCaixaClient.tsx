@@ -41,7 +41,6 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
         @media print {
           @page {
             width: 80mm;
-            height: auto;
             margin: 0mm;
           }
           html, body {
@@ -54,9 +53,7 @@ function ConteudoImpressao({ sessao, detalhes }: { sessao: Sessao; detalhes: any
           #conteudo-impressao * { visibility: visible; }
           #conteudo-impressao {
             display: block !important;
-            position: fixed;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 80mm;
             padding: 3mm 4mm 0 4mm;
             font-family: monospace;
