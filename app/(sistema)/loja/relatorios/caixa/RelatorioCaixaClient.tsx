@@ -153,11 +153,17 @@ export default function RelatorioCaixaClient({
 
   const handleImprimir = async (sessao: Sessao) => {
     setLoadingId(sessao.id);
-    const det = await getDetalhesSessao(sessao.id);
-    setSessaoAtiva(sessao);
-    setDetalhes(det);
-    setLoadingId(null);
-    setTimeout(() => window.print(), 100);
+    try {
+      const det = await getDetalhesSessao(sessao.id);
+      setSessaoAtiva(sessao);
+      setDetalhes(det);
+      setTimeout(() => window.print(), 100);
+    } catch (err) {
+      console.error("Erro ao carregar detalhes da sessão:", err);
+      alert("Erro ao carregar dados para impressão. Tente novamente.");
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const btnStyle = (ativo: boolean, hovered: boolean) => ({
