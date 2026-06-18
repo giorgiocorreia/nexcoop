@@ -10,7 +10,7 @@
 | Fase 3 | /loja/estoque, /loja/compras | ✅ Concluído — migration 037 aplicada |
 | Fase 4 | PDV — Ponto de Venda | ✅ Concluído — migration 038 aplicada |
 | Fase 5 | Dashboard e Relatórios | ✅ Concluído — 18/06/2026 |
-| Fase 6 | Controle de acesso, NF-e saída, Relatórios A4, Entradas NF-e | ⬜ Próxima |
+| Fase 6 | Controle de acesso, NF-e saída, Relatórios A4, Entradas NF-e | 🔄 Em andamento — aguardando dados do contador para emissão fiscal |
 
 ---
 
@@ -75,13 +75,25 @@
 
 ---
 
-## Fase 6 — Controle de Acesso + NF-e + Relatórios A4 (próxima)
+## Fase 6 — Controle de Acesso + NF-e + Relatórios A4 (🔄 em andamento)
 
-### Escopo planejado
-- Filtros por função nas telas de relatório: `operador_caixa` vê só os próprios caixas, `estoquista_loja` só estoque, `gerente_loja` tudo
-- NF-e de saída (venda para não-cooperado)
+### Entregue em 18/06/2026
+- Migration 040: `ncm`/`cfop_saida` em `loja_produtos`, 5 colunas fiscais em `organizacoes`, tabela `loja_notas_fiscais` com RLS
+- Campo NCM na listagem (inline edit + badge), nos formulários criar/editar produto
+- Tela `/configuracoes/fiscal-loja`: CSC NFC-e, séries, regime tributário, card de status com contagem produtos sem NCM
+- `salvarFiscalLoja()` com adminClient + auditoria
+
+### Pendente — aguardando dados do contador (Contabahia / Marcos)
+- CSC ID e CSC Token NFC-e (obtidos na SEFAZ-BA)
+- NCMs de todos os produtos do catálogo
+- Confirmação do regime tributário
+- CSTs para ICMS, PIS, COFINS
+- Emissão de NFC-e/NF-e de saída via Focus NFe
+
+### Ainda planejado
+- Filtros por função nas telas de relatório (`operador_caixa`, `estoquista_loja`, `gerente_loja`)
 - Relatórios em formato A4 (PDF via pdf-lib)
-- Tela dedicada de Entradas NF-e (hoje integrado em compras)
+- Tela dedicada de Entradas NF-e
 - Extrato conta corrente cooperado na loja
 
 ---

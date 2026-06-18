@@ -1,5 +1,17 @@
 # NexCoop — Changelog
 
+## [18/06/2026] — Loja Agropecuária Fase 6 — Preparação Fiscal
+
+- Migration 040: colunas `ncm` e `cfop_saida` em `loja_produtos`, 5 colunas fiscais em `organizacoes` (CSC ID/Token, séries NFC-e/NF-e, regime tributário), tabela `loja_notas_fiscais` com RLS
+- `types/database.ts`: `LojaProduto` + ncm/cfop_saida, `Organizacao` + 5 campos fiscais, nova interface `LojaNotaFiscal` + tipos `LojaNotaTipo`/`LojaNotaStatus`
+- Listagem de produtos: coluna NCM com inline edit + badge "NCM ok" (verde) / "Sem NCM" (cinza) ao lado do nome
+- Formulários criar/editar produto: campo NCM (8 dígitos, validação, dica informativa)
+- `lib/loja/fiscal-actions.ts`: `salvarFiscalLoja()` com `createAdminClient()` + `registrarLog()`
+- `/configuracoes/fiscal-loja`: tela Fiscal da Loja com seções NFC-e (CSC ID/Token/Série), NF-e saída (Série/Regime tributário) e card de Status (NFC-e configurado, NF-e saída, contagem de produtos sem NCM)
+- `ConfiguracoesForm`: link "🧾 Fiscal da Loja" na barra de abas, visível apenas para admin
+
+---
+
 ## [18/06/2026] — Loja Agropecuária Fase 5 Completa
 
 ### Loja — Dashboard e Relatórios (Fase 5)
