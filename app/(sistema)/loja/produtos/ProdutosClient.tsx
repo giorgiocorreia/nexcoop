@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import FabMenu from "@/components/loja/FabMenu";
 import { atualizarPrecoProduto, atualizarMinimoProduto, toggleAtivoProduto } from "@/lib/loja/produtos-actions";
 
 interface Produto {
@@ -141,7 +140,7 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
   ] as const;
 
   return (
-    <div style={{ padding: "24px 32px", maxWidth: 1200, paddingBottom: 120 }}>
+    <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
 
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
@@ -265,7 +264,6 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
         </div>
       </div>
 
-      <FabMenu />
     </div>
   );
 }

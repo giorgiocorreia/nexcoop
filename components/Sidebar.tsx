@@ -13,6 +13,7 @@ interface NavItem {
   icone: string
   em_breve?: boolean
   exact?: boolean
+  children?: { label: string; href: string; icone: string; em_breve?: boolean }[]
 }
 
 interface NavGrupo {
@@ -90,10 +91,18 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
     agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
   if (isAdmin && temModulo(usuario?.organizacao?.modulos_ativos, 'loja'))
-    agroItens.push(
-      { label: 'Loja', href: '/loja', icone: '🏪' },
-      { label: 'PDV',  href: '/loja/pdv', icone: '🛒' },
-    )
+    agroItens.push({
+      label: 'Loja', href: '/loja', icone: '🏪',
+      children: [
+        { label: 'Hub',           href: '/loja',                    icone: '🏪' },
+        { label: 'PDV / Caixa',   href: '/loja/pdv',                icone: '🛒' },
+        { label: 'Produtos',      href: '/loja/produtos',           icone: '📦' },
+        { label: 'Entradas NF-e', href: '/loja/entradas',           icone: '🚚', em_breve: true },
+        { label: 'Rel. Vendas',   href: '/loja/relatorios/vendas',  icone: '💰' },
+        { label: 'Rel. Estoque',  href: '/loja/relatorios/estoque', icone: '📦' },
+        { label: 'Rel. Caixa',    href: '/loja/relatorios/caixa',   icone: '🗃' },
+      ],
+    })
   if (agroItens.length > 0)
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
@@ -170,6 +179,13 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
   const [collapsed, setCollapsed] = useState(false)
   const [nomeDisplay, setNomeDisplay] = useState(usuario?.nome_completo || '')
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (pathname.startsWith('/loja')) {
+      setExpandedGroup('Loja')
+    }
+  }, [pathname])
 
   useEffect(() => {
     const saved = localStorage.getItem(SIDEBAR_KEY)
@@ -206,6 +222,97 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   const W = collapsed ? 56 : 240
 
   function renderItem(item: NavItem) {
+    // Item com submenu
+    if (item.children) {
+      const expanded = expandedGroup === item.label
+      const childActive = item.children.some(c =>
+        pathname === c.href || pathname.startsWith(c.href + '/')
+      )
+
+      if (collapsed) {
+        return (
+          <button
+            key={item.label}
+            onClick={() => router.push(item.href)}
+            title={item.label}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '8px 0',
+              background: childActive ? '#EEEDFE' : 'transparent',
+              border: 'none', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+            onMouseLeave={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+          >
+            <span style={{ fontSize: '18px' }}>{item.icone}</span>
+          </button>
+        )
+      }
+
+      return (
+        <div key={item.label}>
+          {/* Cabeçalho do grupo */}
+          <button
+            onClick={() => setExpandedGroup(expanded ? null : item.label)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 1rem',
+              background: childActive && !expanded ? '#EEEDFE' : 'transparent',
+              border: 'none', cursor: 'pointer', textAlign: 'left',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = childActive && !expanded ? '#EEEDFE' : 'transparent' }}
+          >
+            <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
+            <span style={{ fontSize: '13px', fontWeight: childActive ? '600' : '400', color: childActive ? '#4840CC' : '#444', flex: 1 }}>
+              {item.label}
+            </span>
+            <span style={{
+              fontSize: 10, color: '#aaa',
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s', display: 'inline-block',
+            }}>▼</span>
+          </button>
+
+          {/* Filhos */}
+          <div style={{
+            maxHeight: expanded ? '400px' : '0',
+            overflow: 'hidden',
+            transition: 'max-height 0.2s ease',
+          }}>
+            {item.children.map(child => {
+              const ativo = !child.em_breve && (pathname === child.href || pathname.startsWith(child.href + '/'))
+              return (
+                <button
+                  key={child.href}
+                  onClick={() => !child.em_breve && router.push(child.href)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '7px 1rem 7px 2.5rem',
+                    background: ativo ? '#EEEDFE' : 'transparent',
+                    border: 'none', cursor: child.em_breve ? 'default' : 'pointer',
+                    textAlign: 'left', opacity: child.em_breve ? 0.5 : 1,
+                  }}
+                  onMouseEnter={e => { if (!ativo && !child.em_breve) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+                  onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                >
+                  <span style={{ fontSize: '14px', flexShrink: 0 }}>{child.icone}</span>
+                  <span style={{ fontSize: '12px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#555', flex: 1 }}>
+                    {child.label}
+                  </span>
+                  {child.em_breve && (
+                    <span style={{ fontSize: '9px', background: '#f0f0ec', color: '#888', padding: '2px 5px', borderRadius: '4px', fontWeight: '500', marginRight: '0.5rem' }}>
+                      em breve
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
     const ativo = item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(item.href + '/')

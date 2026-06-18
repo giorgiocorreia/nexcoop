@@ -4,7 +4,6 @@ import Link from "next/link";
 import { temModulo } from "@/lib/org";
 import { podeVerEstoqueLoja, podeVenderLoja } from "@/lib/permissoes";
 import GraficoFaturamento from "@/components/loja/GraficoFaturamento";
-import FabMenu from "@/components/loja/FabMenu";
 import {
   getHubKpis,
   getAlertasEstoque,
@@ -73,7 +72,7 @@ export default async function LojaHubPage() {
   ];
 
   return (
-    <div style={{ padding: "24px 32px", maxWidth: 1200, paddingBottom: 120 }}>
+    <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
 
       {/* Breadcrumb + status caixa */}
       <div style={{
@@ -303,7 +302,6 @@ export default async function LojaHubPage() {
       </div>
 
       {/* FAB flutuante */}
-      <FabMenu />
 
     </div>
   );

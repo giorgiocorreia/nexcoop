@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import FabMenu from "@/components/loja/FabMenu";
 
 interface ItemEstoque {
   id: string; nome: string; unidade: string;
@@ -70,7 +69,7 @@ export default function RelatorioEstoqueClient({
   });
 
   return (
-    <div style={{ padding: "24px 32px", maxWidth: 1200, paddingBottom: 120 }}>
+    <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
 
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
@@ -245,7 +244,6 @@ export default function RelatorioEstoqueClient({
         </div>
       )}
 
-      <FabMenu />
     </div>
   );
 }
