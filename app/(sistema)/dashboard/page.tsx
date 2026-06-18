@@ -16,10 +16,12 @@ export default async function DashboardPage() {
   // Redireciona super_admin para /admin; busca tipo da org em um único select
   const { data: usuarioData } = await supabase
     .from('usuarios')
-    .select('role, organizacoes(tipo)')
+    .select('role, funcoes, organizacoes(tipo)')
     .eq('id', user.id)
     .single()
   if (usuarioData?.role === 'super_admin') redirect('/admin')
+  const funcoes: string[] = (usuarioData?.funcoes as string[] | null) ?? []
+  if (funcoes.includes('caixa_loja')) redirect('/loja')
   const orgTipo = (usuarioData?.organizacoes as unknown as { tipo?: string } | null)?.tipo
 
   // Dados de cotação de cacau — só para cooperativas

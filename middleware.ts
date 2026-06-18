@@ -93,7 +93,11 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/comercializacao'
         return NextResponse.redirect(url)
       }
-      // Futuramente: caixa_loja, vendedor_loja → /loja
+      if (funcoes.includes('caixa_loja') || funcoes.includes('gerente_loja') || funcoes.includes('estoquista_loja')) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/loja'
+        return NextResponse.redirect(url)
+      }
     }
   }
 
