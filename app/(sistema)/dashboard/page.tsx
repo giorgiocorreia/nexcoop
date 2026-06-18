@@ -20,8 +20,16 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
   if (usuarioData?.role === 'super_admin') redirect('/admin')
+
+  // Redireciona para /loja se usuário tem exclusivamente funções da loja
+  const FUNCOES_LOJA = ['caixa_loja', 'gerente_loja', 'estoquista_loja']
   const funcoes: string[] = (usuarioData?.funcoes as string[] | null) ?? []
-  if (funcoes.includes('caixa_loja')) redirect('/loja')
+  const apenasLoja =
+    funcoes.length > 0 &&
+    funcoes.every(f => FUNCOES_LOJA.includes(f)) &&
+    !funcoes.includes('admin')
+
+  if (apenasLoja) redirect('/loja')
   const orgTipo = (usuarioData?.organizacoes as unknown as { tipo?: string } | null)?.tipo
 
   // Dados de cotação de cacau — só para cooperativas
