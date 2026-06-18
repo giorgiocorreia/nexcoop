@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { podeGerenciarLoja } from "@/lib/permissoes";
 
 export async function getSessoesCaixa(orgId: string, filtros?: {
   dataInicio?: string;
@@ -10,6 +11,25 @@ export async function getSessoesCaixa(orgId: string, filtros?: {
   apenasDivergentes?: boolean;
 }) {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: usuario } = await supabase
+    .from("usuarios")
+    .select("role, funcoes")
+    .eq("id", user.id)
+    .single();
+
+  const isGerente = podeGerenciarLoja({
+    role: usuario?.role ?? "",
+    funcoes: (usuario?.funcoes ?? []) as string[],
+  });
+
+  // caixa_loja só vê suas próprias sessões — força filtro no servidor
+  if (!isGerente) {
+    filtros = { ...filtros, usuarioId: user.id };
+  }
 
   let query = supabase
     .from("loja_caixas")
@@ -119,6 +139,21 @@ export async function getDetalhesSessao(caixaId: string) {
 
 export async function getOperadoresCaixa(orgId: string) {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: usuario } = await supabase
+    .from("usuarios")
+    .select("role, funcoes")
+    .eq("id", user.id)
+    .single();
+
+  // caixa_loja não precisa do select de operador — suas sessões já vêm filtradas
+  if (!podeGerenciarLoja({ role: usuario?.role ?? "", funcoes: (usuario?.funcoes ?? []) as string[] })) {
+    return [];
+  }
+
   const { data } = await supabase
     .from("loja_caixas")
     .select("usuario_id, usuarios ( nome_completo )")

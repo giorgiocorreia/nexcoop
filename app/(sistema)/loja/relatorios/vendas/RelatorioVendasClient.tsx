@@ -107,14 +107,16 @@ export default function RelatorioVendasClient({ vendas, operadores }: { vendas: 
             <option value="credito_cooperado">Crédito Coop.</option>
           </select>
         </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#78716c", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Operador</div>
-          <select value={filtroOp} onChange={e => setFiltroOp(e.target.value)}
-            style={{ padding: "7px 10px", borderRadius: 7, border: "1px solid #e5e3dc", fontSize: 13, outline: "none", background: "#fff" }}>
-            <option value="">Todos</option>
-            {operadores.map(o => <option key={o.id} value={o.nome}>{o.nome}</option>)}
-          </select>
-        </div>
+        {operadores.length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#78716c", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Operador</div>
+            <select value={filtroOp} onChange={e => setFiltroOp(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: 7, border: "1px solid #e5e3dc", fontSize: 13, outline: "none", background: "#fff" }}>
+              <option value="">Todos</option>
+              {operadores.map(o => <option key={o.id} value={o.nome}>{o.nome}</option>)}
+            </select>
+          </div>
+        )}
         <button
           onClick={() => { setFiltroInicio(""); setFiltroFim(""); setFiltroForma(""); setFiltroOp(""); }}
           onMouseEnter={() => setHoveredFiltro("limpar")}

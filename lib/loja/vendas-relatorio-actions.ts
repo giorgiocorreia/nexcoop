@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { podeGerenciarLoja } from "@/lib/permissoes";
 
 export async function getVendasRelatorio(orgId: string, filtros?: {
   dataInicio?: string;
@@ -9,6 +10,23 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   usuarioId?: string;
 }) {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: usuario } = await supabase
+    .from("usuarios")
+    .select("role, funcoes")
+    .eq("id", user.id)
+    .single();
+
+  const isGerente = podeGerenciarLoja({
+    role: usuario?.role ?? "",
+    funcoes: (usuario?.funcoes ?? []) as string[],
+  });
+
+  // caixa_loja sempre vê só as próprias vendas — filtro forçado no servidor
+  const usuarioIdFiltro = isGerente ? filtros?.usuarioId : user.id;
 
   let query = supabase
     .from("loja_vendas")
@@ -23,6 +41,18 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
 
   if (filtros?.dataInicio) query = query.gte("criado_em", filtros.dataInicio);
   if (filtros?.dataFim)    query = query.lte("criado_em", filtros.dataFim + "T23:59:59");
+
+  if (usuarioIdFiltro) {
+    const { data: caixas } = await supabase
+      .from("loja_caixas")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("usuario_id", usuarioIdFiltro);
+
+    const caixaIds = (caixas ?? []).map(c => c.id);
+    if (caixaIds.length === 0) return [];
+    query = query.in("caixa_id", caixaIds);
+  }
 
   const { data } = await query;
 
@@ -54,6 +84,21 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
 
 export async function getOperadoresVendas(orgId: string) {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: usuario } = await supabase
+    .from("usuarios")
+    .select("role, funcoes")
+    .eq("id", user.id)
+    .single();
+
+  // caixa_loja não precisa do select de operador — dados já vêm filtrados
+  if (!podeGerenciarLoja({ role: usuario?.role ?? "", funcoes: (usuario?.funcoes ?? []) as string[] })) {
+    return [];
+  }
+
   const { data } = await supabase
     .from("loja_caixas")
     .select("usuario_id, usuarios(nome_completo)")
