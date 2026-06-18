@@ -49,6 +49,7 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
   const [precoNormal, setPrecoNormal]     = useState('')
   const [estoqueMin, setEstoqueMin]       = useState('')
   const [ativo, setAtivo]                 = useState(true)
+  const [ncm, setNcm]                     = useState('')
   const [temDesconto, setTemDesconto]     = useState(false)
   const [descontoPct, setDescontoPct]     = useState('')
   const [erro, setErro]                   = useState<string | null>(null)
@@ -72,6 +73,8 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
       estoque_minimo:        estoqueMin ? parseInt(estoqueMin, 10) : null,
       desconto_cooperado:    temDesconto,
       desconto_cooperado_pct: temDesconto && descontoPct ? parseFloat(descontoPct) : null,
+      ncm:                   ncm.trim() || null,
+      cfop_saida:            null,
     })
     setSalvando(false)
 
@@ -159,6 +162,21 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
                 placeholder="Quantidade mínima"
                 style={inputStyle}
               />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Código NCM</label>
+              <input
+                value={ncm}
+                onChange={e => setNcm(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                placeholder="00000000"
+                maxLength={8}
+                inputMode="numeric"
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
+              />
+              <span style={{ fontSize: 11, color: '#888', marginTop: 4, display: 'block' }}>
+                8 dígitos — necessário para emissão de nota fiscal
+              </span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '8px' }}>

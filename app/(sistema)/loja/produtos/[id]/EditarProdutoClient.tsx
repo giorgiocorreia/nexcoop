@@ -68,6 +68,7 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
   )
   const [estoqueMin, setEstoqueMin]     = useState(produto.estoque_minimo?.toString() ?? '')
   const [ativo, setAtivo]               = useState(produto.ativo)
+  const [ncm, setNcm]                   = useState(produto.ncm ?? '')
   const [temDesconto, setTemDesconto]   = useState(produto.desconto_cooperado)
   const [descontoPct, setDescontoPct]   = useState(produto.desconto_cooperado_pct?.toString() ?? '')
   const [erro, setErro]                 = useState<string | null>(null)
@@ -96,6 +97,7 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
       ativo,
       desconto_cooperado:     temDesconto,
       desconto_cooperado_pct: temDesconto && descontoPct ? parseFloat(descontoPct) : null,
+      ncm:                    ncm.trim() || null,
     })
     setSalvando(false)
 
@@ -200,6 +202,22 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
                 disabled={disabled}
                 style={inputStyle(disabled)}
               />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Código NCM</label>
+              <input
+                value={ncm}
+                onChange={e => setNcm(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                placeholder="00000000"
+                maxLength={8}
+                inputMode="numeric"
+                disabled={disabled}
+                style={{ ...inputStyle(disabled), fontFamily: 'monospace' }}
+              />
+              <span style={{ fontSize: 11, color: '#888', marginTop: 4, display: 'block' }}>
+                8 dígitos — necessário para emissão de nota fiscal
+              </span>
             </div>
 
             {podeGerenciar && (

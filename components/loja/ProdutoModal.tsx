@@ -136,6 +136,8 @@ export default function ProdutoModal({ mode: initialMode, produto, fornecedores,
       desconto_cooperado_pct: values.desconto_cooperado ? pct : null,
       estoque_minimo:         parseBRL(values.estoque_minimo),
       fornecedor_id:          values.fornecedor_id || null,
+      ncm:                    null,
+      cfop_saida:             null,
     }
     const res = mode === 'create'
       ? await criarProduto(dados)

@@ -59,6 +59,11 @@ export interface Organizacao {
   trial_ends_at: string | null
   subscription_ends_at: string | null
   modulos_ativos: string[]
+  loja_nfce_csc_id:       string | null
+  loja_nfce_csc_token:    string | null
+  loja_regime_tributario: string | null
+  loja_nfce_serie:        string | null
+  loja_nfe_saida_serie:   string | null
   criado_em: string
   atualizado_em: string
 }
@@ -377,8 +382,32 @@ export interface LojaProduto {
   estoque_minimo:  number | null
   fornecedor_id:   string | null
   ativo:           boolean
+  ncm:             string | null
+  cfop_saida:      string | null
   criado_em:       string
   atualizado_em:   string
+}
+
+export type LojaNotaTipo   = 'nfe' | 'nfce'
+export type LojaNotaStatus = 'processando' | 'autorizada' | 'rejeitada' | 'cancelada' | 'erro'
+
+export interface LojaNotaFiscal {
+  id:                string
+  org_id:            string
+  venda_id:          string
+  tipo:              LojaNotaTipo
+  referencia:        string
+  chave_acesso:      string | null
+  numero:            string | null
+  serie:             string | null
+  status:            LojaNotaStatus
+  xml_url:           string | null
+  danfe_url:         string | null
+  destinatario_nome: string | null
+  destinatario_doc:  string | null
+  motivo_rejeicao:   string | null
+  emitido_em:        string | null
+  created_at:        string
 }
 
 export interface LojaCliente {
@@ -1053,6 +1082,7 @@ export type Database = {
       loja_estoque_movimentos:   TableDef<LojaEstoqueMovimento>
       loja_pedidos_online:       TableDef<LojaPedidoOnline>
       loja_pedido_itens:         TableDef<LojaPedidoItem>
+      loja_notas_fiscais:        TableDef<LojaNotaFiscal>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       plano_contas:              TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

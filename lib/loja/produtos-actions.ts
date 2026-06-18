@@ -29,3 +29,12 @@ export async function toggleAtivoProduto(id: string, ativo: boolean) {
     .eq("id", id);
   revalidatePath("/loja/produtos");
 }
+
+export async function atualizarNcmProduto(id: string, ncm: string | null) {
+  const supabase = await createClient();
+  await supabase
+    .from("loja_produtos")
+    .update({ ncm: ncm || null })
+    .eq("id", id);
+  revalidatePath("/loja/produtos");
+}

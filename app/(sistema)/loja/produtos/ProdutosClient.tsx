@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { atualizarPrecoProduto, atualizarMinimoProduto, toggleAtivoProduto } from "@/lib/loja/produtos-actions";
+import { atualizarPrecoProduto, atualizarMinimoProduto, toggleAtivoProduto, atualizarNcmProduto } from "@/lib/loja/produtos-actions";
 
 interface Produto {
   id: string;
@@ -11,6 +11,7 @@ interface Produto {
   estoque: number;
   minimo: number;
   ativo: boolean;
+  ncm: string | null;
 }
 
 function fmt(v: number) {
@@ -27,6 +28,71 @@ function StatusBadge({ ativo }: { ativo: boolean }) {
       whiteSpace: "nowrap",
     }}>
       {ativo ? "Ativo" : "Inativo"}
+    </span>
+  );
+}
+
+function InlineNcm({ ncm, onSave }: { ncm: string | null; onSave: (v: string | null) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(ncm ?? "");
+
+  if (!editing) {
+    return (
+      <span onClick={() => setEditing(true)} title="Clique para editar NCM" style={{
+        cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "monospace",
+        color: ncm ? "#374151" : "#a8a29e",
+        borderBottom: "1px dashed #d1d5db", paddingBottom: 1,
+      }}>
+        {ncm ?? "—"}
+      </span>
+    );
+  }
+
+  const salvar = () => {
+    const limpo = val.replace(/\D/g, "").slice(0, 8);
+    onSave(limpo || null);
+    setEditing(false);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <input
+        autoFocus value={val}
+        onChange={e => setVal(e.target.value.replace(/\D/g, "").slice(0, 8))}
+        onKeyDown={e => { if (e.key === "Enter") salvar(); if (e.key === "Escape") setEditing(false); }}
+        placeholder="00000000"
+        maxLength={8}
+        inputMode="numeric"
+        style={{
+          width: 80, fontSize: 12, fontWeight: 600, fontFamily: "monospace",
+          padding: "3px 6px", borderRadius: 6,
+          border: "1px solid #378ADD", outline: "none",
+        }}
+      />
+      <button onClick={salvar} style={{
+        fontSize: 11, padding: "3px 8px", borderRadius: 5,
+        background: "#378ADD", color: "#fff", border: "none", cursor: "pointer",
+      }}>✓</button>
+      <button onClick={() => setEditing(false)} style={{
+        fontSize: 11, padding: "3px 8px", borderRadius: 5,
+        background: "transparent", color: "#78716c",
+        border: "1px solid #e5e3dc", cursor: "pointer",
+      }}>✕</button>
+    </div>
+  );
+}
+
+function NcmBadge({ ncm }: { ncm: string | null }) {
+  const ok = !!ncm;
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 99,
+      background: ok ? "#f0fdf4" : "#f5f5f4",
+      color: ok ? "#15803d" : "#a8a29e",
+      border: `1px solid ${ok ? "#bbf7d0" : "#e5e3dc"}`,
+      whiteSpace: "nowrap", marginLeft: 6,
+    }}>
+      {ok ? "NCM ok" : "Sem NCM"}
     </span>
   );
 }
@@ -133,6 +199,11 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
     await toggleAtivoProduto(id, !ativo);
   };
 
+  const atualizarNcm = async (id: string, ncm: string | null) => {
+    setProdutos(prev => prev.map(p => p.id === id ? { ...p, ncm } : p));
+    await atualizarNcmProduto(id, ncm);
+  };
+
   const filtros = [
     { key: "todos",    label: `Todos (${produtos.length})` },
     { key: "criticos", label: `⚠ Críticos (${criticos})` },
@@ -196,7 +267,7 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #e5e3dc" }}>
-              {["Produto", "Unidade", "Preço de venda", "Estoque atual", "Mínimo", "Status", ""].map(h => (
+              {["Produto", "NCM", "Unidade", "Preço de venda", "Estoque atual", "Mínimo", "Status", ""].map(h => (
                 <th key={h} style={{
                   padding: "11px 16px", fontSize: 11, fontWeight: 700,
                   textTransform: "uppercase", letterSpacing: "0.05em",
@@ -213,7 +284,13 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
                 opacity: p.ativo ? 1 : 0.6,
               }}>
                 <td style={{ padding: "12px 16px" }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</span>
+                  <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{p.nome}</span>
+                    <NcmBadge ncm={p.ncm} />
+                  </div>
+                </td>
+                <td style={{ padding: "12px 16px" }}>
+                  <InlineNcm ncm={p.ncm} onSave={v => atualizarNcm(p.id, v)} />
                 </td>
                 <td style={{ padding: "12px 16px" }}>
                   <span style={{

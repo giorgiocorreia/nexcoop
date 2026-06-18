@@ -201,7 +201,7 @@ export async function getPosicaoEstoque(produtoId: string) {
 }
 
 export async function criarProduto(
-  dados: Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id'>
+  dados: Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id' | 'ncm' | 'cfop_saida'>
 ) {
   try {
     const { supabase, orgId } = await getCtx()
@@ -221,7 +221,7 @@ export async function criarProduto(
 
 export async function atualizarProduto(
   id: string,
-  dados: Partial<Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id' | 'ativo'>>
+  dados: Partial<Pick<LojaProduto, 'nome' | 'categoria' | 'unidade' | 'preco_normal' | 'desconto_cooperado' | 'desconto_cooperado_pct' | 'estoque_minimo' | 'fornecedor_id' | 'ativo' | 'ncm' | 'cfop_saida'>>
 ) {
   try {
     const { supabase } = await getCtx()

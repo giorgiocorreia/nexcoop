@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { Organizacao, PerfilCaptacao, TipoOrganizacao, Usuario, FuncaoDisponivel } from '@/types/database'
 import type { UsuarioPendente } from './usuarios/page'
@@ -104,7 +105,7 @@ export default function ConfiguracoesForm(props: Props) {
       </div>
 
       {/* Barra de abas */}
-      <div style={{ borderBottom: '1px solid #e5e3dc', marginBottom: '1.5rem', display: 'flex' }}>
+      <div style={{ borderBottom: '1px solid #e5e3dc', marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-end' }}>
         {visiveis.map(tab => {
           const ativo    = abaEfetiva === tab.id
           const disabled = tab.disabled ?? false
@@ -137,6 +138,24 @@ export default function ConfiguracoesForm(props: Props) {
             </button>
           )
         })}
+        {showAdminTabs && (
+          <Link href="/configuracoes/fiscal-loja" style={{
+            padding: '10px 20px',
+            border: 'none',
+            borderBottom: '2px solid transparent',
+            background: 'transparent',
+            color: '#666',
+            fontSize: '13px',
+            fontWeight: '400',
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            marginBottom: '-1px',
+            whiteSpace: 'nowrap',
+            textDecoration: 'none',
+          }}>
+            🧾 Fiscal da Loja
+          </Link>
+        )}
       </div>
 
       {/* Conteúdo da aba */}

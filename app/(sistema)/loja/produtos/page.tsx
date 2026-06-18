@@ -20,7 +20,7 @@ export default async function ProdutosPage() {
   const { data: produtos } = await supabase
     .from("loja_produtos")
     .select(`
-      id, nome, unidade, preco_normal, estoque_minimo, ativo,
+      id, nome, unidade, preco_normal, estoque_minimo, ativo, ncm,
       loja_lotes ( quantidade_atual )
     `)
     .eq("org_id", usuario.organizacao_id as string)
@@ -36,6 +36,7 @@ export default async function ProdutosPage() {
     ),
     minimo: Number(p.estoque_minimo ?? 0),
     ativo: p.ativo ?? true,
+    ncm: (p as any).ncm as string | null ?? null,
   }));
 
   return <ProdutosClient produtos={produtosComEstoque} />;
