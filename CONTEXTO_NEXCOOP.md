@@ -111,6 +111,7 @@
 | Portal do Filiado | ❌ (planejado, chat dedicado) |
 | Loja Agropecuária — Fases 0–3 | ✅ (infra, catálogo, compras/estoque) |
 | Loja Agropecuária — Fase 4 PDV | ✅ (migration 038, PDV completo) |
+| Loja Agropecuária — Fase 5 Relatórios | ✅ (Hub, Produtos inline, Rel. Caixa/Vendas/Estoque, sidebar submenus, impressão 80mm) |
 | Super Admin — Módulos/Usuários/Planos | ❌ |
 | Captação — Alertas, MI, Perfil org | ❌ |
 
@@ -247,10 +248,35 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 - Modal comprovante: fecha automaticamente após imprimir
 - Máscara CPF: usa `slice` em vez de regex encadeada
 
-### Fase 5 ⏳ — Dashboard e Relatórios (próxima)
-- Dashboard gerencial: vendas do dia, ticket médio, produtos mais vendidos
-- Relatórios de venda por período, por cooperado, por produto
-- Extrato de conta corrente cooperado (compras na loja)
+### Fase 5 ✅ — Dashboard e Relatórios (18/06/2026)
+- Hub `/loja` com gráfico SVG de vendas dos últimos 7 dias + KPIs (vendas do dia, ticket médio, produtos vendidos) + alertas de estoque
+- Tela `/loja/produtos` com inline edit (edição direto na tabela, sem modal)
+- Relatório de Caixa `/loja/relatorio/caixa/[id]`: fechamento por caixa com totais por forma de pagamento + impressão térmica 80mm via route handler HTML puro (`/imprimir/caixa/[id]`)
+- Relatório de Vendas `/loja/relatorio/vendas`: filtros por período/cooperado/produto, exportação CSV
+- Relatório de Estoque `/loja/relatorio/estoque`: posição atual + movimentações por produto/período
+- Sidebar global com submenus expansíveis da Loja (Catálogo, PDV, Relatórios, Configurações)
+- FAB removido — navegação 100% via sidebar
+
+### Schema real da Loja (confirmado em produção)
+- `loja_vendas` — cabeçalho da venda (caixa_id, cooperado_id, total, formas de pagamento)
+- `loja_produtos` — catálogo com preço, desconto cooperado, estoque mínimo
+- `loja_venda_itens` — itens da venda (produto_id, quantidade, preco_unitario, desconto_pct)
+- `loja_caixas` — sessões de caixa (abertura, fechamento, totais)
+- `loja_lotes` — lotes de estoque com custo, data de entrada, FIFO
+- `loja_sangrias` — sangrias e aportes do caixa
+- `loja_estoque_movimentos` — movimentações de estoque (entradas, saídas, ajustes)
+
+### Impressora térmica
+- Modelo: Epson TM-T88VI
+- Driver/método: POS-80 via Chrome `window.print()` (CSS `@page { width: 80mm }`)
+- Corte: manual (sem ESC/POS direto)
+- Route handler para impressão: `/imprimir/caixa/[id]` → HTML puro sem layout Next.js, imprime e fecha janela
+
+### Funções de usuário da Loja (Fase 6 — filtros por função pendente)
+- `operador_caixa` / `caixa_loja` — opera o PDV
+- `estoquista_loja` — gerencia estoque
+- `gerente_loja` — autoriza descontos e sangrias, acessa relatórios
+- Filtros de acesso por função nas telas de relatório: **pendente (Fase 6)**
 
 ### Decisões consolidadas
 
@@ -290,13 +316,12 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 
 ---
 
-## Fluxo de trabalho Giorgio → Claude → Claude Code
+## Fluxo de trabalho Giorgio → Claude Code
 1. Giorgio descreve o que quer
-2. Claude prepara mockup visual (quando aplicável) para aprovação
-3. Claude gera instrução como **arquivo .txt para download** (nunca inline)
-4. Giorgio passa o .txt ao Claude Code para execução
-5. Giorgio reporta resultado de volta
-6. Sempre terminar com `git add + commit + push`
+2. Claude Code implementa diretamente (sem pedir confirmação a cada passo)
+3. Testar em localhost → aprovar → commit por feature (máx 5-6 arquivos por commit)
+4. Deploy quando estável (não a cada commit)
+5. Sempre terminar com `git add + commit + push`
 
 ---
 
@@ -311,11 +336,11 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 8. Remover "Mensalidades" sidebar para cooperativas
 9. BotaoPdfSessao no Diário de Caixa + renomear "Imprimir Relatório"
 10. Btn.tsx variantes marrom/verde/roxo com cores reais
-11. Loja Agropecuária — Fase 5: Dashboard e Relatórios
+11. Loja Agropecuária — Fase 6: controle de acesso por função (operador_caixa/estoquista_loja/gerente_loja), NF-e saída, relatórios A4, Entradas NF-e tela dedicada
 12. Captação — Radar avançado, alertas, geração de MI
 13. Stripe live, 2FA, Sobras/REFAC
 14. Fluxo convite contador (embolado — chat separado)
 
 ---
 
-*Última atualização: 15/06/2026 — Loja Fase 4 ✅ + UI Global (Toast + Sidebar colapsável)*
+*Última atualização: 18/06/2026 — Loja Fase 5 ✅ (Hub, Relatórios, sidebar submenus, impressão 80mm)*

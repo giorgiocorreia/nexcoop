@@ -1,5 +1,18 @@
 # NexCoop — Changelog
 
+## [18/06/2026] — Loja Agropecuária Fase 5 Completa
+
+### Loja — Dashboard e Relatórios (Fase 5)
+- Hub `/loja` redesenhado: gráfico SVG de vendas dos últimos 7 dias + KPIs (vendas do dia, ticket médio, produtos vendidos) + alertas de estoque mínimo
+- `/loja/produtos`: inline edit — edição de preço/estoque mínimo/desconto direto na tabela, sem abrir modal
+- Relatório de Caixa `/loja/relatorio/caixa/[id]`: resumo do fechamento com totais por forma de pagamento; impressão térmica 80mm via route handler HTML puro em `/imprimir/caixa/[id]` (sem layout Next.js, imprime e fecha)
+- Relatório de Vendas `/loja/relatorio/vendas`: filtros por período, cooperado e produto; exportação CSV
+- Relatório de Estoque `/loja/relatorio/estoque`: posição atual por produto + histórico de movimentações filtráveis por período
+- Sidebar global com submenus expansíveis para a Loja: Catálogo (Produtos, Categorias, Fornecedores), PDV, Relatórios (Caixas, Vendas, Estoque), Configurações
+- FAB removido — navegação 100% via sidebar com submenus
+
+---
+
 ## [16/06/2026] — Correções PDV Loja
 
 - fix: busca cooperado por CPF usando adminClient e tabela cooperados diretamente

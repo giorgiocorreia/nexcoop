@@ -9,7 +9,8 @@
 | Fase 2 | /loja/produtos, /loja/categorias, /loja/fornecedores | ✅ Concluído |
 | Fase 3 | /loja/estoque, /loja/compras | ✅ Concluído — migration 037 aplicada |
 | Fase 4 | PDV — Ponto de Venda | ✅ Concluído — migration 038 aplicada |
-| Fase 5 | Dashboard e Relatórios | ⬜ Próxima |
+| Fase 5 | Dashboard e Relatórios | ✅ Concluído — 18/06/2026 |
+| Fase 6 | Controle de acesso, NF-e saída, Relatórios A4, Entradas NF-e | ⬜ Próxima |
 
 ---
 
@@ -61,16 +62,27 @@
 
 ---
 
-## Fase 5 — Dashboard e Relatórios (próxima)
+## Fase 5 — Dashboard e Relatórios (✅ Concluída — 18/06/2026)
+
+### O que foi entregue
+- Hub `/loja`: gráfico SVG de vendas 7 dias + KPIs (vendas do dia, ticket médio, produtos vendidos) + alertas estoque mínimo
+- `/loja/produtos`: inline edit — edição de preço/estoque mínimo/desconto direto na tabela
+- Relatório de Caixa `/loja/relatorio/caixa/[id]`: totais por forma de pagamento + impressão térmica 80mm via route handler HTML puro (`/imprimir/caixa/[id]`)
+- Relatório de Vendas `/loja/relatorio/vendas`: filtros período/cooperado/produto + exportação CSV
+- Relatório de Estoque `/loja/relatorio/estoque`: posição atual + movimentações filtráveis
+- Sidebar global com submenus expansíveis (Catálogo, PDV, Relatórios, Configurações)
+- FAB removido
+
+---
+
+## Fase 6 — Controle de Acesso + NF-e + Relatórios A4 (próxima)
 
 ### Escopo planejado
-- Vendas do dia / período com filtros
-- Produtos mais vendidos
-- Faturamento por forma de pagamento (dinheiro/pix/conta corrente)
-- Histórico de caixas com totais
-- Extrato conta corrente cooperado
-- Alertas de estoque mínimo
-- Exportação CSV/PDF
+- Filtros por função nas telas de relatório: `operador_caixa` vê só os próprios caixas, `estoquista_loja` só estoque, `gerente_loja` tudo
+- NF-e de saída (venda para não-cooperado)
+- Relatórios em formato A4 (PDF via pdf-lib)
+- Tela dedicada de Entradas NF-e (hoje integrado em compras)
+- Extrato conta corrente cooperado na loja
 
 ---
 
