@@ -36,8 +36,7 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
     .select(`
       id, total, pago_especie, pago_pix, pago_cartao, pago_saldo,
       criado_em, status,
-      loja_caixas ( usuario_id, usuarios ( nome_completo ) ),
-      loja_notas_fiscais ( id, tipo, status, chave_acesso )
+      loja_caixas ( usuario_id, usuarios ( nome_completo ) )
     `)
     .eq("org_id", orgId)
     .eq("status", "concluida")
@@ -79,17 +78,7 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
       pago_cartao:   Number(v.pago_cartao   ?? 0),
       pago_saldo:    Number(v.pago_saldo    ?? 0),
       total:         Number(v.total),
-      nota: (() => {
-        const notas = (v as any).loja_notas_fiscais
-        const nota = Array.isArray(notas) ? notas[0] : notas
-        if (!nota) return null
-        return {
-          id:           nota.id as string,
-          tipo:         nota.tipo as string,
-          status:       nota.status as string,
-          chave_acesso: nota.chave_acesso as string | null,
-        }
-      })(),
+      nota: null,
     };
   }).filter(v => {
     if (filtros?.forma && v.forma !== filtros.forma) return false;
