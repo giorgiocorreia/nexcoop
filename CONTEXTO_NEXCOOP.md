@@ -283,6 +283,7 @@ Garante CFOP 1159 para produtores promovidos via `cooperado_id` (campo `tipo` n�
 - Campo NCM em `loja_produtos`: inline edit na listagem + badge "NCM ok"/"Sem NCM" + campo nos formulários criar/editar
 - Tela `/configuracoes/fiscal-loja`: configuração de CSC NFC-e, série NFC-e/NF-e, regime tributário + card de status com contagem de produtos sem NCM
 - `lib/loja/fiscal-actions.ts`: `salvarFiscalLoja()` com adminClient + registrarLog
+- **Modal de nota fiscal no PDV** (19/06/2026): `ModalNotaFiscal` com seleção NFC-e/NF-e, campos CPF/CNPJ, detecção de fiscal configurado via `loja_nfe_saida_serie`/`loja_nfce_csc_token`; `ModalComprovante` atualizado com botão condicional "Emitir nota fiscal"
 - **Emissão de NF-e/NFC-e**: pendente de dados do escritório contábil (CSC, NCMs dos produtos, CSTs, regime tributário confirmado)
 
 ### Decisões consolidadas

@@ -35,7 +35,8 @@
 - PainelProdutos — grid com busca, badge desconto cooperado, badge esgotado
 - PainelCarrinho — lista itens, desconto por item, validação de estoque antes de finalizar
 - ModalPagamento — dinheiro (troco), pix (chave org), conta corrente (saldo/saldo após), misto
-- ModalComprovante — sucesso com botão imprimir + nova venda
+- ModalComprovante — sucesso com botão imprimir + nova venda + botão "Emitir nota fiscal" (condicional por temFiscal)
+- ModalNotaFiscal — seleção NFC-e (CPF opcional) / NF-e (CNPJ + razão social), telas de emitindo/pendência fiscal
 - ModalFechamentoCaixa — resumo financeiro (abertura/vendas/espécie/pix/sangrias/aportes/saldo final) + imprimir relatório + confirmar
 
 ### API Routes
@@ -83,12 +84,17 @@
 - Tela `/configuracoes/fiscal-loja`: CSC NFC-e, séries, regime tributário, card de status com contagem produtos sem NCM
 - `salvarFiscalLoja()` com adminClient + auditoria
 
+### Entregue em 19/06/2026
+- `ModalNotaFiscal`: UI completa com seleção NFC-e/NF-e, campos CPF/CNPJ, telas de emitindo e pendência fiscal
+- `ModalComprovante`: botão "Emitir nota fiscal" condicional por `temFiscal` (detectado via `loja_nfe_saida_serie`/`loja_nfce_csc_token`)
+
 ### Pendente — aguardando dados do contador (Contabahia / Marcos)
 - CSC ID e CSC Token NFC-e (obtidos na SEFAZ-BA)
 - NCMs de todos os produtos do catálogo
 - Confirmação do regime tributário
 - CSTs para ICMS, PIS, COFINS
-- Emissão de NFC-e/NF-e de saída via Focus NFe
+- Emissão de NFC-e/NF-e de saída via Focus NFe (`emitirNFeSaida` + `emitirNFCe` em `lib/focusnfe/`)
+- Badge de nota emitida na listagem de Rel. Vendas
 
 ### Ainda planejado
 - Filtros por função nas telas de relatório (`operador_caixa`, `estoquista_loja`, `gerente_loja`)

@@ -1,5 +1,14 @@
 # NexCoop — Changelog
 
+## [19/06/2026] — Loja PDV: modal de nota fiscal pós-venda
+
+- `ModalNotaFiscal`: novo componente com seleção NFC-e (CPF opcional) / NF-e (CNPJ + razão social obrigatórios), telas de "emitindo" e "configuração fiscal pendente"
+- `ModalComprovante`: atualizado com prop `temFiscal` — exibe botão "Emitir nota fiscal" apenas se org tem `loja_nfe_saida_serie` ou `loja_nfce_csc_token` configurados
+- PDV `page.tsx`: detecta fiscal configurado no `useEffect` de init e passa `temFiscal` + `orgId` para o `ModalComprovante`
+- Emissão real (Focus NFe) pendente de retorno do contador com CSC, NCMs e CSTs
+
+---
+
 ## [18/06/2026] — Loja Agropecuária Fase 6 — Preparação Fiscal
 
 - Migration 040: colunas `ncm` e `cfop_saida` em `loja_produtos`, 5 colunas fiscais em `organizacoes` (CSC ID/Token, séries NFC-e/NF-e, regime tributário), tabela `loja_notas_fiscais` com RLS
