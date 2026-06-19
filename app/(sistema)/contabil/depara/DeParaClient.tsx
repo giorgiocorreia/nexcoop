@@ -105,7 +105,9 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
         <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400e' }}>
           {isParceiro
             ? '⚠️ Cadastre seu Plano de Contas em Escritório → Plano de Contas antes de criar mapeamentos.'
-            : '⚠️ O contador vinculado ainda não cadastrou o plano de contas do escritório.'}
+            : <>⚠️ O contador vinculado ainda não cadastrou o plano de contas do escritório.{' '}
+                <a href="/escritorio/plano-de-contas" style={{ color: '#0F766E', fontWeight: 600, textDecoration: 'underline' }}>Cadastrar agora →</a>
+              </>}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   getPlanoEscritorio, criarContaEscritorio,
   atualizarContaEscritorio, removerContaEscritorio,
@@ -33,6 +33,9 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [busca, setBusca] = useState('')
+  const [importando, setImportando] = useState(false)
+  const [resultadoImportacao, setResultadoImportacao] = useState<string | null>(null)
+  const csvInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getPlanoEscritorio(empresaId).then(setContas)
@@ -72,6 +75,47 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
     setContas(c => c.filter(x => x.id !== id))
   }
 
+  async function handleImportarCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportando(true)
+    setResultadoImportacao(null)
+    const text = await file.text()
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (lines.length < 2) {
+      setImportando(false)
+      setResultadoImportacao('Arquivo vazio ou sem dados além do cabeçalho.')
+      if (csvInputRef.current) csvInputRef.current.value = ''
+      return
+    }
+    const dataLines = lines.slice(1)
+    let importadas = 0
+    const erros: string[] = []
+    for (let i = 0; i < dataLines.length; i++) {
+      const parts = dataLines[i].split(',')
+      const codigoRaw = parts[0]?.trim() ?? ''
+      const nomeRaw   = parts[1]?.trim() ?? ''
+      const tipoRaw   = parts[2]?.trim() ?? ''
+      const nivelRaw  = parts[3]?.trim() ?? '1'
+      const aceitaRaw = parts[4]?.trim() ?? 'false'
+      if (!codigoRaw || !nomeRaw) { erros.push(`Linha ${i + 2}: código e nome são obrigatórios.`); continue }
+      if (!TIPOS.includes(tipoRaw)) { erros.push(`Linha ${i + 2}: tipo "${tipoRaw}" inválido.`); continue }
+      const nivelNum = parseInt(nivelRaw, 10)
+      if (isNaN(nivelNum) || nivelNum < 1 || nivelNum > 5) { erros.push(`Linha ${i + 2}: nível "${nivelRaw}" inválido (1–5).`); continue }
+      try {
+        await criarContaEscritorio({ empresa_id: empresaId, codigo: codigoRaw, nome: nomeRaw, tipo: tipoRaw, nivel: nivelNum, aceita_lancamento: aceitaRaw.toLowerCase() === 'true' })
+        importadas++
+      } catch (err: any) {
+        erros.push(`Linha ${i + 2} (${codigoRaw}): ${err.message}`)
+      }
+    }
+    setContas(await getPlanoEscritorio(empresaId))
+    setImportando(false)
+    if (csvInputRef.current) csvInputRef.current.value = ''
+    const errMsg = erros.length > 0 ? ` ${erros.length} erro${erros.length !== 1 ? 's' : ''}.` : ''
+    setResultadoImportacao(`${importadas} conta${importadas !== 1 ? 's' : ''} importada${importadas !== 1 ? 's' : ''} com sucesso.${errMsg}`)
+  }
+
   const contasFiltradas = contas.filter(c =>
     c.codigo.includes(busca) || c.nome.toLowerCase().includes(busca.toLowerCase())
   )
@@ -89,15 +133,28 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
             Cadastre os códigos do seu sistema contábil para usar no De/Para com as organizações clientes.
           </p>
         </div>
-        <button onClick={() => abrirModal()}
-          style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          + Nova Conta
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportarCSV} />
+          <button onClick={() => csvInputRef.current?.click()} disabled={importando}
+            style={{ padding: '9px 18px', border: '1px solid #e5e3dc', background: '#fff', color: '#374151', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: importando ? 'not-allowed' : 'pointer' }}>
+            {importando ? 'Importando...' : '↑ Importar CSV'}
+          </button>
+          <button onClick={() => abrirModal()}
+            style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            + Nova Conta
+          </button>
+        </div>
       </div>
 
       {sucesso && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', margin: '16px 0', color: '#166534', fontSize: 13 }}>
           {sucesso}
+        </div>
+      )}
+
+      {resultadoImportacao && (
+        <div style={{ background: resultadoImportacao.includes('erro') ? '#fffbeb' : '#dcfce7', border: `1px solid ${resultadoImportacao.includes('erro') ? '#f59e0b' : '#86efac'}`, borderRadius: 8, padding: '10px 16px', margin: '16px 0', color: resultadoImportacao.includes('erro') ? '#92400e' : '#166534', fontSize: 13 }}>
+          {resultadoImportacao}
         </div>
       )}
 
