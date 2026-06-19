@@ -58,9 +58,12 @@ export default function RelatorioCaixaClient({
 
   const filtradas = sessoes.filter(s => {
     if (filtroOperador && s.operador !== filtroOperador) return false;
-    if (filtroInicio && s.aberto_em < filtroInicio) return false;
-    if (filtroFim && s.aberto_em > filtroFim + "T23:59:59") return false;
     if (apenasDivergentes && Math.abs(s.diferenca) <= 0.01) return false;
+    if (filtroInicio || filtroFim) {
+      const aberto = new Date(s.aberto_em).getTime()
+      if (filtroInicio && aberto < new Date(filtroInicio).getTime()) return false;
+      if (filtroFim && aberto > new Date(filtroFim + "T23:59:59").getTime()) return false;
+    }
     return true;
   });
 
