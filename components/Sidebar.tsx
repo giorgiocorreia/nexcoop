@@ -105,6 +105,14 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     if (isAdmin || isGerenteLoja || isEstoquistaLoja)
       lojaChildren.push({ label: 'Produtos', href: '/loja/produtos', icone: '📦' })
 
+    // Estoque — estoquista, gerente, admin
+    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
+      lojaChildren.push({ label: 'Estoque', href: '/loja/estoque', icone: '🏗️' })
+
+    // Compras — estoquista, gerente, admin
+    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
+      lojaChildren.push({ label: 'Compras', href: '/loja/compras', icone: '🛒' })
+
     if (isAdmin || isGerenteLoja)
       lojaChildren.push({ label: 'Entradas NF-e', href: '/loja/entradas', icone: '🚚', em_breve: true })
 
