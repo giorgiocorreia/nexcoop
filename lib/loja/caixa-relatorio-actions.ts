@@ -31,10 +31,13 @@ export async function getSessoesCaixa(orgId: string, filtros?: {
     filtros = { ...filtros, usuarioId: user.id };
   }
 
-  let query = supabase
+  const admin = createAdminClient();
+
+  let query = admin
     .from("loja_caixas")
     .select(`
       id,
+      usuario_id,
       valor_abertura,
       valor_fechamento,
       total_especie,
@@ -53,7 +56,6 @@ export async function getSessoesCaixa(orgId: string, filtros?: {
   if (filtros?.usuarioId)  query = query.eq("usuario_id", filtros.usuarioId);
 
   const { data: sessoes } = await query;
-  const admin = createAdminClient();
 
   const resultado = await Promise.all((sessoes ?? []).map(async (s) => {
     const { data: vendas } = await supabase
@@ -154,7 +156,8 @@ export async function getOperadoresCaixa(orgId: string) {
     return [];
   }
 
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("loja_caixas")
     .select("usuario_id, usuarios ( nome_completo )")
     .eq("org_id", orgId)
