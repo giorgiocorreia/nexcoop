@@ -1,18 +1,18 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function getEstoqueAtual(orgId: string) {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { data: produtos } = await supabase
+  const { data: produtos } = await admin
     .from("loja_produtos")
-    .select("id, nome, unidade, preco_venda, estoque_minimo, ativo")
+    .select("id, nome, unidade, preco_normal, estoque_minimo, ativo")
     .eq("org_id", orgId)
     .eq("ativo", true)
     .order("nome");
 
-  const { data: lotes } = await supabase
+  const { data: lotes } = await admin
     .from("loja_lotes")
     .select("produto_id, quantidade_atual, preco_custo")
     .eq("org_id", orgId)
@@ -30,7 +30,7 @@ export async function getEstoqueAtual(orgId: string) {
       id: p.id,
       nome: p.nome,
       unidade: p.unidade,
-      preco_venda: Number(p.preco_venda),
+      preco_venda: Number(p.preco_normal),
       estoque_minimo: Number(p.estoque_minimo ?? 0),
       estoque_atual: estoqueAtual,
       custo_medio: custoMedio,
@@ -45,9 +45,9 @@ export async function getMovimentacoes(orgId: string, filtros?: {
   dataFim?: string;
   produtoId?: string;
 }) {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  let query = supabase
+  let query = admin
     .from("loja_estoque_movimentos")
     .select(`
       id, tipo, quantidade, motivo, criado_em,

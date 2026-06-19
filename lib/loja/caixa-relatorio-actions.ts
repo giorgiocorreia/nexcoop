@@ -58,7 +58,7 @@ export async function getSessoesCaixa(orgId: string, filtros?: {
   const { data: sessoes } = await query;
 
   const resultado = await Promise.all((sessoes ?? []).map(async (s) => {
-    const { data: vendas } = await supabase
+    const { data: vendas } = await admin
       .from("loja_vendas")
       .select("total, pago_especie, pago_pix, pago_cartao, pago_saldo")
       .eq("caixa_id", s.id)
@@ -104,7 +104,7 @@ export async function getDetalhesSessao(caixaId: string) {
   const supabase = await createClient();
   const admin = createAdminClient();
 
-  const { data: vendas } = await supabase
+  const { data: vendas } = await admin
     .from("loja_vendas")
     .select("id, total, pago_especie, pago_pix, pago_cartao, pago_saldo, criado_em")
     .eq("caixa_id", caixaId)

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { podeGerenciarLoja } from "@/lib/permissoes";
 
 export async function getVendasRelatorio(orgId: string, filtros?: {
@@ -28,7 +29,9 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   // caixa_loja sempre vê só as próprias vendas — filtro forçado no servidor
   const usuarioIdFiltro = isGerente ? filtros?.usuarioId : user.id;
 
-  let query = supabase
+  const admin = createAdminClient();
+
+  let query = admin
     .from("loja_vendas")
     .select(`
       id, total, pago_especie, pago_pix, pago_cartao, pago_saldo,
@@ -44,7 +47,7 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   if (filtros?.dataFim)    query = query.lte("criado_em", filtros.dataFim + "T23:59:59");
 
   if (usuarioIdFiltro) {
-    const { data: caixas } = await supabase
+    const { data: caixas } = await admin
       .from("loja_caixas")
       .select("id")
       .eq("org_id", orgId)
@@ -111,7 +114,8 @@ export async function getOperadoresVendas(orgId: string) {
     return [];
   }
 
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("loja_caixas")
     .select("usuario_id, usuarios(nome_completo)")
     .eq("org_id", orgId);
