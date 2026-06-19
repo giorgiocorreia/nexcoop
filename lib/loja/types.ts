@@ -58,7 +58,7 @@ export interface DashboardEstoque {
 
 // ─── PDV ────────────────────────────────────────────────────────────────────
 
-export type LojaTipoCliente = 'cooperado' | 'externo' | 'avulso'
+export type LojaTipoCliente = 'cooperado' | 'externo' | 'balcao'
 
 export type LojaTipoPagamento = 'dinheiro' | 'pix' | 'conta_corrente'
 

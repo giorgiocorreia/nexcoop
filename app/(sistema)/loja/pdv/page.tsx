@@ -45,6 +45,7 @@ export default function PDVPage() {
   const [caixa, setCaixa] = useState<EstadoCaixa | null>(null)
   const [produtos, setProdutos] = useState<ProdutoLoja[]>([])
   const [cooperado, setCooperado] = useState<CooperadoIdentificado | null>(null)
+  const [vendaBalcao, setVendaBalcao] = useState(false)
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
 
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoLoja | null>(null)
@@ -148,6 +149,7 @@ export default function PDVPage() {
   function limparCarrinho() {
     setCarrinho([])
     setCooperado(null)
+    setVendaBalcao(false)
   }
 
   function alterarDesconto(index: number, novoPct: number, _cb: (id: string, nome: string) => void) {
@@ -209,7 +211,7 @@ export default function PDVPage() {
   async function handleFinalizarVenda(pagamento: PagamentoVenda) {
     if (!orgId || !usuarioId || !caixa) return
     setModal(null)
-    const tipoCliente: LojaTipoCliente = cooperado ? 'cooperado' : 'externo'
+    const tipoCliente: LojaTipoCliente = cooperado ? 'cooperado' : vendaBalcao ? 'balcao' : 'externo'
     const snap = [...carrinho]
 
     const res = await finalizarVenda(
@@ -336,29 +338,47 @@ export default function PDVPage() {
                   setCarrinho(prev => prev.map(i => ({ ...i, desconto_pct: 0, subtotal: i.preco_unitario * i.quantidade, desconto_autorizado_por: null })))
                 }}
               />
+            ) : vendaBalcao ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#fff8f3', border: '1.5px solid #E07B30', borderRadius: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="ti ti-user-off" style={{ fontSize: 16, color: '#E07B30' }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>Venda Balcão — Consumidor Final</span>
+                </div>
+                <button onClick={() => setVendaBalcao(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 16, lineHeight: 1 }}>
+                  ×
+                </button>
+              </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={cpfBusca}
-                  onChange={e => {
-                    const v = e.target.value.replace(/\D/g, '').slice(0, 11)
-                    let mask = v
-                    if (v.length > 9)      mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`
-                    else if (v.length > 6) mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`
-                    else if (v.length > 3) mask = `${v.slice(0,3)}.${v.slice(3)}`
-                    setCpfBusca(mask)
-                    setErroCpf('')
-                  }}
-                  onKeyDown={e => e.key === 'Enter' && handleBuscarCooperado()}
-                  placeholder="CPF do cooperado"
-                  autoComplete="off"
-                  name="pdv_cpf_cooperado"
-                  style={{ flex: 1, padding: '7px 10px', border: `1.5px solid ${erroCpf ? '#ef4444' : '#d1d5db'}`, borderRadius: 8, fontSize: 13, outline: 'none' }}
-                />
-                <Btn tamanho="sm" variante="cinza" onClick={handleBuscarCooperado} disabled={buscandoCpf}>
-                  {buscandoCpf ? '...' : 'Buscar'}
-                </Btn>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={cpfBusca}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                      let mask = v
+                      if (v.length > 9)      mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`
+                      else if (v.length > 6) mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`
+                      else if (v.length > 3) mask = `${v.slice(0,3)}.${v.slice(3)}`
+                      setCpfBusca(mask)
+                      setErroCpf('')
+                    }}
+                    onKeyDown={e => e.key === 'Enter' && handleBuscarCooperado()}
+                    placeholder="CPF do cooperado"
+                    autoComplete="off"
+                    name="pdv_cpf_cooperado"
+                    style={{ flex: 1, padding: '7px 10px', border: `1.5px solid ${erroCpf ? '#ef4444' : '#d1d5db'}`, borderRadius: 8, fontSize: 13, outline: 'none' }}
+                  />
+                  <Btn tamanho="sm" variante="cinza" onClick={handleBuscarCooperado} disabled={buscandoCpf}>
+                    {buscandoCpf ? '...' : 'Buscar'}
+                  </Btn>
+                </div>
+                <button onClick={() => setVendaBalcao(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'none', border: '1.5px dashed #d1d5db', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#6b7280', width: '100%' }}>
+                  <i className="ti ti-user-off" style={{ fontSize: 14 }} />
+                  Venda Balcão (sem identificação)
+                </button>
               </div>
             )}
             {erroCpf && <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>{erroCpf}</div>}
