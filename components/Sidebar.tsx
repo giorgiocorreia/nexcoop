@@ -66,6 +66,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const isCaptador       = funcoes.includes('captador')
   const isConselhoFiscal = funcoes.includes('conselho_fiscal')
   const isCaixaCacau     = funcoes.includes('caixa_cacau')
+  const isCaixaLoja      = funcoes.includes('caixa_loja')
+  const isGerenteLoja    = funcoes.includes('gerente_loja')
+  const isEstoquistaLoja = funcoes.includes('estoquista_loja')
+  const temFuncaoLoja    = isCaixaLoja || isGerenteLoja || isEstoquistaLoja
 
   const grupos: NavGrupo[] = []
 
@@ -90,19 +94,34 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
   if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
     agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
-  if (isAdmin && temModulo(usuario?.organizacao?.modulos_ativos, 'loja'))
+  if ((isAdmin || temFuncaoLoja) && temModulo(usuario?.organizacao?.modulos_ativos, 'loja')) {
+    const lojaChildren: NavItem['children'] = []
+
+    lojaChildren.push({ label: 'Hub', href: '/loja', icone: '🏪' })
+
+    if (isAdmin || isGerenteLoja || isCaixaLoja)
+      lojaChildren.push({ label: 'PDV / Caixa', href: '/loja/pdv', icone: '🛒' })
+
+    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
+      lojaChildren.push({ label: 'Produtos', href: '/loja/produtos', icone: '📦' })
+
+    if (isAdmin || isGerenteLoja)
+      lojaChildren.push({ label: 'Entradas NF-e', href: '/loja/entradas', icone: '🚚', em_breve: true })
+
+    if (isAdmin || isGerenteLoja || isCaixaLoja)
+      lojaChildren.push({ label: 'Rel. Vendas', href: '/loja/relatorios/vendas', icone: '💰' })
+
+    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
+      lojaChildren.push({ label: 'Rel. Estoque', href: '/loja/relatorios/estoque', icone: '📦' })
+
+    if (isAdmin || isGerenteLoja || isCaixaLoja)
+      lojaChildren.push({ label: 'Rel. Caixa', href: '/loja/relatorios/caixa', icone: '🗃' })
+
     agroItens.push({
       label: 'Loja', href: '/loja', icone: '🏪',
-      children: [
-        { label: 'Hub',           href: '/loja',                    icone: '🏪' },
-        { label: 'PDV / Caixa',   href: '/loja/pdv',                icone: '🛒' },
-        { label: 'Produtos',      href: '/loja/produtos',           icone: '📦' },
-        { label: 'Entradas NF-e', href: '/loja/entradas',           icone: '🚚', em_breve: true },
-        { label: 'Rel. Vendas',   href: '/loja/relatorios/vendas',  icone: '💰' },
-        { label: 'Rel. Estoque',  href: '/loja/relatorios/estoque', icone: '📦' },
-        { label: 'Rel. Caixa',    href: '/loja/relatorios/caixa',   icone: '🗃' },
-      ],
+      children: lojaChildren,
     })
+  }
   if (agroItens.length > 0)
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
@@ -144,13 +163,16 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
 }
 
 const FUNCAO_LABEL: Record<string, string> = {
-  admin:           'Administrador',
-  financeiro:      'Financeiro',
-  tecnico:         'Técnico',
-  conselho_fiscal: 'Conselho Fiscal',
-  captador:        'Captador',
-  contador:        'Contador',
-  contador_aux:    'Contador Auxiliar',
+  admin:            'Administrador',
+  financeiro:       'Financeiro',
+  tecnico:          'Técnico',
+  conselho_fiscal:  'Conselho Fiscal',
+  captador:         'Captador',
+  contador:         'Contador',
+  contador_aux:     'Contador Auxiliar',
+  caixa_loja:       'Operador de Caixa',
+  gerente_loja:     'Gerente da Loja',
+  estoquista_loja:  'Estoquista',
 }
 
 interface Props {
