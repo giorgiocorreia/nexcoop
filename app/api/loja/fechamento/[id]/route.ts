@@ -60,13 +60,22 @@ export async function GET(
     const { id } = await params
     const admin = createAdminClient()
 
-    const { data: caixa } = await admin
+    const { data: caixa, error: errCaixa } = await admin
       .from('loja_caixas')
-      .select('id, org_id, usuario_id, valor_abertura, aberto_em, fechado_em, total_especie, total_pix, valor_fechamento, usuarios(nome_completo)')
+      .select('id, org_id, usuario_id, valor_abertura, aberto_em, fechado_em, total_especie, total_pix, valor_fechamento')
       .eq('id', id)
       .single()
 
-    if (!caixa) return NextResponse.json({ error: 'Caixa nao encontrado' }, { status: 404 })
+    if (!caixa) {
+      console.error('[loja/fechamento] caixa não encontrado:', id, errCaixa)
+      return NextResponse.json({ error: 'Caixa nao encontrado' }, { status: 404 })
+    }
+
+    const { data: operador } = await admin
+      .from('usuarios')
+      .select('nome_completo')
+      .eq('id', caixa.usuario_id)
+      .maybeSingle()
 
     const { data: org } = await admin
       .from('organizacoes')
@@ -94,7 +103,7 @@ export async function GET(
     const valorAbertura = caixa.valor_abertura ?? 0
     const saldoFinal = valorAbertura + totalEspecie + totalAportes - totalSangrias
 
-    const nomeOperador = (caixa.usuarios as any)?.nome_completo ?? 'Operador'
+    const nomeOperador = operador?.nome_completo ?? 'Operador'
 
     const pdfDoc = await PDFDocument.create()
     const page = pdfDoc.addPage([PAGE_W, 700])
