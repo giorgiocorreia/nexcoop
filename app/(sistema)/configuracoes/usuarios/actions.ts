@@ -180,3 +180,59 @@ export async function revogarConvite(
 
   return {}
 }
+
+export async function redefinirSenhaUsuario(
+  id: string,
+  email: string
+): Promise<{ error?: string }> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Sem permissão.' }
+  const { usuarioAtual, admin } = ctx
+
+  const { data: alvo } = await admin.from('usuarios').select('organizacao_id, role').eq('id', id).single()
+  if (!alvo) return { error: 'Usuário não encontrado.' }
+  if (alvo.role === 'super_admin') return { error: 'Não é possível redefinir senha de um super_admin.' }
+  if (!isSuperAdmin(usuarioAtual) && alvo.organizacao_id !== usuarioAtual.organizacao_id) {
+    return { error: 'Sem permissão.' }
+  }
+
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+  })
+  if (linkError || !linkData?.properties?.action_link) {
+    return { error: linkError?.message ?? 'Erro ao gerar link de redefinição.' }
+  }
+
+  const link = linkData.properties.action_link
+
+  const { enviarEmail } = await import('@/lib/email')
+  try {
+    await enviarEmail({
+      to: email,
+      subject: 'Redefinição de senha — NexCoop',
+      html: `
+        <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+          <div style="margin-bottom: 24px;">
+            <span style="font-size: 22px; font-weight: 700; color: #635BFF;">NexCoop</span>
+          </div>
+          <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 12px;">Redefinição de senha</h2>
+          <p style="font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+            Um administrador solicitou a redefinição da sua senha de acesso ao NexCoop.
+            Clique no botão abaixo para criar uma nova senha.
+          </p>
+          <a href="${link}" style="display: inline-block; padding: 12px 28px; background: #635BFF; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
+            Redefinir minha senha
+          </a>
+          <p style="font-size: 12px; color: #aaa; margin-top: 28px; line-height: 1.6;">
+            Este link expira em 24 horas. Se você não esperava este e-mail, ignore-o.
+          </p>
+        </div>
+      `,
+    })
+  } catch (e: any) {
+    return { error: 'Link gerado, mas falha ao enviar e-mail: ' + e.message }
+  }
+
+  return {}
+}

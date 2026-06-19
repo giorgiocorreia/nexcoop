@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database'
 import type { UsuarioPendente } from './page'
-import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite } from './actions'
+import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite, redefinirSenhaUsuario } from './actions'
 import { Btn } from '@/components/ui/Btn'
 import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
 
@@ -74,6 +74,11 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   // Toggle ativo
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [erroToggle, setErroToggle] = useState('')
+
+  // Redefinição de senha
+  const [redefinindoId, setRedefinindoId] = useState<string | null>(null)
+  const [okRedefinir, setOkRedefinir] = useState('')
+  const [erroRedefinir, setErroRedefinir] = useState('')
 
   // Ações nos pendentes
   const [ativandoId, setAtivandoId] = useState<string | null>(null)
@@ -153,6 +158,18 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
     setTogglingId(null)
     if (res.error) { setErroToggle(res.error); return }
     setUsuarios(prev => prev.map(u => u.id === id ? { ...u, ativo: !ativoAtual } : u))
+  }
+
+  async function handleRedefinirSenha(u: Usuario) {
+    if (!confirm(`Enviar e-mail de redefinição de senha para ${u.nome_completo}?`)) return
+    setRedefinindoId(u.id)
+    setErroRedefinir('')
+    setOkRedefinir('')
+    const res = await redefinirSenhaUsuario(u.id, u.email)
+    setRedefinindoId(null)
+    if (res.error) { setErroRedefinir(res.error); return }
+    setOkRedefinir(`E-mail de redefinição enviado para ${u.email}.`)
+    setTimeout(() => setOkRedefinir(''), 5000)
   }
 
   async function handleConvidar() {
@@ -369,7 +386,9 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
       </div>
 
       {/* Erros globais */}
-      {erroToggle && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroToggle}</Alerta>}
+      {erroToggle    && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroToggle}</Alerta>}
+      {erroRedefinir && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroRedefinir}</Alerta>}
+      {okRedefinir   && <Alerta tipo="ok"  style={{ marginBottom: '1rem' }}>✓ {okRedefinir}</Alerta>}
       {erroPendente && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erroPendente}</Alerta>}
 
       {/* Formulário de convite */}
@@ -698,6 +717,15 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                               onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
                             >
                               {editando ? 'Cancelar' : 'Editar'}
+                            </Btn>
+                            <Btn
+                              tamanho="sm"
+                              variante="cinza"
+                              icone="ti-key"
+                              onClick={() => handleRedefinirSenha(u)}
+                              disabled={redefinindoId === u.id || isSelf}
+                            >
+                              {redefinindoId === u.id ? '...' : 'Senha'}
                             </Btn>
                           </>
                         )}
