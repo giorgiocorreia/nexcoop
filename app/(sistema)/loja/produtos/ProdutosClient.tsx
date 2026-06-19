@@ -166,7 +166,7 @@ function InlineEdit({ value, tipo, onSave }: {
   );
 }
 
-export default function ProdutosClient({ produtos: inicial }: { produtos: Produto[] }) {
+export default function ProdutosClient({ produtos: inicial, podeGerenciar = false }: { produtos: Produto[]; podeGerenciar?: boolean }) {
   const [produtos, setProdutos] = useState(inicial);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "criticos" | "inativos">("todos");
@@ -214,12 +214,26 @@ export default function ProdutosClient({ produtos: inicial }: { produtos: Produt
     <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
 
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
-        <Link href="/dashboard" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>NexCoop</Link>
-        <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
-        <Link href="/loja" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>Loja Agropecuária</Link>
-        <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
-        <span style={{ fontSize: 13, color: "#78716c", fontWeight: 600 }}>Produtos</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Link href="/dashboard" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>NexCoop</Link>
+          <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
+          <Link href="/loja" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>Loja Agropecuária</Link>
+          <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
+          <span style={{ fontSize: 13, color: "#78716c", fontWeight: 600 }}>Produtos</span>
+        </div>
+        {podeGerenciar && (
+          <Link
+            href="/loja/produtos/novo"
+            style={{
+              padding: "9px 18px", background: "#E07B30", color: "#fff",
+              borderRadius: "8px", fontSize: "13px", fontWeight: "600",
+              textDecoration: "none", display: "inline-block",
+            }}
+          >
+            + Novo produto
+          </Link>
+        )}
       </div>
 
       {/* Filtros + Busca */}

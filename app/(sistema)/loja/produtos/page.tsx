@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProdutosClient from "./ProdutosClient";
+import { podeGerenciarLoja } from "@/lib/permissoes";
 
 export const metadata = { title: "Produtos — Loja | NexCoop" };
 
@@ -11,7 +12,7 @@ export default async function ProdutosPage() {
 
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("organizacao_id")
+    .select("organizacao_id, role, funcoes")
     .eq("id", user.id)
     .single();
 
@@ -39,5 +40,10 @@ export default async function ProdutosPage() {
     ncm: (p as any).ncm as string | null ?? null,
   }));
 
-  return <ProdutosClient produtos={produtosComEstoque} />;
+  const podeGerenciar = podeGerenciarLoja({
+    role: usuario.role,
+    funcoes: (usuario.funcoes ?? []) as string[],
+  });
+
+  return <ProdutosClient produtos={produtosComEstoque} podeGerenciar={podeGerenciar} />;
 }
