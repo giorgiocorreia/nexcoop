@@ -39,6 +39,7 @@ export default function PDVPage() {
   const [orgId, setOrgId] = useState<string | null>(null)
   const [usuarioId, setUsuarioId] = useState<string | null>(null)
   const [chavePixOrg, setChavePixOrg] = useState('')
+  const [temFiscal, setTemFiscal] = useState(false)
   const [modulos, setModulos] = useState<string[]>([])
 
   const [caixa, setCaixa] = useState<EstadoCaixa | null>(null)
@@ -100,6 +101,10 @@ export default function PDVPage() {
       }
 
       setChavePixOrg(org?.chave_pix ?? '')
+
+      // Verifica se org tem fiscal configurado (série NF-e sempre existe; NFC-e exige CSC)
+      const fiscalConfigurado = !!(org?.loja_nfe_saida_serie || org?.loja_nfce_csc_token)
+      setTemFiscal(fiscalConfigurado)
 
       const { data: caixaAberto } = await supabase
         .from('loja_caixas')
@@ -396,9 +401,11 @@ export default function PDVPage() {
         />
       )}
 
-      {modal === 'comprovante' && vendaIdFinalizada && (
+      {modal === 'comprovante' && vendaIdFinalizada && orgId && (
         <ModalComprovante
           vendaId={vendaIdFinalizada}
+          orgId={orgId}
+          temFiscal={temFiscal}
           onNovaVenda={() => { setModal(null); setVendaIdFinalizada(null) }}
         />
       )}
