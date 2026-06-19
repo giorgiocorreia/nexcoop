@@ -761,7 +761,71 @@ export async function buscarCooperadoPorCPF(
   }
 }
 
-// ── 3. Validar Senha do Autorizador ─────────────────────────────────────────
+// ── 3. Buscar Cooperados por Nome ou CPF ────────────────────────────────────
+
+export async function buscarCooperadosPorNomeOuCPF(
+  orgId: string,
+  termo: string
+): Promise<CooperadoIdentificado[]> {
+  const admin = createAdminClient()
+  const termoLimpo = termo.trim()
+  const cpfLimpo = termoLimpo.replace(/\D/g, '')
+
+  const { data: org } = await admin
+    .from('organizacoes')
+    .select('modulos_ativos')
+    .eq('id', orgId)
+    .single()
+
+  const temComercializacao = (org?.modulos_ativos ?? []).includes('comercializacao')
+
+  let query = admin
+    .from('cooperados')
+    .select('id, nome_completo, cpf, usuario_id')
+    .eq('organizacao_id', orgId)
+    .eq('status', 'ativo')
+    .limit(8)
+
+  if (cpfLimpo.length === 11) {
+    query = query.eq('cpf', cpfLimpo)
+  } else {
+    query = query.ilike('nome_completo', `%${termoLimpo}%`)
+  }
+
+  const { data, error } = await query
+  if (error || !data) return []
+
+  const resultados: CooperadoIdentificado[] = []
+
+  for (const cooperado of data) {
+    let saldoFinanceiro = 0
+    if (temComercializacao) {
+      const { data: produtor } = await admin
+        .from('produtores')
+        .select('id, contas_produtor(saldo_financeiro)')
+        .eq('cooperado_id', cooperado.id)
+        .eq('organizacao_id', orgId)
+        .maybeSingle()
+
+      const conta = Array.isArray((produtor as any)?.contas_produtor)
+        ? (produtor as any).contas_produtor[0]
+        : (produtor as any)?.contas_produtor
+      saldoFinanceiro = conta?.saldo_financeiro ?? 0
+    }
+
+    resultados.push({
+      cooperado_id: cooperado.id as string,
+      produtor_id: cooperado.id as string,
+      nome: cooperado.nome_completo as string,
+      saldo_financeiro: saldoFinanceiro,
+      tem_conta_corrente: temComercializacao,
+    })
+  }
+
+  return resultados
+}
+
+// ── 4. Validar Senha do Autorizador ─────────────────────────────────────────
 
 export async function validarSenhaAutorizador(
   orgId: string,

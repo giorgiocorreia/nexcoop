@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   abrirCaixaLoja,
-  buscarCooperadoPorCPF,
+  buscarCooperadosPorNomeOuCPF,
   finalizarVenda,
   registrarSangriaLoja,
   fecharCaixaLoja,
@@ -56,9 +56,11 @@ export default function PDVPage() {
   const [fechandoCaixa, setFechandoCaixa] = useState(false)
   const [dadosConferencia, setDadosConferencia] = useState<{ valor_fisico_especie: number; valor_fisico_debito: number; valor_fisico_credito: number } | null>(null)
 
-  const [cpfBusca, setCpfBusca] = useState('')
-  const [buscandoCpf, setBuscandoCpf] = useState(false)
-  const [erroCpf, setErroCpf] = useState('')
+  const [termoBusca, setTermoBusca] = useState('')
+  const [buscandoCliente, setBuscandoCliente] = useState(false)
+  const [erroCliente, setErroCliente] = useState('')
+  const [resultadosBusca, setResultadosBusca] = useState<CooperadoIdentificado[]>([])
+  const [mostrarDropdown, setMostrarDropdown] = useState(false)
 
   const [valorAbertura, setValorAbertura] = useState('')
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
@@ -180,15 +182,26 @@ export default function PDVPage() {
     }
   }
 
-  async function handleBuscarCooperado() {
-    if (!orgId || !cpfBusca.trim()) return
-    setBuscandoCpf(true); setErroCpf('')
-    const resultado = await buscarCooperadoPorCPF(orgId, cpfBusca)
-    setBuscandoCpf(false)
-    if (!resultado) { setErroCpf('Cooperado nao encontrado.'); return }
+  async function handleBuscarCliente() {
+    if (!orgId || !termoBusca.trim() || termoBusca.trim().length < 2) return
+    setBuscandoCliente(true); setErroCliente(''); setResultadosBusca([]); setMostrarDropdown(false)
+    const resultados = await buscarCooperadosPorNomeOuCPF(orgId, termoBusca)
+    setBuscandoCliente(false)
+    if (resultados.length === 0) { setErroCliente('Nenhum cooperado encontrado.'); return }
+    if (resultados.length === 1) {
+      selecionarCooperado(resultados[0])
+      return
+    }
+    setResultadosBusca(resultados)
+    setMostrarDropdown(true)
+  }
+
+  function selecionarCooperado(resultado: CooperadoIdentificado) {
     const temConta = resultado.tem_conta_corrente && orgTemModulo(modulos, 'comercializacao')
     setCooperado({ ...resultado, tem_conta_corrente: temConta })
-    setCpfBusca('')
+    setTermoBusca('')
+    setResultadosBusca([])
+    setMostrarDropdown(false)
     setCarrinho(prev => prev.map(item => {
       if (!item.produto.desconto_cooperado) return item
       const desconto = item.produto.desconto_cooperado_pct ?? 0
@@ -351,29 +364,44 @@ export default function PDVPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    type="text"
-                    value={cpfBusca}
-                    onChange={e => {
-                      const v = e.target.value.replace(/\D/g, '').slice(0, 11)
-                      let mask = v
-                      if (v.length > 9)      mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`
-                      else if (v.length > 6) mask = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`
-                      else if (v.length > 3) mask = `${v.slice(0,3)}.${v.slice(3)}`
-                      setCpfBusca(mask)
-                      setErroCpf('')
-                    }}
-                    onKeyDown={e => e.key === 'Enter' && handleBuscarCooperado()}
-                    placeholder="CPF do cooperado"
-                    autoComplete="off"
-                    name="pdv_cpf_cooperado"
-                    style={{ flex: 1, padding: '7px 10px', border: `1.5px solid ${erroCpf ? '#ef4444' : '#d1d5db'}`, borderRadius: 8, fontSize: 13, outline: 'none' }}
-                  />
-                  <Btn tamanho="sm" variante="cinza" onClick={handleBuscarCooperado} disabled={buscandoCpf}>
-                    {buscandoCpf ? '...' : 'Buscar'}
-                  </Btn>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      value={termoBusca}
+                      onChange={e => {
+                        setTermoBusca(e.target.value)
+                        setErroCliente('')
+                        setMostrarDropdown(false)
+                      }}
+                      onKeyDown={e => e.key === 'Enter' && handleBuscarCliente()}
+                      placeholder="Nome ou CPF do cooperado"
+                      autoComplete="off"
+                      name="pdv_busca_cliente"
+                      style={{ flex: 1, padding: '7px 10px', border: `1.5px solid ${erroCliente ? '#ef4444' : '#d1d5db'}`, borderRadius: 8, fontSize: 13, outline: 'none' }}
+                    />
+                    <Btn tamanho="sm" variante="cinza" onClick={handleBuscarCliente} disabled={buscandoCliente || termoBusca.trim().length < 2}>
+                      {buscandoCliente ? '...' : 'Buscar'}
+                    </Btn>
+                  </div>
+
+                  {mostrarDropdown && resultadosBusca.length > 1 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: '#fff', border: '1.5px solid #d1d5db', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', marginTop: 4, overflow: 'hidden' }}>
+                      {resultadosBusca.map(r => (
+                        <button
+                          key={r.cooperado_id}
+                          onClick={() => selecionarCooperado(r)}
+                          style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', textAlign: 'left' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#f8f7f4' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{r.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <button onClick={() => setVendaBalcao(true)}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'none', border: '1.5px dashed #d1d5db', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#6b7280', width: '100%' }}>
                   <i className="ti ti-user-off" style={{ fontSize: 14 }} />
@@ -381,7 +409,7 @@ export default function PDVPage() {
                 </button>
               </div>
             )}
-            {erroCpf && <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>{erroCpf}</div>}
+            {erroCliente && <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>{erroCliente}</div>}
           </div>
 
           <PainelCarrinho
