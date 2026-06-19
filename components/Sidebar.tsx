@@ -93,7 +93,18 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin || isTecnico)
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
   if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
-    agroItens.push({ label: 'Comercialização', href: '/comercializacao', icone: '🤝' })
+    agroItens.push({
+      label: 'Comercialização', href: '/comercializacao', icone: '🤝',
+      children: [
+        { label: 'Dashboard',    href: '/comercializacao',            icone: '📊' },
+        { label: 'Cotações',     href: '/comercializacao/cotacoes',   icone: '📋' },
+        { label: 'Produtores',   href: '/comercializacao/produtores', icone: '👨‍🌾' },
+        { label: 'Vendas',       href: '/comercializacao/vendas',     icone: '💰' },
+        { label: 'Entregas',     href: '/comercializacao/entregas',   icone: '📦', em_breve: true },
+        { label: 'Caixa',        href: '/comercializacao/caixa',      icone: '🗃', em_breve: true },
+        { label: 'NF-e Entrada', href: '/comercializacao/nfe',        icone: '🧾', em_breve: true },
+      ],
+    })
   if ((isAdmin || temFuncaoLoja) && temModulo(usuario?.organizacao?.modulos_ativos, 'loja')) {
     const lojaChildren: NavItem['children'] = []
 
@@ -112,6 +123,9 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     // Compras — estoquista, gerente, admin
     if (isAdmin || isGerenteLoja || isEstoquistaLoja)
       lojaChildren.push({ label: 'Compras', href: '/loja/compras', icone: '🛒' })
+
+    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
+      lojaChildren.push({ label: 'Fornecedores', href: '/loja/fornecedores', icone: '🏭' })
 
     if (isAdmin || isGerenteLoja)
       lojaChildren.push({ label: 'Entradas NF-e', href: '/loja/entradas', icone: '🚚', em_breve: true })
@@ -217,6 +231,8 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   useEffect(() => {
     if (pathname.startsWith('/loja')) {
       setExpandedGroup('Loja')
+    } else if (pathname.startsWith('/comercializacao')) {
+      setExpandedGroup('Comercialização')
     }
   }, [pathname])
 
