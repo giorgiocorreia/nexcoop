@@ -1,5 +1,15 @@
 # NexCoop — Changelog
 
+## [19/06/2026] — Loja PDV: pagamento completo persistido (Migration 041)
+
+- Migration 041: colunas `tipo_cartao`, `cartao_nsu`, `cartao_autorizacao`, `pix_identificador`, `desconto_total`, `pago_saldo` adicionadas em `loja_vendas`
+- `types/database.ts`: interface `LojaVenda` atualizada com os 6 novos campos
+- `lib/loja/types.ts`: campo `pix_identificador: string` adicionado a `PagamentoVenda`
+- `lib/loja/actions.ts`: `finalizarVenda` agora persiste tipo_cartao, NSU, autorização e identificador PIX no insert
+- `ModalPagamento`: campo "Identificador / End-to-End" no bloco PIX; `pixIdentificador` propagado em todos os casos do `handleConfirmar`
+
+---
+
 ## [19/06/2026] — Loja PDV: modal de nota fiscal pós-venda
 
 - `ModalNotaFiscal`: novo componente com seleção NFC-e (CPF opcional) / NF-e (CNPJ + razão social obrigatórios), telas de "emitindo" e "configuração fiscal pendente"

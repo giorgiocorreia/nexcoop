@@ -60,8 +60,11 @@
 - 036: perfil de usuário (dados pessoais, atividades recentes)
 - 037: loja_compras expandida (numero_nf, data_compra, valor_frete, outros_custos_valor, outros_custos_descricao, observacoes)
 - 038: loja_sangrias (PDV — registra sangrias do caixa da loja)
+- 039: (reservado)
+- 040: NCM/CFOP em loja_produtos, 5 colunas fiscais em organizacoes, tabela loja_notas_fiscais
+- 041: colunas cartao_nsu, cartao_autorizacao, pix_identificador, desconto_total, pago_saldo em loja_vendas
 
-**Próxima migration:** 039
+**Próxima migration:** 042
 
 ---
 
