@@ -235,10 +235,17 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   useEffect(() => {
     if (isParceiro && !nomeDisplay) {
       supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          supabase.from('usuarios').select('nome_completo').eq('id', user.id).maybeSingle()
-            .then(({ data }) => { if (data?.nome_completo) setNomeDisplay(data.nome_completo) })
-        }
+        if (!user) return
+        supabase.from('usuarios').select('nome_completo').eq('id', user.id).maybeSingle()
+          .then(({ data: u }) => {
+            if (u?.nome_completo) {
+              setNomeDisplay(u.nome_completo)
+            } else {
+              // Parceiros criados sem linha em usuarios: nome está em profissionais_parceiros
+              supabase.from('profissionais_parceiros').select('nome').eq('usuario_id', user.id).eq('ativo', true).maybeSingle()
+                .then(({ data: p }) => { if (p?.nome) setNomeDisplay(p.nome) })
+            }
+          })
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

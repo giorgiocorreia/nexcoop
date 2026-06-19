@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import FinanceiroLista from './FinanceiroLista'
 
 export const metadata = { title: 'Financeiro — NexCoop' }
@@ -34,17 +35,14 @@ export default async function FinanceiroPage() {
     nomeCooperado[c.id] = c.nome_completo
   }
 
-  const { data: usuario } = await supabaseAuth
-    .from('usuarios')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const cookieStore = await cookies()
+  const isParceiro = !!cookieStore.get('parceiro_org_id')?.value
 
   return (
     <FinanceiroLista
       lancamentos={lancamentos ?? []}
       nomeCooperado={nomeCooperado}
-      isParceiro={usuario?.role === 'parceiro'}
+      isParceiro={isParceiro}
     />
   )
 }
