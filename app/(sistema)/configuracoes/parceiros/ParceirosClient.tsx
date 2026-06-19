@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getParceiras, criarParceira, atualizarStatusParceira, reenviarConviteParceira, removerParceira } from '@/lib/parceiros/actions'
+import { getParceiras, criarParceira, criarParceiraComSenha, atualizarStatusParceira, reenviarConviteParceira, removerParceira } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, TipoParceria } from '@/lib/parceiros/types'
 
 const COR = '#635BFF'
@@ -74,6 +74,12 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
   const [site, setSite]               = useState('')
   const [obs, setObs]                 = useState('')
 
+  // Modo de cadastro: 'convite' | 'senha'
+  const [modoCadastro, setModoCadastro] = useState<'convite' | 'senha'>('convite')
+  const [nomeResponsavel, setNomeResponsavel] = useState('')
+  const [credenciaisParceiro, setCredenciaisParceiro] = useState<{ email: string; senha: string } | null>(null)
+  const [copiadoParceiro, setCopiadoParceiro] = useState(false)
+
   // Estados da busca CNPJ
   // Estados da busca CNPJ
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false)
@@ -118,6 +124,8 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
     setCnpj(''); setRazaoSocial(''); setEmail(''); setTelefone('')
     setCidade(''); setEstado(''); setSite(''); setObs('')
     setErroCNPJ(''); setAvisoCNPJ('')
+    setNomeResponsavel('')
+    setModoCadastro('convite')
   }
 
   async function handleSalvar() {
@@ -136,6 +144,45 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
       setModal(false); setTipoSel(null); resetForm()
     } catch (e: any) { setErro(e.message) }
     finally { setSalvando(false) }
+  }
+
+  async function handleSalvarComSenha() {
+    if (!tipoSel || !razaoSocial || !email) { setErro('Preencha razão social e e-mail.'); return }
+    if (!nomeResponsavel.trim()) { setErro('Informe o nome do responsável.'); return }
+    setSalvando(true); setErro('')
+    try {
+      const res = await criarParceiraComSenha({
+        org_id: orgId,
+        razao_social: razaoSocial,
+        cnpj,
+        email_contato: email,
+        telefone,
+        tipo: tipoSel,
+        cidade,
+        estado,
+        site,
+        observacoes: obs,
+        nome_responsavel: nomeResponsavel.trim(),
+      })
+      if (!res.sucesso) { setErro(res.erro ?? 'Erro ao cadastrar.'); return }
+      const novas = await getParceiras(orgId)
+      setParceiras(novas)
+      setCredenciaisParceiro({ email, senha: res.senha! })
+      setModal(false); setTipoSel(null); resetForm()
+    } catch (e: any) { setErro(e.message) }
+    finally { setSalvando(false) }
+  }
+
+  async function copiarCredenciaisParceiro() {
+    if (!credenciaisParceiro) return
+    await navigator.clipboard.writeText(`E-mail: ${credenciaisParceiro.email}\nSenha temporária: ${credenciaisParceiro.senha}`)
+    setCopiadoParceiro(true)
+    setTimeout(() => setCopiadoParceiro(false), 2000)
+  }
+
+  function fecharModalECredenciais() {
+    setCredenciaisParceiro(null)
+    setCopiadoParceiro(false)
   }
 
   async function handleToggle(id: string, status: string) {
@@ -325,6 +372,34 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                   </button>
                 </div>
 
+                {/* Modo de cadastro */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <button
+                    type="button"
+                    onClick={() => setModoCadastro('convite')}
+                    style={{
+                      flex: 1, padding: '9px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', border: `1px solid ${modoCadastro === 'convite' ? COR : '#e5e3dc'}`,
+                      background: modoCadastro === 'convite' ? '#EEF0FF' : '#fff',
+                      color: modoCadastro === 'convite' ? COR : '#6b7280',
+                    }}
+                  >
+                    ✉️ Enviar convite por e-mail
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModoCadastro('senha')}
+                    style={{
+                      flex: 1, padding: '9px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', border: `1px solid ${modoCadastro === 'senha' ? COR : '#e5e3dc'}`,
+                      background: modoCadastro === 'senha' ? '#EEF0FF' : '#fff',
+                      color: modoCadastro === 'senha' ? COR : '#6b7280',
+                    }}
+                  >
+                    🔑 Cadastrar com senha provisória
+                  </button>
+                </div>
+
                 {erro && (
                   <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '8px 12px', marginBottom: 14, color: '#dc2626', fontSize: 12 }}>
                     {erro}
@@ -370,6 +445,21 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                       placeholder="email@empresa.com.br" type="email" style={inputStyle} />
                   </div>
 
+                  {/* Nome do responsável — só no modo senha */}
+                  {modoCadastro === 'senha' && (
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                        Nome do responsável *
+                      </label>
+                      <input
+                        value={nomeResponsavel}
+                        onChange={e => setNomeResponsavel(e.target.value)}
+                        placeholder="Nome completo do responsável"
+                        style={inputStyle}
+                      />
+                    </div>
+                  )}
+
                   {/* 4. Telefone */}
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Telefone</label>
@@ -410,22 +500,80 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
 
                 </div>
 
-                <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginTop: 16, fontSize: 12, color: '#166534' }}>
-                  Um convite será enviado para o e-mail informado. A empresa precisará criar uma conta e aceitar o vínculo.
-                </div>
+                {modoCadastro === 'convite' ? (
+                  <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginTop: 16, fontSize: 12, color: '#166534' }}>
+                    Um convite será enviado para o e-mail informado. A empresa precisará criar uma conta e aceitar o vínculo.
+                  </div>
+                ) : (
+                  <div style={{ background: '#EEF0FF', border: '1px solid #c7d2fe', borderRadius: 8, padding: '10px 14px', marginTop: 16, fontSize: 12, color: '#3730a3' }}>
+                    A empresa será cadastrada imediatamente com senha provisória. As credenciais serão exibidas para você repassar ao responsável.
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
                   <button onClick={() => { setModal(false); setTipoSel(null); resetForm(); setErro('') }}
                     style={{ padding: '9px 18px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
                     Cancelar
                   </button>
-                  <button onClick={handleSalvar} disabled={salvando}
+                  <button onClick={modoCadastro === 'convite' ? handleSalvar : handleSalvarComSenha} disabled={salvando}
                     style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
-                    {salvando ? 'Cadastrando...' : 'Cadastrar e Enviar Convite'}
+                    {salvando ? 'Cadastrando...' : modoCadastro === 'convite' ? 'Cadastrar e Enviar Convite' : 'Cadastrar com Senha Provisória'}
                   </button>
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Credenciais da empresa parceira cadastrada */}
+      {credenciaisParceiro && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 480, maxWidth: '95vw' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#E6F7F1', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 24 }}>
+                ✓
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>Empresa vinculada cadastrada!</div>
+              <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Repasse as credenciais ao responsável.</div>
+            </div>
+
+            <div style={{ background: '#f8f7f4', border: '1px solid #e5e3dc', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#9a9a9a', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 12 }}>
+                Credenciais de acesso
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <div>
+                  <span style={{ fontSize: 12, color: '#888' }}>E-mail:</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginLeft: 8 }}>{credenciaisParceiro.email}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: 12, color: '#888' }}>Senha temporária:</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginLeft: 8, fontFamily: 'monospace', letterSpacing: '0.08em' }}>
+                    {credenciaisParceiro.senha}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#FFF8E1', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 20 }}>
+              ⚠️ Anote e repasse pessoalmente — esta senha não será exibida novamente.
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={copiarCredenciaisParceiro}
+                style={{ padding: '9px 16px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {copiadoParceiro ? '✓ Copiado!' : 'Copiar credenciais'}
+              </button>
+              <button
+                onClick={fecharModalECredenciais}
+                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

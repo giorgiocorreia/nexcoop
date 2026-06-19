@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { TipoParceria, MODULOS_POR_TIPO } from './types'
+import { randomBytes } from 'crypto'
 
 export async function getParceiras(orgId: string) {
   const supabase = createAdminClient()
@@ -253,4 +254,90 @@ export async function getOrgIdsDoParceiro(usuarioId: string): Promise<string[]> 
     .map((d: any) => d.empresa)
     .filter((e: any) => e?.status === 'ativo')
     .map((e: any) => e.org_id)
+}
+
+function gerarSenhaTemporaria(): string {
+  return randomBytes(6).toString('hex')
+}
+
+export async function criarParceiraComSenha(data: {
+  org_id: string
+  razao_social: string
+  cnpj?: string
+  email_contato: string
+  telefone?: string
+  tipo: TipoParceria
+  cidade?: string
+  estado?: string
+  site?: string
+  observacoes?: string
+  nome_responsavel: string
+}): Promise<{ sucesso: boolean; senha?: string; erro?: string }> {
+  const supabase = createAdminClient()
+
+  const modulos = MODULOS_POR_TIPO[data.tipo] || []
+  const { data: nova, error: empresaError } = await supabase
+    .from('empresas_parceiras')
+    .insert({
+      org_id: data.org_id,
+      razao_social: data.razao_social,
+      cnpj: data.cnpj || null,
+      email_contato: data.email_contato,
+      telefone: data.telefone || null,
+      tipo: data.tipo,
+      cidade: data.cidade || null,
+      estado: data.estado || null,
+      site: data.site || null,
+      observacoes: data.observacoes || null,
+      modulos_acesso: modulos,
+      status: 'ativo',
+      aceito_em: new Date().toISOString(),
+    })
+    .select()
+    .single()
+
+  if (empresaError || !nova) {
+    return { sucesso: false, erro: empresaError?.message ?? 'Erro ao criar empresa.' }
+  }
+
+  const senha = gerarSenhaTemporaria()
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: data.email_contato,
+    password: senha,
+    email_confirm: true,
+  })
+
+  if (authError || !authData.user) {
+    await supabase.from('empresas_parceiras').delete().eq('id', nova.id)
+    if (
+      authError?.message?.toLowerCase().includes('already registered') ||
+      authError?.message?.toLowerCase().includes('already exists')
+    ) {
+      return { sucesso: false, erro: 'Este e-mail já está cadastrado na plataforma.' }
+    }
+    return { sucesso: false, erro: authError?.message ?? 'Erro ao criar acesso.' }
+  }
+
+  const { error: profError } = await supabase
+    .from('profissionais_parceiros')
+    .insert({
+      empresa_id: nova.id,
+      nome: data.nome_responsavel,
+      email: data.email_contato,
+      cargo: 'Responsável',
+      nivel: 'responsavel',
+      ativo: true,
+      usuario_id: authData.user.id,
+      aceito_em: new Date().toISOString(),
+      convidado_em: new Date().toISOString(),
+    })
+
+  if (profError) {
+    await supabase.auth.admin.deleteUser(authData.user.id)
+    await supabase.from('empresas_parceiras').delete().eq('id', nova.id)
+    return { sucesso: false, erro: profError.message }
+  }
+
+  revalidatePath('/configuracoes')
+  return { sucesso: true, senha }
 }
