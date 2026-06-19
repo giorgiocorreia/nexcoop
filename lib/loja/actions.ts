@@ -807,6 +807,10 @@ export async function finalizarVenda(
     pago_pix: number
     pago_cartao?: number
     pago_conta?: number
+    tipo_cartao?: string | null
+    cartao_nsu?: string
+    cartao_autorizacao?: string
+    pix_identificador?: string
   },
   itens: ItemCarrinho[]
 ): Promise<ResultadoFinalizarVenda | { error: string }> {
@@ -825,10 +829,15 @@ export async function finalizarVenda(
       canal: 'presencial',
       status: 'concluida',
       total: venda.total,
+      desconto_total: venda.desconto_total ?? 0,
       pago_especie: venda.pago_especie,
       pago_pix: venda.pago_pix,
       pago_cartao: venda.pago_cartao ?? 0,
       pago_saldo: venda.pago_conta ?? 0,
+      tipo_cartao: venda.tipo_cartao ?? null,
+      cartao_nsu: venda.cartao_nsu || null,
+      cartao_autorizacao: venda.cartao_autorizacao || null,
+      pix_identificador: venda.pix_identificador || null,
     })
     .select('id')
     .single()

@@ -87,6 +87,7 @@ export interface PagamentoVenda {
   tipo_cartao:       'debito' | 'credito' | null
   nsu:               string
   autorizacao:       string
+  pix_identificador: string
   valor_recebido:    number
 }
 

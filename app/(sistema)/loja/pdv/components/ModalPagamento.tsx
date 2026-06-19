@@ -23,6 +23,7 @@ export default function ModalPagamento({ total, cooperado, chavePixOrg, onConfir
   const [tipoCartao, setTipoCartao] = useState<'debito' | 'credito'>('debito')
   const [nsu, setNsu] = useState('')
   const [autorizacao, setAutorizacao] = useState('')
+  const [pixIdentificador, setPixIdentificador] = useState('')
 
   const valorContaNum = parseFloat(valorConta.replace(',', '.')) || 0
   const valorRecebidoNum = parseFloat(valorRecebido.replace(',', '.')) || 0
@@ -46,19 +47,20 @@ export default function ModalPagamento({ total, cooperado, chavePixOrg, onConfir
   function handleConfirmar() {
     let pagamento: PagamentoVenda
     if (forma === 'dinheiro') {
-      pagamento = { dinheiro: total, pix: 0, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', conta_corrente: 0, valor_recebido: valorRecebidoNum }
+      pagamento = { dinheiro: total, pix: 0, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', pix_identificador: '', conta_corrente: 0, valor_recebido: valorRecebidoNum }
     } else if (forma === 'pix') {
-      pagamento = { dinheiro: 0, pix: total, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', conta_corrente: 0, valor_recebido: 0 }
+      pagamento = { dinheiro: 0, pix: total, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', pix_identificador: pixIdentificador, conta_corrente: 0, valor_recebido: 0 }
     } else if (forma === 'cartao') {
-      pagamento = { dinheiro: 0, pix: 0, cartao: total, tipo_cartao: tipoCartao, nsu, autorizacao, conta_corrente: 0, valor_recebido: 0 }
+      pagamento = { dinheiro: 0, pix: 0, cartao: total, tipo_cartao: tipoCartao, nsu, autorizacao, pix_identificador: '', conta_corrente: 0, valor_recebido: 0 }
     } else if (forma === 'conta') {
-      pagamento = { dinheiro: 0, pix: 0, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', conta_corrente: total, valor_recebido: 0 }
+      pagamento = { dinheiro: 0, pix: 0, cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '', pix_identificador: '', conta_corrente: total, valor_recebido: 0 }
     } else {
       const resto = total - valorContaNum
       pagamento = {
         dinheiro: formaSecundaria === 'dinheiro' ? resto : 0,
         pix: formaSecundaria === 'pix' ? resto : 0,
         cartao: 0, tipo_cartao: null, nsu: '', autorizacao: '',
+        pix_identificador: formaSecundaria === 'pix' ? pixIdentificador : '',
         conta_corrente: valorContaNum,
         valor_recebido: valorRecebidoNum,
       }
@@ -120,10 +122,14 @@ export default function ModalPagamento({ total, cooperado, chavePixOrg, onConfir
         )}
 
         {forma === 'pix' && (
-          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: '#15803d', marginBottom: 4, fontWeight: 600 }}>Chave Pix</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#14532d' }}>{chavePixOrg || 'Nao configurada'}</div>
-            <div style={{ fontSize: 13, color: '#15803d', marginTop: 6 }}>Valor: {fmtReal(total)}</div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '12px 16px', marginBottom: 10 }}>
+              <div style={{ fontSize: 12, color: '#15803d', marginBottom: 4, fontWeight: 600 }}>Chave Pix</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#14532d' }}>{chavePixOrg || 'Nao configurada'}</div>
+              <div style={{ fontSize: 13, color: '#15803d', marginTop: 6 }}>Valor: {fmtReal(total)}</div>
+            </div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>Identificador / End-to-End (opcional)</label>
+            <input type="text" value={pixIdentificador} onChange={e => setPixIdentificador(e.target.value)} placeholder="E2E..." style={inpStyle} />
           </div>
         )}
 

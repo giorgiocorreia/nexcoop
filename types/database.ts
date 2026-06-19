@@ -449,19 +449,25 @@ export interface LojaCaixa {
 }
 
 export interface LojaVenda {
-  id:           string
-  org_id:       string
-  caixa_id:     string
-  cliente_id:   string | null
-  cooperado_id: string | null
-  tipo_cliente: LojaTipoCliente
-  canal:        LojaCanal
-  status:       LojaStatusVenda
-  total:        number
-  pago_especie: number
-  pago_cartao:  number
-  pago_pix:     number
-  criado_em:    string
+  id:                  string
+  org_id:              string
+  caixa_id:            string
+  cliente_id:          string | null
+  cooperado_id:        string | null
+  tipo_cliente:        LojaTipoCliente
+  canal:               LojaCanal
+  status:              LojaStatusVenda
+  total:               number
+  desconto_total:      number
+  pago_especie:        number
+  pago_cartao:         number
+  pago_pix:            number
+  pago_saldo:          number
+  tipo_cartao:         string | null
+  cartao_nsu:          string | null
+  cartao_autorizacao:  string | null
+  pix_identificador:   string | null
+  criado_em:           string
 }
 
 export interface LojaVendaItem {

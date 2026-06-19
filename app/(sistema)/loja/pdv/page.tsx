@@ -222,6 +222,10 @@ export default function PDVPage() {
         pago_pix: pagamento.pix,
         pago_cartao: pagamento.cartao,
         pago_conta: pagamento.conta_corrente,
+        tipo_cartao: pagamento.tipo_cartao,
+        cartao_nsu: pagamento.nsu,
+        cartao_autorizacao: pagamento.autorizacao,
+        pix_identificador: pagamento.pix_identificador,
       },
       snap
     )
