@@ -446,6 +446,13 @@ export interface LojaCaixa {
   status:           LojaStatusCaixa
   aberto_em:        string
   fechado_em:       string | null
+  status_conferencia:     string
+  valor_fisico_especie:   number | null
+  valor_fisico_debito:    number | null
+  valor_fisico_credito:   number | null
+  conferido_por:          string | null
+  conferido_em:           string | null
+  observacao_conferencia: string | null
 }
 
 export interface LojaVenda {
@@ -467,6 +474,7 @@ export interface LojaVenda {
   cartao_nsu:          string | null
   cartao_autorizacao:  string | null
   pix_identificador:   string | null
+  pix_nome_pagador:    string | null
   criado_em:           string
 }
 

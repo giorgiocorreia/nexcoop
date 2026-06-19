@@ -53,6 +53,7 @@ export default function PDVPage() {
   const [vendaIdFinalizada, setVendaIdFinalizada] = useState<string | null>(null)
   const [resumoFechamento, setResumoFechamento] = useState<ResumoFechamento | null>(null)
   const [fechandoCaixa, setFechandoCaixa] = useState(false)
+  const [dadosConferencia, setDadosConferencia] = useState<{ valor_fisico_especie: number; valor_fisico_debito: number; valor_fisico_credito: number } | null>(null)
 
   const [cpfBusca, setCpfBusca] = useState('')
   const [buscandoCpf, setBuscandoCpf] = useState(false)
@@ -452,6 +453,7 @@ export default function PDVPage() {
           onImprimir={() => window.open(`/api/loja/fechamento/${resumoFechamento.caixa_id}`, '_blank')}
           onConfirmar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
           onCancelar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
+          onFechar={dados => setDadosConferencia(dados)}
         />
       )}
     </div>

@@ -88,6 +88,7 @@ export interface PagamentoVenda {
   nsu:               string
   autorizacao:       string
   pix_identificador: string
+  pix_nome_pagador:  string
   valor_recebido:    number
 }
 

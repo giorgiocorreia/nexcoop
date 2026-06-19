@@ -1034,17 +1034,21 @@ export async function registrarSangriaLoja(
 // ── 7. Fechar Caixa ──────────────────────────────────────────────────────────
 
 export interface ResumoFechamento {
-  caixa_id: string
-  aberto_em: string
-  fechado_em: string
-  valor_abertura: number
-  total_vendas: number
-  total_especie: number
-  total_pix: number
-  total_sangrias: number
-  total_aportes: number
-  saldo_final_especie: number
-  qtd_vendas: number
+  caixa_id:             string
+  aberto_em:            string
+  fechado_em:           string
+  valor_abertura:       number
+  total_vendas:         number
+  total_especie:        number
+  total_pix:            number
+  total_cartao_debito:  number
+  total_cartao_credito: number
+  total_saldo:          number
+  total_sangrias:       number
+  total_aportes:        number
+  saldo_final_especie:  number
+  qtd_vendas:           number
+  vendas_pix:           { id: string; num: string; valor: number; identificador: string | null; nome_pagador: string | null }[]
 }
 
 export async function fecharCaixaLoja(
@@ -1056,14 +1060,26 @@ export async function fecharCaixaLoja(
 
   const { data: vendas } = await admin
     .from('loja_vendas')
-    .select('total, pago_especie, pago_pix, status')
+    .select('id, total, pago_especie, pago_pix, pago_cartao, pago_saldo, tipo_cartao, pix_identificador, pix_nome_pagador, status')
     .eq('caixa_id', caixaId)
     .eq('org_id', orgId)
 
   const vendasConcluidas = (vendas ?? []).filter(v => v.status !== 'cancelada')
   const totalVendas = vendasConcluidas.reduce((s, v) => s + (v.total ?? 0), 0)
-  const totalEspecie = vendasConcluidas.reduce((s, v) => s + (v.pago_especie ?? 0), 0)
-  const totalPix = vendasConcluidas.reduce((s, v) => s + (v.pago_pix ?? 0), 0)
+  const totalEspecie       = vendasConcluidas.reduce((s, v) => s + (v.pago_especie ?? 0), 0)
+  const totalPix           = vendasConcluidas.reduce((s, v) => s + (v.pago_pix ?? 0), 0)
+  const totalCartaoDebito  = vendasConcluidas.filter(v => v.tipo_cartao === 'debito').reduce((s, v) => s + (v.pago_cartao ?? 0), 0)
+  const totalCartaoCredito = vendasConcluidas.filter(v => v.tipo_cartao === 'credito').reduce((s, v) => s + (v.pago_cartao ?? 0), 0)
+  const totalSaldo         = vendasConcluidas.reduce((s, v) => s + (v.pago_saldo ?? 0), 0)
+  const vendasPix          = vendasConcluidas
+    .filter(v => (v.pago_pix ?? 0) > 0)
+    .map(v => ({
+      id:            v.id,
+      num:           `V-${v.id.slice(-6).toUpperCase()}`,
+      valor:         Number(v.pago_pix),
+      identificador: (v as any).pix_identificador ?? null,
+      nome_pagador:  (v as any).pix_nome_pagador ?? null,
+    }))
 
   const { data: sangriasRaw } = await (admin as any)
     .from('loja_sangrias')
@@ -1085,27 +1101,32 @@ export async function fecharCaixaLoja(
   const saldoFinalEspecie = valorAbertura + totalEspecie + totalAportes - totalSangrias
 
   const resumo: ResumoFechamento = {
-    caixa_id: caixaId,
-    aberto_em: caixaData?.aberto_em ?? new Date().toISOString(),
-    fechado_em: new Date().toISOString(),
-    valor_abertura: valorAbertura,
-    total_vendas: totalVendas,
-    total_especie: totalEspecie,
-    total_pix: totalPix,
-    total_sangrias: totalSangrias,
-    total_aportes: totalAportes,
-    saldo_final_especie: saldoFinalEspecie,
-    qtd_vendas: vendasConcluidas.length,
+    caixa_id:             caixaId,
+    aberto_em:            caixaData?.aberto_em ?? new Date().toISOString(),
+    fechado_em:           new Date().toISOString(),
+    valor_abertura:       valorAbertura,
+    total_vendas:         totalVendas,
+    total_especie:        totalEspecie,
+    total_pix:            totalPix,
+    total_cartao_debito:  totalCartaoDebito,
+    total_cartao_credito: totalCartaoCredito,
+    total_saldo:          totalSaldo,
+    total_sangrias:       totalSangrias,
+    total_aportes:        totalAportes,
+    saldo_final_especie:  saldoFinalEspecie,
+    qtd_vendas:           vendasConcluidas.length,
+    vendas_pix:           vendasPix,
   }
 
   const { error } = await admin
     .from('loja_caixas')
     .update({
-      status: 'fechado',
-      fechado_em: resumo.fechado_em,
-      valor_fechamento: totalVendas,
-      total_especie: totalEspecie,
-      total_pix: totalPix,
+      status:             'fechado',
+      fechado_em:         resumo.fechado_em,
+      valor_fechamento:   totalVendas,
+      total_especie:      totalEspecie,
+      total_pix:          totalPix,
+      status_conferencia: 'aguardando',
     })
     .eq('id', caixaId)
 
@@ -1120,4 +1141,56 @@ export async function fecharCaixaLoja(
   })
 
   return { ok: true, resumo }
+}
+
+// ── 8. Conferir Caixa ────────────────────────────────────────────────────────
+
+export async function conferirCaixa(
+  orgId: string,
+  caixaId: string,
+  conferidoPor: string,
+  dados: {
+    status_conferencia: 'conferido' | 'divergente'
+    valor_fisico_especie: number
+    valor_fisico_debito: number
+    valor_fisico_credito: number
+    observacao_conferencia?: string
+  }
+): Promise<{ ok: boolean } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { data: caixa } = await admin
+    .from('loja_caixas')
+    .select('org_id, status, status_conferencia')
+    .eq('id', caixaId)
+    .single()
+
+  if (!caixa) return { error: 'Caixa não encontrado.' }
+  if ((caixa as any).org_id !== orgId) return { error: 'Sem permissão.' }
+  if ((caixa as any).status !== 'fechado') return { error: 'Caixa ainda não foi fechado.' }
+
+  const { error } = await admin
+    .from('loja_caixas')
+    .update({
+      status_conferencia:     dados.status_conferencia,
+      valor_fisico_especie:   dados.valor_fisico_especie,
+      valor_fisico_debito:    dados.valor_fisico_debito,
+      valor_fisico_credito:   dados.valor_fisico_credito,
+      observacao_conferencia: dados.observacao_conferencia ?? null,
+      conferido_por:          conferidoPor,
+      conferido_em:           new Date().toISOString(),
+    })
+    .eq('id', caixaId)
+
+  if (error) return { error: error.message }
+
+  await registrarLog({
+    org_id: orgId,
+    usuario_id: conferidoPor,
+    modulo: 'loja',
+    acao: 'loja_caixa_conferido',
+    dados_depois: { caixa_id: caixaId, status: dados.status_conferencia },
+  })
+
+  return { ok: true }
 }

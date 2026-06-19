@@ -117,6 +117,9 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     if (isAdmin || isGerenteLoja || isCaixaLoja)
       lojaChildren.push({ label: 'Rel. Caixa', href: '/loja/relatorios/caixa', icone: '🗃' })
 
+    if (isAdmin || isGerenteLoja)
+      lojaChildren.push({ label: 'Conferência', href: '/loja/conferencia', icone: '🔍' })
+
     agroItens.push({
       label: 'Loja', href: '/loja', icone: '🏪',
       children: lojaChildren,
