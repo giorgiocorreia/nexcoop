@@ -6,7 +6,7 @@ import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database
 import type { UsuarioPendente } from './page'
 import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite } from './actions'
 import { Btn } from '@/components/ui/Btn'
-import ModalCadastrarUsuario from '@/components/usuarios/ModalCadastrarUsuario'
+import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
@@ -53,6 +53,18 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   const [erroConvite, setErroConvite] = useState('')
   const [okConvite, setOkConvite] = useState('')
 
+  // Cadastro direto
+  const [cadastroAberto, setCadastroAberto] = useState(false)
+  const [cadastro, setCadastro] = useState({ nome: '', email: '', cpf: '', vinculo: '', funcoes: [] as string[] })
+  const [enviandoCadastro, setEnviandoCadastro] = useState(false)
+  const [erroCadastro, setErroCadastro] = useState('')
+  const [okCadastro, setOkCadastro] = useState('')
+  const [credenciais, setCredenciais] = useState<{ email: string; senha: string } | null>(null)
+  const [copiado, setCopiado] = useState(false)
+  const [enviandoEmailBV, setEnviandoEmailBV] = useState(false)
+  const [emailBVEnviado, setEmailBVEnviado] = useState(false)
+  const [erroEmailBV, setErroEmailBV] = useState('')
+
   // Edição inline
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ funcoes: [] as string[], vinculo: '' })
@@ -74,9 +86,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   const [senhaAtivar, setSenhaAtivar] = useState('')
   const [erroSenha, setErroSenha] = useState('')
   const [salvandoAtivar, setSalvandoAtivar] = useState(false)
-
-  // Modal de cadastro
-  const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
 
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -195,6 +204,73 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
     setPendentes(prev => prev.filter(x => x.id !== p.id))
   }
 
+  function toggleFuncaoCadastro(nome: string) {
+    setCadastro(prev => ({
+      ...prev,
+      funcoes: prev.funcoes.includes(nome)
+        ? prev.funcoes.filter(f => f !== nome)
+        : [...prev.funcoes, nome],
+    }))
+  }
+
+  async function handleCadastrar() {
+    if (!cadastro.nome.trim()) { setErroCadastro('Informe o nome.'); return }
+    if (!cadastro.email.trim()) { setErroCadastro('Informe o e-mail.'); return }
+    if (!cadastro.vinculo) { setErroCadastro('Selecione o vínculo.'); return }
+    if (!organizacaoId) { setErroCadastro('Organização não encontrada.'); return }
+    setEnviandoCadastro(true)
+    setErroCadastro('')
+    const res = await criarUsuarioComCooperadoOpcional(organizacaoId, {
+      nome: cadastro.nome.trim(),
+      email: cadastro.email.trim(),
+      cpf: '',
+      funcoes: cadastro.funcoes,
+      vinculo: cadastro.vinculo,
+      ehCooperado: false,
+    })
+    setEnviandoCadastro(false)
+    if (!res.success) { setErroCadastro(res.error ?? 'Erro ao cadastrar.'); return }
+    setCredenciais({ email: cadastro.email.trim(), senha: res.senhaTemporaria })
+  }
+
+  async function handleEnviarEmailBoasVindas() {
+    if (!credenciais) return
+    setEnviandoEmailBV(true)
+    setErroEmailBV('')
+    const res = await enviarEmailBoasVindas({
+      nomeCooperado: cadastro.nome.trim(),
+      emailCooperado: credenciais.email,
+      senhaTemporaria: credenciais.senha,
+      nomeOrg: nomeOrg ?? 'sua organização',
+      tipoMembro: cadastro.vinculo || 'membro',
+    })
+    setEnviandoEmailBV(false)
+    if (res.success) {
+      setEmailBVEnviado(true)
+    } else {
+      setErroEmailBV(res.error ?? 'Erro ao enviar e-mail.')
+    }
+  }
+
+  async function copiarCredenciais() {
+    if (!credenciais) return
+    await navigator.clipboard.writeText(`E-mail: ${credenciais.email}\nSenha temporária: ${credenciais.senha}`)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
+  function fecharCadastro() {
+    setCadastroAberto(false)
+    setCadastro({ nome: '', email: '', cpf: '', vinculo: '', funcoes: [] })
+    setErroCadastro('')
+    setOkCadastro('')
+    setCredenciais(null)
+    setCopiado(false)
+    setEnviandoEmailBV(false)
+    setEmailBVEnviado(false)
+    setErroEmailBV('')
+  }
+
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
@@ -263,17 +339,6 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
         </div>
       )}
 
-      {/* Modal de cadastro */}
-      {modalCadastrarAberto && organizacaoId && (
-        <ModalCadastrarUsuario
-          organizacaoId={organizacaoId}
-          funcoes={funcoes}
-          nomeOrg={nomeOrg}
-          onClose={() => setModalCadastrarAberto(false)}
-          onSucesso={() => { setModalCadastrarAberto(false); router.refresh() }}
-        />
-      )}
-
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -286,12 +351,12 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Btn
-            variante="azul"
-            icone="ti-user-plus"
-            onClick={() => setModalCadastrarAberto(true)}
+            variante={cadastroAberto ? 'cinza' : 'azul'}
+            icone={cadastroAberto ? undefined : 'ti-user-plus'}
+            onClick={() => { fecharCadastro(); setCadastroAberto(v => !v) }}
             disabled={!organizacaoId}
           >
-            + Cadastrar usuário
+            {cadastroAberto ? 'Cancelar' : '+ Cadastrar usuário'}
           </Btn>
           <Btn
             variante={conviteAberto ? 'cinza' : 'azul'}
@@ -395,6 +460,142 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
           >
             {enviandoConvite ? 'Enviando...' : 'Enviar convite'}
           </button>
+        </div>
+      )}
+
+      {/* Painel de cadastro direto */}
+      {cadastroAberto && (
+        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>Cadastrar usuário</div>
+          <p style={{ fontSize: '12px', color: '#888', marginTop: 0, marginBottom: '1rem' }}>
+            Usuário criado imediatamente com senha temporária — sem necessidade de confirmação de e-mail.
+          </p>
+
+          {!credenciais ? (
+            <>
+              {erroCadastro && <Alerta tipo="erro" style={{ marginBottom: '12px' }}>{erroCadastro}</Alerta>}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <FieldLabel required>Nome completo</FieldLabel>
+                  <input
+                    value={cadastro.nome}
+                    onChange={e => setCadastro(p => ({ ...p, nome: e.target.value }))}
+                    placeholder="Nome do usuário"
+                    style={inp}
+                    onFocus={e => e.target.style.borderColor = GREEN}
+                    onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                  />
+                </div>
+                <div>
+                  <FieldLabel required>E-mail</FieldLabel>
+                  <input
+                    type="email"
+                    value={cadastro.email}
+                    onChange={e => setCadastro(p => ({ ...p, email: e.target.value }))}
+                    placeholder="email@exemplo.com"
+                    style={inp}
+                    onFocus={e => e.target.style.borderColor = GREEN}
+                    onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <FieldLabel required>Vínculo</FieldLabel>
+                <select
+                  value={cadastro.vinculo}
+                  onChange={e => setCadastro(p => ({ ...p, vinculo: e.target.value }))}
+                  style={{ ...inp, width: '220px' }}
+                >
+                  <option value="">Selecionar...</option>
+                  {VINCULO_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <FieldLabel>Funções</FieldLabel>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {funcoes.map(f => {
+                    const sel = cadastro.funcoes.includes(f.nome)
+                    return (
+                      <button
+                        key={f.nome} type="button"
+                        onClick={() => toggleFuncaoCadastro(f.nome)}
+                        style={{
+                          fontSize: '12px', padding: '4px 12px', borderRadius: '12px',
+                          border: `1px solid ${sel ? GREEN : '#d5d3cc'}`,
+                          background: sel ? '#EEF0FF' : '#fff',
+                          color: sel ? GREEN_DARK : '#555',
+                          cursor: 'pointer', fontWeight: sel ? '600' : '400',
+                        }}
+                      >
+                        {f.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCadastrar}
+                disabled={enviandoCadastro}
+                style={{
+                  padding: '9px 20px', background: enviandoCadastro ? '#9F9BFF' : GREEN,
+                  color: '#fff', border: 'none', borderRadius: '8px',
+                  fontSize: '13px', fontWeight: '600',
+                  cursor: enviandoCadastro ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {enviandoCadastro ? 'Cadastrando...' : 'Cadastrar'}
+              </button>
+            </>
+          ) : (
+            <div>
+              <div style={{ background: '#f8f7f4', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#9a9a9a', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '12px' }}>
+                  Credenciais para repassar ao usuário
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#888' }}>E-mail:</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginLeft: '8px' }}>{credenciais.email}</span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#888' }}>Senha temporária:</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginLeft: '8px', fontFamily: 'monospace', letterSpacing: '0.08em' }}>
+                      {credenciais.senha}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#FFF8E1', border: '1px solid #FDE68A', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#92400e', marginBottom: '1rem' }}>
+                ⚠️ Anote e repasse pessoalmente — esta senha não será exibida novamente.
+              </div>
+
+              {erroEmailBV && <Alerta tipo="erro" style={{ marginBottom: '8px' }}>{erroEmailBV}</Alerta>}
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
+                <Btn variante="cinza" icone="ti-copy" onClick={copiarCredenciais}>
+                  {copiado ? 'Copiado!' : 'Copiar credenciais'}
+                </Btn>
+                {emailBVEnviado ? (
+                  <span style={{ fontSize: '12px', color: '#166534', fontWeight: 500, alignSelf: 'center' }}>✓ E-mail enviado</span>
+                ) : (
+                  <Btn variante="cinza" icone="ti-mail" onClick={handleEnviarEmailBoasVindas} disabled={enviandoEmailBV}>
+                    {enviandoEmailBV ? 'Enviando...' : 'Enviar por e-mail'}
+                  </Btn>
+                )}
+                <Btn variante="azul" onClick={() => { fecharCadastro(); router.refresh() }}>
+                  Fechar
+                </Btn>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
