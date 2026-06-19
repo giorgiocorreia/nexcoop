@@ -3,11 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 
+interface NotaVenda {
+  id: string;
+  tipo: string;
+  status: string;
+  chave_acesso: string | null;
+}
+
 interface Venda {
   id: string; num: string; data: string; hora: string;
   operador: string; forma: string;
   pago_especie: number; pago_pix: number; pago_cartao: number; pago_saldo: number;
   total: number;
+  nota: NotaVenda | null;
 }
 
 interface Operador { id: string; nome: string; }
@@ -24,10 +32,46 @@ function fmtForma(f: string) {
   return map[f] ?? f;
 }
 
+function NotaBadge({ nota }: { nota: NotaVenda | null }) {
+  if (!nota) {
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5,
+        background: "#f5f5f4", color: "#a8a29e", whiteSpace: "nowrap",
+      }}>
+        Sem nota
+      </span>
+    )
+  }
+
+  const config: Record<string, { bg: string; color: string; label: string }> = {
+    autorizada:  { bg: "#f0fdf4", color: "#15803d", label: nota.tipo === "nfce" ? "NFC-e" : "NF-e" },
+    processando: { bg: "#fef9c3", color: "#854d0e", label: "Emitindo..." },
+    rejeitada:   { bg: "#fef2f2", color: "#dc2626", label: "Rejeitada" },
+    cancelada:   { bg: "#f5f5f4", color: "#78716c", label: "Cancelada" },
+    erro:        { bg: "#fef2f2", color: "#dc2626", label: "Erro" },
+  }
+
+  const c = config[nota.status] ?? { bg: "#f5f5f4", color: "#78716c", label: nota.status }
+
+  return (
+    <span
+      title={nota.chave_acesso ? `Chave: ${nota.chave_acesso}` : undefined}
+      style={{
+        fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5,
+        background: c.bg, color: c.color, whiteSpace: "nowrap",
+        cursor: nota.chave_acesso ? "help" : "default",
+      }}
+    >
+      {c.label}
+    </span>
+  )
+}
+
 function exportCSV(vendas: Venda[]) {
-  const header = "Nº,Data,Hora,Operador,Forma,Dinheiro,PIX,Cartão,Crédito Coop.,Total";
+  const header = "Nº,Data,Hora,Operador,Forma,Nota,Dinheiro,PIX,Cartão,Crédito Coop.,Total";
   const rows = vendas.map(v =>
-    `${v.num},${v.data},${v.hora},"${v.operador}",${fmtForma(v.forma)},${v.pago_especie},${v.pago_pix},${v.pago_cartao},${v.pago_saldo},${v.total}`
+    `${v.num},${v.data},${v.hora},"${v.operador}",${fmtForma(v.forma)},${v.nota ? v.nota.status : "sem nota"},${v.pago_especie},${v.pago_pix},${v.pago_cartao},${v.pago_saldo},${v.total}`
   );
   const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -159,7 +203,7 @@ export default function RelatorioVendasClient({ vendas, operadores }: { vendas: 
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #e5e3dc" }}>
-              {["Data", "Hora", "Nº", "Operador", "Forma", "Total"].map(h => (
+              {["Data", "Hora", "Nº", "Operador", "Forma", "Nota", "Total"].map(h => (
                 <th key={h} style={{
                   padding: "11px 14px", fontSize: 11, fontWeight: 700,
                   textTransform: "uppercase", letterSpacing: "0.05em",
@@ -181,6 +225,9 @@ export default function RelatorioVendasClient({ vendas, operadores }: { vendas: 
                     color: v.forma === "credito_cooperado" ? "#0369a1" : "#78716c",
                     padding: "2px 7px", borderRadius: 5, fontWeight: 600, whiteSpace: "nowrap",
                   }}>{fmtForma(v.forma)}</span>
+                </td>
+                <td style={{ padding: "11px 14px" }}>
+                  <NotaBadge nota={v.nota} />
                 </td>
                 <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700, textAlign: "right" }}>{fmt(v.total)}</td>
               </tr>
