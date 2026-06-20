@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { registrarCompra } from '@/lib/loja/actions'
+import { registrarCompra, criarFornecedor } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
 
 interface Produto { id: string; nome: string; unidade: string }
@@ -61,6 +61,16 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
 
   // Cabeçalho
   const [fornecedorId, setFornecedorId] = useState('')
+  const [fornecedorBusca, setFornecedorBusca]     = useState('')
+  const [fornecedorNome, setFornecedorNome]        = useState('')
+  const [mostrarDropdown, setMostrarDropdown]      = useState(false)
+  const [mostrarCadastrar, setMostrarCadastrar]    = useState(false)
+  const [novoFornNome, setNovoFornNome]            = useState('')
+  const [novoFornCnpj, setNovoFornCnpj]            = useState('')
+  const [novoFornEmail, setNovoFornEmail]          = useState('')
+  const [novoFornTelefone, setNovoFornTelefone]    = useState('')
+  const [salvandoForn, setSalvandoForn]            = useState(false)
+  const [fornecedoresLocal, setFornecedoresLocal]  = useState(fornecedores)
   const [dataCompra, setDataCompra]     = useState(new Date().toISOString().split('T')[0])
   const [numeroNF, setNumeroNF]         = useState('')
   const [frete, setFrete]               = useState('0,00')
@@ -155,6 +165,31 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
     setItens(prev => prev.filter((_, i) => i !== idx))
   }
 
+  async function handleCadastrarFornecedor() {
+    if (!novoFornNome.trim()) { setErro('Informe o nome do fornecedor.'); return }
+    setSalvandoForn(true)
+    setErro(null)
+    const result = await criarFornecedor({
+      nome: novoFornNome.trim(),
+      cnpj: novoFornCnpj || null,
+      email: novoFornEmail || null,
+      telefone: novoFornTelefone || null,
+    })
+    setSalvandoForn(false)
+    if ('error' in result) { setErro(result.error ?? null); return }
+    const novo = result.data!
+    setFornecedoresLocal(prev => [...prev, { id: novo.id, nome: novo.nome }])
+    setFornecedorId(novo.id)
+    setFornecedorNome(novo.nome)
+    setFornecedorBusca(novo.nome)
+    setMostrarCadastrar(false)
+    setMostrarDropdown(false)
+    setNovoFornNome('')
+    setNovoFornCnpj('')
+    setNovoFornEmail('')
+    setNovoFornTelefone('')
+  }
+
   async function handleSubmit() {
     if (!fornecedorId)     { setErro('Selecione um fornecedor.'); return }
     if (itens.length === 0) { setErro('Adicione ao menos um item.'); return }
@@ -205,12 +240,136 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       <div style={cardStyle}>
         <h2 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700' }}>Dados da compra</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          <div>
+          <div style={{ position: 'relative' }}>
             <label style={labelStyle}>Fornecedor *</label>
-            <select value={fornecedorId} onChange={e => setFornecedorId(e.target.value)} style={inputStyle}>
-              <option value="">Selecione...</option>
-              {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-            </select>
+            <input
+              type="text"
+              value={fornecedorBusca}
+              onChange={e => {
+                const v = e.target.value
+                setFornecedorBusca(v)
+                setFornecedorId('')
+                setFornecedorNome('')
+                setMostrarDropdown(v.length > 0)
+                setMostrarCadastrar(false)
+              }}
+              onFocus={() => { if (fornecedorBusca.length > 0) setMostrarDropdown(true) }}
+              onBlur={() => setTimeout(() => setMostrarDropdown(false), 200)}
+              placeholder="Digite para buscar fornecedor..."
+              style={{ ...inputStyle, borderColor: fornecedorId ? '#1D9E75' : undefined }}
+              autoComplete="off"
+            />
+            {fornecedorId && (
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(8px)', fontSize: 14, color: '#1D9E75' }}>✓</span>
+            )}
+
+            {mostrarDropdown && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                background: '#fff', border: '1px solid #d5d3cc', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto',
+              }}>
+                {(() => {
+                  const filtrados = fornecedoresLocal.filter(f =>
+                    f.nome.toLowerCase().includes(fornecedorBusca.toLowerCase())
+                  )
+                  if (filtrados.length > 0) {
+                    return filtrados.map(f => (
+                      <div
+                        key={f.id}
+                        onMouseDown={() => {
+                          setFornecedorId(f.id)
+                          setFornecedorNome(f.nome)
+                          setFornecedorBusca(f.nome)
+                          setMostrarDropdown(false)
+                          setMostrarCadastrar(false)
+                        }}
+                        style={{
+                          padding: '10px 14px', fontSize: 13, cursor: 'pointer',
+                          borderBottom: '1px solid #f0eeea',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f8f7f4')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                      >
+                        {f.nome}
+                      </div>
+                    ))
+                  }
+                  return (
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 10 }}>
+                        Fornecedor "<strong>{fornecedorBusca}</strong>" não encontrado.
+                      </div>
+                      <button
+                        type="button"
+                        onMouseDown={() => {
+                          setNovoFornNome(fornecedorBusca)
+                          setMostrarCadastrar(true)
+                          setMostrarDropdown(false)
+                        }}
+                        style={{
+                          padding: '7px 14px', background: LARANJA, color: '#fff',
+                          border: 'none', borderRadius: 7, fontSize: 12,
+                          fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        + Cadastrar "{fornecedorBusca}"
+                      </button>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {mostrarCadastrar && (
+              <div style={{
+                marginTop: 8, background: '#f8f7f4', border: '1px solid #e5e3dc',
+                borderRadius: 10, padding: '14px 16px',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 12 }}>
+                  Cadastrar novo fornecedor
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <label style={labelStyle}>Nome *</label>
+                    <input value={novoFornNome} onChange={e => setNovoFornNome(e.target.value)}
+                      placeholder="Nome do fornecedor" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>CNPJ</label>
+                    <input value={novoFornCnpj} onChange={e => setNovoFornCnpj(e.target.value)}
+                      placeholder="00.000.000/0001-00" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>E-mail</label>
+                    <input type="email" value={novoFornEmail} onChange={e => setNovoFornEmail(e.target.value)}
+                      placeholder="email@fornecedor.com" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Telefone</label>
+                    <input value={novoFornTelefone} onChange={e => setNovoFornTelefone(e.target.value)}
+                      placeholder="(00) 00000-0000" style={inputStyle} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => { setMostrarCadastrar(false); setNovoFornNome('') }}
+                    style={{ padding: '7px 14px', border: '1px solid #d5d3cc', borderRadius: 7, fontSize: 12, background: '#fff', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCadastrarFornecedor}
+                    disabled={salvandoForn}
+                    style={{ padding: '7px 14px', background: LARANJA, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: salvandoForn ? 'not-allowed' : 'pointer', opacity: salvandoForn ? 0.7 : 1 }}
+                  >
+                    {salvandoForn ? 'Salvando...' : 'Salvar fornecedor'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label style={labelStyle}>Data da compra *</label>
