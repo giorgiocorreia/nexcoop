@@ -7,7 +7,7 @@ export interface DadosComprovantePagamento {
   comprovante: {
     id: string
     numero_sequencial: number
-    emitido_em: string | null
+    emitido_em: string
     status: string
   }
   organizacao: {
@@ -20,25 +20,26 @@ export interface DadosComprovantePagamento {
   }
   produtor: {
     nome: string
-    cpf: string | null
-  }
-  pagamento: {
+    cpf: string
     tipo: string
-    valor_financeiro: number
-    forma_pagamento: string | null
-    observacoes: string | null
-    created_at: string
-    quantidade_produto: number | null
-    preco_unitario: number | null
   }
   produto: {
     nome: string
     unidade: string
-  } | null
-  posicao: {
-    saldo_financeiro_antes: number
+  }
+  pagamento: {
+    tipo: string
+    quantidade_kg: number
+    cotacao: number
     valor_pago: number
-    saldo_financeiro_depois: number
+    forma: string
+    observacoes: string | null
+    created_at: string
+  }
+  posicao: {
+    total_entregue_kg: number
+    total_vendido_kg: number
+    saldo_ordem_kg: number
   }
 }
 
@@ -51,7 +52,7 @@ export async function emitirComprovantePagamento(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuário não autenticado')
 
-  // Idempotente: retorna o existente se já emitido
+  // Idempotente: retorna existente se já emitido
   const { data: existente } = await admin
     .from('comprovantes_pagamento')
     .select('id, numero_sequencial')
@@ -63,7 +64,7 @@ export async function emitirComprovantePagamento(
     return { comprovante_id: existente.id, numero: existente.numero_sequencial }
   }
 
-  // Busca a movimentação com joins
+  // Busca o saque com joins
   const { data: mov, error: movErr } = await admin
     .from('movimentacoes_conta')
     .select(`
@@ -75,11 +76,11 @@ export async function emitirComprovantePagamento(
       observacoes,
       quantidade_produto,
       preco_unitario,
-      created_at,
       produto_id,
+      created_at,
       contas_produtor(
         produtor_id,
-        produtores(nome, cpf)
+        produtores(nome, cpf, tipo)
       ),
       produtos(nome, unidade),
       sessoes_caixa!sessao_caixa_id(
@@ -94,22 +95,95 @@ export async function emitirComprovantePagamento(
   if (movErr || !mov) throw new Error('Movimentação não encontrada')
 
   const sessaoCaixa = (mov as any).sessoes_caixa
-  const organizacao_id: string = Array.isArray(sessaoCaixa)
-    ? sessaoCaixa[0]?.organizacao_id
-    : sessaoCaixa?.organizacao_id
-
+  const sess = Array.isArray(sessaoCaixa) ? sessaoCaixa[0] : sessaoCaixa
+  const organizacao_id: string = sess?.organizacao_id
   if (!organizacao_id) throw new Error('Organização não encontrada na sessão')
 
-  // Saldo financeiro atual da conta (após a movimentação)
-  const { data: conta } = await admin
-    .from('contas_produtor')
-    .select('saldo_financeiro')
-    .eq('id', (mov as any).conta_id)
-    .single()
+  const contaProdutor = (mov as any).contas_produtor
+  const cp = Array.isArray(contaProdutor) ? contaProdutor[0] : contaProdutor
+  const produtorRaw = Array.isArray(cp?.produtores) ? cp.produtores[0] : cp?.produtores
 
-  const saldo_depois = (conta as any)?.saldo_financeiro ?? 0
-  const valor = Math.abs((mov as any).valor_financeiro ?? 0)
-  const saldo_antes = saldo_depois + valor
+  const sessaoUsuarios = Array.isArray(sess?.usuarios) ? sess.usuarios[0] : sess?.usuarios
+  const operadorNome: string = sessaoUsuarios?.nome_completo ?? ''
+
+  // Produto direto no saque (só para conversao-based saques que usam base spread)
+  let produtoId: string | null = (mov as any).produto_id ?? null
+  let produtoNome = ''
+  let produtoUnidade = ''
+  let quantidadeKg = 0
+  let cotacao = 0
+
+  const produtoRaw = (mov as any).produtos
+  const produtoDireto = produtoRaw ? (Array.isArray(produtoRaw) ? produtoRaw[0] : produtoRaw) : null
+  if (produtoDireto) {
+    produtoNome = produtoDireto.nome ?? ''
+    produtoUnidade = produtoDireto.unidade ?? ''
+  }
+  if ((mov as any).quantidade_produto) quantidadeKg = (mov as any).quantidade_produto
+  if ((mov as any).preco_unitario) cotacao = (mov as any).preco_unitario
+
+  // Se não tem produto no saque, busca a conversao associada (mesma conta/sessao, criada ≤ 60s antes)
+  if (!produtoId) {
+    const { data: conv } = await admin
+      .from('movimentacoes_conta')
+      .select('produto_id, quantidade_produto, preco_unitario, produtos(nome, unidade)')
+      .eq('conta_id', (mov as any).conta_id)
+      .eq('sessao_caixa_id', sess?.id ?? '')
+      .eq('tipo', 'conversao')
+      .lte('created_at', (mov as any).created_at)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (conv) {
+      produtoId = (conv as any).produto_id ?? null
+      quantidadeKg = (conv as any).quantidade_produto ?? 0
+      cotacao = (conv as any).preco_unitario ?? 0
+      const cp2 = (conv as any).produtos
+      const p2 = Array.isArray(cp2) ? cp2[0] : cp2
+      if (p2) { produtoNome = p2.nome ?? ''; produtoUnidade = p2.unidade ?? '' }
+    }
+  }
+
+  // Busca a sessao_id (sessoes_caixa join não retorna o id — precisamos buscá-lo separado)
+  const { data: sessaoRow } = await admin
+    .from('sessoes_caixa')
+    .select('id')
+    .eq('organizacao_id', organizacao_id)
+    .eq('usuario_id', sess?.usuario_id ?? '')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const sessaoId: string = sessaoRow?.id ?? ''
+
+  // Saldo a ordem (kg) e posição
+  let saldo_ordem_kg = 0
+  let total_entregue_kg = 0
+  let total_vendido_kg = 0
+
+  const contaId: string = (mov as any).conta_id ?? ''
+
+  if (produtoId && contaId) {
+    const [{ data: saldoProd }, { data: entregas }] = await Promise.all([
+      admin
+        .from('saldos_produto')
+        .select('quantidade')
+        .eq('conta_id', contaId)
+        .eq('produto_id', produtoId)
+        .maybeSingle(),
+      admin
+        .from('movimentacoes_conta')
+        .select('quantidade_produto')
+        .eq('conta_id', contaId)
+        .eq('produto_id', produtoId)
+        .eq('tipo', 'entrega'),
+    ])
+    saldo_ordem_kg = (saldoProd as any)?.quantidade ?? 0
+    total_entregue_kg = ((entregas as any[]) ?? []).reduce(
+      (acc: number, e: any) => acc + (e.quantidade_produto ?? 0), 0
+    )
+    total_vendido_kg = total_entregue_kg - saldo_ordem_kg
+  }
 
   // Número sequencial via RPC
   const { data: numeroData, error: numErr } = await (admin as any)
@@ -117,39 +191,27 @@ export async function emitirComprovantePagamento(
   if (numErr) throw new Error('Erro ao gerar número sequencial: ' + numErr.message)
   const numero_sequencial = numeroData as number
 
-  // Dados do produtor
-  const contaProdutor = (mov as any).contas_produtor
-  const cp = Array.isArray(contaProdutor) ? contaProdutor[0] : contaProdutor
-  const produtorRaw = Array.isArray(cp?.produtores) ? cp.produtores[0] : cp?.produtores
-
-  // Dados do produto (se a movimentação tem produto_id)
-  const produtoRaw = (mov as any).produtos
-  const produto = produtoRaw
-    ? (Array.isArray(produtoRaw) ? produtoRaw[0] : produtoRaw)
-    : null
-
-  // Dados do operador
-  const sessaoUsuarios = Array.isArray(sessaoCaixa?.usuarios)
-    ? sessaoCaixa.usuarios[0]
-    : sessaoCaixa?.usuarios
-  const operadorNome = sessaoUsuarios?.nome_completo ?? ''
+  const forma = (mov as any).forma_pagamento === 'pix' ? 'Pix' : 'Especie'
 
   const snapshot = {
     movimentacao_id,
     tipo: (mov as any).tipo,
-    valor_financeiro: (mov as any).valor_financeiro,
+    valor_pago: Math.abs((mov as any).valor_financeiro ?? 0),
     forma_pagamento: (mov as any).forma_pagamento,
+    forma,
     observacoes: (mov as any).observacoes,
-    quantidade_produto: (mov as any).quantidade_produto,
-    preco_unitario: (mov as any).preco_unitario,
-    created_at: (mov as any).created_at,
+    quantidade_kg: quantidadeKg,
+    cotacao,
+    produto_nome: produtoNome,
+    produto_unidade: produtoUnidade,
     produtor_nome: produtorRaw?.nome ?? '',
-    produtor_cpf: produtorRaw?.cpf ?? null,
-    produto_nome: produto?.nome ?? null,
-    produto_unidade: produto?.unidade ?? null,
+    produtor_cpf: produtorRaw?.cpf ?? '',
+    produtor_tipo: produtorRaw?.tipo ?? '',
     operador_nome: operadorNome,
-    saldo_financeiro_antes: saldo_antes,
-    saldo_financeiro_depois: saldo_depois,
+    created_at: (mov as any).created_at,
+    saldo_ordem_kg,
+    total_entregue_kg,
+    total_vendido_kg,
   }
 
   const { data: comprovante, error: insertErr } = await admin
@@ -197,15 +259,13 @@ export async function buscarDadosComprovantePagamento(
     ? await admin.from('usuarios').select('nome_completo').eq('id', comp.emitido_por).maybeSingle()
     : { data: null }
 
-  const operadorNome: string = snap.operador_nome
-    || (operadorData as any)?.nome_completo
-    || ''
+  const emitido_em: string = comp.emitido_em ?? snap.created_at ?? new Date().toISOString()
 
   return {
     comprovante: {
       id: comp.id,
       numero_sequencial: comp.numero_sequencial,
-      emitido_em: comp.emitido_em,
+      emitido_em,
       status: comp.status,
     },
     organizacao: {
@@ -213,27 +273,31 @@ export async function buscarDadosComprovantePagamento(
       cnpj: (org as any).cnpj ?? '',
       cidade: (org as any).cidade ?? '',
     },
-    operador: { nome: operadorNome },
+    operador: {
+      nome: snap.operador_nome || (operadorData as any)?.nome_completo || '',
+    },
     produtor: {
       nome: snap.produtor_nome ?? '',
-      cpf: snap.produtor_cpf ?? null,
+      cpf: snap.produtor_cpf ?? '',
+      tipo: snap.produtor_tipo ?? '',
+    },
+    produto: {
+      nome: snap.produto_nome ?? '',
+      unidade: snap.produto_unidade ?? '',
     },
     pagamento: {
       tipo: snap.tipo ?? '',
-      valor_financeiro: snap.valor_financeiro ?? 0,
-      forma_pagamento: snap.forma_pagamento ?? null,
+      quantidade_kg: snap.quantidade_kg ?? 0,
+      cotacao: snap.cotacao ?? 0,
+      valor_pago: snap.valor_pago ?? 0,
+      forma: snap.forma ?? (snap.forma_pagamento === 'pix' ? 'Pix' : 'Especie'),
       observacoes: snap.observacoes ?? null,
-      created_at: snap.created_at ?? comp.emitido_em ?? '',
-      quantidade_produto: snap.quantidade_produto ?? null,
-      preco_unitario: snap.preco_unitario ?? null,
+      created_at: snap.created_at ?? emitido_em,
     },
-    produto: snap.produto_nome
-      ? { nome: snap.produto_nome, unidade: snap.produto_unidade ?? '' }
-      : null,
     posicao: {
-      saldo_financeiro_antes: snap.saldo_financeiro_antes ?? 0,
-      valor_pago: Math.abs(snap.valor_financeiro ?? 0),
-      saldo_financeiro_depois: snap.saldo_financeiro_depois ?? 0,
+      total_entregue_kg: snap.total_entregue_kg ?? 0,
+      total_vendido_kg: snap.total_vendido_kg ?? 0,
+      saldo_ordem_kg: snap.saldo_ordem_kg ?? 0,
     },
   }
 }
