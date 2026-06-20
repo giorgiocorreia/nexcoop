@@ -83,7 +83,9 @@ export async function emitirComprovantePagamento(
         produtores(nome, cpf, tipo)
       ),
       produtos(nome, unidade),
+      sessao_caixa_id,
       sessoes_caixa!sessao_caixa_id(
+        id,
         organizacao_id,
         usuario_id,
         usuarios!usuario_id(nome_completo)
@@ -105,6 +107,7 @@ export async function emitirComprovantePagamento(
 
   const sessaoUsuarios = Array.isArray(sess?.usuarios) ? sess.usuarios[0] : sess?.usuarios
   const operadorNome: string = sessaoUsuarios?.nome_completo ?? ''
+  const sessaoId: string = sess?.id ?? (mov as any).sessao_caixa_id ?? ''
 
   // Produto direto no saque (só para conversao-based saques que usam base spread)
   let produtoId: string | null = (mov as any).produto_id ?? null
@@ -128,7 +131,7 @@ export async function emitirComprovantePagamento(
       .from('movimentacoes_conta')
       .select('produto_id, quantidade_produto, preco_unitario, produtos(nome, unidade)')
       .eq('conta_id', (mov as any).conta_id)
-      .eq('sessao_caixa_id', sess?.id ?? '')
+      .eq('sessao_caixa_id', sessaoId)
       .eq('tipo', 'conversao')
       .lte('created_at', (mov as any).created_at)
       .order('created_at', { ascending: false })
@@ -145,17 +148,6 @@ export async function emitirComprovantePagamento(
     }
   }
 
-  // Busca a sessao_id (sessoes_caixa join não retorna o id — precisamos buscá-lo separado)
-  const { data: sessaoRow } = await admin
-    .from('sessoes_caixa')
-    .select('id')
-    .eq('organizacao_id', organizacao_id)
-    .eq('usuario_id', sess?.usuario_id ?? '')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const sessaoId: string = sessaoRow?.id ?? ''
-
   // Saldo a ordem (kg) e posição
   let saldo_ordem_kg = 0
   let total_entregue_kg = 0
@@ -163,26 +155,23 @@ export async function emitirComprovantePagamento(
 
   const contaId: string = (mov as any).conta_id ?? ''
 
-  if (produtoId && contaId) {
-    const [{ data: saldoProd }, { data: entregas }] = await Promise.all([
-      admin
-        .from('saldos_produto')
-        .select('quantidade')
-        .eq('conta_id', contaId)
-        .eq('produto_id', produtoId)
-        .maybeSingle(),
-      admin
-        .from('movimentacoes_conta')
-        .select('quantidade_produto')
-        .eq('conta_id', contaId)
-        .eq('produto_id', produtoId)
-        .eq('tipo', 'entrega'),
-    ])
-    saldo_ordem_kg = (saldoProd as any)?.quantidade ?? 0
-    total_entregue_kg = ((entregas as any[]) ?? []).reduce(
-      (acc: number, e: any) => acc + (e.quantidade_produto ?? 0), 0
-    )
-    total_vendido_kg = total_entregue_kg - saldo_ordem_kg
+  if (contaId) {
+    const { data: todasMov } = await admin
+      .from('movimentacoes_conta')
+      .select('tipo, quantidade_produto, produto_id')
+      .eq('conta_id', contaId)
+
+    const movs = (todasMov ?? []) as any[]
+
+    total_entregue_kg = movs
+      .filter((m: any) => m.tipo === 'entrega' && (!produtoId || m.produto_id === produtoId))
+      .reduce((acc: number, m: any) => acc + (m.quantidade_produto ?? 0), 0)
+
+    total_vendido_kg = movs
+      .filter((m: any) => m.tipo === 'conversao' && (!produtoId || m.produto_id === produtoId))
+      .reduce((acc: number, m: any) => acc + (m.quantidade_produto ?? 0), 0)
+
+    saldo_ordem_kg = Math.max(0, total_entregue_kg - total_vendido_kg)
   }
 
   // Número sequencial via RPC

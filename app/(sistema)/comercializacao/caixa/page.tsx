@@ -185,6 +185,7 @@ export default function CaixaPage() {
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
   const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
+  const [ultimaSaqueId, setUltimaSaqueId] = useState<string | null>(null)
   const [modalNfe, setModalNfe] = useState<string | null>(null)
   const [orgNome, setOrgNome] = useState('')
   const [orgCnpj, setOrgCnpj] = useState('')
@@ -410,7 +411,7 @@ export default function CaixaPage() {
       setUltimaMovimentacaoId(result.id)
       setModalNfe(result.id)
       await recarregarConta(); await recarregarSessao()
-      setStatusOp('sucesso'); setTimeout(() => { setStatusOp('idle'); setUltimaMovimentacaoId(null) }, 30000)
+      setStatusOp('sucesso'); setTimeout(() => { setStatusOp('idle'); setUltimaMovimentacaoId(null) }, 8000)
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
   }
 
@@ -471,15 +472,16 @@ export default function CaixaPage() {
     const qtd = parseFloat(formReceber.quantidade), preco = parseFloat(formReceber.preco_kg)
     setStatusOp('salvando')
     try {
-      await registrarConversaoESaque({
+      const result = await registrarConversaoESaque({
         sessao_id: sessao.id, produtor_id: produtorSelecionado!.id, conta_id: conta.id,
         produto_id: formReceber.produto_id, quantidade_produto: qtd, preco_unitario: preco,
         valor_financeiro: parseFloat((qtd * preco).toFixed(2)),
         forma_pagamento: formReceber.forma_pagamento, chave_pix: formReceber.chave_pix || undefined
       })
+      setUltimaSaqueId(result.saque_id)
       setFormReceber(f => ({ ...f, quantidade: '', preco_kg: '' }))
       await recarregarConta(); await recarregarSessao()
-      setStatusOp('sucesso'); setTimeout(() => setStatusOp('idle'), 3000)
+      setStatusOp('idle')
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
   }
 
@@ -929,22 +931,42 @@ export default function CaixaPage() {
                   style={operacao === 'entrega' ? { background: '#fef3c7' } : {}}>
                   Registrar entrega
                 </Btn>
-                <Btn variante="verde" icone="ti-arrow-up" onClick={() => setOperacao(operacao === 'receber' ? null : 'receber')}
+                <Btn variante="verde" icone="ti-arrow-up"
+                  onClick={() => { setOperacao(operacao === 'receber' ? null : 'receber'); setUltimaMovimentacaoId(null); setStatusOp('idle') }}
                   style={operacao === 'receber' ? { background: '#dcfce7' } : {}}>
                   Pagar produtor
                 </Btn>
-                <Btn variante="cinza" icone="ti-currency-dollar" onClick={() => setOperacao(operacao === 'saque' ? null : 'saque')}
+                <Btn variante="cinza" icone="ti-currency-dollar"
+                  onClick={() => { setOperacao(operacao === 'saque' ? null : 'saque'); setUltimaMovimentacaoId(null); setStatusOp('idle') }}
                   style={operacao === 'saque' ? { background: '#f3f4f6' } : {}}>
                   Saque financeiro
                 </Btn>
               </div>
 
-              {statusOp === 'sucesso' && (
-                <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Operação registrada com sucesso.</span>
-                  {ultimaMovimentacaoId && (
+              {ultimaMovimentacaoId && (
+                <div
+                  onClick={() => { setUltimaMovimentacaoId(null); setStatusOp('idle') }}
+                  style={{ cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px' }}
+                >
+                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Entrega registrada com sucesso.</span>
+                  <span onClick={e => e.stopPropagation()}>
                     <BotaoComprovante movimentacao_id={ultimaMovimentacaoId} />
-                  )}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); setUltimaMovimentacaoId(null); setStatusOp('idle') }}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 18, lineHeight: 1 }}>×</button>
+                </div>
+              )}
+              {ultimaSaqueId && (
+                <div
+                  onClick={() => setUltimaSaqueId(null)}
+                  style={{ cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px' }}
+                >
+                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Pagamento registrado com sucesso.</span>
+                  <span onClick={e => e.stopPropagation()}>
+                    <BotaoComprovantePagamento movimentacao_id={ultimaSaqueId} />
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); setUltimaSaqueId(null) }}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
               )}
               {statusOp === 'erro' && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>}

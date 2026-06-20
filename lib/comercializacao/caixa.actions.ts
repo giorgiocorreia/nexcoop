@@ -301,7 +301,7 @@ export async function registrarConversaoESaque(params: {
     .insert({ ...base, tipo: 'conversao', valor_financeiro: params.valor_financeiro })
   if (e1) throw new Error(e1.message)
   const tipoSaque = params.forma_pagamento === 'pix' ? 'saque_pix' : 'saque_especie'
-  const { error: e2 } = await supabase
+  const { data: saqueData, error: e2 } = await supabase
     .from('movimentacoes_conta')
     .insert({
       organizacao_id: usuario.organizacao_id as string,
@@ -313,6 +313,8 @@ export async function registrarConversaoESaque(params: {
       forma_pagamento: params.forma_pagamento,
       observacoes: params.chave_pix ? `Pix: ${params.chave_pix}` : params.observacoes
     })
+    .select('id')
+    .single()
   if (e2) throw new Error(e2.message)
   const campo = params.forma_pagamento === 'pix' ? 'total_pix' : 'total_saidas_especie'
   const { data: sessao } = await supabase
@@ -326,6 +328,7 @@ export async function registrarConversaoESaque(params: {
       .update({ [campo]: (sessao[campo as keyof typeof sessao] as number ?? 0) + params.valor_financeiro } as any)
       .eq('id', params.sessao_id)
   }
+  return { saque_id: saqueData!.id as string }
 }
 
 export async function registrarSaqueFinanceiro(params: {
