@@ -37,16 +37,16 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
   if (comprovanteId) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12, color: '#166534', fontWeight: 600 }}>
-          Pgto N\xBA {String(numero).padStart(6, '0')}
+        <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>
+          N\xBA {String(numero).padStart(6, '0')}
         </span>
         <button
           onClick={handleBaixar}
           style={{
-            display: 'flex', alignItems: 'center', gap: 5,
+            display: 'flex', alignItems: 'center', gap: 6,
             padding: '4px 10px', borderRadius: 6,
-            border: '1px solid #166534', background: 'white',
-            color: '#166534', fontSize: 12, fontWeight: 600,
+            border: '1px solid #16a34a', background: 'white',
+            color: '#16a34a', fontSize: 12, fontWeight: 600,
             cursor: 'pointer',
           }}
         >
@@ -55,7 +55,7 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          PDF
+          Baixar PDF
         </button>
       </div>
     )
@@ -69,16 +69,18 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
           padding: '4px 10px', borderRadius: 6,
-          border: '1px solid #bbf7d0', background: loading ? '#f0fdf4' : '#dcfce7',
-          color: '#166534', fontSize: 12, fontWeight: 600,
+          border: '1px solid #86efac', background: loading ? '#f0fdf4' : '#dcfce7',
+          color: '#16a34a', fontSize: 12, fontWeight: 600,
           cursor: loading ? 'not-allowed' : 'pointer',
         }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="2" y="5" width="20" height="14" rx="2"/>
-          <path d="M2 10h20"/>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
         </svg>
-        {loading ? 'Gerando...' : 'Comprovante pgto'}
+        {loading ? 'Gerando...' : 'Emitir comprovante'}
       </button>
       {erro && <span style={{ fontSize: 10, color: '#dc2626' }}>{erro}</span>}
     </div>
