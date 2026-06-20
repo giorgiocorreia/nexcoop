@@ -6,7 +6,7 @@ import type { FuncaoDisponivel, Usuario, VinculoUsuario } from '@/types/database
 import type { UsuarioPendente } from './page'
 import { atualizarUsuario, convidarUsuario, toggleAtivo, ativarConvite, reenviarConvite, revogarConvite, redefinirSenhaUsuario } from './actions'
 import { Btn } from '@/components/ui/Btn'
-import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
+import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas, vincularUsuarioComoCooperado } from '@/lib/cooperados/actions'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
@@ -38,9 +38,10 @@ interface Props {
   organizacaoId: string | null
   nomeOrg: string | null
   embeddedMode?: boolean
+  usuariosComCooperado: Set<string>
 }
 
-export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, nomeOrg, embeddedMode }: Props) {
+export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, nomeOrg, embeddedMode, usuariosComCooperado }: Props) {
   const router = useRouter()
   const [usuarios, setUsuarios] = useState(usuariosInit)
   const [pendentes, setPendentes] = useState(pendentesInit)
@@ -91,6 +92,20 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   const [senhaAtivar, setSenhaAtivar] = useState('')
   const [erroSenha, setErroSenha] = useState('')
   const [salvandoAtivar, setSalvandoAtivar] = useState(false)
+
+  // Modal "Tornar Cooperado"
+  const [modalCooperadoUsuario, setModalCooperadoUsuario] = useState<Usuario | null>(null)
+  const [formCooperado, setFormCooperado] = useState({
+    numero_matricula: '',
+    data_admissao: '',
+    quota_parte: '',
+    caf_numero: '',
+    dap_numero: '',
+    status: 'ativo',
+  })
+  const [salvandoCooperado, setSalvandoCooperado] = useState(false)
+  const [erroCooperado, setErroCooperado] = useState('')
+  const [okCooperado, setOkCooperado] = useState('')
 
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -288,6 +303,34 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
     setErroEmailBV('')
   }
 
+  async function handleTornarCooperado() {
+    if (!modalCooperadoUsuario || !organizacaoId) return
+    setSalvandoCooperado(true)
+    setErroCooperado('')
+    const res = await vincularUsuarioComoCooperado(organizacaoId, {
+      usuarioId: modalCooperadoUsuario.id,
+      nome: modalCooperadoUsuario.nome_completo,
+      cpf: modalCooperadoUsuario.cpf ?? '',
+      email: modalCooperadoUsuario.email,
+      telefone: modalCooperadoUsuario.telefone ?? undefined,
+      numero_matricula: formCooperado.numero_matricula || undefined,
+      data_admissao: formCooperado.data_admissao || undefined,
+      quota_parte: formCooperado.quota_parte ? Number(formCooperado.quota_parte) : undefined,
+      caf_numero: formCooperado.caf_numero || undefined,
+      dap_numero: formCooperado.dap_numero || undefined,
+      status: formCooperado.status as any,
+    })
+    setSalvandoCooperado(false)
+    if (!res.success) { setErroCooperado(res.error ?? 'Erro ao vincular.'); return }
+    setOkCooperado('Cooperado criado com sucesso!')
+    setTimeout(() => {
+      setModalCooperadoUsuario(null)
+      setOkCooperado('')
+      setFormCooperado({ numero_matricula: '', data_admissao: '', quota_parte: '', caf_numero: '', dap_numero: '', status: 'ativo' })
+      router.refresh()
+    }, 1500)
+  }
+
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
@@ -352,6 +395,134 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                 {salvandoAtivar ? 'Ativando...' : 'Ativar'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tornar Cooperado */}
+      {modalCooperadoUsuario && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px',
+        }} onClick={() => setModalCooperadoUsuario(null)}>
+          <div style={{
+            background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '480px',
+            padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '15px', fontWeight: '600', color: '#1a1a1a', marginBottom: '4px' }}>
+              Tornar Cooperado
+            </div>
+            <div style={{ fontSize: '13px', color: '#888', marginBottom: '1.25rem' }}>
+              {modalCooperadoUsuario.nome_completo} · {modalCooperadoUsuario.email}
+            </div>
+
+            {okCooperado ? (
+              <div style={{ background: '#E6F7F1', border: '1px solid #1D9E7533', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: '#166534', textAlign: 'center' }}>
+                ✓ {okCooperado}
+              </div>
+            ) : (
+              <>
+                {erroCooperado && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>
+                    {erroCooperado}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <FieldLabel>Matrícula</FieldLabel>
+                    <input
+                      value={formCooperado.numero_matricula}
+                      onChange={e => setFormCooperado(p => ({ ...p, numero_matricula: e.target.value }))}
+                      placeholder="Gerada automaticamente"
+                      style={inp}
+                      onFocus={e => e.target.style.borderColor = GREEN}
+                      onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Data de admissão</FieldLabel>
+                    <input
+                      type="date"
+                      value={formCooperado.data_admissao}
+                      onChange={e => setFormCooperado(p => ({ ...p, data_admissao: e.target.value }))}
+                      style={inp}
+                      onFocus={e => e.target.style.borderColor = GREEN}
+                      onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Quota parte (R$)</FieldLabel>
+                    <input
+                      type="number"
+                      value={formCooperado.quota_parte}
+                      onChange={e => setFormCooperado(p => ({ ...p, quota_parte: e.target.value }))}
+                      placeholder="0,00"
+                      style={inp}
+                      onFocus={e => e.target.style.borderColor = GREEN}
+                      onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Status</FieldLabel>
+                    <select
+                      value={formCooperado.status}
+                      onChange={e => setFormCooperado(p => ({ ...p, status: e.target.value }))}
+                      style={{ ...inp, background: '#fff' }}
+                    >
+                      <option value="ativo">Ativo</option>
+                      <option value="inativo">Inativo</option>
+                      <option value="suspenso">Suspenso</option>
+                    </select>
+                  </div>
+                  <div>
+                    <FieldLabel>CAF</FieldLabel>
+                    <input
+                      value={formCooperado.caf_numero}
+                      onChange={e => setFormCooperado(p => ({ ...p, caf_numero: e.target.value }))}
+                      placeholder="Número do CAF"
+                      style={inp}
+                      onFocus={e => e.target.style.borderColor = GREEN}
+                      onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>DAP</FieldLabel>
+                    <input
+                      value={formCooperado.dap_numero}
+                      onChange={e => setFormCooperado(p => ({ ...p, dap_numero: e.target.value }))}
+                      placeholder="Número da DAP"
+                      style={inp}
+                      onFocus={e => e.target.style.borderColor = GREEN}
+                      onBlur={e => e.target.style.borderColor = '#d5d3cc'}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                  <button
+                    onClick={() => setModalCooperadoUsuario(null)}
+                    style={{ padding: '8px 16px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleTornarCooperado}
+                    disabled={salvandoCooperado}
+                    style={{
+                      padding: '8px 18px', border: 'none', borderRadius: '8px',
+                      background: salvandoCooperado ? '#9F9BFF' : GREEN,
+                      color: '#fff', fontSize: '13px', fontWeight: '600',
+                      cursor: salvandoCooperado ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {salvandoCooperado ? 'Salvando...' : 'Confirmar'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -727,7 +898,31 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                             >
                               {redefinindoId === u.id ? '...' : 'Senha'}
                             </Btn>
+                            {!usuariosComCooperado.has(u.id) && u.vinculo === 'cooperado' && (
+                              <Btn
+                                tamanho="sm"
+                                variante="cinza"
+                                icone="ti-user-check"
+                                onClick={() => {
+                                  setModalCooperadoUsuario(u)
+                                  setErroCooperado('')
+                                  setOkCooperado('')
+                                  setFormCooperado({ numero_matricula: '', data_admissao: '', quota_parte: '', caf_numero: '', dap_numero: '', status: 'ativo' })
+                                }}
+                              >
+                                Tornar Cooperado
+                              </Btn>
+                            )}
                           </>
+                        )}
+                        {usuariosComCooperado.has(u.id) && (
+                          <span style={{
+                            fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
+                            background: '#E6F7F1', color: '#166534', fontWeight: '500',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            ✓ Cooperado
+                          </span>
                         )}
                       </div>
                     </div>

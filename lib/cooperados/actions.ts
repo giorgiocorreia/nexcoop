@@ -530,6 +530,138 @@ export async function promoverProdutorACooperado(
   return { success: true, cooperadoId: cooperado.id, usuarioId, senhaTemporaria }
 }
 
+// ── Fluxo 4: Vincular usuário existente como cooperado ────────────────────────
+
+interface VincularUsuarioComoCooperadoInput {
+  usuarioId: string
+  nome: string
+  cpf?: string
+  email: string
+  telefone?: string
+  numero_matricula?: string
+  data_admissao?: string
+  quota_parte?: number
+  caf_numero?: string
+  dap_numero?: string
+  status?: StatusCooperado
+}
+
+export async function vincularUsuarioComoCooperado(
+  organizacaoId: string,
+  input: VincularUsuarioComoCooperadoInput
+) {
+  const { userId: adminId, usuarioAtual } = await verificarAdmin()
+  const admin = createAdminClient()
+
+  // Verificar se usuário existe e pertence à org
+  const { data: usuario, error: usuarioError } = await admin
+    .from('usuarios')
+    .select('id, nome_completo, cpf, email, telefone, organizacao_id')
+    .eq('id', input.usuarioId)
+    .single()
+  if (usuarioError || !usuario) {
+    return { success: false as const, error: 'Usuário não encontrado.' }
+  }
+  if ((usuario as any).organizacao_id !== organizacaoId) {
+    return { success: false as const, error: 'Usuário não pertence a esta organização.' }
+  }
+
+  // Verificar se já tem cooperado vinculado
+  const { data: cooperadoExistente } = await admin
+    .from('cooperados')
+    .select('id')
+    .eq('usuario_id', input.usuarioId)
+    .eq('organizacao_id', organizacaoId)
+    .maybeSingle()
+  if (cooperadoExistente) {
+    return { success: false as const, error: 'Este usuário já possui vínculo de cooperado.' }
+  }
+
+  // Gerar matrícula automática se não informada
+  let numeroMatricula = input.numero_matricula
+  if (!numeroMatricula) {
+    const ano = new Date().getFullYear().toString().slice(-2)
+    const { data: ultimaMatricula } = await admin
+      .from('cooperados')
+      .select('numero_matricula')
+      .eq('organizacao_id', organizacaoId)
+      .not('numero_matricula', 'is', null)
+      .order('numero_matricula', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    let proximoSeq = 50
+    if (ultimaMatricula?.numero_matricula) {
+      const seq = parseInt((ultimaMatricula.numero_matricula as string).slice(-4), 10)
+      if (!isNaN(seq)) proximoSeq = seq + 1
+    }
+    numeroMatricula = `${ano}${String(proximoSeq).padStart(4, '0')}`
+  }
+
+  // Criar cooperado
+  const { data: cooperado, error: cooperadoError } = await admin
+    .from('cooperados')
+    .insert({
+      organizacao_id: organizacaoId,
+      usuario_id: input.usuarioId,
+      nome_completo: input.nome,
+      cpf: input.cpf ?? null,
+      email: input.email,
+      telefone: input.telefone ?? null,
+      numero_matricula: numeroMatricula,
+      data_admissao: input.data_admissao ?? null,
+      quota_parte: input.quota_parte ?? null,
+      caf_numero: input.caf_numero ?? null,
+      dap_numero: input.dap_numero ?? null,
+      status: input.status ?? 'ativo',
+      tipo: 'pessoa_fisica',
+    })
+    .select('id')
+    .single()
+  if (cooperadoError || !cooperado) {
+    return { success: false as const, error: `Erro ao criar cooperado: ${cooperadoError?.message}` }
+  }
+
+  // Verificar se já tem produtor vinculado ao usuário
+  const { data: produtorExistente } = await admin
+    .from('produtores')
+    .select('id')
+    .eq('usuario_id', input.usuarioId)
+    .eq('organizacao_id', organizacaoId)
+    .maybeSingle()
+
+  if (!produtorExistente) {
+    await admin.from('produtores').insert({
+      organizacao_id: organizacaoId,
+      nome: input.nome,
+      cpf: input.cpf ?? null,
+      email: input.email,
+      telefone: input.telefone ?? null,
+      usuario_id: input.usuarioId,
+      cooperado_id: cooperado.id,
+      tipo: 'cooperado',
+      ativo: true,
+    } as any)
+  } else {
+    await admin.from('produtores').update({ cooperado_id: cooperado.id } as any).eq('id', produtorExistente.id)
+  }
+
+  registrarLog({
+    org_id: organizacaoId,
+    usuario_id: adminId,
+    usuario_email: usuarioAtual.email,
+    acao: 'vincular_cooperado',
+    modulo: 'cooperados',
+    descricao: `Usuário vinculado como cooperado: ${input.nome} (matrícula ${numeroMatricula})`,
+    dados_depois: { usuarioId: input.usuarioId, cooperadoId: cooperado.id, numeroMatricula },
+  }).catch(e => console.error('[audit]', e))
+
+  revalidatePath('/cooperados')
+  revalidatePath('/configuracoes/usuarios')
+  revalidatePath('/dashboard')
+
+  return { success: true as const, cooperadoId: cooperado.id, numeroMatricula }
+}
+
 // ── Utilitário: contexto do usuário atual (para client components) ─────────────
 
 export async function getContextoUsuario(): Promise<{ ehAdmin: boolean; organizacaoId: string | null; nomeOrg: string | null }> {
