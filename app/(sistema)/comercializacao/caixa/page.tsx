@@ -16,6 +16,7 @@ import {
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
+import { BotaoComprovantePagamento } from '@/components/comercializacao/BotaoComprovantePagamento'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
 import { fmtReal } from '@/lib/comercializacao/fmt'
@@ -1169,6 +1170,9 @@ export default function CaixaPage() {
                             <BotaoComprovante movimentacao_id={op.id} />
                             <BotaoNfe movimentacao_id={op.id} />
                           </div>
+                        )}
+                        {(op.tipo === 'saque_especie' || op.tipo === 'saque_pix') && (
+                          <BotaoComprovantePagamento movimentacao_id={op.id} />
                         )}
                       </td>
                     </tr>

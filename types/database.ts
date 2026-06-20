@@ -1009,6 +1009,21 @@ export interface AporteSangria {
   created_at:       string
 }
 
+export interface ComprovantePagamento {
+  id:                   string
+  organizacao_id:       string
+  movimentacao_id:      string
+  numero_sequencial:    number
+  status:               'emitido' | 'cancelado'
+  snapshot:             Record<string, unknown>
+  emitido_por:          string | null
+  emitido_em:           string | null
+  cancelado_em:         string | null
+  cancelado_por:        string | null
+  motivo_cancelamento:  string | null
+  created_at:           string | null
+}
+
 export interface SolicitacaoAporte {
   id:               string
   organizacao_id:   string
@@ -1180,6 +1195,7 @@ export type Database = {
       rateio_entrega:              TableDef<RateioEntrega>
       // ── Comercialização (029) ──────────────────────────────────────────────
       notas_entrega:               TableDef<NotaEntrega>
+      comprovantes_pagamento:      TableDef<ComprovantePagamento>
       // ── Tesouraria (028) ──────────────────────────────────────────────────
       aportes_sangrias:            TableDef<AporteSangria>
       // ── Comercialização (029b) ────────────────────────────────────────────
