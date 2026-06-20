@@ -76,14 +76,14 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
   // Filtro combinado
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
+    const qDigitos = q.replace(/\D/g, '')
+    const normalize = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     return lista.filter(c => {
-      const normalize = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-
       const passaBusca =
         !q ||
         normalize(c.nome_completo).includes(normalize(q)) ||
-        (c.cpf ?? '').replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
+        (qDigitos.length > 0 && (c.cpf ?? '').replace(/\D/g, '').includes(qDigitos)) ||
         (c.email ?? '').toLowerCase().includes(q)
       const passaStatus =
         filtroStatus === 'todos' || c.status === filtroStatus
