@@ -1,8 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { podeGerenciarLoja } from "@/lib/permissoes";
 
 export async function getVendasRelatorio(orgId: string, filtros?: {
   dataInicio?: string;
@@ -10,25 +8,6 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   forma?: string;
   usuarioId?: string;
 }) {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("role, funcoes")
-    .eq("id", user.id)
-    .single();
-
-  const isGerente = podeGerenciarLoja({
-    role: usuario?.role ?? "",
-    funcoes: (usuario?.funcoes ?? []) as string[],
-  });
-
-  // caixa_loja sempre vê só as próprias vendas — filtro forçado no servidor
-  const usuarioIdFiltro = isGerente ? filtros?.usuarioId : user.id;
-
   const admin = createAdminClient();
 
   let query = admin
@@ -45,12 +24,12 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   if (filtros?.dataInicio) query = query.gte("criado_em", filtros.dataInicio);
   if (filtros?.dataFim)    query = query.lte("criado_em", filtros.dataFim + "T23:59:59");
 
-  if (usuarioIdFiltro) {
+  if (filtros?.usuarioId) {
     const { data: caixas } = await admin
       .from("loja_caixas")
       .select("id")
       .eq("org_id", orgId)
-      .eq("usuario_id", usuarioIdFiltro);
+      .eq("usuario_id", filtros.usuarioId);
 
     const caixaIds = (caixas ?? []).map(c => c.id);
     if (caixaIds.length === 0) return [];
@@ -86,22 +65,8 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
   });
 }
 
-export async function getOperadoresVendas(orgId: string) {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("role, funcoes")
-    .eq("id", user.id)
-    .single();
-
-  // caixa_loja não precisa do select de operador — dados já vêm filtrados
-  if (!podeGerenciarLoja({ role: usuario?.role ?? "", funcoes: (usuario?.funcoes ?? []) as string[] })) {
-    return [];
-  }
+export async function getOperadoresVendas(orgId: string, isGerente: boolean) {
+  if (!isGerente) return [];
 
   const admin = createAdminClient();
   const { data } = await admin
