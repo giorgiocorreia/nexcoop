@@ -510,6 +510,14 @@ export interface LojaCompra {
   observacoes:             string | null
   total:                   number
   criado_em:               string
+  // Migration 044 — campos fiscais
+  chave_acesso_nfe:        string | null
+  serie_nfe:               string | null
+  data_emissao_nfe:        string | null
+  emitente_nfe:            string | null
+  cnpj_emitente:           string | null
+  valor_nfe:               number | null
+  status_nfe:              'com_chave' | 'sem_chave' | 'sem_nota'
 }
 
 export interface LojaCompraItem {

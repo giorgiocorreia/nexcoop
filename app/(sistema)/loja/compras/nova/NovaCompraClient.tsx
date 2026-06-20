@@ -77,6 +77,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   const [outrosCustos, setOutrosCustos] = useState('0,00')
   const [outrosDesc, setOutrosDesc]     = useState('')
   const [observacoes, setObservacoes]   = useState('')
+  const [statusNfe, setStatusNfe]       = useState<'sem_chave' | 'sem_nota'>('sem_chave')
 
   // Item em edição
   const [produtoId, setProdutoId]       = useState('')
@@ -207,6 +208,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       outros_custos_valor:     outrosNum,
       outros_custos_descricao: outrosDesc || undefined,
       observacoes:             observacoes || undefined,
+      status_nfe:              statusNfe,
       itens: itens.map(i => ({
         produto_id:     i.produto_id,
         quantidade:     i.quantidade,
@@ -394,6 +396,20 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
           <div>
             <label style={labelStyle}>Descrição outros custos</label>
             <input type="text" value={outrosDesc} onChange={e => setOutrosDesc(e.target.value)} placeholder="Ex: Seguro transporte" style={inputStyle} />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={labelStyle}>Nota Fiscal</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {([
+                { value: 'sem_chave', label: 'Tem NF-e (vincular depois)' },
+                { value: 'sem_nota',  label: 'Sem nota fiscal' },
+              ] as const).map(op => (
+                <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, padding: '6px 12px', border: `0.5px solid ${statusNfe === op.value ? '#E07B30' : '#d1d5db'}`, borderRadius: 8, background: statusNfe === op.value ? '#FEF3EA' : 'transparent', color: statusNfe === op.value ? '#E07B30' : '#374151' }}>
+                  <input type="radio" name="status_nfe" value={op.value} checked={statusNfe === op.value} onChange={e => setStatusNfe(e.target.value as 'sem_chave' | 'sem_nota')} style={{ display: 'none' }} />
+                  {op.label}
+                </label>
+              ))}
+            </div>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={labelStyle}>Observações</label>

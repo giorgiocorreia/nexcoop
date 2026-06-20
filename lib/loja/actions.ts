@@ -343,6 +343,7 @@ export async function registrarCompra(
     outros_custos_valor: number
     outros_custos_descricao?: string
     observacoes?: string
+    status_nfe?: 'sem_chave' | 'sem_nota'
     itens: {
       produto_id: string
       quantidade: number
@@ -377,6 +378,7 @@ export async function registrarCompra(
         outros_custos_valor: compra.outros_custos_valor,
         outros_custos_descricao: compra.outros_custos_descricao ?? null,
         observacoes: compra.observacoes ?? null,
+        status_nfe:  compra.status_nfe ?? 'sem_chave',
         total: total_geral,
       })
       .select('id')
