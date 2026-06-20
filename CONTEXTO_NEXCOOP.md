@@ -11,6 +11,22 @@
 
 ## Estado atual (20/06/2026)
 
+### Cooperados / Cotas (migrations 045 + 046 aplicadas)
+- Dois tipos de cota: Plena (voto individual, 100% sobras) e Colaboradora (voto via grupo, 10% sobras)
+- Cooperado pode ter ambas (110% sobras)
+- Grupos de colaboradores por org (grupos_colaboradores): com ou sem CNPJ, criação inline no cadastro de cota
+- Representantes de grupo: 1 a cada 10 membros, alerta automático, notificação persistida
+- Cota plena: quantidade variável; colaboradora: sempre quantidade 1
+- quota_parte em cooperados sincronizado via trigger
+- Pagamentos: tabela cota_pagamentos com formas dinheiro/pix/cartao/promessa
+- Parcelas com data de vencimento para promessas
+- Status automático: proposta/ativo → probatório (1º pagamento parcial), probatório → ativo (quitação total via confirmação)
+- Inadimplência: parcelas vencidas → cooperado.status = 'inadimplente' (verificado via verificarInadimplencia() no acesso ao dashboard)
+- Recibo térmico PDF 80mm gerado automaticamente após registro de pagamento; botão reimprimir no histórico
+- Nomenclatura dinâmica: cooperados (cooperativa) / filiados (associação) via tipoOrg prop
+- Tela /configuracoes/grupos para gerenciar grupos de colaboradores
+- Cards de inadimplência e capital a receber no dashboard admin
+
 ### Em andamento
 - Loja Fase 6: infraestrutura fiscal completa, emissão NF-e bloqueada aguardando contador
 - Comercialização: dashboard com cotações funcionando

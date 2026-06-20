@@ -1,5 +1,35 @@
 # NexCoop — Changelog
 
+## [20/06/2026] — Sistema de Cotas e Pagamentos
+
+### Migrations
+- 045: tabelas grupos_colaboradores, cotas_cooperado (tipo_cota, grupo_id), grupo_representantes, triggers, RLS
+- 046: tabela cota_pagamentos com formas de pagamento, parcelas, vencimentos, RLS
+
+### Novos arquivos (todos em app/(sistema)/)
+- cooperados/[id]/CotasSection.tsx — reformulado: cota plena + colaboradora, busca/criação inline de grupo
+- cooperados/[id]/cotas-actions.ts — buscarCotas, buscarGrupos, criarGrupo, salvarCota, removerCota, indicarRepresentante, updateCooperadoStatus
+- cooperados/[id]/PagamentosSection.tsx — histórico, formulário multi-parcela, quitação inline, modal integralização
+- cooperados/[id]/pagamentos-actions.ts — registrarPagamentos, quitarParcela, buscarPagamentos, verificarInadimplencia, buscarResumoCotasDashboard
+- cooperados/[id]/recibo-cota-actions.ts — PDF 80mm com parcelas, totais, CNPJ formatado
+- configuracoes/grupos/page.tsx — tela de grupos com métricas
+- configuracoes/grupos/actions.ts — listarGruposOrg, criarGrupoOrg, alterarStatusGrupo
+
+### Arquivos modificados
+- types/database.ts — TipoCota, CotaCooperado, GrupoColaborador, GrupoRepresentante, CotaPagamento, FormaPagamentoCota, StatusPagamentoCota
+- app/(sistema)/cooperados/page.tsx — tipoOrg prop + nomenclatura dinâmica
+- app/(sistema)/cooperados/CooperadosLista.tsx — getNomenclatura(), header padrão NexCoop
+- app/(sistema)/cooperados/[id]/CooperadoPerfil.tsx — PagamentosSection integrado, usuarioId prop
+- components/Sidebar.tsx — item Grupos em Configurações
+
+### Fixes
+- CNPJ formatado no recibo (54.305.114/0001-79)
+- Cooperado ativo/proposta com cota parcial muda para probatório automaticamente
+- Verificação de !quitou movida para após cálculo de quitação
+- Limpeza de caixas de teste (Giorgio Correia, Atendente Cacau, Luan de Jesus)
+
+---
+
 ## [20/06/2026] — Sessão: Loja Fase 6 + Comercialização + Correções
 
 ### Loja Agropecuária
