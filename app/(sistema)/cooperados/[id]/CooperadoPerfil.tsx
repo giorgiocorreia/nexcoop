@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Cooperado, StatusCooperado } from '@/types/database'
 import CotasSection from './CotasSection'
+import PagamentosSection from './PagamentosSection'
 
 const STATUS_CONFIG: Record<
   StatusCooperado,
@@ -58,11 +59,12 @@ function Secao({ titulo, icone, children }: { titulo: string; icone: string; chi
 }
 
 interface Props {
-  cooperado: Cooperado
-  orgTipo:   string | null
+  cooperado:  Cooperado
+  orgTipo:    string | null
+  usuarioId:  string
 }
 
-export default function CooperadoPerfil({ cooperado: initial, orgTipo }: Props) {
+export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -335,6 +337,15 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo }: Props) 
       {/* Cotas de Participação — exclusivo cooperativas */}
       {orgTipo === 'cooperativa' && (
         <CotasSection cooperadoId={cooperado.id} orgId={cooperado.organizacao_id} />
+      )}
+
+      {/* Pagamentos de cotas — exclusivo cooperativas */}
+      {orgTipo === 'cooperativa' && (
+        <PagamentosSection
+          cooperadoId={cooperado.id}
+          orgId={cooperado.organizacao_id}
+          usuarioId={usuarioId}
+        />
       )}
 
       {/* Rodapé com ID */}

@@ -40,5 +40,5 @@ export default async function CooperadoPage({ params }: Props) {
     .eq('id', cooperado.organizacao_id)
     .single()
 
-  return <CooperadoPerfil cooperado={cooperado} orgTipo={org?.tipo ?? null} />
+  return <CooperadoPerfil cooperado={cooperado} orgTipo={org?.tipo ?? null} usuarioId={user.id} />
 }

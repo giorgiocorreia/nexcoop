@@ -172,6 +172,20 @@ export async function removerCota(cotaId: string, cooperadoId: string) {
   revalidatePath(`/cooperados/${cooperadoId}`)
 }
 
+// ── Atualizar status do cooperado ─────────────────────────────────────────────
+export async function updateCooperadoStatus(
+  cooperadoId: string,
+  status: 'ativo' | 'probatorio' | 'inadimplente'
+) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('cooperados')
+    .update({ status })
+    .eq('id', cooperadoId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/cooperados/${cooperadoId}`)
+}
+
 // ── Indicar representante ─────────────────────────────────────────────────────
 export async function indicarRepresentante(
   grupoId: string,

@@ -25,6 +25,8 @@ export type StatusOportunidade = 'identificado' | 'contatado' | 'proposta' | 'ag
 export type FonteOportunidade  = 'internacional' | 'nacional' | 'manual' | 'agregador'
 export type TipoCota           = 'plena' | 'colaboradora'
 export type StatusCota         = 'integralizada' | 'parcial' | 'pendente'
+export type FormaPagamentoCota = 'dinheiro' | 'pix' | 'cartao' | 'promessa'
+export type StatusPagamentoCota = 'pago' | 'pendente' | 'vencido'
 
 export interface Organizacao {
   id: string
@@ -203,6 +205,24 @@ export interface GrupoRepresentante {
   ativo:          boolean
   indicado_em:    string
   indicado_por:   string | null
+}
+
+export interface CotaPagamento {
+  id:               string
+  cota_id:          string
+  cooperado_id:     string
+  organizacao_id:   string
+  valor_total_cota: number
+  valor_pago:       number
+  forma_pagamento:  FormaPagamentoCota
+  data_pagamento:   string | null
+  data_vencimento:  string | null
+  status:           StatusPagamentoCota
+  numero_parcela:   number
+  total_parcelas:   number
+  registrado_por:   string | null
+  observacoes:      string | null
+  criado_em:        string
 }
 
 export interface CotaIntegralizacao {
@@ -1139,6 +1159,7 @@ export type Database = {
       radar_fontes:              TableDef<RadarFonte>
       radar_resultados:          TableDef<RadarResultado>
       cotas_cooperado:           TableDef<CotaCooperado>
+      cota_pagamentos:           TableDef<CotaPagamento>
       cotas_integralizacao:      TableDef<CotaIntegralizacao>
       grupos_colaboradores:      TableDef<GrupoColaborador>
       grupo_representantes:      TableDef<GrupoRepresentante>

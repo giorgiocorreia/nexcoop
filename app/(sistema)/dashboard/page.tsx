@@ -7,6 +7,10 @@ import {
   getTendencia7dias,
   getConfigPrecosSugeridos,
 } from '@/lib/dashboard/cotacoes-mercado-actions'
+import {
+  verificarInadimplencia,
+  buscarResumoCotasDashboard,
+} from '@/app/(sistema)/cooperados/[id]/pagamentos-actions'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -31,6 +35,20 @@ export default async function DashboardPage() {
 
   if (apenasLoja) redirect('/loja')
   const orgTipo = (usuarioData?.organizacoes as unknown as { tipo?: string } | null)?.tipo
+
+  // Verificar inadimplência e resumo de cotas — só para cooperativas
+  let resumoCotas: Awaited<ReturnType<typeof buscarResumoCotasDashboard>> | null = null
+  if (orgTipo === 'cooperativa') {
+    const { data: usuarioOrg } = await supabase
+      .from('usuarios')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single()
+    if (usuarioOrg?.organizacao_id) {
+      await verificarInadimplencia(usuarioOrg.organizacao_id)
+      resumoCotas = await buscarResumoCotasDashboard(usuarioOrg.organizacao_id)
+    }
+  }
 
   // Dados de cotação de cacau — só para cooperativas
   const [cotacaoAtual, tendencia7d, configCotacao] =
@@ -97,12 +115,64 @@ export default async function DashboardPage() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: resumoCotas ? '1rem' : '2rem' }}>
         <CardResumo label="Total de filiados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#635BFF" bg="#EEF0FF" />
         <CardResumo label="A receber" valor={formatBRL(totalReceber)} sub="Lançamentos pendentes" cor="#185FA5" bg="#E6F1FB" />
         <CardResumo label="A pagar" valor={formatBRL(totalPagar)} sub="Lançamentos pendentes" cor="#993C1D" bg="#FAECE7" />
         <CardResumo label="Docs vencendo" valor={String(documentosVencendo?.length || 0)} sub="Próximos 30 dias" cor="#854F0B" bg="#FAEEDA" />
       </div>
+
+      {resumoCotas && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '2rem' }}>
+          {/* Card 1 — Capital a Receber */}
+          <div style={{ background: '#E6F1FB', border: '1px solid #B5D4F4', borderRadius: '12px', padding: '1rem 1.25rem' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+              CAPITAL A RECEBER
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: '#185FA5' }}>
+              {formatBRL(resumoCotas.totalAReceber)}
+            </div>
+            {resumoCotas.totalVencido > 0 && (
+              <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', fontWeight: '500' }}>
+                Vencido: {formatBRL(resumoCotas.totalVencido)}
+              </div>
+            )}
+            {resumoCotas.totalVencido === 0 && (
+              <div style={{ fontSize: '11px', color: '#185FA599', marginTop: '2px' }}>
+                Parcelas pendentes de cotas
+              </div>
+            )}
+          </div>
+
+          {/* Card 2 — Inadimplentes */}
+          <div style={{
+            background: resumoCotas.totalInadimplentes > 0 ? '#FEF3C7' : '#f8f7f4',
+            border: `1px solid ${resumoCotas.totalInadimplentes > 0 ? '#fcd34d' : '#e5e3dc'}`,
+            borderRadius: '12px', padding: '1rem 1.25rem',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: resumoCotas.totalInadimplentes > 0 ? '#854F0B' : '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+              COOPERADOS INADIMPLENTES
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: resumoCotas.totalInadimplentes > 0 ? '#854F0B' : '#374151' }}>
+              {resumoCotas.totalInadimplentes}
+            </div>
+            {resumoCotas.inadimplentes.length > 0 && (
+              <div style={{ fontSize: '11px', color: '#633806', marginTop: '4px' }}>
+                {resumoCotas.inadimplentes
+                  .slice(0, 3)
+                  .map(c => c.nome_completo.split(' ').slice(0, 2).join(' '))
+                  .join(', ')}
+                {resumoCotas.inadimplentes.length > 3 && ` e mais ${resumoCotas.inadimplentes.length - 3}…`}
+              </div>
+            )}
+            {resumoCotas.totalInadimplentes === 0 && (
+              <div style={{ fontSize: '11px', color: '#88888899', marginTop: '2px' }}>
+                Nenhum cooperado inadimplente
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
