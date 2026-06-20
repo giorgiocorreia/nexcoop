@@ -827,44 +827,49 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                 return (
                   <div key={u.id}>
                     {i > 0 && <div style={{ borderTop: '1px solid #f0eeea' }} />}
-                    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ flexShrink: 0 }}>
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{
-                            width: 40, height: 40, borderRadius: '50%',
-                            background: u.ativo ? GREEN : '#ccc',
-                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '14px', fontWeight: '700', flexShrink: 0,
-                          }}>
-                            {iniciais}
+                    <div style={{ padding: '12px 16px' }}>
+                      {/* Linha 1: identidade */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ flexShrink: 0 }}>
+                          {u.avatar_url ? (
+                            <img src={u.avatar_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{
+                              width: 40, height: 40, borderRadius: '50%',
+                              background: u.ativo ? GREEN : '#ccc',
+                              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '14px', fontWeight: '700', flexShrink: 0,
+                            }}>
+                              {iniciais}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            {u.nome_completo}
+                            {isSelf && <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>Você</span>}
+                            {isSuperAdminRow && <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>Super Admin</span>}
                           </div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          {u.nome_completo}
-                          {isSelf && <span style={{ fontSize: '10px', fontWeight: '500', padding: '1px 7px', borderRadius: '8px', background: '#f0eeea', color: '#888' }}>Você</span>}
-                          {isSuperAdminRow && <span style={{ fontSize: '10px', fontWeight: '600', padding: '1px 7px', borderRadius: '8px', background: '#fff3cd', color: '#92400e' }}>Super Admin</span>}
+                          <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+                            {u.email}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#888', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {u.email}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', flexShrink: 0 }}>
+                          {u.vinculo && (
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                              {VINCULO_LABEL[u.vinculo] ?? u.vinculo}
+                            </span>
+                          )}
+                          {(u.funcoes ?? []).map(f => (
+                            <span key={f} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EEF0FF', color: GREEN_DARK, fontWeight: '600', whiteSpace: 'nowrap' }}>
+                              {FUNCAO_LABEL[f] ?? f}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', flexShrink: 0, maxWidth: '260px' }}>
-                        {u.vinculo && (
-                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#f0eeea', color: '#555', fontWeight: '500', whiteSpace: 'nowrap' }}>
-                            {VINCULO_LABEL[u.vinculo] ?? u.vinculo}
-                          </span>
-                        )}
-                        {(u.funcoes ?? []).map(f => (
-                          <span key={f} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EEF0FF', color: GREEN_DARK, fontWeight: '600', whiteSpace: 'nowrap' }}>
-                            {FUNCAO_LABEL[f] ?? f}
-                          </span>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+
+                      {/* Linha 2: status + ações */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', paddingLeft: '52px', flexWrap: 'wrap' }}>
                         <span style={{
                           fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500', whiteSpace: 'nowrap',
                           background: u.ativo ? '#E6F7F1' : '#f0eeea',
@@ -874,44 +879,22 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                         </span>
                         {podeEditar && (
                           <>
-                            <Btn
-                              tamanho="sm"
-                              variante="cinza"
-                              icone={u.ativo ? 'ti-ban' : 'ti-check'}
-                              onClick={() => handleToggleAtivo(u.id, u.ativo)}
-                              disabled={toggling}
-                            >
+                            <Btn tamanho="sm" variante="cinza" icone={u.ativo ? 'ti-ban' : 'ti-check'} onClick={() => handleToggleAtivo(u.id, u.ativo)} disabled={toggling}>
                               {toggling ? '...' : u.ativo ? 'Desativar' : 'Ativar'}
                             </Btn>
-                            <Btn
-                              tamanho="sm"
-                              variante="cinza"
-                              icone={editando ? undefined : 'ti-pencil'}
-                              onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}
-                            >
+                            <Btn tamanho="sm" variante="cinza" icone={editando ? undefined : 'ti-pencil'} onClick={() => editando ? setEditandoId(null) : abrirEdicao(u)}>
                               {editando ? 'Cancelar' : 'Editar'}
                             </Btn>
-                            <Btn
-                              tamanho="sm"
-                              variante="cinza"
-                              icone="ti-key"
-                              onClick={() => handleRedefinirSenha(u)}
-                              disabled={redefinindoId === u.id || isSelf}
-                            >
+                            <Btn tamanho="sm" variante="cinza" icone="ti-key" onClick={() => handleRedefinirSenha(u)} disabled={redefinindoId === u.id || isSelf}>
                               {redefinindoId === u.id ? '...' : 'Senha'}
                             </Btn>
                             {!cooperadoSet.has(u.id) && (
-                              <Btn
-                                tamanho="sm"
-                                variante="cinza"
-                                icone="ti-user-check"
-                                onClick={() => {
-                                  setModalCooperadoUsuario(u)
-                                  setErroCooperado('')
-                                  setOkCooperado('')
-                                  setFormCooperado({ numero_matricula: '', data_admissao: '', quota_parte: '', caf_numero: '', dap_numero: '', status: 'ativo' })
-                                }}
-                              >
+                              <Btn tamanho="sm" variante="cinza" icone="ti-user-check" onClick={() => {
+                                setModalCooperadoUsuario(u)
+                                setErroCooperado('')
+                                setOkCooperado('')
+                                setFormCooperado({ numero_matricula: '', data_admissao: '', quota_parte: '', caf_numero: '', dap_numero: '', status: 'ativo' })
+                              }}>
                                 Tornar Cooperado
                               </Btn>
                             )}
@@ -920,8 +903,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                         {cooperadoSet.has(u.id) && (
                           <span style={{
                             fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                            background: '#E6F7F1', color: '#166534', fontWeight: '500',
-                            whiteSpace: 'nowrap',
+                            background: '#E6F7F1', color: '#166534', fontWeight: '500', whiteSpace: 'nowrap',
                           }}>
                             ✓ Cooperado
                           </span>
