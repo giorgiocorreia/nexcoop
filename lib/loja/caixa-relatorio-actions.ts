@@ -45,7 +45,7 @@ export async function getSessoesCaixa(orgId: string, filtros?: {
       total_pix,
       aberto_em,
       fechado_em,
-      usuarios ( nome_completo )
+      usuarios!loja_caixas_usuario_id_fkey ( nome_completo )
     `)
     .eq("org_id", orgId)
     .eq("status", "fechado")
@@ -159,7 +159,7 @@ export async function getOperadoresCaixa(orgId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("loja_caixas")
-    .select("usuario_id, usuarios ( nome_completo )")
+    .select("usuario_id, usuarios!loja_caixas_usuario_id_fkey ( nome_completo )")
     .eq("org_id", orgId)
     .eq("status", "fechado");
 

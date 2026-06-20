@@ -15,7 +15,7 @@ export async function getVendasRelatorio(orgId: string, filtros?: {
     .select(`
       id, total, pago_especie, pago_pix, pago_cartao, pago_saldo,
       criado_em, status,
-      loja_caixas ( usuario_id, usuarios ( nome_completo ) )
+      loja_caixas ( usuario_id, usuarios!loja_caixas_usuario_id_fkey ( nome_completo ) )
     `)
     .eq("org_id", orgId)
     .eq("status", "concluida")
@@ -71,7 +71,7 @@ export async function getOperadoresVendas(orgId: string, isGerente: boolean) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("loja_caixas")
-    .select("usuario_id, usuarios(nome_completo)")
+    .select("usuario_id, usuarios!loja_caixas_usuario_id_fkey(nome_completo)")
     .eq("org_id", orgId);
 
   const mapa: Record<string, string> = {};
