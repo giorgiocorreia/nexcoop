@@ -5,7 +5,7 @@
 | Módulo | Status | Última atualização |
 |---|---|---|
 | Autenticação / Onboarding | ✅ Completo | — |
-| Cooperados / Filiados | ✅ Completo | 13/06/2026 |
+| Cooperados / Filiados | ✅ Completo | 20/06/2026 |
 | Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | — |
 | Stripe (modo teste) | ✅ Completo | — |
 | Super Admin | ✅ Completo | — |
@@ -15,7 +15,7 @@
 | NF-e entrada via Focus NFe | ✅ Homologação | 14/06/2026 |
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | — |
 | Audit logs | ✅ Completo | — |
-| Gestão de usuários | ✅ Completo | 13/06/2026 |
+| Gestão de usuários | ✅ Completo | 20/06/2026 |
 | Loja Agropecuária Fases 0–5 | ✅ Completo | 18/06/2026 |
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 20/06/2026 |
 | Portal do Filiado | ❌ Planejado | — |
@@ -61,6 +61,17 @@
 ### Planejado (chat dedicado)
 - Fluxo de saque: solicitação → execução → comprovante 80mm
 - Tela /comercializacao/vendas
+
+## Cooperados — Fluxos implementados
+
+| Fluxo | Descrição | Status |
+|---|---|---|
+| 1 | Cadastro direto de cooperado (com criação de usuário) | ✅ |
+| 2 | Criação de usuário com checkbox "é cooperado?" | ✅ |
+| 3 | Promoção de produtor externo a cooperado (`promoverProdutorACooperado`) | ✅ |
+| 4 | Vincular usuário existente como cooperado — botão "Tornar Cooperado" em Configurações → Usuários | ✅ 20/06/2026 |
+
+**Matrículas:** formato AANNNN, sequencial por org. COOPAIBI: 26001–26014 manuais, próxima automática 26015.
 
 ## Roadmap crítico
 

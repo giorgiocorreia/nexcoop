@@ -22,15 +22,18 @@
 | 041 | cartao_nsu, cartao_autorizacao, pix_identificador, desconto_total, pago_saldo em loja_vendas |
 | 042 | status_conferencia, valor_fisico_*, conferido_por, conferido_em em loja_caixas; pix_nome_pagador em loja_vendas |
 | 043 | loja_unidades: remove CHECK fixo de loja_produtos.unidade, cria tabela dinâmica com 12 unidades padrão |
+| 045 | grupos_colaboradores, cotas_cooperado (tipo_cota, grupo_id), grupo_representantes, triggers, RLS |
+| 046 | cota_pagamentos: formas de pagamento, parcelas, vencimentos, RLS |
+| 047 | índices de performance: cooperados(organizacao_id) e cooperados(organizacao_id, numero_matricula) |
 
-**Próxima migration:** 044
+**Próxima migration:** 048
 
 ## Tabelas principais
 
 ### Core
 - `organizacoes` — orgs multi-tenant (modulos_ativos text[])
 - `usuarios` — login, role, funcoes text[], organizacao_id
-- `cooperados` — vínculo societário (CAF, DAP, quota_parte, status, matrícula)
+- `cooperados` — vínculo societário (CAF, DAP, quota_parte, status, numero_matricula AANNNN)
 - `produtores` — identidade cadastral (CPF, nome, cooperado_id, usuario_id, tipo)
 
 ### Comercialização
@@ -51,6 +54,12 @@
 - `loja_estoque_movimentos`
 - `loja_notas_fiscais`
 - `loja_unidades` — unidades dinâmicas por org
+
+### Cooperados — Cotas
+- `grupos_colaboradores` — grupos por org (com/sem CNPJ, criação inline)
+- `cotas_cooperado` — tipo_cota (plena/colaboradora), grupo_id, quantidade, valor_unitario
+- `grupo_representantes` — representante por grupo (1 a cada 10 membros)
+- `cota_pagamentos` — forma (dinheiro/pix/cartao/promessa), parcelas, data_vencimento, status
 
 ### Outros
 - `audit_logs` — imutável, `registrarLog()` em lib/audit/logger.ts

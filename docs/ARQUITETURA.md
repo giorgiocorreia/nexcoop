@@ -59,8 +59,11 @@
 - `produtores` = identidade cadastral (base de tudo)
 - `cooperados` = vínculo societário 1:1 via `produtores.cooperado_id`
 - `usuarios` = login e acesso
-- Promoção: `promoverProdutorACooperado` atualiza `tipo = 'cooperado'` no produtor
-- 3 actions em `lib/cooperados/actions.ts`
+- 4 fluxos em `lib/cooperados/actions.ts`:
+  1. `criarCooperado` — cadastro direto com usuário
+  2. `criarUsuarioComCooperadoOpcional` — usuário com checkbox "é cooperado?"
+  3. `promoverProdutorACooperado` — promoção de produtor externo
+  4. `vincularUsuarioComoCooperado` — usuário existente → cooperado (Configurações → Usuários)
 
 ## NF-e entrada (Focus NFe)
 
