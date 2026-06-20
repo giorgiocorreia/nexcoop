@@ -98,7 +98,7 @@ export default async function UsuariosPage() {
       isSuperAdmin={isSuperAdmin(usuarioAtual)}
       organizacaoId={orgId}
       nomeOrg={nomeOrg}
-      usuariosComCooperado={usuariosComCooperado}
+      usuariosComCooperado={[...usuariosComCooperado]}
     />
   )
 }

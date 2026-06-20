@@ -65,7 +65,7 @@ interface Props {
   usuarios: Usuario[]
   pendentes: UsuarioPendente[]
   funcoes: FuncaoDisponivel[]
-  usuariosComCooperado?: Set<string>
+  usuariosComCooperado?: string[]
 }
 
 // ── Export principal ──────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export default function ConfiguracoesForm(props: Props) {
           organizacaoId={props.org?.id ?? null}
           nomeOrg={props.org?.nome ?? null}
           embeddedMode
-          usuariosComCooperado={props.usuariosComCooperado ?? new Set()}
+          usuariosComCooperado={props.usuariosComCooperado ?? []}
         />
       )}
       {abaEfetiva === 'parceiros' && showAdminTabs && props.org && (

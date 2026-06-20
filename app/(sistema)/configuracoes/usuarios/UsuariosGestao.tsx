@@ -38,7 +38,7 @@ interface Props {
   organizacaoId: string | null
   nomeOrg: string | null
   embeddedMode?: boolean
-  usuariosComCooperado: Set<string>
+  usuariosComCooperado: string[]
 }
 
 export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pendentesInit, funcoes, usuarioAtualId, isSuperAdmin, organizacaoId, nomeOrg, embeddedMode, usuariosComCooperado }: Props) {
@@ -106,6 +106,8 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
   const [salvandoCooperado, setSalvandoCooperado] = useState(false)
   const [erroCooperado, setErroCooperado] = useState('')
   const [okCooperado, setOkCooperado] = useState('')
+
+  const cooperadoSet = useMemo(() => new Set(usuariosComCooperado), [usuariosComCooperado])
 
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
@@ -898,7 +900,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                             >
                               {redefinindoId === u.id ? '...' : 'Senha'}
                             </Btn>
-                            {!usuariosComCooperado.has(u.id) && u.vinculo === 'cooperado' && (
+                            {!cooperadoSet.has(u.id) && u.vinculo === 'cooperado' && (
                               <Btn
                                 tamanho="sm"
                                 variante="cinza"
@@ -915,7 +917,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                             )}
                           </>
                         )}
-                        {usuariosComCooperado.has(u.id) && (
+                        {cooperadoSet.has(u.id) && (
                           <span style={{
                             fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
                             background: '#E6F7F1', color: '#166534', fontWeight: '500',
