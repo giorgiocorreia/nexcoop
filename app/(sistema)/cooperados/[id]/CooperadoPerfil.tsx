@@ -122,7 +122,7 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
           onClick={() => router.push('/cooperados')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
         >
-          ← Filiados
+          ← {orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'}
         </button>
         <span>/</span>
         <span style={{ color: '#1a1a1a', fontWeight: '500' }}>{cooperado.nome_completo}</span>

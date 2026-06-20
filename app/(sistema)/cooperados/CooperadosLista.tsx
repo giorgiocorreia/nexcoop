@@ -59,23 +59,24 @@ interface Props {
 export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
   const n = getNomenclatura(tipoOrg)
   const router = useRouter()
+  const [lista] = useState(cooperados)
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<StatusCooperado | 'todos'>('todos')
   const [hovered, setHovered] = useState<string | null>(null)
 
   // Resumo por status
   const resumo = useMemo(() => {
-    const total = cooperados.length
-    const ativos = cooperados.filter(c => c.status === 'ativo').length
-    const probatorios = cooperados.filter(c => c.status === 'probatorio').length
-    const inadimplentes = cooperados.filter(c => c.status === 'inadimplente').length
+    const total = lista.length
+    const ativos = lista.filter(c => c.status === 'ativo').length
+    const probatorios = lista.filter(c => c.status === 'probatorio').length
+    const inadimplentes = lista.filter(c => c.status === 'inadimplente').length
     return { total, ativos, probatorios, inadimplentes }
-  }, [cooperados])
+  }, [lista])
 
   // Filtro combinado
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
-    return cooperados.filter(c => {
+    return lista.filter(c => {
       const passaBusca =
         !q ||
         c.nome_completo.toLowerCase().includes(q) ||
@@ -85,7 +86,7 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
         filtroStatus === 'todos' || c.status === filtroStatus
       return passaBusca && passaStatus
     })
-  }, [cooperados, busca, filtroStatus])
+  }, [lista, busca, filtroStatus])
 
   return (
     <div style={{ maxWidth: '1100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -94,16 +95,10 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
         display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', marginBottom: '1.5rem',
       }}>
-        <div>
-          <h1 style={{
-            fontSize: '22px', fontWeight: '700',
-            color: '#1a1a1a', margin: 0,
-          }}>
-            {n.plural}
-          </h1>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '2px', margin: 0 }}>
-            {cooperados.length} {cooperados.length === 1 ? n.singular.toLowerCase() : n.plural.toLowerCase()} cadastrado{cooperados.length !== 1 ? 's' : ''}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#6b7280', fontWeight: 500 }}>
+          <span style={{ color: '#6b7280' }}>NexCoop</span>
+          <span style={{ color: '#d1d5db' }}>/</span>
+          <span style={{ color: '#1a1a1a' }}>{n.plural}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <BotaoAjuda chave="manual_cooperados_url" />
@@ -285,7 +280,7 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
 
       {filtrados.length > 0 && (
         <p style={{ fontSize: '12px', color: '#aaa', marginTop: '8px', textAlign: 'right' }}>
-          {filtrados.length} de {cooperados.length} {cooperados.length !== 1 ? n.plural.toLowerCase() : n.singular.toLowerCase()}
+          {filtrados.length} de {lista.length} {lista.length !== 1 ? n.plural.toLowerCase() : n.singular.toLowerCase()}
         </p>
       )}
     </div>
