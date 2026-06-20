@@ -80,6 +80,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
 
   // Item em edição
   const [produtoId, setProdutoId]       = useState('')
+  const [produtoBusca, setProdutoBusca]               = useState('')
+  const [produtoSelecionado, setProdutoSelecionado]   = useState<Produto | null>(null)
+  const [mostrarDropdownProd, setMostrarDropdownProd] = useState(false)
   const [quantidade, setQuantidade]     = useState('')
   const [precoUnit, setPrecoUnit]       = useState('0,00')
   const [numeroLote, setNumeroLote]     = useState('')
@@ -141,7 +144,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   }
 
   function adicionarItem() {
-    const prod = produtos.find(p => p.id === produtoId)
+    const prod = produtoSelecionado
     if (!prod) { setErro('Selecione um produto.'); return }
     const qtd   = parseFloat(quantidade.replace(',', '.')) || 0
     const preco = parseReais(precoUnit)
@@ -157,7 +160,8 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       numero_lote:   numeroLote,
       data_validade: dataValidade,
     }])
-    setProdutoId(''); setQuantidade(''); setPrecoUnit('0,00')
+    setProdutoId(''); setProdutoBusca(''); setProdutoSelecionado(null)
+    setQuantidade(''); setPrecoUnit('0,00')
     setNumeroLote(''); setDataValidade('')
   }
 
@@ -402,12 +406,77 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       <div style={cardStyle}>
         <h2 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700' }}>Itens da compra</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '10px', alignItems: 'end', marginBottom: '14px' }}>
-          <div>
+          <div style={{ position: 'relative' }}>
             <label style={labelStyle}>Produto</label>
-            <select value={produtoId} onChange={e => setProdutoId(e.target.value)} style={inputStyle}>
-              <option value="">Selecione...</option>
-              {produtos.map(p => <option key={p.id} value={p.id}>{p.nome} ({p.unidade})</option>)}
-            </select>
+            <input
+              type="text"
+              value={produtoBusca}
+              onChange={e => {
+                const v = e.target.value
+                setProdutoBusca(v)
+                setProdutoId('')
+                setProdutoSelecionado(null)
+                setMostrarDropdownProd(v.length > 0)
+              }}
+              onFocus={() => { if (produtoBusca.length > 0) setMostrarDropdownProd(true) }}
+              onBlur={() => setTimeout(() => setMostrarDropdownProd(false), 200)}
+              placeholder="Digite para buscar produto..."
+              style={{ ...inputStyle, borderColor: produtoSelecionado ? '#1D9E75' : undefined }}
+              autoComplete="off"
+            />
+            {produtoSelecionado && (
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#1D9E75' }}>✓</span>
+            )}
+
+            {mostrarDropdownProd && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                background: '#fff', border: '1px solid #d5d3cc', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto',
+              }}>
+                {(() => {
+                  const filtrados = produtos.filter(p =>
+                    p.nome.toLowerCase().includes(produtoBusca.toLowerCase())
+                  )
+                  if (filtrados.length > 0) {
+                    return filtrados.map(p => (
+                      <div
+                        key={p.id}
+                        onMouseDown={() => {
+                          setProdutoId(p.id)
+                          setProdutoBusca(`${p.nome} (${p.unidade})`)
+                          setProdutoSelecionado(p)
+                          setMostrarDropdownProd(false)
+                        }}
+                        style={{
+                          padding: '10px 14px', fontSize: 13, cursor: 'pointer',
+                          borderBottom: '1px solid #f0eeea',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f8f7f4')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                      >
+                        <span style={{ fontWeight: 500 }}>{p.nome}</span>
+                        <span style={{ color: '#9ca3af', marginLeft: 6, fontSize: 11 }}>{p.unidade}</span>
+                      </div>
+                    ))
+                  }
+                  return (
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                        Produto "<strong>{produtoBusca}</strong>" não encontrado.
+                      </div>
+                      <a
+                        href="/loja/produtos/novo"
+                        target="_blank"
+                        style={{ fontSize: 12, color: LARANJA, fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        + Cadastrar novo produto →
+                      </a>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
           </div>
           <div>
             <label style={labelStyle}>Quantidade</label>
