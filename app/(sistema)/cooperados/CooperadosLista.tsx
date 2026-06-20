@@ -143,23 +143,20 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
 
       {/* Barra de busca e filtros */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#aaa' }}>🔍</span>
-          <input
-            type="text"
-            placeholder="Buscar por nome, CPF ou e-mail…"
-            value={busca}
-            onChange={e => setBusca(e.target.value)}
-            style={{
-              width: '100%', padding: '9px 12px 9px 32px',
-              border: '1px solid #d5d3cc', borderRadius: '8px',
-              fontSize: '13px', background: '#fff', color: '#1a1a1a',
-              outline: 'none', boxSizing: 'border-box',
-            }}
-            onFocus={e => (e.target.style.borderColor = '#635BFF')}
-            onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Buscar por nome, CPF ou e-mail…"
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          style={{
+            flex: 1, minWidth: '220px', padding: '9px 12px',
+            border: '1px solid #d5d3cc', borderRadius: '8px',
+            fontSize: '13px', background: '#fff', color: '#1a1a1a',
+            outline: 'none', boxSizing: 'border-box',
+          }}
+          onFocus={e => (e.target.style.borderColor = '#635BFF')}
+          onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
+        />
 
         <select
           value={filtroStatus}
