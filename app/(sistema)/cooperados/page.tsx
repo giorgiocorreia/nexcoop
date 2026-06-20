@@ -3,6 +3,8 @@ import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import CooperadosLista from './CooperadosLista'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata() {
   const ctx = await getOrgContext()
   const { data: org } = ctx
