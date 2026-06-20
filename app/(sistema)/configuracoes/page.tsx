@@ -34,6 +34,7 @@ export default async function ConfiguracoesPage() {
   let usuarios: Usuario[] = []
   let funcoes: FuncaoDisponivel[] = []
   let pendentes: UsuarioPendente[] = []
+  let usuariosComCooperado: string[] = []
 
   if (orgId) {
     const db = ctx!.supabase
@@ -48,7 +49,7 @@ export default async function ConfiguracoesPage() {
     if (isAdmin(usuario) || superAdmin) {
       const admin = createAdminClient()
 
-      const [usersRes, funcoesRes, authRes] = await Promise.all([
+      const [usersRes, funcoesRes, authRes, cooperadosRes] = await Promise.all([
         admin
           .from('usuarios')
           .select('*')
@@ -60,7 +61,11 @@ export default async function ConfiguracoesPage() {
           .or(`organizacao_id.is.null,organizacao_id.eq.${orgId}`)
           .order('nome'),
         admin.auth.admin.listUsers({ perPage: 1000 }),
+        admin.from('cooperados').select('usuario_id').eq('organizacao_id', orgId),
       ])
+      usuariosComCooperado = (cooperadosRes.data ?? [])
+        .map((c: any) => c.usuario_id)
+        .filter(Boolean) as string[]
 
       usuarios = (usersRes.data ?? []) as Usuario[]
       console.log('[ConfiguracoesPage] usuarios encontrados:', usuarios.length, usuarios.map(u => u.email))
@@ -97,6 +102,7 @@ export default async function ConfiguracoesPage() {
         usuarios={usuarios}
         pendentes={pendentes}
         funcoes={funcoes}
+        usuariosComCooperado={usuariosComCooperado}
       />
     </Suspense>
   )
