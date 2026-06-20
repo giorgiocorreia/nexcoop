@@ -324,7 +324,15 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
                 <td style={{ padding: "12px 16px" }}>
                   <StatusBadge ativo={p.ativo} />
                 </td>
-                <td style={{ padding: "12px 16px" }}>
+                <td style={{ padding: "12px 16px", display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => window.location.href = `/loja/produtos/${p.id}`}
+                    style={{
+                      padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      cursor: "pointer", background: "transparent",
+                      color: "#378ADD", border: "1px solid #bfdbfe",
+                    }}
+                  >Editar</button>
                   <button
                     onClick={() => toggleAtivo(p.id, p.ativo)}
                     style={{

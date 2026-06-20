@@ -37,3 +37,15 @@ export async function toggleUnidade(id: string, ativo: boolean) {
   revalidatePath('/loja/produtos')
   return { ok: true }
 }
+
+export async function atualizarUnidade(id: string, dados: { nome: string; sigla: string }) {
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('loja_unidades')
+    .update({ nome: dados.nome.trim(), sigla: dados.sigla.trim() })
+    .eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/loja/unidades')
+  revalidatePath('/loja/produtos')
+  return { ok: true }
+}

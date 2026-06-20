@@ -1258,3 +1258,96 @@ export async function conferirCaixa(
 
   return { ok: true }
 }
+
+// ── Cancelar Compra ──────────────────────────────────────────────────────────
+
+export async function cancelarCompra(
+  orgId: string,
+  compraId: string,
+  operadorId: string
+): Promise<{ ok: boolean } | { error: string }> {
+  const admin = createAdminClient()
+
+  const { data: compra } = await admin
+    .from('loja_compras')
+    .select('id, org_id, observacoes, numero_nf')
+    .eq('id', compraId)
+    .single()
+
+  if (!compra) return { error: 'Compra não encontrada.' }
+  if ((compra as any).org_id !== orgId) return { error: 'Sem permissão.' }
+  if (((compra as any).observacoes ?? '').startsWith('[CANCELADA')) return { error: 'Esta compra já foi cancelada.' }
+
+  const { data: itens } = await admin
+    .from('loja_compra_itens')
+    .select('produto_id, quantidade, numero_lote')
+    .eq('compra_id', compraId)
+
+  if (!itens || itens.length === 0) return { error: 'Itens da compra não encontrados.' }
+
+  for (const item of itens as any[]) {
+    let loteQuery = admin
+      .from('loja_lotes')
+      .select('id, quantidade_atual')
+      .eq('org_id', orgId)
+      .eq('produto_id', item.produto_id)
+      .order('criado_em', { ascending: false })
+
+    if (item.numero_lote) {
+      loteQuery = loteQuery.eq('numero_lote', item.numero_lote)
+    }
+
+    const { data: lotes } = await loteQuery.limit(1)
+    const lote = lotes?.[0]
+
+    if (lote) {
+      const novaQtd = Math.max(0, (lote as any).quantidade_atual - item.quantidade)
+      await admin.from('loja_lotes').update({ quantidade_atual: novaQtd }).eq('id', (lote as any).id)
+    }
+
+    await admin.from('loja_estoque_movimentos').insert({
+      org_id: orgId,
+      produto_id: item.produto_id,
+      tipo: 'saida_manual',
+      quantidade: item.quantidade,
+      motivo: `cancelamento de compra${(compra as any).numero_nf ? ' NF ' + (compra as any).numero_nf : ''}`,
+      referencia_id: compraId,
+    })
+
+    const { data: prod } = await admin
+      .from('loja_produtos')
+      .select('estoque_atual')
+      .eq('id', item.produto_id)
+      .eq('org_id', orgId)
+      .single()
+
+    if (prod) {
+      await admin
+        .from('loja_produtos')
+        .update({ estoque_atual: Math.max(0, (prod as any).estoque_atual - item.quantidade) })
+        .eq('id', item.produto_id)
+        .eq('org_id', orgId)
+    }
+  }
+
+  const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  const obsAnterior = (compra as any).observacoes ? ` | ${(compra as any).observacoes}` : ''
+  await admin
+    .from('loja_compras')
+    .update({ observacoes: `[CANCELADA em ${agora}]${obsAnterior}` })
+    .eq('id', compraId)
+
+  await registrarLog({
+    org_id: orgId,
+    usuario_id: operadorId,
+    modulo: 'loja',
+    acao: 'loja_compra_cancelada',
+    dados_depois: { compra_id: compraId },
+  })
+
+  revalidatePath('/loja/compras')
+  revalidatePath(`/loja/compras/${compraId}`)
+  revalidatePath('/loja/estoque')
+
+  return { ok: true }
+}

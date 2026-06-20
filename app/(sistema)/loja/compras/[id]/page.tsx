@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { temModulo } from '@/lib/org'
 import { podeGerenciarLoja } from '@/lib/permissoes'
 import { getCompra } from '@/lib/loja/actions'
+import BotaoCancelarCompra from './BotaoCancelarCompra'
 
 export const metadata = { title: 'Detalhe da Compra — Loja | NexCoop' }
 
@@ -26,7 +27,7 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
 
   const { data: usuario } = await supabase
     .from('usuarios')
-    .select('funcoes, role, organizacoes(modulos_ativos)')
+    .select('organizacao_id, funcoes, role, organizacoes(modulos_ativos)')
     .eq('id', user.id)
     .single()
 
@@ -34,6 +35,7 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
   const org = Array.isArray(orgRaw) ? orgRaw[0] : orgRaw
   if (!temModulo(org?.modulos_ativos, 'loja')) redirect('/dashboard')
 
+  const orgId = (usuario as any)?.organizacao_id as string
   const up = { role: usuario?.role ?? '', funcoes: ((usuario as any)?.funcoes ?? []) as string[] }
   if (!podeGerenciarLoja(up)) redirect('/loja')
 
@@ -82,9 +84,19 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
           ))}
         </div>
         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '13px', color: '#888' }}>
-            {compra.observacoes ? `Obs: ${compra.observacoes}` : ''}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {compra.observacoes && (
+              <span style={{ fontSize: '13px', color: (compra.observacoes ?? '').startsWith('[CANCELADA') ? '#dc2626' : '#888' }}>
+                {compra.observacoes}
+              </span>
+            )}
+            <BotaoCancelarCompra
+              compraId={compra.id}
+              orgId={orgId}
+              usuarioId={user.id}
+              cancelada={(compra.observacoes ?? '').startsWith('[CANCELADA')}
+            />
+          </div>
           <span style={{ fontSize: '18px', fontWeight: '700', color: LARANJA }}>
             Total geral: {fmtReal(compra.total)}
           </span>
