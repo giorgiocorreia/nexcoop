@@ -127,19 +127,6 @@ export async function registrarPagamentos(
 
   if (error) throw new Error(error.message)
 
-  const { data: coopAtual } = await supabase
-    .from('cooperados')
-    .select('status')
-    .eq('id', cooperadoId)
-    .single()
-
-  if (coopAtual?.status === 'proposta') {
-    await supabase
-      .from('cooperados')
-      .update({ status: 'probatorio' })
-      .eq('id', cooperadoId)
-  }
-
   const { data: todasParcelas } = await supabase
     .from('cota_pagamentos')
     .select('status, valor_pago')
@@ -151,6 +138,20 @@ export async function registrarPagamentos(
 
   const quitou = totalPago >= valorTotalCota
   const temPendente = (todasParcelas ?? []).some(p => p.status === 'pendente')
+
+  const { data: coopAtual } = await supabase
+    .from('cooperados')
+    .select('status')
+    .eq('id', cooperadoId)
+    .single()
+
+  const statusPermitemProbatorio = ['proposta', 'ativo']
+  if (coopAtual?.status && statusPermitemProbatorio.includes(coopAtual.status) && !quitou) {
+    await supabase
+      .from('cooperados')
+      .update({ status: 'probatorio' })
+      .eq('id', cooperadoId)
+  }
 
   if (quitou && !temPendente) {
     await supabase
