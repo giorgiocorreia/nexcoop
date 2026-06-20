@@ -182,8 +182,9 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     grupos.push({
       grupo: 'Conta',
       itens: [
-        { label: 'Configurações', href: '/configuracoes',      icone: '⚙️' },
-        { label: 'Logs',          href: '/configuracoes/logs', icone: '📋' },
+        { label: 'Configurações', href: '/configuracoes',        icone: '⚙️' },
+        { label: 'Grupos',        href: '/configuracoes/grupos', icone: '👥' },
+        { label: 'Logs',          href: '/configuracoes/logs',   icone: '📋' },
       ],
     })
 

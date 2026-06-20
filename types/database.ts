@@ -23,6 +23,7 @@ export type StatusAssinatura = 'active' | 'past_due' | 'canceled' | 'trialing'
 
 export type StatusOportunidade = 'identificado' | 'contatado' | 'proposta' | 'aguardando' | 'aprovado' | 'reprovado' | 'arquivado'
 export type FonteOportunidade  = 'internacional' | 'nacional' | 'manual' | 'agregador'
+export type TipoCota           = 'plena' | 'colaboradora'
 export type StatusCota         = 'integralizada' | 'parcial' | 'pendente'
 
 export interface Organizacao {
@@ -174,11 +175,34 @@ export interface CotaCooperado {
   id:             string
   cooperado_id:   string
   organizacao_id: string
+  tipo_cota:      TipoCota
   quantidade:     number
   valor_cota:     number
   status:         StatusCota
+  grupo_id:       string | null
   criado_em:      string
   atualizado_em:  string
+}
+
+export interface GrupoColaborador {
+  id:             string
+  organizacao_id: string
+  nome:           string
+  cnpj:           string | null
+  descricao:      string | null
+  ativo:          boolean
+  criado_em:      string
+  atualizado_em:  string
+}
+
+export interface GrupoRepresentante {
+  id:             string
+  grupo_id:       string
+  cooperado_id:   string
+  organizacao_id: string
+  ativo:          boolean
+  indicado_em:    string
+  indicado_por:   string | null
 }
 
 export interface CotaIntegralizacao {
@@ -1116,6 +1140,8 @@ export type Database = {
       radar_resultados:          TableDef<RadarResultado>
       cotas_cooperado:           TableDef<CotaCooperado>
       cotas_integralizacao:      TableDef<CotaIntegralizacao>
+      grupos_colaboradores:      TableDef<GrupoColaborador>
+      grupo_representantes:      TableDef<GrupoRepresentante>
       loja_fornecedores:         TableDef<LojaFornecedor>
       loja_clientes:             TableDef<LojaCliente>
       loja_produtos:             TableDef<LojaProduto>
