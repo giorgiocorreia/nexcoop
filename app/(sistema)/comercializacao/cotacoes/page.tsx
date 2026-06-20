@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isAdmin } from '@/lib/permissoes'
 import CotacoesClient from './CotacoesClient'
 
 export default async function CotacoesPage() {
@@ -13,11 +14,8 @@ export default async function CotacoesPage() {
     .eq('id', user.id)
     .single()
 
-  const funcoes = (usuario?.funcoes ?? []) as string[]
-  const podeRegistrar = funcoes.includes('admin') ||
-    funcoes.includes('financeiro') ||
-    funcoes.includes('tecnico') ||
-    funcoes.includes('caixa_cacau')
+  const up = { role: usuario?.role ?? '', funcoes: (usuario?.funcoes ?? []) as string[] }
+  const podeRegistrar = isAdmin(up)
 
   return <CotacoesClient podeRegistrar={podeRegistrar} />
 }
