@@ -1,5 +1,53 @@
 # NexCoop — Changelog
 
+## [20/06/2026] — Sessão: Loja Fase 6 + Comercialização + Correções
+
+### Loja Agropecuária
+- Migration 041: persiste tipo_cartao, NSU, autorização, identificador PIX nas vendas
+- Migration 042: conferência de caixa — status_conferencia, valor_fisico_*, conferido_por, conferido_em em loja_caixas; pix_nome_pagador em loja_vendas
+- Migration 043: loja_unidades dinâmicas — remove CHECK fixo, cria tabela com 12 unidades padrão
+- ModalFechamentoCaixa: checklist operador com valores físicos por forma de pagamento + lista PIX
+- Tela /loja/conferencia: gerente confere sessões, marca conferido/divergente
+- Action conferirCaixa em lib/loja/actions.ts
+- Badge de nota fiscal no Rel. Vendas
+- Fix RLS: todos os relatórios da loja migrados para adminClient
+- Fix join ambíguo: loja_caixas→usuarios usa usuarios!loja_caixas_usuario_id_fkey
+- Fix filtro de data client-side no Rel. Caixa (comparação via getTime())
+- Campo de pesquisa de fornecedor com cadastro rápido inline (Nova Compra)
+- Campo de pesquisa de produto com autocomplete + link para cadastro (Nova Compra)
+- PDV: painel de produtos em lista (colunas: produto, unidade, preço, estoque)
+- Tela /loja/unidades: gestão de unidades de medida dinâmicas
+- Select de unidade dinâmico em cadastro/edição de produto
+- Cancelamento de compra com estorno de estoque e log de auditoria
+- Botão Editar na listagem de produtos
+- Edição inline de nome e sigla de unidades
+- Sidebar: Estoque, Compras, Fornecedores, Unidades, Conferência adicionados
+- Fix sidebar: Comercialização com submenu (Dashboard, Cotações, Produtores, etc.)
+- Fix: botão "Cadastrar novo produto" usa router.push em vez de target blank
+
+### Comercialização
+- Dashboard: breadcrumb padrão substituindo título "Comercialização"
+- Dashboard: cotações vigentes por produto (adminClient)
+- Cotações: breadcrumb padrão + formulário oculto para caixa_loja
+- Fix: adminClient em getDashboardComercializacao para cotações (RLS bloqueava)
+
+### Bugs corrigidos
+- Fix: produtor promovido a cooperado agora atualiza tipo='cooperado' no banco
+- Fix: Rel. Vendas move auth para page.tsx, action usa apenas adminClient
+- Fix: debug route /api/debug-vendas identificou join ambíguo como causa raiz
+
+### Banco de dados (limpeza COOPAIBI)
+- Removidas todas as vendas e itens de teste
+- Removidas sangrias e movimentos de estoque de teste
+- Removidos caixas fechados de teste
+- Removida compra NF 1234567
+- Removido produto "Sal Proteinado"
+- Zerados saldos produto e financeiro de produtores
+- Removidas sessões de caixa, movimentações e aportes/sangrias da Comercialização
+- Zerado estoque físico
+
+---
+
 ## [19/06/2026] — Loja PDV: pagamento completo persistido (Migration 041)
 
 - Migration 041: colunas `tipo_cartao`, `cartao_nsu`, `cartao_autorizacao`, `pix_identificador`, `desconto_total`, `pago_saldo` adicionadas em `loja_vendas`
