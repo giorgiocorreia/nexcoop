@@ -12,7 +12,7 @@ interface Props {
 export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inicial, numero_inicial }: Props) {
   const [loading, setLoading] = useState(false)
   const [comprovanteId, setComprovanteId] = useState<string | null>(comprovante_id_inicial || null)
-  const [numero, setNumero] = useState<number | null>(numero_inicial ?? null)
+  const [numero, setNumero] = useState<number | null>(numero_inicial || null)
   const [erro, setErro] = useState<string | null>(null)
 
   async function handleEmitir() {
@@ -38,7 +38,7 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>
-          N\xBA {String(numero).padStart(6, '0')}
+          Nº {String(numero).padStart(6, '0')}
         </span>
         <button
           onClick={handleBaixar}
@@ -55,7 +55,7 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Baixar PDF
+          PDF
         </button>
       </div>
     )
@@ -80,7 +80,7 @@ export function BotaoComprovantePagamento({ movimentacao_id, comprovante_id_inic
           <line x1="16" y1="13" x2="8" y2="13"/>
           <line x1="16" y1="17" x2="8" y2="17"/>
         </svg>
-        {loading ? 'Gerando...' : 'Emitir comprovante'}
+        {loading ? 'Gerando...' : 'Comprovante'}
       </button>
       {erro && <span style={{ fontSize: 10, color: '#dc2626' }}>{erro}</span>}
     </div>
