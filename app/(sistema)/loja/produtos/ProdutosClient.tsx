@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { Btn } from "@/components/ui/Btn";
 import { atualizarPrecoProduto, atualizarMinimoProduto, toggleAtivoProduto, atualizarNcmProduto } from "@/lib/loja/produtos-actions";
 
 interface Produto {
@@ -324,24 +325,25 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
                 <td style={{ padding: "12px 16px" }}>
                   <StatusBadge ativo={p.ativo} />
                 </td>
-                <td style={{ padding: "12px 16px", display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => window.location.href = `/loja/produtos/${p.id}`}
-                    style={{
-                      padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                      cursor: "pointer", background: "transparent",
-                      color: "#378ADD", border: "1px solid #bfdbfe",
-                    }}
-                  >Editar</button>
-                  <button
-                    onClick={() => toggleAtivo(p.id, p.ativo)}
-                    style={{
-                      padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                      cursor: "pointer", background: "transparent",
-                      color: p.ativo ? "#DC2626" : "#15803d",
-                      border: `1px solid ${p.ativo ? "#fecaca" : "#bbf7d0"}`,
-                    }}
-                  >{p.ativo ? "Inativar" : "Ativar"}</button>
+                <td style={{ padding: "12px 16px" }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Btn
+                      tamanho="sm"
+                      variante="cinza"
+                      icone="ti-pencil"
+                      onClick={() => window.location.href = `/loja/produtos/${p.id}`}
+                    >
+                      Editar
+                    </Btn>
+                    <Btn
+                      tamanho="sm"
+                      variante="cinza"
+                      icone={p.ativo ? "ti-ban" : "ti-check"}
+                      onClick={() => toggleAtivo(p.id, p.ativo)}
+                    >
+                      {p.ativo ? "Inativar" : "Ativar"}
+                    </Btn>
+                  </div>
                 </td>
               </tr>
             ))}
