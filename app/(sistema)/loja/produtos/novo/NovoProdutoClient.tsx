@@ -5,19 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { criarProduto } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
-import type { LojaFornecedor, LojaUnidade } from '@/types/database'
+import type { LojaFornecedor } from '@/types/database'
+
+interface Unidade { id: string; nome: string; sigla: string }
 
 interface Props {
   fornecedores: LojaFornecedor[]
+  unidades:     Unidade[]
 }
-
-const UNIDADES: { value: LojaUnidade; label: string }[] = [
-  { value: 'kg',      label: 'Quilograma (kg)' },
-  { value: 'litro',   label: 'Litro (L)'       },
-  { value: 'unidade', label: 'Unidade (un)'    },
-  { value: 'saco',    label: 'Saco (sc)'       },
-  { value: 'caixa',   label: 'Caixa (cx)'      },
-]
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', fontSize: '14px',
@@ -39,12 +34,12 @@ function parseReais(val: string): number {
   return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0
 }
 
-export default function NovoProdutoClient({ fornecedores }: Props) {
+export default function NovoProdutoClient({ fornecedores, unidades }: Props) {
   const router = useRouter()
 
   const [nome, setNome]                   = useState('')
   const [categoria, setCategoria]         = useState('')
-  const [unidade, setUnidade]             = useState<LojaUnidade>('unidade')
+  const [unidade, setUnidade]             = useState(unidades[0]?.nome ?? 'unidade')
   const [fornecedorId, setFornecedorId]   = useState('')
   const [precoNormal, setPrecoNormal]     = useState('')
   const [estoqueMin, setEstoqueMin]       = useState('')
@@ -128,8 +123,8 @@ export default function NovoProdutoClient({ fornecedores }: Props) {
 
             <div>
               <label style={labelStyle}>Unidade *</label>
-              <select value={unidade} onChange={e => setUnidade(e.target.value as LojaUnidade)} style={inputStyle}>
-                {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+              <select value={unidade} onChange={e => setUnidade(e.target.value)} style={inputStyle}>
+                {unidades.map(u => <option key={u.id} value={u.nome}>{u.nome} ({u.sigla})</option>)}
               </select>
             </div>
 

@@ -5,24 +5,19 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { atualizarProduto } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
-import type { LojaFornecedor, LojaUnidade, LojaLote } from '@/types/database'
+import type { LojaFornecedor, LojaLote } from '@/types/database'
 import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
 import type { PosicaoEstoque } from '@/lib/loja/types'
+
+interface Unidade { id: string; nome: string; sigla: string }
 
 interface Props {
   produto:        LojaProdutoComFornecedor
   posicaoEstoque: PosicaoEstoque
   fornecedores:   LojaFornecedor[]
+  unidades:       Unidade[]
   podeGerenciar:  boolean
 }
-
-const UNIDADES: { value: LojaUnidade; label: string }[] = [
-  { value: 'kg',      label: 'Quilograma (kg)' },
-  { value: 'litro',   label: 'Litro (L)'       },
-  { value: 'unidade', label: 'Unidade (un)'    },
-  { value: 'saco',    label: 'Saco (sc)'       },
-  { value: 'caixa',   label: 'Caixa (cx)'      },
-]
 
 const inputStyle = (disabled: boolean): React.CSSProperties => ({
   width: '100%', padding: '9px 12px', fontSize: '14px',
@@ -55,13 +50,13 @@ function fmtData(iso: string | null): string {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
 
-export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedores, podeGerenciar }: Props) {
+export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedores, unidades, podeGerenciar }: Props) {
   const router = useRouter()
   const disabled = !podeGerenciar
 
   const [nome, setNome]                 = useState(produto.nome)
   const [categoria, setCategoria]       = useState(produto.categoria ?? '')
-  const [unidade, setUnidade]           = useState<LojaUnidade>(produto.unidade)
+  const [unidade, setUnidade]           = useState(produto.unidade)
   const [fornecedorId, setFornecedorId] = useState(produto.fornecedor_id ?? '')
   const [precoNormal, setPrecoNormal]   = useState(
     formatReais(String(Math.round(produto.preco_normal * 100)))
@@ -160,11 +155,11 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
               <label style={labelStyle}>Unidade</label>
               <select
                 value={unidade}
-                onChange={e => setUnidade(e.target.value as LojaUnidade)}
+                onChange={e => setUnidade(e.target.value)}
                 disabled={disabled}
                 style={{ ...inputStyle(disabled), appearance: 'auto' }}
               >
-                {UNIDADES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+                {unidades.map(u => <option key={u.id} value={u.nome}>{u.nome} ({u.sigla})</option>)}
               </select>
             </div>
 

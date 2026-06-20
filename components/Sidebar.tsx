@@ -128,6 +128,9 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
       lojaChildren.push({ label: 'Fornecedores', href: '/loja/fornecedores', icone: '🏭' })
 
     if (isAdmin || isGerenteLoja)
+      lojaChildren.push({ label: 'Unidades', href: '/loja/unidades', icone: '📏' })
+
+    if (isAdmin || isGerenteLoja)
       lojaChildren.push({ label: 'Entradas NF-e', href: '/loja/entradas', icone: '🚚', em_breve: true })
 
     if (isAdmin || isGerenteLoja || isCaixaLoja)

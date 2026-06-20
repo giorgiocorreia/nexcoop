@@ -350,7 +350,7 @@ export interface Notificacao {
 
 // ── Loja Agropecuária ─────────────────────────────────────────────────────────
 
-export type LojaUnidade       = 'kg' | 'litro' | 'unidade' | 'saco' | 'caixa'
+export type LojaUnidade       = string
 export type LojaStatusCaixa   = 'aberto' | 'fechado'
 export type LojaTipoCliente   = 'cooperado' | 'externo'
 export type LojaCanal         = 'presencial' | 'online'
@@ -408,6 +408,15 @@ export interface LojaNotaFiscal {
   motivo_rejeicao:   string | null
   emitido_em:        string | null
   created_at:        string
+}
+
+export interface LojaUnidadeMedida {
+  id:        string
+  org_id:    string
+  nome:      string
+  sigla:     string
+  ativo:     boolean
+  criado_em: string
 }
 
 export interface LojaCliente {
@@ -1097,6 +1106,7 @@ export type Database = {
       loja_pedidos_online:       TableDef<LojaPedidoOnline>
       loja_pedido_itens:         TableDef<LojaPedidoItem>
       loja_notas_fiscais:        TableDef<LojaNotaFiscal>
+      loja_unidades:             TableDef<LojaUnidadeMedida>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       plano_contas:              TableDef<any>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
