@@ -77,9 +77,12 @@ export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
   const filtrados = useMemo(() => {
     const q = busca.toLowerCase().trim()
     return lista.filter(c => {
+      const normalize = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
       const passaBusca =
         !q ||
-        c.nome_completo.toLowerCase().includes(q) ||
+        normalize(c.nome_completo).includes(normalize(q)) ||
         (c.cpf ?? '').replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
         (c.email ?? '').toLowerCase().includes(q)
       const passaStatus =
