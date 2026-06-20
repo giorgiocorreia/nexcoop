@@ -465,13 +465,17 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                       <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
                         Produto "<strong>{produtoBusca}</strong>" não encontrado.
                       </div>
-                      <a
-                        href="/loja/produtos/novo"
-                        target="_blank"
-                        style={{ fontSize: 12, color: LARANJA, fontWeight: 600, textDecoration: 'none' }}
+                      <button
+                        type="button"
+                        onMouseDown={() => router.push('/loja/produtos/novo')}
+                        style={{
+                          fontSize: 12, color: LARANJA, fontWeight: 600,
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          padding: 0, textDecoration: 'underline',
+                        }}
                       >
                         + Cadastrar novo produto →
-                      </a>
+                      </button>
                     </div>
                   )
                 })()}
