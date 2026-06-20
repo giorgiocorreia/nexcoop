@@ -900,7 +900,7 @@ export default function UsuariosGestao({ usuarios: usuariosInit, pendentes: pend
                             >
                               {redefinindoId === u.id ? '...' : 'Senha'}
                             </Btn>
-                            {!cooperadoSet.has(u.id) && u.vinculo === 'cooperado' && (
+                            {!cooperadoSet.has(u.id) && (
                               <Btn
                                 tamanho="sm"
                                 variante="cinza"
