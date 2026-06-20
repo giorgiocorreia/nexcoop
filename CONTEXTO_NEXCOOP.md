@@ -27,6 +27,16 @@
 - Tela /configuracoes/grupos para gerenciar grupos de colaboradores
 - Cards de inadimplência e capital a receber no dashboard admin
 
+### Modelo Membro/Produtor/Usuário
+
+**Fluxo 4 implementado (20/06/2026):** Vincular usuário existente como cooperado via botão "Tornar Cooperado" em Configurações → Usuários. Aparece para qualquer usuário sem cooperado vinculado. Modal com campos: matrícula (gerada automaticamente AANNNN por org), data admissão, quota parte, status, CAF, DAP. Server action `vincularUsuarioComoCooperado()` em `lib/cooperados/actions.ts`. Badge "✓ Cooperado" para usuários já vinculados. Fix serialização: `usuariosComCooperado` passado como `string[]` (não Set) do Server Component para Client Component.
+
+**Matrículas COOPAIBI:** 26001–26014 atribuídas manualmente. Próxima automática: 26015. Formato AANNNN, sequencial por org, índices em `cooperados(organizacao_id)` e `cooperados(organizacao_id, numero_matricula)` — migration 047.
+
+**Busca cooperados:** filtro de texto busca nome/email; filtro numérico busca CPF (separação por tipo de caractere).
+
+**Bugs corrigidos:** breadcrumb `/cooperados` no padrão NexCoop / Cooperados; breadcrumb detalhe "← Cooperados" dinâmico por tipo org; layout linha usuário em 2 linhas para evitar espremimento; `sites/` excluído do `tsconfig.json`; `nodemailer` instalado; `force-dynamic` em cooperados/page.tsx.
+
 ### Em andamento
 - Loja Fase 6: infraestrutura fiscal completa, emissão NF-e bloqueada aguardando contador
 - Comercialização: dashboard com cotações funcionando

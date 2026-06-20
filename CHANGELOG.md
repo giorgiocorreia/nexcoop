@@ -1,5 +1,18 @@
 # NexCoop — Changelog
 
+## [20/06/2026] — Cooperados: Fluxo 4 + Matrículas + Busca + Correções
+
+- **Cooperados:** Fluxo 4 — botão "Tornar Cooperado" em Configurações → Usuários para vincular usuário existente como cooperado
+- **Cooperados:** Geração automática de matrícula AANNNN por org; matrículas 26001–26014 atribuídas à COOPAIBI; migration 047 (índices de performance)
+- **Cooperados:** Busca por nome/email separada de busca por CPF (numérico)
+- **Cooperados:** Breadcrumb lista e detalhe no padrão do sistema
+- **Usuários:** Layout linha em 2 linhas para evitar espremimento com muitos botões
+- **Usuários:** Fix serialização `usuariosComCooperado` Set → array
+- **Usuários:** Botão "Tornar Cooperado" visível para qualquer usuário sem cooperado vinculado
+- **Build:** `sites/` excluído do `tsconfig.json`; `nodemailer` instalado como dependência
+
+---
+
 ## [20/06/2026] — Sistema de Cotas e Pagamentos
 
 ### Migrations
