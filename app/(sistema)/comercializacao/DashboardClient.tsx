@@ -80,48 +80,43 @@ export default function DashboardComercializacao({
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
 
-      {/* Cabeçalho */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 6px', color: '#1a1a1a' }}>
-          Comercialização
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-              Gestão completa do ciclo de comercialização
-            </p>
-            {d.sessoesAbertas.length > 0 ? (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                background: '#dcfce7', color: '#14532d', fontWeight: 500,
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
-                Caixa aberto
-              </span>
-            ) : (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                background: '#f3f4f6', color: '#6b7280', fontWeight: 500,
-              }}>
-                Caixa fechado
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BtnLink href="/comercializacao/produtores" variante="cinza" icone="ti-users">
-              Produtores
+      {/* Breadcrumb + ações */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Link href="/dashboard" style={{ fontSize: 13, color: '#78716c', textDecoration: 'none' }}>NexCoop</Link>
+          <span style={{ fontSize: 13, color: '#e5e3dc' }}>/</span>
+          <span style={{ fontSize: 13, color: '#78716c', fontWeight: 600 }}>Comercialização</span>
+          {d.sessoesAbertas.length > 0 ? (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: 11, padding: '3px 10px', borderRadius: 20,
+              background: '#dcfce7', color: '#14532d', fontWeight: 500, marginLeft: 8,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
+              Caixa aberto
+            </span>
+          ) : (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: 11, padding: '3px 10px', borderRadius: 20,
+              background: '#f3f4f6', color: '#6b7280', fontWeight: 500, marginLeft: 8,
+            }}>
+              Caixa fechado
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <BtnLink href="/comercializacao/produtores" variante="cinza" icone="ti-users">
+            Produtores
+          </BtnLink>
+          <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-wallet">
+            Caixa
+          </BtnLink>
+          {d.isAdmin && (
+            <BtnLink href="/comercializacao/diario" variante="cinza" icone="ti-notebook">
+              Diário
             </BtnLink>
-            <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-wallet">
-              Caixa
-            </BtnLink>
-            {d.isAdmin && (
-              <BtnLink href="/comercializacao/diario" variante="cinza" icone="ti-notebook">
-                Diário
-              </BtnLink>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
