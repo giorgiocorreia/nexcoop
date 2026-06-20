@@ -12,6 +12,7 @@ interface Props {
 
 export default function PainelProdutos({ produtos, cooperadoIdentificado, onSelecionarProduto }: Props) {
   const [busca, setBusca] = useState('')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -22,6 +23,7 @@ export default function PainelProdutos({ produtos, cooperadoIdentificado, onSele
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Busca */}
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e3dc' }}>
         <div style={{ position: 'relative' }}>
           <i className="ti ti-search" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 16 }} />
@@ -40,39 +42,88 @@ export default function PainelProdutos({ produtos, cooperadoIdentificado, onSele
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, alignContent: 'start' }}>
+      {/* Header da lista */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 80px 100px 80px',
+        padding: '8px 16px', borderBottom: '1px solid #e5e3dc',
+        background: '#fafaf9',
+      }}>
+        {['Produto', 'Unidade', 'Preço', 'Estoque'].map(h => (
+          <div key={h} style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {h}
+          </div>
+        ))}
+      </div>
+
+      {/* Lista */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         {filtrados.length === 0 && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af', fontSize: 14, padding: '32px 0' }}>
+          <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: 14, padding: '32px 0' }}>
             Nenhum produto encontrado
           </div>
         )}
         {filtrados.map(produto => {
-          const esgotado = produto.estoque_atual <= 0
+          const esgotado  = produto.estoque_atual <= 0
           const temDesconto = produto.desconto_cooperado && cooperadoIdentificado && (produto.desconto_cooperado_pct ?? 0) > 0
+          const hovered   = hoveredId === produto.id
 
           return (
-            <button
+            <div
               key={produto.id}
               onClick={() => !esgotado && onSelecionarProduto(produto)}
-              disabled={esgotado}
+              onMouseEnter={() => !esgotado && setHoveredId(produto.id)}
+              onMouseLeave={() => setHoveredId(null)}
               style={{
-                background: esgotado ? '#f9fafb' : '#fff',
-                border: `1.5px solid ${esgotado ? '#e5e7eb' : '#e5e3dc'}`,
-                borderRadius: 10, padding: '12px 10px', cursor: esgotado ? 'not-allowed' : 'pointer',
-                textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4,
-                opacity: esgotado ? 0.6 : 1, transition: 'border-color .15s',
+                display: 'grid', gridTemplateColumns: '1fr 80px 100px 80px',
+                padding: '10px 16px',
+                borderBottom: '1px solid #f5f5f4',
+                background: esgotado ? '#fafaf9' : hovered ? '#fff8f3' : '#fff',
+                cursor: esgotado ? 'not-allowed' : 'pointer',
+                opacity: esgotado ? 0.6 : 1,
+                transition: 'background 0.1s',
+                borderLeft: hovered && !esgotado ? '3px solid #E07B30' : '3px solid transparent',
               }}
-              onMouseEnter={e => { if (!esgotado) (e.currentTarget as HTMLElement).style.borderColor = '#E07B30' }}
-              onMouseLeave={e => { if (!esgotado) (e.currentTarget as HTMLElement).style.borderColor = '#e5e3dc' }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.3 }}>{produto.nome}</div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>{produto.unidade}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginTop: 4 }}>{fmtReal(produto.preco_normal)}</div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
-                {esgotado && <span style={{ fontSize: 10, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 4, padding: '2px 6px' }}>Esgotado</span>}
-                {temDesconto && <span style={{ fontSize: 10, fontWeight: 700, background: '#E07B30', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>-{produto.desconto_cooperado_pct}%</span>}
+              {/* Nome + badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {produto.nome}
+                </span>
+                {esgotado && (
+                  <span style={{ fontSize: 10, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Esgotado
+                  </span>
+                )}
+                {temDesconto && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#E07B30', color: '#fff', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    -{produto.desconto_cooperado_pct}%
+                  </span>
+                )}
               </div>
-            </button>
+
+              {/* Unidade */}
+              <div style={{ fontSize: 12, color: '#6b7280', alignSelf: 'center' }}>
+                {produto.unidade}
+              </div>
+
+              {/* Preço */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', alignSelf: 'center' }}>
+                {fmtReal(produto.preco_normal)}
+                {temDesconto && (
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#E07B30' }}>
+                    {fmtReal(produto.preco_normal * (1 - (produto.desconto_cooperado_pct ?? 0) / 100))}
+                  </div>
+                )}
+              </div>
+
+              {/* Estoque */}
+              <div style={{
+                fontSize: 12, fontWeight: 600, alignSelf: 'center',
+                color: esgotado ? '#dc2626' : produto.estoque_minimo && produto.estoque_atual <= produto.estoque_minimo ? '#d97706' : '#15803d',
+              }}>
+                {produto.estoque_atual} {produto.unidade}
+              </div>
+            </div>
           )
         })}
       </div>
