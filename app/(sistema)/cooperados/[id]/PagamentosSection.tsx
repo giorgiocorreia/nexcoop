@@ -75,6 +75,7 @@ export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Pro
   const [quitandoPag, setQuitandoPag]         = useState<string | null>(null)
   const [quitouModal, setQuitouModal]         = useState<{ tipoCota: string } | null>(null)
   const [definindoAtivo, setDefinindoAtivo]   = useState(false)
+  const [reimprimindo, setReimprimindo]       = useState<string | null>(null)
 
   const novaParcelaForm = (): ParcelaForm => ({
     valor_pago: '', forma_pagamento: 'dinheiro', data_pagamento: HOJE, data_vencimento: '',
@@ -219,6 +220,28 @@ export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Pro
     setQuitandoPag(null)
   }
 
+  async function handleReimprimir(cota: CotaCooperado) {
+    setReimprimindo(cota.id)
+    try {
+      const pags = pagsPorCota[cota.id] ?? []
+      const pdfRows = pags.map(p => ({
+        numero_parcela:  p.numero_parcela,
+        total_parcelas:  p.total_parcelas,
+        forma_pagamento: p.forma_pagamento,
+        valor_pago:      Number(p.valor_pago),
+        data_pagamento:  p.data_pagamento,
+        data_vencimento: p.data_vencimento,
+        status:          p.status,
+        registrado_por:  p.registrado_por,
+      }))
+      const base64 = await gerarReciboCota(cooperadoId, cota.id, pdfRows)
+      downloadBase64Pdf(base64, `recibo-cota-${cota.tipo_cota}-${HOJE}.pdf`)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao gerar recibo.')
+    }
+    setReimprimindo(null)
+  }
+
   async function handleDefinirAtivo() {
     setDefinindoAtivo(true)
     try {
@@ -265,9 +288,25 @@ export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Pro
                   <span style={{ fontSize: 12, color: '#aaa' }}>— {fmtBRL(totalCota)}</span>
                 </div>
                 {!isOpen && (
-                  <button onClick={() => iniciarForm(cota.id)} style={btnPrimary}>
-                    + Registrar pagamento
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {pags.length > 0 && (
+                      <button
+                        onClick={() => handleReimprimir(cota)}
+                        disabled={reimprimindo === cota.id}
+                        style={{
+                          padding: '7px 14px', fontSize: 12, fontWeight: 500,
+                          background: '#f5f5f2', color: '#444',
+                          border: '1px solid #d5d3cc', borderRadius: 8, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 5,
+                        }}
+                      >
+                        {reimprimindo === cota.id ? 'Gerando…' : '🖨 Recibo'}
+                      </button>
+                    )}
+                    <button onClick={() => iniciarForm(cota.id)} style={btnPrimary}>
+                      + Registrar pagamento
+                    </button>
+                  </div>
                 )}
               </div>
 

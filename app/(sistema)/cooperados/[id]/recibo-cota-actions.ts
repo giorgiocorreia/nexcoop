@@ -37,6 +37,13 @@ function fmtCpf(cpf: string | null) {
   return `${s.slice(0,3)}.${s.slice(3,6)}.${s.slice(6,9)}-${s.slice(9)}`
 }
 
+function fmtCnpj(cnpj: string | null) {
+  if (!cnpj) return '—'
+  const s = cnpj.replace(/\D/g, '')
+  if (s.length !== 14) return cnpj
+  return `${s.slice(0,2)}.${s.slice(2,5)}.${s.slice(5,8)}/${s.slice(8,12)}-${s.slice(12)}`
+}
+
 export async function gerarReciboCota(
   cooperadoId: string,
   cotaId: string,
@@ -176,7 +183,7 @@ export async function gerarReciboCota(
   spacer()
   line()
 
-  const cnpjStr = org?.cnpj ? ` — CNPJ: ${org.cnpj}` : ''
+  const cnpjStr = org?.cnpj ? ` — CNPJ: ${fmtCnpj(org.cnpj)}` : ''
   page.drawText(`${org?.nome ?? ''}${cnpjStr}`, { x: MARGIN, y, size: 6, font: fontR, color: gray, maxWidth: PAGE_W - MARGIN * 2 })
 
   const pdfBytes = await doc.save()
