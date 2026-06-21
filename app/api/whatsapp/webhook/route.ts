@@ -3,26 +3,16 @@ import { enviarMensagem } from '../_lib/evolution'
 import { buscarOuCriarSessao, adicionarMensagemHistorico, atualizarSessao } from '../_lib/session'
 import { gerarResposta } from '../_lib/agent'
 
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY!
 const NUMERO_GIORGIO = '5573999693548'
 
 export async function POST(request: NextRequest) {
   try {
     const apikey = request.headers.get('apikey')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const allHeaders = Object.fromEntries((request.headers as any).entries())
-    console.log('[Webhook] Headers recebidos:', JSON.stringify(allHeaders))
-    console.log('[Webhook] apikey header:', apikey)
-    console.log('[Webhook] EVOLUTION_API_KEY env:', process.env.EVOLUTION_API_KEY?.substring(0, 10))
-    console.log('[Webhook] EVOLUTION_INSTANCE_TOKEN env:', process.env.EVOLUTION_INSTANCE_TOKEN?.substring(0, 10))
-
-    // Temporariamente sem validação para debug
-    // if (apikey !== EVOLUTION_API_KEY && apikey !== EVOLUTION_INSTANCE_TOKEN) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    if (!apikey || (apikey !== process.env.EVOLUTION_API_KEY && apikey !== process.env.EVOLUTION_INSTANCE_TOKEN)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const body = await request.json()
-    console.log('[Webhook] Evento recebido:', JSON.stringify(body, null, 2))
 
     // Filtra apenas mensagens recebidas (não enviadas pelo bot)
     const evento = body?.event
@@ -45,7 +35,6 @@ export async function POST(request: NextRequest) {
                   mensagem.message?.extendedTextMessage?.text ||
                   ''
     const nomeContato = mensagem.pushName || null
-    console.log('[Webhook] Telefone:', telefone, '| Texto:', texto, '| FromMe:', mensagem.key?.fromMe)
 
     if (!telefone || !texto.trim()) return NextResponse.json({ ok: true })
 
