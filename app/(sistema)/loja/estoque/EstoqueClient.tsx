@@ -84,22 +84,6 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
         </div>
       </div>
 
-      {/* Cards resumo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '1.5rem' }}>
-        <div style={cardStyle}>
-          <div style={{ fontSize: '26px', fontWeight: '700', color: '#1a1a1a' }}>{dashboard.total_skus}</div>
-          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>SKUs ativos</div>
-        </div>
-        <div style={cardStyle}>
-          <div style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>{fmtReal(dashboard.valor_total_estoque)}</div>
-          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>Valor total em estoque</div>
-        </div>
-        <div style={{ ...cardStyle, background: dashboard.qtd_criticos > 0 ? '#fff8f2' : '#fff', borderColor: dashboard.qtd_criticos > 0 ? LARANJA : '#e5e3dc' }}>
-          <div style={{ fontSize: '26px', fontWeight: '700', color: dashboard.qtd_criticos > 0 ? VERMELHO : '#1a1a1a' }}>{dashboard.qtd_criticos}</div>
-          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>Produtos com estoque crítico</div>
-        </div>
-      </div>
-
       {/* Tabela posição de estoque */}
       <div style={{ ...cardStyle, marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
@@ -174,6 +158,22 @@ export default function EstoqueClient({ dashboard, produtos }: Props) {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Cards resumo */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '1.5rem' }}>
+        <div style={cardStyle}>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: '#1a1a1a' }}>{dashboard.total_skus}</div>
+          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>SKUs ativos</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>{fmtReal(dashboard.valor_total_estoque)}</div>
+          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>Valor total em estoque</div>
+        </div>
+        <div style={{ ...cardStyle, background: dashboard.qtd_criticos > 0 ? '#fff8f2' : '#fff', borderColor: dashboard.qtd_criticos > 0 ? LARANJA : '#e5e3dc' }}>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: dashboard.qtd_criticos > 0 ? VERMELHO : '#1a1a1a' }}>{dashboard.qtd_criticos}</div>
+          <div style={{ fontSize: '12px', color: '#888', marginTop: '3px' }}>Produtos com estoque crítico</div>
         </div>
       </div>
 
