@@ -1131,6 +1131,21 @@ export interface ChangelogEntry {
   created_at: string
 }
 
+// ── Agente WhatsApp ───────────────────────────────────────────────────────────
+
+export interface WhatsappSessao {
+  id:             string
+  telefone:       string
+  nome:           string | null
+  estado:         string
+  perfil_lead:    Record<string, unknown>
+  historico:      Array<{ role: 'user' | 'assistant'; content: string; ts: string }>
+  transferido_em: string | null
+  convertido_em:  string | null
+  criado_em:      string
+  atualizado_em:  string
+}
+
 // Formato compatível com GenericSchema do @supabase/ssr
 // A intersecção com Record<string, unknown> é necessária para satisfazer
 // o constraint Row: Record<string, unknown> do GenericTable do postgrest-js
@@ -1254,6 +1269,8 @@ export type Database = {
       enderecos:                   TableDef<Enderecos>
       // ── Admin (033) ────────────────────────────────────────────────────
       changelog_entries:           TableDef<ChangelogEntry>
+      // ── Agente WhatsApp ────────────────────────────────────────────────────
+      whatsapp_sessoes:            TableDef<WhatsappSessao>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
