@@ -8,12 +8,18 @@ const NUMERO_GIORGIO = '5573999693548'
 
 export async function POST(request: NextRequest) {
   try {
-    // Valida autenticação
-    const EVOLUTION_INSTANCE_TOKEN = process.env.EVOLUTION_INSTANCE_TOKEN!
     const apikey = request.headers.get('apikey')
-    if (apikey !== EVOLUTION_API_KEY && apikey !== EVOLUTION_INSTANCE_TOKEN) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allHeaders = Object.fromEntries((request.headers as any).entries())
+    console.log('[Webhook] Headers recebidos:', JSON.stringify(allHeaders))
+    console.log('[Webhook] apikey header:', apikey)
+    console.log('[Webhook] EVOLUTION_API_KEY env:', process.env.EVOLUTION_API_KEY?.substring(0, 10))
+    console.log('[Webhook] EVOLUTION_INSTANCE_TOKEN env:', process.env.EVOLUTION_INSTANCE_TOKEN?.substring(0, 10))
+
+    // Temporariamente sem validação para debug
+    // if (apikey !== EVOLUTION_API_KEY && apikey !== EVOLUTION_INSTANCE_TOKEN) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
     const body = await request.json()
     console.log('[Webhook] Evento recebido:', JSON.stringify(body, null, 2))
