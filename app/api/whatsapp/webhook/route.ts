@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('[Webhook] Evento recebido:', JSON.stringify(body, null, 2))
 
     // Filtra apenas mensagens recebidas (não enviadas pelo bot)
     const evento = body?.event
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
                   mensagem.message?.extendedTextMessage?.text ||
                   ''
     const nomeContato = mensagem.pushName || null
+    console.log('[Webhook] Telefone:', telefone, '| Texto:', texto, '| FromMe:', mensagem.key?.fromMe)
 
     if (!telefone || !texto.trim()) return NextResponse.json({ ok: true })
 
