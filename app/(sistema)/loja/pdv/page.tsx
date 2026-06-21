@@ -114,6 +114,7 @@ export default function PDVPage() {
         .from('loja_caixas')
         .select('id, usuario_id, valor_abertura, aberto_em, status')
         .eq('org_id', oid as string)
+        .eq('usuario_id', user.id)
         .eq('status', 'aberto')
         .maybeSingle()
 

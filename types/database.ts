@@ -499,6 +499,10 @@ export interface LojaCaixa {
   status:           LojaStatusCaixa
   aberto_em:        string
   fechado_em:       string | null
+  total_sangrias:         number
+  total_aportes:          number
+  saldo_final_especie:    number
+  total_saldo:            number
   status_conferencia:     string
   valor_fisico_especie:   number | null
   valor_fisico_debito:    number | null

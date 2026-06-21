@@ -1187,14 +1187,20 @@ export async function fecharCaixaLoja(
   const { error } = await admin
     .from('loja_caixas')
     .update({
-      status:             'fechado',
-      fechado_em:         resumo.fechado_em,
-      valor_fechamento:   totalVendas,
-      total_especie:      totalEspecie,
-      total_pix:          totalPix,
-      status_conferencia: 'aguardando',
+      status:              'fechado',
+      fechado_em:          new Date().toISOString(),
+      valor_fechamento:    totalVendas,
+      total_especie:       totalEspecie,
+      total_pix:           totalPix,
+      total_cartao:        totalCartaoDebito + totalCartaoCredito,
+      total_saldo:         totalSaldo,
+      total_sangrias:      totalSangrias,
+      total_aportes:       totalAportes,
+      saldo_final_especie: saldoFinalEspecie,
+      status_conferencia:  'aguardando',
     })
     .eq('id', caixaId)
+    .eq('usuario_id', operadorId)
 
   if (error) return { error: 'Erro ao fechar caixa.' }
 
