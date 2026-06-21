@@ -1,5 +1,33 @@
 # NexCoop — Changelog
 
+## [21/06/2026] — Landing page v2 + planejamento agente WhatsApp
+
+Arquivos criados:
+- app/(landing)/DemoInterativa.tsx — client component com 4 abas interativas (useState), extraído de page.tsx para permitir interatividade sem tornar a page um client component
+
+Arquivos modificados:
+- app/(landing)/page.tsx — reestruturação completa:
+  - Adicionados: Numeros(), Dores(), TelasReais(), Depoimento(), WppFlutuante()
+  - Modificados: Navbar() (fundo escuro, CTA WhatsApp), Hero() (foto bg + overlay, mockup genérico), MockupDashboard() (sem logo org, números expressivos), Funcionalidades() (foto bg + 12 módulos), PorQueNexCoop() (foto bg, 6 diferenciais), Planos() (removida linha isenção fiscal, plano Agro com CTA WhatsApp), CTAFinal() (foto bg, CTA WhatsApp único), Rodape() (4 colunas completas com links reais)
+  - Removidos: sistema de abas CSS com âncoras (substituído por useState no DemoInterativa.tsx)
+  - Constante WPP_URL = 'https://wa.me/5573999693548'
+  - Constante adicionada: DORES[] com 6 itens
+
+Assets adicionados em /public/images/:
+- bg-hero.jpg
+- bg-dores.jpg
+- bg-funcs.jpg
+- bg-depo.jpg
+- bg-cta.jpg
+
+Decisões registradas:
+- ManyChat descartado: WhatsApp exclusivo plano Pro
+- Agente WhatsApp: Evolution API + Claude Haiku + webhook Next.js
+- Número WhatsApp NexCoop: 73999693548
+- Razão social: Nexcoop Tecnologia Ltda (SLU)
+
+---
+
 ## [20/06/2026] — Cooperados: Fluxo 4 + Matrículas + Busca + Correções
 
 - **Cooperados:** Fluxo 4 — botão "Tornar Cooperado" em Configurações → Usuários para vincular usuário existente como cooperado

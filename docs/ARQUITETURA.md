@@ -53,6 +53,9 @@
 - Supabase Storage: documentos, logos, manuais
 - TradingView widgets: symbol-overview (não mini-symbol-overview)
 - Stripe: modo teste ativo
+- Evolution API: provedor WhatsApp Business via QR Code, self-host no Railway. Webhook aponta para /api/whatsapp/webhook. Variáveis: EVOLUTION_API_URL, EVOLUTION_API_KEY. (planejado — implementação na próxima sessão)
+- WhatsApp NexCoop: número 73999693548, conectado via Evolution API
+- Meta Business Manager: conta criada, Instagram conectado, WhatsApp pendente de CNPJ
 
 ## Modelo Produtor/Cooperado/Usuário
 

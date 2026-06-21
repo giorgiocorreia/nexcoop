@@ -9,51 +9,71 @@
 - **IA:** claude-haiku-4-5-20251001 via ANTHROPIC_API_KEY
 - **Claude Code:** `claude --dangerously-skip-permissions`
 
-## Estado atual (20/06/2026)
+## Estado atual (21/06/2026)
 
-### Cooperados / Cotas (migrations 045 + 046 aplicadas)
-- Dois tipos de cota: Plena (voto individual, 100% sobras) e Colaboradora (voto via grupo, 10% sobras)
-- Cooperado pode ter ambas (110% sobras)
-- Grupos de colaboradores por org (grupos_colaboradores): com ou sem CNPJ, criação inline no cadastro de cota
-- Representantes de grupo: 1 a cada 10 membros, alerta automático, notificação persistida
-- Cota plena: quantidade variável; colaboradora: sempre quantidade 1
-- quota_parte em cooperados sincronizado via trigger
-- Pagamentos: tabela cota_pagamentos com formas dinheiro/pix/cartao/promessa
-- Parcelas com data de vencimento para promessas
-- Status automático: proposta/ativo → probatório (1º pagamento parcial), probatório → ativo (quitação total via confirmação)
-- Inadimplência: parcelas vencidas → cooperado.status = 'inadimplente' (verificado via verificarInadimplencia() no acesso ao dashboard)
-- Recibo térmico PDF 80mm gerado automaticamente após registro de pagamento; botão reimprimir no histórico
-- Nomenclatura dinâmica: cooperados (cooperativa) / filiados (associação) via tipoOrg prop
-- Tela /configuracoes/grupos para gerenciar grupos de colaboradores
-- Cards de inadimplência e capital a receber no dashboard admin
+### Landing Page — v2 concluída
 
-### Modelo Membro/Produtor/Usuário
+Reestruturação completa de app/(landing)/page.tsx e criação de app/(landing)/DemoInterativa.tsx.
 
-**Fluxo 4 implementado (20/06/2026):** Vincular usuário existente como cooperado via botão "Tornar Cooperado" em Configurações → Usuários. Aparece para qualquer usuário sem cooperado vinculado. Modal com campos: matrícula (gerada automaticamente AANNNN por org), data admissão, quota parte, status, CAF, DAP. Server action `vincularUsuarioComoCooperado()` em `lib/cooperados/actions.ts`. Badge "✓ Cooperado" para usuários já vinculados. Fix serialização: `usuariosComCooperado` passado como `string[]` (não Set) do Server Component para Client Component.
+Nova ordem de seções:
+1. Navbar — fundo #042C53, CTA WhatsApp verde
+2. Hero — foto bg-hero.jpg + overlay, mockup dashboard genérico
+3. Números — 284+ filiados, 13 telas contábeis, 7 dias, 100% nuvem
+4. Clientes — componente existente sem alteração
+5. Dores da presidência — 6 cards dor→resolução (NOVA)
+6. Funcionalidades — card contábil destaque + 12 módulos
+7. Telas Reais — 4 mockups do sistema sem logo de org (NOVA)
+8. Demo interativa — client component, 4 abas com useState
+9. Por que NexCoop — 6 diferenciais sobre foto de fundo
+10. Depoimento — João Matheus, Presidente COOPAIBI, com logo
+11. Planos — 4 planos + Enterprise, sem linha "isenção fiscal"
+12. CTA Final — foto de fundo, CTA único WhatsApp
+13. Rodapé — 4 colunas completas
+14. Botão WhatsApp flutuante — position fixed, canto inferior direito
 
-**Matrículas COOPAIBI:** 26001–26014 atribuídas manualmente. Próxima automática: 26015. Formato AANNNN, sequencial por org, índices em `cooperados(organizacao_id)` e `cooperados(organizacao_id, numero_matricula)` — migration 047.
+Fotos de fundo salvas em /public/images/:
+- bg-hero.jpg, bg-dores.jpg, bg-funcs.jpg, bg-depo.jpg, bg-cta.jpg
 
-**Busca cooperados:** filtro de texto busca nome/email; filtro numérico busca CPF (separação por tipo de caractere).
+CTA único em toda a página: https://wa.me/5573999693548
+Número WhatsApp NexCoop: 73999693548
 
-**Bugs corrigidos:** breadcrumb `/cooperados` no padrão NexCoop / Cooperados; breadcrumb detalhe "← Cooperados" dinâmico por tipo org; layout linha usuário em 2 linhas para evitar espremimento; `sites/` excluído do `tsconfig.json`; `nodemailer` instalado; `force-dynamic` em cooperados/page.tsx.
+### Razão Social
+Nexcoop Tecnologia Ltda — escolhida, SLU no Simples Nacional, em abertura.
+- Verificar disponibilidade: juceb.ba.gov.br
+- CNPJ necessário para verificação Meta Business Manager
 
-### Em andamento
-- Loja Fase 6: infraestrutura fiscal completa, emissão NF-e bloqueada aguardando contador
-- Comercialização: dashboard com cotações funcionando
+### Meta Business Manager
+- Conta criada com perfil pessoal Giorgio Correia
+- Instagram conectado
+- WhatsApp pendente — aguarda CNPJ para verificação completa
+
+### Agente WhatsApp — planejado
+Decisão tomada: Evolution API (Railway, gratuito) + Claude Haiku + webhook Next.js.
+ManyChat descartado — WhatsApp exclusivo do plano Pro pago.
+
+Fluxo planejado:
+Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/webhook → Claude Haiku → resposta automática → se pedir humano → notifica Giorgio
+
+Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
 ### Próxima sessão
-- Verificar cotações no dashboard Comercialização (build ok, não confirmado visualmente)
-- Fluxo de saque Comercialização (chat dedicado)
-- Migração multi-org (chat dedicado — ANTES do segundo cliente)
+1. Chat dedicado: "NexCoop — Agente WhatsApp Evolution API"
+   - Subir Evolution API no Railway
+   - Conectar número 73999693548 via QR Code
+   - Criar rota /api/whatsapp/webhook
+   - Montar prompt do agente com contexto NexCoop
+   - Lógica de transferência para humano
+   - Deploy e teste
+2. Verificar landing page v2 no browser após deploy
+3. Migração multi-org (chat dedicado — ANTES do segundo cliente)
 
 ### Caixa aberto COOPAIBI
 - ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
 
-### Pendente do contador (Marcos/Contabahia — mrogerio@contabahia.com.br)
-- CSC ID e Token NFC-e
-- NCMs dos produtos da loja
-- Regime tributário
-- CSTs ICMS/PIS/COFINS
+### Pendências externas
+- Marcos/Contabahia: CSC ID/Token NFC-e, NCMs, regime tributário, CSTs (inalterado)
+- Abertura Nexcoop Tecnologia Ltda (novo)
+- CNPJ para verificação Meta Business Manager (novo)
 
 ## Workflow desta sessão
 1. Giorgio descreve → Claude planeja → Claude Code executa

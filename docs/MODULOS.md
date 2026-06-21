@@ -73,6 +73,25 @@
 
 **Matrículas:** formato AANNNN, sequencial por org. COOPAIBI: 26001–26014 manuais, próxima automática 26015.
 
+## Agente WhatsApp (planejado)
+
+- **Status:** não iniciado
+- **Descrição:** bot de primeiro atendimento via WhatsApp com IA (Claude Haiku), qualificação de leads e transferência para humano
+- **Stack:** Evolution API (Railway) + /api/whatsapp/webhook (Next.js) + Claude Haiku
+- **Número:** 73999693548
+- **Script definido:** 3 opções de menu (conhecer sistema / ver planos / falar com equipe)
+- **Próxima ação:** chat dedicado "NexCoop — Agente WhatsApp Evolution API"
+
+## API Routes planejadas
+
+- POST /api/whatsapp/webhook — recebe eventos da Evolution API, processa com Claude Haiku, retorna resposta ao prospect. Lógica de transferência para humano via notificação quando prospect solicitar.
+
+## Variáveis de ambiente
+
+- EVOLUTION_API_URL — URL da instância Evolution API no Railway
+- EVOLUTION_API_KEY — Chave de autenticação Evolution API
+- WHATSAPP_NUMBER=5573999693548
+
 ## Roadmap crítico
 
 1. **Migração multi-org** (ANTES do segundo cliente): `usuarios.organizacao_id` (1:1) → `usuario_organizacoes` (many-to-many). ~70 arquivos, RLS completa. Abrir chat dedicado.
