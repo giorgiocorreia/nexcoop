@@ -9,8 +9,9 @@ const NUMERO_GIORGIO = '5573999693548'
 export async function POST(request: NextRequest) {
   try {
     // Valida autenticação
+    const EVOLUTION_INSTANCE_TOKEN = process.env.EVOLUTION_INSTANCE_TOKEN!
     const apikey = request.headers.get('apikey')
-    if (apikey !== EVOLUTION_API_KEY) {
+    if (apikey !== EVOLUTION_API_KEY && apikey !== EVOLUTION_INSTANCE_TOKEN) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
