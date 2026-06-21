@@ -50,7 +50,7 @@ const DORES = [
   { icon: '💵', cor: '#E1F5EE', corIcon: '#0F6E56', titulo: 'Captação de recursos travada', desc: 'Editais passam despercebidos por falta de tempo ou ferramenta de monitoramento.', resolve: 'Radar IA + pipeline Kanban de oportunidades de financiamento' },
 ]
 
-const WPP_URL = 'https://wa.me/55SEUNUMERO'
+const WPP_URL = 'https://wa.me/5571999783992'
 
 // ─── CSS Responsivo Global ─────────────────────────────────────────────────
 function EstilosGlobais() {

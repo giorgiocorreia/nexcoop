@@ -16,7 +16,7 @@ const DEMO_FINANCEIRO = [
   { desc: 'Material de escritório', valor: '-R$ 380', status: 'Pago', positivo: false },
 ]
 
-const WPP_URL = 'https://wa.me/55SEUNUMERO'
+const WPP_URL = 'https://wa.me/5571999783992'
 
 export default function DemoInterativa() {
   const [aba, setAba] = useState<'dashboard' | 'filiados' | 'financeiro' | 'assembleia'>('dashboard')
