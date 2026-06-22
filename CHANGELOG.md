@@ -1,5 +1,24 @@
 # NexCoop — Changelog
 
+## [21/06/2026] — Loja Agropecuária: Entradas NF-e
+
+### Migration
+- 044: ALTER TABLE loja_compras ADD COLUMN chave_acesso_nfe, serie_nfe, data_emissao_nfe, emitente_nfe, cnpj_emitente, valor_nfe, status_nfe
+
+### Arquivos criados/modificados
+- `app/(sistema)/loja/entradas/page.tsx` — criado
+- `app/(sistema)/loja/entradas/EntradasNFeClient.tsx` — criado
+- `app/(sistema)/loja/entradas/actions.ts` — criado (listarEntradasNFe, kpisEntradasNFe, consultarNFeNaSEFAZ, vincularNFe)
+- `app/(sistema)/loja/LojaHub.tsx` — card "Entradas NF-e" ativado na aba Compras
+
+### Decisões técnicas
+- Consulta SEFAZ via Focus NFe homologação (endpoint /v2/nfe/{chave})
+- status_nfe com CHECK constraint: 'com_chave' | 'sem_chave' | 'sem_nota'
+- Compras de fornecedores informais nascem como 'sem_nota' (sem ação disponível)
+- Dados da NF-e salvos localmente após vinculação (sem re-consulta SEFAZ no modal Ver)
+
+---
+
 ## [21/06/2026] — Landing page v2 + planejamento agente WhatsApp
 
 Arquivos criados:

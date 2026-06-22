@@ -22,11 +22,21 @@
 | 041 | cartao_nsu, cartao_autorizacao, pix_identificador, desconto_total, pago_saldo em loja_vendas |
 | 042 | status_conferencia, valor_fisico_*, conferido_por, conferido_em em loja_caixas; pix_nome_pagador em loja_vendas |
 | 043 | loja_unidades: remove CHECK fixo de loja_produtos.unidade, cria tabela dinâmica com 12 unidades padrão |
+| 044 | loja_compras: chave_acesso_nfe, serie_nfe, data_emissao_nfe, emitente_nfe, cnpj_emitente, valor_nfe, status_nfe |
 | 045 | grupos_colaboradores, cotas_cooperado (tipo_cota, grupo_id), grupo_representantes, triggers, RLS |
 | 046 | cota_pagamentos: formas de pagamento, parcelas, vencimentos, RLS |
 | 047 | índices de performance: cooperados(organizacao_id) e cooperados(organizacao_id, numero_matricula) |
 
 **Próxima migration:** 048
+
+### loja_compras — campos fiscais (migration 044)
+- `chave_acesso_nfe` TEXT — chave 44 dígitos
+- `serie_nfe` TEXT
+- `data_emissao_nfe` DATE
+- `emitente_nfe` TEXT — razão social do emitente
+- `cnpj_emitente` TEXT
+- `valor_nfe` NUMERIC(12,2)
+- `status_nfe` TEXT DEFAULT 'sem_chave' CHECK IN ('com_chave','sem_chave','sem_nota')
 
 ## Tabelas principais
 
@@ -48,7 +58,8 @@
 - `loja_produtos` — preco_normal, desconto_cooperado, desconto_cooperado_pct, unidade (string livre), ncm, cfop_saida
 - `loja_caixas` — status, valor_abertura, status_conferencia, valor_fisico_especie, valor_fisico_debito, valor_fisico_credito, conferido_por, conferido_em
 - `loja_lotes` — FIFO por data_validade
-- `loja_compras`, `loja_compra_itens`
+- `loja_compras` — chave_acesso_nfe, serie_nfe, data_emissao_nfe, emitente_nfe, cnpj_emitente, valor_nfe, status_nfe ('com_chave'|'sem_chave'|'sem_nota', default 'sem_chave')
+- `loja_compra_itens`
 - `loja_fornecedores`
 - `loja_sangrias`
 - `loja_estoque_movimentos`

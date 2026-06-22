@@ -11,6 +11,29 @@
 
 ## Estado atual (21/06/2026)
 
+### Loja Agropecuária — Entradas NF-e (21/06/2026)
+
+Migration 044 aplicada — campos fiscais em `loja_compras`:
+- `chave_acesso_nfe` TEXT
+- `serie_nfe` TEXT
+- `data_emissao_nfe` DATE
+- `emitente_nfe` TEXT
+- `cnpj_emitente` TEXT
+- `valor_nfe` NUMERIC(12,2)
+- `status_nfe` TEXT — 'com_chave' | 'sem_chave' | 'sem_nota' (default 'sem_chave')
+
+Arquivos implementados:
+- `app/(sistema)/loja/entradas/page.tsx` — server component com auth
+- `app/(sistema)/loja/entradas/EntradasNFeClient.tsx` — UI com KPIs, tabela filtrada, modal vincular (consulta SEFAZ), modal ver
+- `app/(sistema)/loja/entradas/actions.ts` — listarEntradasNFe, kpisEntradasNFe, consultarNFeNaSEFAZ, vincularNFe
+
+LojaHub atualizado: aba Compras exibe card "Entradas NF-e" → /loja/entradas
+
+Pendências abertas desta feature:
+- Campo status_nfe na tela Nova Compra (verificar se foi implementado)
+- Teste do endpoint Focus NFe em homologação para NF-e de terceiros
+- Ambiente de produção: variável FOCUS_NFE_TOKEN_HOMOLOGACAO deve ser substituída por FOCUS_NFE_TOKEN quando Marcos liberar dados reais
+
 ### Landing Page — v2 concluída
 
 Reestruturação completa de app/(landing)/page.tsx e criação de app/(landing)/DemoInterativa.tsx.

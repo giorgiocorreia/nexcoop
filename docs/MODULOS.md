@@ -17,7 +17,7 @@
 | Audit logs | ✅ Completo | — |
 | Gestão de usuários | ✅ Completo | 20/06/2026 |
 | Loja Agropecuária Fases 0–5 | ✅ Completo | 18/06/2026 |
-| Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 20/06/2026 |
+| Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 21/06/2026 |
 | Portal do Filiado | ❌ Planejado | — |
 | Fluxo de Saque / Vendas Comercialização | ❌ Planejado | — |
 
@@ -28,6 +28,7 @@
 - Migration 041: campos de pagamento completo em loja_vendas
 - Migration 042: conferência de caixa (status_conferencia, valor_fisico_*, conferido_por)
 - Migration 043: loja_unidades (unidades dinâmicas, remove CHECK fixo)
+- Migration 044: campos fiscais em loja_compras (chave_acesso_nfe, serie_nfe, data_emissao_nfe, emitente_nfe, cnpj_emitente, valor_nfe, status_nfe)
 - ModalNotaFiscal: UI completa no PDV pós-venda
 - Badge de nota no Rel. Vendas
 - ModalFechamentoCaixa: checklist com valores físicos (espécie, débito, crédito) + lista PIX
@@ -42,6 +43,16 @@
 - Cancelamento de compra com estorno de estoque
 - Edição inline de unidades
 - Botão Editar na listagem de produtos
+- Tela Entradas NF-e (/loja/entradas) — KPIs, tabela com status fiscal, modal vincular com consulta SEFAZ, modal ver dados salvos (21/06/2026)
+- LojaHub: aba Compras ativa com cards Nova Compra, Histórico e Entradas NF-e (21/06/2026)
+
+### Pendente no módulo
+- Campo status_nfe na tela Nova Compra (verificar se foi implementado)
+- Filtros por função nas relatórios (caixa_loja vê só suas vendas) — action existe, UI pendente
+- Relatórios A4 em PDF (vendas, estoque, compras)
+- Extrato conta corrente cooperado na Loja
+- Emissão NF-e/NFC-e real — bloqueado (aguarda Marcos: CSC, NCMs, CSTs, regime)
+- Teste endpoint Focus NFe homologação para NF-e de terceiros
 
 ### Bloqueado — aguardando contador (Marcos/Contabahia)
 - CSC ID e CSC Token NFC-e
