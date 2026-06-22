@@ -161,7 +161,7 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
           onClick={handleGerarZip}
           disabled={gerandoZip}
           style={{
-            marginTop: 16, padding: '10px 20px', fontSize: 13, fontWeight: 600,
+            marginTop: 16, padding: '8px 16px', fontSize: 13, fontWeight: 600,
             borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff',
             cursor: 'pointer', opacity: gerandoZip ? 0.6 : 1
           }}
