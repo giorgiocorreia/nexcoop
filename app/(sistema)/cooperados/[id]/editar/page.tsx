@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
+import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import type { StatusCooperado } from '@/types/database'
 
 const UFS = [
@@ -173,6 +174,14 @@ export default function EditarCooperadoPage() {
       setErro('Nome completo é obrigatório.')
       setAbaAtiva('pessoal')
       return
+    }
+    if (form.tipo === 'pessoa_fisica' && form.cpf) {
+      const erroCpf = cpfInvalidoMsg(form.cpf)
+      if (erroCpf) { setErro(erroCpf); setAbaAtiva('pessoal'); return }
+    }
+    if (form.tipo === 'pessoa_juridica' && form.representante_cpf) {
+      const erroCpf = cpfInvalidoMsg(form.representante_cpf)
+      if (erroCpf) { setErro(erroCpf); setAbaAtiva('pessoal'); return }
     }
     setSalvando(true)
     setErro('')

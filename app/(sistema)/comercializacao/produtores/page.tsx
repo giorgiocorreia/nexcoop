@@ -8,6 +8,7 @@ import {
   listarCooperadosSemProdutor
 } from '@/lib/comercializacao/produtores.actions'
 import { Btn } from '@/components/ui/Btn'
+import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 
 type Produtor = {
   id: string
@@ -115,6 +116,10 @@ export default function ProdutoresPage() {
 
   async function handleSalvar() {
     if (!form.nome) return
+    if (form.cpf) {
+      const erroCpf = cpfInvalidoMsg(form.cpf)
+      if (erroCpf) { alert(erroCpf); return }
+    }
     setStatus('salvando')
     try {
       const payload = {

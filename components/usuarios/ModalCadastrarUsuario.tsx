@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Btn } from '@/components/ui/Btn'
 import { criarUsuarioComCooperadoOpcional, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
+import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import type { FuncaoDisponivel } from '@/types/database'
 
 interface Props {
@@ -94,6 +95,10 @@ export default function ModalCadastrarUsuario({ organizacaoId, funcoes, nomeOrg,
     if (!nome.trim()) { setErro('Informe o nome completo.'); return }
     if (!email.trim()) { setErro('Informe o e-mail.'); return }
     if (!ehCooperado && !vinculo) { setErro('Selecione o vínculo.'); return }
+    if (cpf.trim()) {
+      const erroCpf = cpfInvalidoMsg(cpf)
+      if (erroCpf) { setErro(erroCpf); return }
+    }
     setErro('')
 
     startTransition(async () => {

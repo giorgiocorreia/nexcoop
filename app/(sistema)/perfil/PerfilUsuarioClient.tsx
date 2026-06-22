@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { salvarPerfil } from '@/lib/perfil/actions'
+import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 
 type Atividade = {
   id: string
@@ -135,6 +136,10 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
   const org = usuario.organizacoes
 
   async function handleSalvar() {
+    if (form.cpf.trim()) {
+      const erroCpf = cpfInvalidoMsg(form.cpf)
+      if (erroCpf) { setErro(erroCpf); return }
+    }
     setSalvando(true)
     setErro(null)
     try {
