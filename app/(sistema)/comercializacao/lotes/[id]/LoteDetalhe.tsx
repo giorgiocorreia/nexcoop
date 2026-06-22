@@ -277,11 +277,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_pago)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      {entrega.chave_nfe_entrada ? (
-                        <span style={{ fontSize: 11, color: '#1D9E75', fontWeight: 600 }}>✓ Com NF-e</span>
-                      ) : (
-                        <BotaoNfe movimentacao_id={entrega.id} />
-                      )}
+                      <BotaoNfe movimentacao_id={entrega.id} />
                     </td>
                   </tr>
                 )
