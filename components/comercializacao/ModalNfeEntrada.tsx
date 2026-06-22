@@ -4,7 +4,7 @@
 // Modal pós-entrega: pergunta se deseja emitir NF-e agora
 // Também exporta BotaoNfe para uso no diário de operações
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { emitirNfeEntradaAction, getNfeStatus, getCotacaoParaModal } from '@/lib/comercializacao/nfe.actions'
 import { Btn } from '@/components/ui/Btn'
 
@@ -260,6 +260,21 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
   >('idle')
   const [danfe_url, setDanfeUrl] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function verificarStatus() {
+      try {
+        const nota = await getNfeStatus(movimentacao_id)
+        if (nota?.status === 'autorizada') {
+          setDanfeUrl((nota.danfe_url as string | null) ?? null)
+          setNfeStatus('autorizada')
+        } else if (nota?.status === 'processando') {
+          setNfeStatus('emitindo')
+        }
+      } catch {}
+    }
+    verificarStatus()
+  }, [movimentacao_id])
 
   async function verificarEAbrirNfe() {
     if (nfeStatus === 'autorizada' && danfe_url) {
