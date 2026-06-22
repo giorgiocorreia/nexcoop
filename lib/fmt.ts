@@ -7,4 +7,7 @@ export const fmt = {
 
   data: (v: string | null | undefined) =>
     v ? new Date(v).toLocaleDateString('pt-BR') : '—',
+
+  pct: (v: number | null | undefined) =>
+    `${(v ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%`,
 }
