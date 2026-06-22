@@ -185,7 +185,35 @@ export default function LojaHub({ totalProdutos, totalFornecedores, estoqueBaixo
         <AbaVazia label="Controle de Estoque" icone="📊" />
       )}
       {abaAtiva === 'compras' && (
-        <AbaVazia label="Compras e Entradas" icone="🧾" />
+        <div>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#1a1a1a', marginBottom: '1rem', marginTop: 0 }}>
+            Módulos de Compras e Fiscal
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {([
+              {
+                titulo:    'Nova Compra',
+                descricao: 'Registre entradas de mercadorias de fornecedores.',
+                icone:     '🛒',
+                href:      '/loja/compras/nova',
+              },
+              {
+                titulo:    'Histórico de Compras',
+                descricao: 'Consulte todas as compras realizadas e seus lotes.',
+                icone:     '📋',
+                href:      '/loja/compras',
+              },
+              {
+                titulo:    'Entradas NF-e',
+                descricao: 'Vincule chaves de acesso da SEFAZ às compras registradas.',
+                icone:     '📄',
+                href:      '/loja/entradas',
+              },
+            ] as ModuloCard[]).map(card => (
+              <CardModulo key={card.titulo} card={card} onClick={() => router.push(card.href)} />
+            ))}
+          </div>
+        </div>
       )}
       {abaAtiva === 'caixa' && (
         <AbaVazia label="Caixa" icone="💰" />
