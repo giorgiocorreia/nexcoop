@@ -20,9 +20,12 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false })),
   ], [entregasDoLote, entregasDisponiveis])
 
-  const [selecionados, setSelecionados] = useState<Set<string>>(
-    () => new Set(entregasDoLote.map((e: any) => e.id))
-  )
+  const [selecionados, setSelecionados] = useState<Set<string>>(() => {
+    // Se lote já tem entregas vinculadas (aberto/em_venda), pré-seleciona elas
+    // Se rascunho, pré-seleciona todas as disponíveis
+    const base = entregasDoLote.length > 0 ? entregasDoLote : entregasDisponiveis
+    return new Set(base.map((e: any) => e.id))
+  })
 
   const kpis = useMemo(() => {
     const sel = todasEntregas.filter(e => selecionados.has(e.id))
