@@ -183,3 +183,9 @@ export async function emitirNfeSaidaAction(vendaId: string): Promise<{
   await supabase.from('vendas_externas').update({ status_nfe: 'erro' } as any).eq('id', vendaId)
   return { sucesso: false, erro: motivo }
 }
+
+import { gerarZipEEnviarEmail } from '@/lib/comercializacao/zip-lote'
+
+export async function gerarZipLoteAction(loteId: string) {
+  return gerarZipEEnviarEmail(loteId)
+}

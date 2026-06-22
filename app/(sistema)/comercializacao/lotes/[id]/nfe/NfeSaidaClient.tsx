@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { emitirNfeSaidaAction } from './actions'
+import { emitirNfeSaidaAction, gerarZipLoteAction } from './actions'
 import { fmt } from '@/lib/fmt'
 
 export default function NfeSaidaClient({ lote, venda, vendaId }: {
@@ -13,6 +13,8 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
   const router = useRouter()
   const [emitindo, setEmitindo] = useState(false)
   const [resultado, setResultado] = useState<{ sucesso: boolean; chave_nfe?: string; danfe_url?: string; erro?: string } | null>(null)
+  const [gerandoZip, setGerandoZip] = useState(false)
+  const [zipGerado, setZipGerado] = useState(false)
 
   const comprador = venda?.compradores
 
@@ -26,6 +28,31 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
       setResultado({ sucesso: false, erro: e.message })
     } finally {
       setEmitindo(false)
+    }
+  }
+
+  async function handleGerarZip() {
+    setGerandoZip(true)
+    try {
+      const res = await gerarZipLoteAction(lote.id)
+      if (res.sucesso) {
+        setZipGerado(true)
+        if (res.zipBase64) {
+          const blob = new Blob([Buffer.from(res.zipBase64, 'base64')], { type: 'application/zip' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `lote_${lote.codigo}.zip`
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+      } else {
+        alert('Erro ao gerar ZIP: ' + res.erro)
+      }
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setGerandoZip(false)
     }
   }
 
@@ -127,6 +154,20 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
         </button>
       ) : (
         <div style={{ color: '#888', fontSize: 13 }}>Nenhuma venda vinculada a este lote.</div>
+      )}
+
+      {(resultado?.sucesso || venda?.status_nfe === 'autorizada') && (
+        <button
+          onClick={handleGerarZip}
+          disabled={gerandoZip}
+          style={{
+            marginTop: 16, padding: '10px 20px', fontSize: 13, fontWeight: 600,
+            borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff',
+            cursor: 'pointer', opacity: gerandoZip ? 0.6 : 1
+          }}
+        >
+          {gerandoZip ? '⏳ Gerando ZIP...' : zipGerado ? '✅ ZIP enviado — Baixar novamente' : '📦 Gerar ZIP + Enviar por email'}
+        </button>
       )}
     </div>
   )

@@ -16,10 +16,12 @@ export async function enviarEmail({
   to,
   subject,
   html,
+  attachments,
 }: {
   to: string
   subject: string
   html: string
+  attachments?: { filename: string; content: Buffer }[]
 }): Promise<void> {
   const transporter = getTransporter()
   await transporter.sendMail({
@@ -27,5 +29,6 @@ export async function enviarEmail({
     to,
     subject,
     html,
+    attachments,
   })
 }
