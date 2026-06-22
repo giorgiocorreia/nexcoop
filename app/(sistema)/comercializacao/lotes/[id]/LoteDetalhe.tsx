@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { confirmarComposicaoLote, fecharLote, criarVendaExterna } from '../actions'
+import { BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 import { fmt } from '@/lib/fmt'
 
 export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis, compradores }: {
@@ -279,7 +280,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                       {entrega.chave_nfe_entrada ? (
                         <span style={{ fontSize: 11, color: '#1D9E75', fontWeight: 600 }}>✓ Com NF-e</span>
                       ) : (
-                        <span style={{ fontSize: 11, color: '#E07B30' }}>Sem NF-e</span>
+                        <BotaoNfe movimentacao_id={entrega.id} />
                       )}
                     </td>
                   </tr>
