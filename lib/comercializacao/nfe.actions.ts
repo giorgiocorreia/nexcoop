@@ -4,13 +4,47 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getUsuarioLogado } from '@/lib/auth'
 import { emitirNfeEntrada, consultarNfeEntrada } from '@/lib/focusnfe/emitir-nfe-entrada'
 
-export async function emitirNfeEntradaAction(movimentacao_id: string) {
+export async function emitirNfeEntradaAction(
+  movimentacao_id: string,
+  preco_unitario_override?: number
+) {
   const usuario = await getUsuarioLogado()
   const resultado = await emitirNfeEntrada({
     movimentacao_id,
     organizacao_id: usuario.organizacao_id as string,
+    preco_unitario_override,
   })
   return resultado
+}
+
+export async function getCotacaoParaModal(movimentacao_id: string) {
+  const supabase = createAdminClient()
+  const usuario = await getUsuarioLogado()
+
+  const { data: mov } = await supabase
+    .from('movimentacoes_conta')
+    .select('produto_id, created_at')
+    .eq('id', movimentacao_id)
+    .single()
+
+  if (!mov) return null
+
+  const dataMovimentacao = new Date(mov.created_at).toISOString().split('T')[0]
+
+  const { data: cotacao } = await supabase
+    .from('cotacoes')
+    .select('preco_cooperado, preco_externo')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+    .eq('produto_id', mov.produto_id as string)
+    .lte('data', dataMovimentacao)
+    .order('data', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return cotacao ? {
+    preco_cooperado: Number(cotacao.preco_cooperado),
+    preco_externo: Number(cotacao.preco_externo),
+  } : null
 }
 
 // Helper: monta URL completa para XML/DANFE retornados como path relativo

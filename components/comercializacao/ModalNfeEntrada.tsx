@@ -5,7 +5,7 @@
 // Também exporta BotaoNfe para uso no diário de operações
 
 import { useState } from 'react'
-import { emitirNfeEntradaAction, getNfeStatus } from '@/lib/comercializacao/nfe.actions'
+import { emitirNfeEntradaAction, getNfeStatus, getCotacaoParaModal } from '@/lib/comercializacao/nfe.actions'
 import { Btn } from '@/components/ui/Btn'
 
 // ─── Modal pós-entrega ────────────────────────────────────────────────────────
@@ -16,15 +16,36 @@ interface ModalNfeEntradaProps {
 }
 
 export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaProps) {
-  const [status, setStatus] = useState<'pergunta' | 'emitindo' | 'sucesso' | 'erro'>('pergunta')
+  const [status, setStatus] = useState<'pergunta' | 'preco' | 'emitindo' | 'sucesso' | 'erro'>('pergunta')
+  const [cotacoes, setCotacoes] = useState<{ preco_cooperado: number; preco_externo: number } | null>(null)
+  const [precoEscolhido, setPrecoEscolhido] = useState<'cooperado' | 'externo' | 'manual'>('externo')
+  const [precoManual, setPrecoManual] = useState('')
   const [danfe_url, setDanfeUrl] = useState<string | null>(null)
   const [chave_nfe, setChaveNfe] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  async function handleIrParaPreco() {
+    setStatus('preco')
+    try {
+      const cot = await getCotacaoParaModal(movimentacao_id)
+      setCotacoes(cot)
+      if (cot) setPrecoManual(cot.preco_externo.toFixed(2))
+    } catch {}
+  }
+
   async function handleEmitir() {
     setStatus('emitindo')
     try {
-      const resultado = await emitirNfeEntradaAction(movimentacao_id)
+      let preco: number | undefined
+      if (precoEscolhido === 'cooperado' && cotacoes) {
+        preco = cotacoes.preco_cooperado
+      } else if (precoEscolhido === 'externo' && cotacoes) {
+        preco = cotacoes.preco_externo
+      } else if (precoEscolhido === 'manual') {
+        preco = parseFloat(precoManual)
+      }
+
+      const resultado = await emitirNfeEntradaAction(movimentacao_id, preco)
       if (resultado.sucesso) {
         setDanfeUrl(resultado.danfe_url ?? null)
         setChaveNfe(resultado.chave_nfe ?? null)
@@ -46,7 +67,7 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
     }}>
       <div style={{
         background: '#fff', borderRadius: '16px', padding: '28px',
-        width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
+        width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
       }}>
 
         {/* Pergunta inicial */}
@@ -59,7 +80,7 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
               Deseja emitir a Nota Fiscal de Entrada (NF-e) agora?
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <Btn variante="marrom" icone="ti-file-invoice" onClick={handleEmitir}
+              <Btn variante="marrom" icone="ti-file-invoice" onClick={handleIrParaPreco}
                 style={{ width: '100%', justifyContent: 'center' }}>
                 Emitir NF-e agora
               </Btn>
@@ -71,16 +92,110 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
           </>
         )}
 
+        {/* Seleção de preço */}
+        {status === 'preco' && (
+          <>
+            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '16px' }}>
+              Qual preço usar na NF-e?
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              {/* Cooperado */}
+              <div
+                onClick={() => setPrecoEscolhido('cooperado')}
+                style={{
+                  padding: '12px 16px', borderRadius: '10px', cursor: 'pointer',
+                  border: `2px solid ${precoEscolhido === 'cooperado' ? '#92400e' : '#e5e3dc'}`,
+                  background: precoEscolhido === 'cooperado' ? '#fef3c7' : '#fff',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600 }}>Preço cooperado</div>
+                  <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: 2 }}>Para membros da cooperativa</div>
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#92400e' }}>
+                  {cotacoes ? `R$ ${cotacoes.preco_cooperado.toFixed(2)}/kg` : '—'}
+                </div>
+              </div>
+
+              {/* Externo */}
+              <div
+                onClick={() => setPrecoEscolhido('externo')}
+                style={{
+                  padding: '12px 16px', borderRadius: '10px', cursor: 'pointer',
+                  border: `2px solid ${precoEscolhido === 'externo' ? '#92400e' : '#e5e3dc'}`,
+                  background: precoEscolhido === 'externo' ? '#fef3c7' : '#fff',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600 }}>Preço externo</div>
+                  <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: 2 }}>Para produtores não cooperados</div>
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#92400e' }}>
+                  {cotacoes ? `R$ ${cotacoes.preco_externo.toFixed(2)}/kg` : '—'}
+                </div>
+              </div>
+
+              {/* Manual */}
+              <div
+                onClick={() => setPrecoEscolhido('manual')}
+                style={{
+                  padding: '12px 16px', borderRadius: '10px', cursor: 'pointer',
+                  border: `2px solid ${precoEscolhido === 'manual' ? '#92400e' : '#e5e3dc'}`,
+                  background: precoEscolhido === 'manual' ? '#fef3c7' : '#fff',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600 }}>Valor personalizado</div>
+                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: 2 }}>Informar manualmente</div>
+                  </div>
+                </div>
+                {precoEscolhido === 'manual' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={precoManual}
+                      onChange={e => setPrecoManual(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      placeholder="0,00"
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: '8px',
+                        border: '1px solid #d1d5db', fontSize: '14px', boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ fontSize: '12px', color: '#6b6b6b', marginBottom: '16px' }}>
+              Valor total da nota: <strong style={{ color: '#92400e' }}>será calculado na emissão</strong>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <Btn variante="cinza" onClick={() => setStatus('pergunta')}>Voltar</Btn>
+              <Btn
+                variante="marrom"
+                icone="ti-send"
+                onClick={handleEmitir}
+                disabled={precoEscolhido === 'manual' && (!precoManual || parseFloat(precoManual) <= 0)}
+              >
+                Emitir NF-e
+              </Btn>
+            </div>
+          </>
+        )}
+
         {/* Emitindo */}
         {status === 'emitindo' && (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
-            <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '4px' }}>
-              Emitindo NF-e...
-            </div>
-            <div style={{ fontSize: '13px', color: '#6b6b6b' }}>
-              Aguarde a autorização da SEFAZ
-            </div>
+            <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '4px' }}>Emitindo NF-e...</div>
+            <div style={{ fontSize: '13px', color: '#6b6b6b' }}>Aguarde a autorização da SEFAZ</div>
           </div>
         )}
 
@@ -88,9 +203,7 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
         {status === 'sucesso' && (
           <>
             <div style={{ fontSize: '32px', marginBottom: '12px', textAlign: 'center' }}>✅</div>
-            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', textAlign: 'center' }}>
-              NF-e autorizada
-            </div>
+            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', textAlign: 'center' }}>NF-e autorizada</div>
             {chave_nfe && (
               <div style={{
                 background: '#f8f7f4', border: '1px solid #e5e3dc', borderRadius: '8px',
@@ -103,16 +216,12 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {danfe_url && (
                 <a href={danfe_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                  <Btn variante="marrom" icone="ti-printer"
-                    style={{ width: '100%', justifyContent: 'center' }}>
+                  <Btn variante="marrom" icone="ti-printer" style={{ width: '100%', justifyContent: 'center' }}>
                     Imprimir DANFE
                   </Btn>
                 </a>
               )}
-              <Btn variante="cinza" onClick={onClose}
-                style={{ width: '100%', justifyContent: 'center' }}>
-                Fechar
-              </Btn>
+              <Btn variante="cinza" onClick={onClose} style={{ width: '100%', justifyContent: 'center' }}>Fechar</Btn>
             </div>
           </>
         )}
@@ -121,20 +230,15 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
         {status === 'erro' && (
           <>
             <div style={{ fontSize: '32px', marginBottom: '12px', textAlign: 'center' }}>❌</div>
-            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', textAlign: 'center' }}>
-              Erro ao emitir NF-e
-            </div>
+            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px', textAlign: 'center' }}>Erro ao emitir NF-e</div>
             <div style={{
               background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px',
               padding: '10px 12px', marginBottom: '16px', fontSize: '13px', color: '#991b1b'
             }}>
               {erro}
             </div>
-            <div style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '16px' }}>
-              Você pode tentar novamente pelo histórico de operações.
-            </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <Btn variante="cinza" onClick={handleEmitir}>Tentar novamente</Btn>
+              <Btn variante="cinza" onClick={() => setStatus('preco')}>Tentar novamente</Btn>
               <Btn variante="marrom" onClick={onClose}>Fechar</Btn>
             </div>
           </>

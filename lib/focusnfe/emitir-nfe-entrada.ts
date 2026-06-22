@@ -27,6 +27,7 @@ function sleep(ms: number) {
 interface EmitirNfeEntradaParams {
   movimentacao_id: string
   organizacao_id: string
+  preco_unitario_override?: number
 }
 
 interface FocusNfeResponse {
@@ -87,28 +88,34 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   const isCooperado = !!produtor.cooperado_id || produtor.tipo === 'cooperado'
   const cfop = isCooperado ? '1159' : '1102'
 
-  // 3. Buscar cotação vigente na data da movimentação
-  const dataMovimentacao = new Date(mov.created_at).toISOString().split('T')[0]
-  const { data: cotacao } = await supabase
-    .from('cotacoes')
-    .select('preco_cooperado, preco_externo')
-    .eq('organizacao_id', params.organizacao_id)
-    .eq('produto_id', mov.produto_id as any)
-    .lte('data', dataMovimentacao)
-    .order('data', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // 3. Determinar preço unitário
+  let preco_unitario: number
 
-  if (!cotacao) {
-    return { sucesso: false, erro: 'Cotação não encontrada para a data da entrega' }
-  }
+  if (params.preco_unitario_override && params.preco_unitario_override > 0) {
+    preco_unitario = params.preco_unitario_override
+  } else {
+    const dataMovimentacao = new Date(mov.created_at).toISOString().split('T')[0]
+    const { data: cotacao } = await supabase
+      .from('cotacoes')
+      .select('preco_cooperado, preco_externo')
+      .eq('organizacao_id', params.organizacao_id)
+      .eq('produto_id', mov.produto_id as any)
+      .lte('data', dataMovimentacao)
+      .order('data', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-  const preco_unitario = isCooperado
-    ? Number(cotacao.preco_cooperado)
-    : Number(cotacao.preco_externo)
+    if (!cotacao) {
+      return { sucesso: false, erro: 'Cotação não encontrada para a data da entrega' }
+    }
 
-  if (!preco_unitario || preco_unitario <= 0) {
-    return { sucesso: false, erro: 'Preço unitário inválido na cotação' }
+    preco_unitario = isCooperado
+      ? Number(cotacao.preco_cooperado)
+      : Number(cotacao.preco_externo)
+
+    if (!preco_unitario || preco_unitario <= 0) {
+      return { sucesso: false, erro: 'Preço unitário inválido na cotação' }
+    }
   }
 
   const quantidade_kg = Number(mov.quantidade_produto)
