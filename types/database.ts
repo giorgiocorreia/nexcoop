@@ -1066,7 +1066,7 @@ export interface NotaEntrega {
   organizacao_id:        string
   movimentacao_id:       string
   numero_sequencial:     number
-  status:                'rascunho' | 'emitida' | 'cancelada'
+  status:                'rascunho' | 'emitida' | 'cancelada' | 'autorizada' | 'processando' | 'rejeitada'
   snapshot:              Record<string, unknown>
   emitida_por:           string | null
   emitida_em:            string | null
@@ -1074,6 +1074,20 @@ export interface NotaEntrega {
   cancelada_por:         string | null
   motivo_cancelamento:   string | null
   created_at:            string | null
+  chave_nfe:             string | null
+  numero_nfe:            string | null
+  serie:                 string | null
+  xml_url:               string | null
+  danfe_url:             string | null
+  referencia:            string | null
+  motivo_rejeicao:       string | null
+  valor_unitario:        number | null
+  valor_total:           number | null
+  quantidade_kg:         number | null
+  cfop:                  string | null
+  produtor_id:           string | null
+  lote_id:               string | null
+  sessao_caixa_id:       string | null
 }
 
 export interface AporteSangria {
