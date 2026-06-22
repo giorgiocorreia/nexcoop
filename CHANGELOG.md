@@ -1,5 +1,38 @@
 # NexCoop — Changelog
 
+## [22/06/2026] — Comercialização: Lotes + NF-e entrada produção
+
+### Migrations
+- `049_lote_status_rascunho.sql`: adiciona status 'rascunho' ao CHECK de lotes.status
+
+### Arquivos modificados
+- `app/(sistema)/comercializacao/lotes/actions.ts` — `gerarLoteAutomatico` removida; `iniciarLote` criada (status rascunho, sem vínculo); `confirmarComposicaoLote` refatorada (desvincula tudo, vincula selecionados, promove para 'aberto'); `listarEntregasDisponiveis` e `listarEntregasDoLote` com `valor_pago` via join conversao por sessao_caixa_id + conta_id
+- `app/(sistema)/comercializacao/lotes/LotesLista.tsx` — botão "Iniciar lote", status 'rascunho' em STATUS_LABEL/STATUS_COLOR
+- `app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx` — seleção começa vazia no rascunho; botão muda entre "Confirmar lote" / "Atualizar composição"; "Fechar lote" só aparece quando aberto + seleção > 0; `BotaoNfe` em todas as entregas
+- `components/comercializacao/ModalNfeEntrada.tsx` — etapa de seleção de preço (cooperado/externo/manual); `useEffect` no `BotaoNfe` para verificar status ao montar
+- `lib/comercializacao/nfe.actions.ts` — `emitirNfeEntradaAction` com `preco_unitario_override`; nova action `getCotacaoParaModal`
+- `lib/focusnfe/emitir-nfe-entrada.ts` — suporte a `preco_unitario_override` (skip cotação quando informado)
+
+### Infra
+- `FOCUSNFE_AMBIENTE=producao` adicionado no Vercel (Production only)
+- CSC NFC-e produção: ID 1, token 2BF39D09-64CD-4545-850D-D25BAB7B3215
+- CSC NFC-e homologação: ID 1, token 1D4F937E-A986-44BA-8099-955413671F0B
+
+### Fixes
+- Join `movimentacoes_conta→contas_produtor→produtores` (sem FK direta)
+- Custo do lote via `movimentacoes_conta` tipo='conversao' por `sessao_caixa_id + conta_id`
+- `BotaoNfe` com `useEffect` verifica status ao montar (não exige clique para mostrar estado correto)
+- `params` assíncrono no Next.js 15 em `lotes/[id]/page.tsx`
+
+### Pendências registradas
+- Emitir NF-e Flávio + Gerson (CPF do Gerson com 10 dígitos — campo zerado no banco)
+- Validação CPF 11 dígitos em todos os campos do sistema
+- NF-e de saída (`vendas_externas`) — próxima sessão
+- Pacote ZIP XMLs para moageira — próxima sessão
+- CSC NFC-e configurar no código (NFCE_CSC_ID_PRODUCAO, NFCE_CSC_TOKEN_PRODUCAO)
+
+---
+
 ## [22/06/2026] — Comercialização: Lotes MVP
 
 ### Migration

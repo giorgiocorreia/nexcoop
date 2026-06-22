@@ -11,21 +11,24 @@
 
 ## Estado atual (22/06/2026)
 
-### Comercialização — Lotes MVP (22/06/2026)
+### Em andamento: Comercialização — Lotes MVP + NF-e entrada em produção (22/06/2026)
 
-Migration 048 criada (aplicar no Supabase SQL Editor):
-- `lotes`: safra_id/produto_id nullable, +produto_descricao, +data_fechamento
-- `movimentacoes_conta`: +lote_id (FK lotes), +chave_nfe_entrada, +xml_nfe_entrada
-- `vendas_externas`: +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
-- `compradores`: +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
-- `produtos`: +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca
+Migrations aplicadas: 048 (campos fiscais) + 049 (status 'rascunho' em lotes)
 
-Arquivos implementados:
-- `app/(sistema)/comercializacao/lotes/actions.ts` — 9 server actions (listar, gerar, compor, fechar, vender)
-- `app/(sistema)/comercializacao/lotes/page.tsx` + `LotesLista.tsx` — lista com "Gerar lote"
-- `app/(sistema)/comercializacao/lotes/[id]/page.tsx` + `LoteDetalhe.tsx` — KPIs tempo real, tabela tikável, salvar composição, fechar lote, painel venda
-- `lib/fmt.ts` — fmt.peso(), fmt.moeda(), fmt.data()
-- Sidebar: item "Lotes" ativo no submenu Comercialização
+Fluxo de lote refatorado para rascunho→aberto→em_venda:
+- `iniciarLote` cria lote com status 'rascunho' e peso 0 (sem vínculo imediato)
+- `confirmarComposicaoLote` desvincula tudo, vincula selecionados, recalcula peso, promove para 'aberto'
+- `fecharLote` muda para 'em_venda' com data_fechamento
+
+NF-e entrada em produção:
+- `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only)
+- `BotaoNfe` usa `useEffect` para verificar status ao montar (mostra estado correto sem clique)
+- Modal de emissão tem etapa de seleção de preço: cooperado / externo / manual
+- `emitirNfeEntradaAction` aceita `preco_unitario_override`; sem override, busca cotação vigente
+
+Custo do lote:
+- `valor_pago` via join `movimentacoes_conta` tipo='conversao' por `sessao_caixa_id + conta_id`
+- Não usa `valor_financeiro` da entrega diretamente
 
 Decisões de arquitetura:
 - Entrega de cacau vive em `movimentacoes_conta` (tipo='entrega'), não em `loja_compras`
@@ -103,16 +106,22 @@ Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/we
 Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
 ### Próximos passos
-1. **Aplicar migration 048 no Supabase SQL Editor** (obrigatório antes de testar lotes)
-2. **Tela /lotes/[id]/nfe — NF-e de saída** (próxima sessão): emissão via Focus NFe com dados do lote + comprador
-3. Migração multi-org (chat dedicado — ANTES do segundo cliente)
+1. **Emitir NF-e Flávio + Gerson** — CPF do Gerson pendente (10 dígitos no banco, campo zerado)
+2. **NF-e de saída para moageira** — tela `/lotes/[id]/nfe`, emissão via Focus NFe com dados do lote + comprador
+3. **Pacote ZIP XMLs para moageira** — download em lote dos XMLs de entrada do lote
+4. **Validação CPF 11 dígitos** em todos os campos do sistema (produtores, cooperados, usuários)
 
 ### Caixa aberto COOPAIBI
 - ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
 
+### Desbloqueado
+- `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only)
+- CSC NFC-e produção: ID 1, token 2BF39D09-64CD-4545-850D-D25BAB7B3215
+- CSC NFC-e homologação: ID 1, token 1D4F937E-A986-44BA-8099-955413671F0B
+
 ### Pendências externas
-- Marcos/Contabahia: CSC ID/Token NFC-e, NCMs, regime tributário, CSTs (inalterado)
 - CFOP/NCM do cacau: usar 5101/6101 + NCM 18010000 + CST ICMS 040 + CST PIS/COFINS 07 — confirmar com Marcos antes de emitir NF-e de saída real
+- CSC NFC-e: configurar no código (NFCE_CSC_ID_PRODUCAO, NFCE_CSC_TOKEN_PRODUCAO)
 - Abertura Nexcoop Tecnologia Ltda (em andamento)
 - CNPJ para verificação Meta Business Manager (aguarda abertura)
 
