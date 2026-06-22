@@ -792,6 +792,14 @@ export interface Produto {
   unidade:        TipoProdutoUnidade
   ativo:          boolean
   created_at:     string
+  // migration 048
+  ncm:                      string | null
+  cfop_saida_interna:       string | null
+  cfop_saida_interestadual: string | null
+  cst_icms:                 string | null
+  cst_pis:                  string | null
+  cst_cofins:               string | null
+  fator_saca:               number | null
 }
 
 export interface Cotacao {
@@ -896,6 +904,10 @@ export interface MovimentacaoConta {
   referencia_tipo:  string | null
   observacoes:      string | null
   created_at:       string
+  // migration 048
+  lote_id:          string | null
+  chave_nfe_entrada: string | null
+  xml_nfe_entrada:  string | null
 }
 
 export interface MovimentacaoEstoqueFisico {
@@ -969,24 +981,36 @@ export interface Comprador {
   telefone:       string | null
   ativo:          boolean
   created_at:     string
+  // migration 048
+  ie:          string | null
+  logradouro:  string | null
+  numero:      string | null
+  complemento: string | null
+  bairro:      string | null
+  cep:         string | null
+  municipio:   string | null
+  uf:          string | null
 }
 
 export interface Lote {
   id:             string
   organizacao_id: string
-  safra_id:       string
-  produto_id:     string
+  safra_id:       string | null
+  produto_id:     string | null
   codigo:         string
   peso_total_kg:  number
   status:         StatusLote
   observacoes:    string | null
   created_at:     string
+  // migration 048
+  produto_descricao: string | null
+  data_fechamento:   string | null
 }
 
 export interface VendaExterna {
   id:                       string
   organizacao_id:           string
-  safra_id:                 string
+  safra_id:                 string | null
   lote_id:                  string
   comprador_id:             string
   data_venda:               string
@@ -1001,6 +1025,13 @@ export interface VendaExterna {
   lancamento_id:            string | null
   observacoes:              string | null
   created_at:               string
+  // migration 048
+  chave_nfe:        string | null
+  numero_nfe:       string | null
+  serie_nfe:        string | null
+  status_nfe:       'pendente' | 'autorizada' | 'rejeitada' | 'cancelada' | null
+  xml_nfe:          string | null
+  data_emissao_nfe: string | null
 }
 
 export interface RateioEntrega {

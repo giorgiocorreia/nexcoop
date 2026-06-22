@@ -99,6 +99,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
         { label: 'Dashboard',    href: '/comercializacao',            icone: '📊' },
         { label: 'Cotações',     href: '/comercializacao/cotacoes',   icone: '📋' },
         { label: 'Produtores',   href: '/comercializacao/produtores', icone: '👨‍🌾' },
+        { label: 'Lotes',        href: '/comercializacao/lotes',      icone: '📦' },
         { label: 'Vendas',       href: '/comercializacao/vendas',     icone: '💰' },
         { label: 'Entregas',     href: '/comercializacao/entregas',   icone: '📦', em_breve: true },
         { label: 'Caixa',        href: '/comercializacao/caixa',      icone: '🗃', em_breve: true },
