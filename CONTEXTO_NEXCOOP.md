@@ -11,7 +11,7 @@
 
 ## Estado atual (22/06/2026)
 
-### Em andamento: Comercialização — Lotes MVP + NF-e entrada em produção (22/06/2026)
+### Em andamento: Comercialização — Lotes MVP + NF-e entrada/saída (22/06/2026)
 
 Migrations aplicadas: 048 (campos fiscais) + 049 (status 'rascunho' em lotes)
 
@@ -19,16 +19,39 @@ Fluxo de lote refatorado para rascunho→aberto→em_venda:
 - `iniciarLote` cria lote com status 'rascunho' e peso 0 (sem vínculo imediato)
 - `confirmarComposicaoLote` desvincula tudo, vincula selecionados, recalcula peso, promove para 'aberto'
 - `fecharLote` muda para 'em_venda' com data_fechamento
+- Pré-seleção inteligente: rascunho pré-seleciona todas as disponíveis; aberto/em_venda pré-seleciona as do lote
 
 NF-e entrada em produção:
 - `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only)
 - `BotaoNfe` usa `useEffect` para verificar status ao montar (mostra estado correto sem clique)
 - Modal de emissão tem etapa de seleção de preço: cooperado / externo / manual
 - `emitirNfeEntradaAction` aceita `preco_unitario_override`; sem override, busca cotação vigente
+- Rota `/api/nfe/sincronizar` reconcilia status com Focus NFe via POST `{nota_id, referencia}`
+- Middleware liberado para `/api/nfe` (sem auth requerida, igual a `/api/cron`)
+
+NF-e de saída:
+- Tela `/comercializacao/lotes/[id]/nfe?venda=<id>` criada (page + NfeSaidaClient + actions)
+- Emissão via Focus NFe: CFOP 5102, NCM 18010000, ICMS CST 41, PIS/COFINS CST 72
+- Testada em homologação: NF-e nº 7, R$5.451,06, Barry Callebaut — autorizada
+- Comprador Barry Callebaut cadastrado com endereço fiscal completo
+- Lote 001 fechado (status em_venda), vinculado à safra
 
 Custo do lote:
 - `valor_pago` via join `movimentacoes_conta` tipo='conversao' por `sessao_caixa_id + conta_id`
 - Não usa `valor_financeiro` da entrega diretamente
+
+Campos fiscais adicionados:
+- `compradores`: IE, logradouro, numero, bairro, cep, municipio, uf — UI + actions atualizados
+- `types/database.ts` → `NotaEntrega`: +14 campos fiscais, status agora inclui 'autorizada' | 'processando' | 'rejeitada'
+- `lib/fmt.ts`: adicionado `fmt.pct()`
+
+Sidebar:
+- Itens de gestão (Cotações, Lotes, Compradores, Vendas) restritos a admin
+- Operacional (Produtores, Caixa, NF-e Entrada) visível para financeiro/técnico/caixa_cacau
+
+Validação CPF:
+- `lib/utils/cpf.ts` com algoritmo de dígitos verificadores
+- Aplicado em 5 formulários: cooperados/novo, cooperados/editar, ModalCadastrarUsuario, produtores, perfil
 
 Decisões de arquitetura:
 - Entrega de cacau vive em `movimentacoes_conta` (tipo='entrega'), não em `loja_compras`
@@ -106,21 +129,29 @@ Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/we
 Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
 ### Próximos passos
-1. **Emitir NF-e Flávio + Gerson** — CPF do Gerson pendente (10 dígitos no banco, campo zerado)
-2. **NF-e de saída para moageira** — tela `/lotes/[id]/nfe`, emissão via Focus NFe com dados do lote + comprador
-3. **Pacote ZIP XMLs para moageira** — download em lote dos XMLs de entrada do lote
-4. **Validação CPF 11 dígitos** em todos os campos do sistema (produtores, cooperados, usuários)
+1. **Voltar FOCUSNFE_AMBIENTE=producao no Vercel** — foi alterado para homologação durante testes de saída; restaurar para produção
+2. **iniciarLote: obrigar seleção de safra** — campo safra obrigatório antes de criar rascunho
+3. **saldo_kg em contas_produtor** — campo calculado ou atualizado via trigger
+4. **KPI Custo total** — corrigir cálculo (usa valor_pago mas pode estar incorreto)
+5. **Módulo de resultado por safra** — DRE simplificado por safra
+6. **Tela Vender produto** — painel de venda no LoteDetalhe (fluxo criarVendaExterna)
+7. **Dashboard comercialização** — KPIs globais
+8. **Sincronização automática NF-e no BotaoNfe** — polling ou webhook Focus NFe
+9. **Separação FOCUSNFE_AMBIENTE por módulo** — loja vs comercialização podem precisar de ambientes diferentes
+10. **Gerson/Marcelo** — corrigir vínculo cooperado/produtor após fechamento do lote; CPF do Gerson com 10 dígitos
+11. **ZIP XMLs + PDF relatório para moageira** — download em lote dos XMLs de entrada
 
 ### Caixa aberto COOPAIBI
 - ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
 
 ### Desbloqueado
-- `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only)
-- CSC NFC-e produção: ID 1, token 2BF39D09-64CD-4545-850D-D25BAB7B3215
+- `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only) — temporariamente em homologação para testes NF-e saída
+- CSC NFC-e produção: ID 1, token 2BF39D09-64CD-4545-850D-D25BAB7B3215 — configurado no banco COOPAIBI
 - CSC NFC-e homologação: ID 1, token 1D4F937E-A986-44BA-8099-955413671F0B
+- NF-e de saída testada em homologação: autorizada nº 7, R$5.451,06, Barry Callebaut
 
 ### Pendências externas
-- CFOP/NCM do cacau: usar 5101/6101 + NCM 18010000 + CST ICMS 040 + CST PIS/COFINS 07 — confirmar com Marcos antes de emitir NF-e de saída real
+- CFOP/NCM do cacau: usar 5102 + NCM 18010000 + CST ICMS 41 + CST PIS/COFINS 72 (saída) — confirmar com Marcos antes de emitir em produção
 - CSC NFC-e: configurar no código (NFCE_CSC_ID_PRODUCAO, NFCE_CSC_TOKEN_PRODUCAO)
 - Abertura Nexcoop Tecnologia Ltda (em andamento)
 - CNPJ para verificação Meta Business Manager (aguarda abertura)

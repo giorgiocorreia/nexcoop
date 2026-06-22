@@ -1,5 +1,50 @@
 # NexCoop — Changelog
 
+## [22/06/2026] — Comercialização: NF-e saída, campos fiscais, sidebar, validação CPF
+
+### Arquivos criados
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/page.tsx` — Server Component NF-e saída (async params Next.js 15)
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/NfeSaidaClient.tsx` — UI com KPIs, destinatário, botão emitir, estados sucesso/erro
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/actions.ts` — `emitirNfeSaidaAction`: payload Focus NFe (CFOP 5102, NCM 18010000), polling autorização, salva chave/número/status na venda
+- `app/api/nfe/sincronizar/route.ts` — POST `{nota_id, referencia}` → consulta Focus NFe → atualiza `notas_entrega`
+- `lib/utils/cpf.ts` — `validarCPF` (dígitos verificadores) + `cpfInvalidoMsg`
+
+### Arquivos modificados
+- `app/(sistema)/comercializacao/compradores/page.tsx` — campos fiscais (IE, logradouro, numero, bairro, CEP com máscara, municipio, UF); modal alargado 560px com scroll; `mascaraCEP`
+- `lib/comercializacao/compradores.actions.ts` — `criarComprador` + `editarComprador` aceitam os 7 novos campos fiscais
+- `components/Sidebar.tsx` — itens de gestão (Cotações, Lotes, Compradores, Vendas) restritos a admin; item Compradores adicionado
+- `middleware.ts` — `/api/nfe` liberado da autenticação (igual a `/api/cron`)
+- `types/database.ts` — `NotaEntrega`: status + 'autorizada' | 'processando' | 'rejeitada'; +14 campos fiscais
+- `lib/fmt.ts` — adicionado `fmt.pct()`
+- `app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx` — pré-seleção inteligente (rascunho: todas disponíveis; aberto: só as do lote); `BotaoNfe` usa `entrega.movimentacao_id ?? entrega.id`
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/NfeSaidaClient.tsx` — URL DANFE usa variável `FOCUS_BASE_URL` via `urlCompleta`
+- `app/(sistema)/cooperados/novo/page.tsx` — validação CPF com dígitos verificadores (PF + representante PJ)
+- `app/(sistema)/cooperados/[id]/editar/page.tsx` — idem, com foco na aba 'pessoal' em caso de erro
+- `components/usuarios/ModalCadastrarUsuario.tsx` — validação CPF quando preenchido
+- `app/(sistema)/comercializacao/produtores/page.tsx` — validação CPF quando preenchido
+- `app/(sistema)/perfil/PerfilUsuarioClient.tsx` — validação CPF quando preenchido
+
+### Testes
+- NF-e de saída homologação: autorizada nº 7, R$5.451,06, Barry Callebaut (Lote 001 COOPAIBI)
+- `api/nfe/sincronizar`: duas NF-e de entrada reconciliadas com sucesso
+  - `ENT-3ad97dc2-558d99ec` → chave `NFe29260654305114000179550010000000021743108593`
+  - `ENT-3ad97dc2-db0dc8f5` → chave `NFe29260654305114000179550010000000031791514374`
+
+### Pendências registradas
+- Voltar FOCUSNFE_AMBIENTE=producao no Vercel
+- iniciarLote: obrigar seleção de safra
+- saldo_kg em contas_produtor
+- KPI Custo total corrigir cálculo
+- Módulo de resultado por safra
+- Tela Vender produto
+- Dashboard comercialização
+- Sincronização automática NF-e no BotaoNfe
+- Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercializacao)
+- Gerson/Marcelo: corrigir vínculo cooperado/produtor após lote; CPF Gerson 10 dígitos
+- ZIP XMLs + PDF relatório para moageira
+
+---
+
 ## [22/06/2026] — Comercialização: Lotes + NF-e entrada produção
 
 ### Migrations
