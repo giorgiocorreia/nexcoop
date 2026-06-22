@@ -20,7 +20,9 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false })),
   ], [entregasDoLote, entregasDisponiveis])
 
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  const [selecionados, setSelecionados] = useState<Set<string>>(
+    () => new Set(entregasDoLote.map((e: any) => e.id))
+  )
 
   const kpis = useMemo(() => {
     const sel = todasEntregas.filter(e => selecionados.has(e.id))
@@ -277,7 +279,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_pago)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      <BotaoNfe movimentacao_id={entrega.id} />
+                      <BotaoNfe movimentacao_id={entrega.movimentacao_id ?? entrega.id} />
                     </td>
                   </tr>
                 )
