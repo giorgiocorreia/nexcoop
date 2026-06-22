@@ -14,7 +14,6 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
   const [emitindo, setEmitindo] = useState(false)
   const [resultado, setResultado] = useState<{ sucesso: boolean; chave_nfe?: string; danfe_url?: string; erro?: string } | null>(null)
   const [gerandoZip, setGerandoZip] = useState(false)
-  const [zipGerado, setZipGerado] = useState(false)
 
   const comprador = venda?.compradores
 
@@ -36,7 +35,6 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
     try {
       const res = await gerarZipLoteAction(lote.id)
       if (res.sucesso) {
-        setZipGerado(true)
         if (res.zipBase64) {
           const blob = new Blob([Buffer.from(res.zipBase64, 'base64')], { type: 'application/zip' })
           const url = URL.createObjectURL(blob)
@@ -107,33 +105,42 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
       )}
 
       {/* Status NF-e */}
-      {venda?.status_nfe === 'autorizada' ? (
+      {(venda?.status_nfe === 'autorizada' || resultado?.sucesso) ? (
         <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 12, padding: '1.25rem', marginBottom: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: '#166534', marginBottom: 8 }}>✅ NF-e autorizada</div>
-          <div style={{ fontSize: 12, color: '#166534', marginBottom: 12, wordBreak: 'break-all' }}>
-            Chave: {venda.chave_nfe}
-          </div>
-          <a href={`https://homologacao.focusnfe.com.br/danfe/${venda.chave_nfe}`} target="_blank" rel="noreferrer">
-            <button style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#166534', color: '#fff', cursor: 'pointer' }}>
-              Imprimir DANFE
-            </button>
-          </a>
-        </div>
-      ) : resultado?.sucesso ? (
-        <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 12, padding: '1.25rem', marginBottom: 24 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#166534', marginBottom: 4 }}>✅ NF-e autorizada</div>
-          {resultado.chave_nfe && (
+          {(resultado?.chave_nfe || venda?.chave_nfe) && (
             <div style={{ fontSize: 12, color: '#166534', marginBottom: 12, wordBreak: 'break-all' }}>
-              Chave: {resultado.chave_nfe}
+              Chave: {resultado?.chave_nfe ?? venda?.chave_nfe}
             </div>
           )}
-          {resultado.danfe_url && (
-            <a href={resultado.danfe_url} target="_blank" rel="noreferrer">
-              <button style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#166534', color: '#fff', cursor: 'pointer' }}>
-                Imprimir DANFE
-              </button>
-            </a>
-          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {(resultado?.danfe_url || venda?.chave_nfe) && (
+              <a
+                href={resultado?.danfe_url ?? `https://${process.env.NEXT_PUBLIC_FOCUSNFE_AMBIENTE === 'producao' ? 'api' : 'homologacao'}.focusnfe.com.br/danfe/${venda?.chave_nfe}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                <button style={{
+                  padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+                  border: 'none', background: '#166534', color: '#fff', cursor: 'pointer'
+                }}>
+                  🖨️ Imprimir DANFE
+                </button>
+              </a>
+            )}
+            <button
+              onClick={handleGerarZip}
+              disabled={gerandoZip}
+              style={{
+                padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+                border: 'none', background: '#166534', color: '#fff', cursor: 'pointer',
+                opacity: gerandoZip ? 0.6 : 1
+              }}
+            >
+              {gerandoZip ? '⏳ Gerando...' : '📦 ZIP + Email'}
+            </button>
+          </div>
         </div>
       ) : resultado?.sucesso === false ? (
         <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 12, padding: '1.25rem', marginBottom: 24 }}>
@@ -156,19 +163,6 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
         <div style={{ color: '#888', fontSize: 13 }}>Nenhuma venda vinculada a este lote.</div>
       )}
 
-      {(resultado?.sucesso || venda?.status_nfe === 'autorizada') && (
-        <button
-          onClick={handleGerarZip}
-          disabled={gerandoZip}
-          style={{
-            marginTop: 16, padding: '8px 16px', fontSize: 13, fontWeight: 600,
-            borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff',
-            cursor: 'pointer', opacity: gerandoZip ? 0.6 : 1
-          }}
-        >
-          {gerandoZip ? '⏳ Gerando ZIP...' : zipGerado ? '✅ ZIP enviado — Baixar novamente' : '📦 Gerar ZIP + Enviar por email'}
-        </button>
-      )}
     </div>
   )
 }
