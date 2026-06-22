@@ -61,14 +61,21 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-      zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: '16px', padding: '28px',
-        width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
-      }}>
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+        zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+        pointerEvents: 'all',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: '16px', padding: '28px',
+          width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
+        }}
+      >
 
         {/* Pergunta inicial */}
         {status === 'pergunta' && (
