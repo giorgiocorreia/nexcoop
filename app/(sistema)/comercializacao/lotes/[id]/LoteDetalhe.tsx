@@ -242,16 +242,14 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Produtor</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Data</th>
                 <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Kg</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Sacas</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Kg líquido</th>
                 <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Valor pago</th>
                 <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 500, color: '#555' }}>NF-e entrada</th>
               </tr>
             </thead>
             <tbody>
               {todasEntregas.map((entrega: any) => {
-                const sel    = selecionados.has(entrega.id)
-                const sacas  = Math.floor((entrega.quantidade_produto ?? 0) / fatorSaca)
-                const resto  = (entrega.quantidade_produto ?? 0) % fatorSaca
+                const sel = selecionados.has(entrega.id)
                 return (
                   <tr
                     key={entrega.id}
@@ -277,7 +275,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', color: '#666' }}>
-                      {sacas > 0 ? `${sacas} sc` : ''}{resto > 0.001 ? ` +${fmt.peso(resto)}` : ''}
+                      {fmt.peso(entrega.quantidade_produto ?? 0)}
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_financeiro)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
