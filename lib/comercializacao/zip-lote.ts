@@ -52,6 +52,15 @@ export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: b
 
   if (!lote) return { sucesso: false, erro: 'Lote não encontrado' }
 
+  // 1b. Buscar nome da organização
+  const { data: org } = await supabase
+    .from('organizacoes')
+    .select('nome, nome_curto')
+    .eq('id', lote.organizacao_id)
+    .single()
+
+  const nomeOrg = org?.nome_curto ?? org?.nome ?? 'Cooperativa'
+
   // 2. IDs das movimentações do lote
   const { data: movs } = await supabase
     .from('movimentacoes_conta')
@@ -143,9 +152,9 @@ export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: b
 
   await enviarEmail({
     to: emailDestinatario,
-    subject: `NexCoop — XMLs ${nomeLote} — ${lote.produto_descricao} — ${dataHoje}`,
+    subject: `${nomeOrg} — Documentos Fiscais — Lote ${lote.codigo} — ${dataHoje}`,
     html: `
-      <h2>NexCoop — Documentos Fiscais</h2>
+      <h2>${nomeOrg} — Documentos Fiscais</h2>
       <p><strong>Lote:</strong> ${nomeLote}</p>
       <p><strong>Produto:</strong> ${lote.produto_descricao}</p>
       <p><strong>Data:</strong> ${dataHoje}</p>
@@ -155,7 +164,7 @@ export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: b
         <li>XML + DANFE da NF-e de saída</li>
         <li>Lista de cooperados (CSV)</li>
       </ul>
-      <p>— NexCoop</p>
+      <p>Atenciosamente,<br/><strong>${nomeOrg}</strong></p>
     `,
     attachments: [
       {
