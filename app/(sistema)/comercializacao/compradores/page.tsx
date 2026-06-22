@@ -11,6 +11,13 @@ type Comprador = {
   contato: string | null
   email: string | null
   telefone: string | null
+  ie: string | null
+  logradouro: string | null
+  numero: string | null
+  bairro: string | null
+  cep: string | null
+  municipio: string | null
+  uf: string | null
   ativo: boolean
 }
 
@@ -34,7 +41,14 @@ const formVazio = {
   cnpj: '',
   contato: '',
   email: '',
-  telefone: ''
+  telefone: '',
+  ie: '',
+  logradouro: '',
+  numero: '',
+  bairro: '',
+  cep: '',
+  municipio: '',
+  uf: 'BA'
 }
 
 function mascaraCNPJ(valor: string): string {
@@ -44,6 +58,11 @@ function mascaraCNPJ(valor: string): string {
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1/$2')
     .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+}
+
+function mascaraCEP(valor: string): string {
+  const digits = valor.replace(/\D/g, '').slice(0, 8)
+  return digits.replace(/(\d{5})(\d)/, '$1-$2')
 }
 
 function mascaraTelefone(valor: string): string {
@@ -94,7 +113,14 @@ export default function CompradoresPage() {
       cnpj: c.cnpj ? mascaraCNPJ(c.cnpj) : '',
       contato: c.contato ?? '',
       email: c.email ?? '',
-      telefone: c.telefone ? mascaraTelefone(c.telefone) : ''
+      telefone: c.telefone ? mascaraTelefone(c.telefone) : '',
+      ie: c.ie ?? '',
+      logradouro: c.logradouro ?? '',
+      numero: c.numero ?? '',
+      bairro: c.bairro ?? '',
+      cep: c.cep ? mascaraCEP(c.cep) : '',
+      municipio: c.municipio ?? '',
+      uf: c.uf ?? 'BA'
     })
     setAbrirModal(true)
   }
@@ -116,7 +142,14 @@ export default function CompradoresPage() {
         cnpj: form.cnpj ? form.cnpj.replace(/\D/g, '') : undefined,
         contato: form.contato || undefined,
         email: form.email || undefined,
-        telefone: form.telefone ? form.telefone.replace(/\D/g, '') : undefined
+        telefone: form.telefone ? form.telefone.replace(/\D/g, '') : undefined,
+        ie: form.ie || undefined,
+        logradouro: form.logradouro || undefined,
+        numero: form.numero || undefined,
+        bairro: form.bairro || undefined,
+        cep: form.cep ? form.cep.replace(/\D/g, '') : undefined,
+        municipio: form.municipio || undefined,
+        uf: form.uf || undefined
       }
       if (editando) {
         await editarComprador(editando.id, { ...payload, ativo: editando.ativo })
@@ -215,7 +248,7 @@ export default function CompradoresPage() {
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
         }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '480px', maxWidth: '95vw' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '560px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
 
             {/* Header modal com X */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -282,6 +315,72 @@ export default function CompradoresPage() {
                 <input value={form.email}
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+
+              {/* Endereço fiscal */}
+              <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#6b6b6b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Endereço fiscal
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Inscrição Estadual (IE)</label>
+                    <input value={form.ie}
+                      onChange={e => setForm(f => ({ ...f, ie: e.target.value }))}
+                      placeholder="Ex: 12345678"
+                      style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 3 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Logradouro</label>
+                      <input value={form.logradouro}
+                        onChange={e => setForm(f => ({ ...f, logradouro: e.target.value }))}
+                        placeholder="Rua, Av, Rod..."
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Número</label>
+                      <input value={form.numero}
+                        onChange={e => setForm(f => ({ ...f, numero: e.target.value }))}
+                        placeholder="S/N"
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 2 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Bairro</label>
+                      <input value={form.bairro}
+                        onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))}
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CEP</label>
+                      <input value={form.cep}
+                        placeholder="00000-000"
+                        onChange={e => setForm(f => ({ ...f, cep: mascaraCEP(e.target.value) }))}
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 3 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
+                      <input value={form.municipio}
+                        onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))}
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>UF</label>
+                      <input value={form.uf}
+                        maxLength={2}
+                        onChange={e => setForm(f => ({ ...f, uf: e.target.value.toUpperCase() }))}
+                        style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {editando && (

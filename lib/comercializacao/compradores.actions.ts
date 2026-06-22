@@ -22,6 +22,13 @@ export async function criarComprador(form: {
   contato?: string
   email?: string
   telefone?: string
+  ie?: string
+  logradouro?: string
+  numero?: string
+  bairro?: string
+  cep?: string
+  municipio?: string
+  uf?: string
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
@@ -38,6 +45,13 @@ export async function editarComprador(id: string, form: {
   contato?: string
   email?: string
   telefone?: string
+  ie?: string
+  logradouro?: string
+  numero?: string
+  bairro?: string
+  cep?: string
+  municipio?: string
+  uf?: string
   ativo?: boolean
 }) {
   const supabase = createAdminClient()
