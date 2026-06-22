@@ -1,27 +1,29 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { gerarLoteAutomatico } from './actions'
+import { iniciarLote } from './actions'
 import { fmt } from '@/lib/fmt'
 
 const STATUS_LABEL: Record<string, string> = {
+  rascunho: 'Rascunho',
   aberto: 'Aberto',
   em_venda: 'Em venda',
   entregue: 'Entregue',
 }
 
 const STATUS_COLOR: Record<string, string> = {
+  rascunho: '#888780',
   aberto: '#1D9E75',
   em_venda: '#E07B30',
-  entregue: '#888780',
+  entregue: '#555',
 }
 
 export default function LotesLista({ lotes }: { lotes: any[] }) {
   const router = useRouter()
 
-  async function handleGerarLote() {
+  async function handleIniciarLote() {
     try {
-      const lote = await gerarLoteAutomatico('Cacau amêndoa seca')
+      const lote = await iniciarLote('Cacau amêndoa seca')
       router.push(`/comercializacao/lotes/${lote.id}`)
     } catch (e: any) {
       alert(e.message)
@@ -36,16 +38,16 @@ export default function LotesLista({ lotes }: { lotes: any[] }) {
           <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>Formação e gestão de lotes para venda</p>
         </div>
         <button
-          onClick={handleGerarLote}
+          onClick={handleIniciarLote}
           style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
         >
-          + Gerar lote
+          + Iniciar lote
         </button>
       </div>
 
       {lotes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: '#888', fontSize: 14 }}>
-          Nenhum lote criado. Clique em "Gerar lote" para começar.
+          Nenhum lote criado. Clique em "Iniciar lote" para começar.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

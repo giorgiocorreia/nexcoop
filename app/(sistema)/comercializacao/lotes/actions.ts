@@ -68,7 +68,7 @@ export async function listarEntregasDoLote(loteId: string) {
   return data ?? []
 }
 
-export async function gerarLoteAutomatico(produtoDescricao: string) {
+export async function iniciarLote(produtoDescricao: string) {
   const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
 
@@ -84,73 +84,48 @@ export async function gerarLoteAutomatico(produtoDescricao: string) {
     ? String(parseInt(ultimoLote.codigo, 10) + 1).padStart(3, '0')
     : '001'
 
-  const { data: entregas, error: errEntregas } = await supabase
-    .from('movimentacoes_conta')
-    .select('id, quantidade_produto')
-    .eq('organizacao_id', orgId)
-    .eq('tipo', 'entrega')
-    .is('lote_id', null)
-
-  if (errEntregas) throw new Error(errEntregas.message)
-  if (!entregas || entregas.length === 0) throw new Error('Nenhuma entrega disponível para formar lote.')
-
-  const pesoTotal = entregas.reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
-
-  const { data: lote, error: errLote } = await supabase
+  const { data: lote, error } = await supabase
     .from('lotes')
     .insert({
       organizacao_id:    orgId,
       codigo:            proximoNumero,
       produto_descricao: produtoDescricao,
-      peso_total_kg:     pesoTotal,
-      status:            'aberto',
+      peso_total_kg:     0,
+      status:            'rascunho',
     } as any)
     .select()
     .single()
 
-  if (errLote) throw new Error(errLote.message)
-
-  const ids = entregas.map(e => e.id)
-  const { error: errUpdate } = await supabase
-    .from('movimentacoes_conta')
-    .update({ lote_id: lote.id } as any)
-    .in('id', ids)
-
-  if (errUpdate) throw new Error(errUpdate.message)
-
+  if (error) throw new Error(error.message)
   revalidatePath('/comercializacao/lotes')
   return lote
 }
 
 export async function confirmarComposicaoLote(
   loteId: string,
-  idsIncluidos: string[],
-  idsPreviamenteLigados: string[]
+  idsIncluidos: string[]
 ) {
   const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
 
-  const idsRemovidos  = idsPreviamenteLigados.filter(id => !idsIncluidos.includes(id))
-  const idsAdicionados = idsIncluidos.filter(id => !idsPreviamenteLigados.includes(id))
+  // 1. Desvincular todas que já estavam neste lote
+  await supabase
+    .from('movimentacoes_conta')
+    .update({ lote_id: null } as any)
+    .eq('lote_id', loteId)
+    .eq('organizacao_id', orgId)
 
-  if (idsRemovidos.length > 0) {
-    const { error } = await supabase
-      .from('movimentacoes_conta')
-      .update({ lote_id: null } as any)
-      .in('id', idsRemovidos)
-      .eq('organizacao_id', orgId)
-    if (error) throw new Error(error.message)
-  }
-
-  if (idsAdicionados.length > 0) {
+  // 2. Vincular apenas as selecionadas
+  if (idsIncluidos.length > 0) {
     const { error } = await supabase
       .from('movimentacoes_conta')
       .update({ lote_id: loteId } as any)
-      .in('id', idsAdicionados)
+      .in('id', idsIncluidos)
       .eq('organizacao_id', orgId)
     if (error) throw new Error(error.message)
   }
 
+  // 3. Recalcular peso_total_kg
   const { data: entregas } = await supabase
     .from('movimentacoes_conta')
     .select('quantidade_produto')
@@ -159,10 +134,14 @@ export async function confirmarComposicaoLote(
 
   const pesoTotal = (entregas ?? []).reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
 
-  await supabase
+  // 4. Atualizar peso e promover status para 'aberto'
+  const { error: errUpdate } = await supabase
     .from('lotes')
-    .update({ peso_total_kg: pesoTotal })
+    .update({ peso_total_kg: pesoTotal, status: 'aberto' } as any)
     .eq('id', loteId)
+    .eq('organizacao_id', orgId)
+
+  if (errUpdate) throw new Error(errUpdate.message)
 
   revalidatePath(`/comercializacao/lotes/${loteId}`)
 }

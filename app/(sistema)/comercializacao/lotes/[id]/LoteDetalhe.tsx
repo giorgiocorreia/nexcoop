@@ -19,9 +19,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false })),
   ], [entregasDoLote, entregasDisponiveis])
 
-  const [selecionados, setSelecionados] = useState<Set<string>>(
-    new Set(entregasDoLote.map((e: any) => e.id))
-  )
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
   const kpis = useMemo(() => {
     const sel = todasEntregas.filter(e => selecionados.has(e.id))
@@ -53,11 +51,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   async function handleSalvarComposicao() {
     setSalvando(true)
     try {
-      await confirmarComposicaoLote(
-        lote.id,
-        Array.from(selecionados),
-        entregasDoLote.map((e: any) => e.id)
-      )
+      await confirmarComposicaoLote(lote.id, Array.from(selecionados))
       router.refresh()
     } catch (e: any) {
       alert(e.message)
@@ -91,7 +85,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     }
   }
 
-  const loteFechado = lote.status !== 'aberto'
+  const podeEditar = lote.status === 'rascunho' || lote.status === 'aberto'
+  const loteFechado = !podeEditar
   const cardAzul: React.CSSProperties = { background: '#E6F1FB', borderRadius: 12, padding: '1rem', minWidth: 140 }
 
   return (
@@ -114,21 +109,23 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {!loteFechado && (
+            {podeEditar && (
               <>
                 <button
                   onClick={handleSalvarComposicao}
                   disabled={salvando}
                   style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer' }}
                 >
-                  Salvar composição
+                  {lote.status === 'rascunho' ? 'Confirmar lote' : 'Atualizar composição'}
                 </button>
-                <button
-                  onClick={handleFecharLote}
-                  style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
-                >
-                  Fechar lote
-                </button>
+                {lote.status === 'aberto' && selecionados.size > 0 && (
+                  <button
+                    onClick={handleFecharLote}
+                    style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
+                  >
+                    Fechar lote
+                  </button>
+                )}
               </>
             )}
             {lote.status === 'em_venda' && !mostrarVenda && (
