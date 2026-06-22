@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getOrganizacaoId } from '@/lib/auth'
+import { getOrganizacaoId, getUsuarioLogado } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 export async function listarLotes() {
@@ -42,7 +42,24 @@ export async function listarEntregasDisponiveis() {
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return data ?? []
+
+  const entregas = data ?? []
+
+  if (entregas.length === 0) return []
+
+  const { data: conversoes } = await supabase
+    .from('movimentacoes_conta')
+    .select('conta_id, sessao_caixa_id, valor_financeiro')
+    .eq('organizacao_id', orgId)
+    .eq('tipo', 'conversao')
+    .in('sessao_caixa_id', entregas.map(e => e.sessao_caixa_id).filter((id): id is string => id !== null))
+
+  return entregas.map(e => ({
+    ...e,
+    valor_pago: conversoes?.find(
+      c => c.conta_id === e.conta_id && c.sessao_caixa_id === e.sessao_caixa_id
+    )?.valor_financeiro ?? 0
+  }))
 }
 
 export async function listarEntregasDoLote(loteId: string) {
@@ -65,7 +82,24 @@ export async function listarEntregasDoLote(loteId: string) {
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return data ?? []
+
+  const entregas = data ?? []
+
+  if (entregas.length === 0) return []
+
+  const { data: conversoes } = await supabase
+    .from('movimentacoes_conta')
+    .select('conta_id, sessao_caixa_id, valor_financeiro')
+    .eq('organizacao_id', orgId)
+    .eq('tipo', 'conversao')
+    .in('sessao_caixa_id', entregas.map(e => e.sessao_caixa_id).filter((id): id is string => id !== null))
+
+  return entregas.map(e => ({
+    ...e,
+    valor_pago: conversoes?.find(
+      c => c.conta_id === e.conta_id && c.sessao_caixa_id === e.sessao_caixa_id
+    )?.valor_financeiro ?? 0
+  }))
 }
 
 export async function iniciarLote(produtoDescricao: string) {

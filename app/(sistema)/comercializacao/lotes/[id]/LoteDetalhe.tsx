@@ -24,7 +24,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const kpis = useMemo(() => {
     const sel = todasEntregas.filter(e => selecionados.has(e.id))
     const pesoTotal  = sel.reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
-    const valorTotal = sel.reduce((acc, e) => acc + (e.valor_financeiro ?? 0), 0)
+    const valorTotal = sel.reduce((acc, e) => acc + (e.valor_pago ?? 0), 0)
     const sacas      = Math.floor(pesoTotal / fatorSaca)
     const resto      = pesoTotal % fatorSaca
     const precoMedio = pesoTotal > 0 ? valorTotal / pesoTotal : 0
@@ -274,7 +274,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <td style={{ padding: '10px 16px', textAlign: 'right', color: '#666' }}>
                       {fmt.peso(entrega.quantidade_produto ?? 0)}
                     </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_financeiro)}</td>
+                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_pago)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                       {entrega.chave_nfe_entrada ? (
                         <span style={{ fontSize: 11, color: '#1D9E75', fontWeight: 600 }}>✓ Com NF-e</span>
