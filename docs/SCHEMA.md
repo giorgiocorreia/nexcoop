@@ -26,8 +26,9 @@
 | 045 | grupos_colaboradores, cotas_cooperado (tipo_cota, grupo_id), grupo_representantes, triggers, RLS |
 | 046 | cota_pagamentos: formas de pagamento, parcelas, vencimentos, RLS |
 | 047 | índices de performance: cooperados(organizacao_id) e cooperados(organizacao_id, numero_matricula) |
+| 048 | lotes (nullable safra_id/produto_id, +produto_descricao, +data_fechamento), movimentacoes_conta (+lote_id, +chave_nfe_entrada, +xml_nfe_entrada), vendas_externas (+campos NF-e saída), compradores (+endereço completo), produtos (+ncm, +CFOPs, +CSTs, +fator_saca) |
 
-**Próxima migration:** 048
+**Próxima migration:** 049
 
 ### loja_compras — campos fiscais (migration 044)
 - `chave_acesso_nfe` TEXT — chave 44 dígitos
@@ -48,9 +49,13 @@
 
 ### Comercialização
 - `sessoes_caixa`, `aportes_sangrias`, `saldos_produto`
-- `notas_entrega`, `lotes`, `contas_produtor`, `movimentacoes_conta`
+- `notas_entrega`, `contas_produtor`
+- `lotes` — codigo, peso_total_kg, status (aberto|em_venda|entregue), produto_descricao, data_fechamento, safra_id (nullable), produto_id (nullable)
+- `movimentacoes_conta` — tipo='entrega' vincula ao lote via lote_id; campos +chave_nfe_entrada, +xml_nfe_entrada
+- `compradores` — +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
+- `vendas_externas` — +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
 - `cotacoes` (produto_id, data, preco_externo, preco_cooperado)
-- `produtos` (comercialização — cacau, agrofloresta, etc.)
+- `produtos` — cacau, agrofloresta; +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca (default 60)
 
 ### Loja Agropecuária
 - `loja_vendas` — pago_especie, pago_pix, pago_cartao, pago_saldo, tipo_cartao, cartao_nsu, cartao_autorizacao, pix_identificador, pix_nome_pagador, status_conferencia (via loja_caixas)

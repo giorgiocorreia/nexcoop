@@ -9,7 +9,30 @@
 - **IA:** claude-haiku-4-5-20251001 via ANTHROPIC_API_KEY
 - **Claude Code:** `claude --dangerously-skip-permissions`
 
-## Estado atual (21/06/2026)
+## Estado atual (22/06/2026)
+
+### Comercialização — Lotes MVP (22/06/2026)
+
+Migration 048 criada (aplicar no Supabase SQL Editor):
+- `lotes`: safra_id/produto_id nullable, +produto_descricao, +data_fechamento
+- `movimentacoes_conta`: +lote_id (FK lotes), +chave_nfe_entrada, +xml_nfe_entrada
+- `vendas_externas`: +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
+- `compradores`: +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
+- `produtos`: +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca
+
+Arquivos implementados:
+- `app/(sistema)/comercializacao/lotes/actions.ts` — 9 server actions (listar, gerar, compor, fechar, vender)
+- `app/(sistema)/comercializacao/lotes/page.tsx` + `LotesLista.tsx` — lista com "Gerar lote"
+- `app/(sistema)/comercializacao/lotes/[id]/page.tsx` + `LoteDetalhe.tsx` — KPIs tempo real, tabela tikável, salvar composição, fechar lote, painel venda
+- `lib/fmt.ts` — fmt.peso(), fmt.moeda(), fmt.data()
+- Sidebar: item "Lotes" ativo no submenu Comercialização
+
+Decisões de arquitetura:
+- Entrega de cacau vive em `movimentacoes_conta` (tipo='entrega'), não em `loja_compras`
+- `loja_compras` = reposição da loja agropecuária (insumos), escopo diferente
+- Numeração de lotes: sequencial por org, formato '001', '002'...
+- safra_id em lotes: nullable — operador não precisa criar safra antes de abrir lote
+- fator_saca=60 hardcoded; campo em `produtos` para futura configuração por produto
 
 ### Loja Agropecuária — Entradas NF-e (21/06/2026)
 
@@ -79,15 +102,9 @@ Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/we
 
 Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
-### Próxima sessão
-1. Chat dedicado: "NexCoop — Agente WhatsApp Evolution API"
-   - Subir Evolution API no Railway
-   - Conectar número 73999693548 via QR Code
-   - Criar rota /api/whatsapp/webhook
-   - Montar prompt do agente com contexto NexCoop
-   - Lógica de transferência para humano
-   - Deploy e teste
-2. Verificar landing page v2 no browser após deploy
+### Próximos passos
+1. **Aplicar migration 048 no Supabase SQL Editor** (obrigatório antes de testar lotes)
+2. **Tela /lotes/[id]/nfe — NF-e de saída** (próxima sessão): emissão via Focus NFe com dados do lote + comprador
 3. Migração multi-org (chat dedicado — ANTES do segundo cliente)
 
 ### Caixa aberto COOPAIBI
@@ -95,8 +112,9 @@ Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / f
 
 ### Pendências externas
 - Marcos/Contabahia: CSC ID/Token NFC-e, NCMs, regime tributário, CSTs (inalterado)
-- Abertura Nexcoop Tecnologia Ltda (novo)
-- CNPJ para verificação Meta Business Manager (novo)
+- CFOP/NCM do cacau: usar 5101/6101 + NCM 18010000 + CST ICMS 040 + CST PIS/COFINS 07 — confirmar com Marcos antes de emitir NF-e de saída real
+- Abertura Nexcoop Tecnologia Ltda (em andamento)
+- CNPJ para verificação Meta Business Manager (aguarda abertura)
 
 ## Workflow desta sessão
 1. Giorgio descreve → Claude planeja → Claude Code executa

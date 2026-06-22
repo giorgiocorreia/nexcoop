@@ -1,5 +1,39 @@
 # NexCoop — Changelog
 
+## [22/06/2026] — Comercialização: Lotes MVP
+
+### Migration
+- `048_comercializacao_lotes_fiscal.sql`: ALTER em 5 tabelas
+  - `lotes`: safra_id/produto_id nullable, +produto_descricao, +data_fechamento
+  - `movimentacoes_conta`: +lote_id (FK lotes), +chave_nfe_entrada, +xml_nfe_entrada
+  - `vendas_externas`: +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
+  - `compradores`: +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
+  - `produtos`: +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca
+
+### Arquivos criados
+- `app/(sistema)/comercializacao/lotes/actions.ts` — 9 server actions: listarLotes, listarEntregasDisponiveis, listarEntregasDoLote, gerarLoteAutomatico, confirmarComposicaoLote, fecharLote, buscarLote, listarCompradores, criarVendaExterna
+- `app/(sistema)/comercializacao/lotes/page.tsx` — server component
+- `app/(sistema)/comercializacao/lotes/LotesLista.tsx` — lista com botão "Gerar lote"
+- `app/(sistema)/comercializacao/lotes/[id]/page.tsx` — server component (carrega lote + entregas + compradores)
+- `app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx` — KPIs tempo real, tabela tikável, salvar composição, fechar lote, painel venda → NF-e
+- `lib/fmt.ts` — utilitários fmt.peso(), fmt.moeda(), fmt.data()
+
+### Arquivos modificados
+- `types/database.ts` — Lote (nullable safra_id/produto_id, +produto_descricao, +data_fechamento), MovimentacaoConta (+lote_id, +chave_nfe_entrada, +xml_nfe_entrada), Comprador (+endereço), VendaExterna (safra_id nullable, +campos NF-e), Produto (+campos fiscais)
+- `components/Sidebar.tsx` — item "Lotes" ativo no submenu Comercialização
+
+### Decisões de arquitetura
+- Entrega de cacau vive em `movimentacoes_conta` (tipo='entrega'), não em `loja_compras`
+- `loja_compras` = reposição da loja agropecuária (insumos), escopo completamente diferente
+- Lote vincula `movimentacoes_conta` via `lote_id` (nullable FK)
+- Numeração de lotes: sequencial por org, formato '001', '002'...
+- `fator_saca=60` hardcoded por ora; campo em `produtos` para futura configuração por produto
+- CFOP determinado por `compradores.uf` vs 'BA': 5101 (interna) / 6101 (interestadual)
+- `distribuicao_resultado` mantida no schema mas não utilizada (modelo de rateio abandonado)
+- `safra_id` em lotes: nullable — operador não precisa criar safra antes de abrir lote
+
+---
+
 ## [21/06/2026] — Loja Agropecuária: Entradas NF-e
 
 ### Migration
