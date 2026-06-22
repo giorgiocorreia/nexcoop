@@ -30,7 +30,10 @@ export async function listarEntregasDisponiveis() {
     .from('movimentacoes_conta')
     .select(`
       *,
-      produtores(nome),
+      contas_produtor(
+        produtor_id,
+        produtores(nome, cpf)
+      ),
       produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins)
     `)
     .eq('organizacao_id', orgId)
@@ -50,7 +53,10 @@ export async function listarEntregasDoLote(loteId: string) {
     .from('movimentacoes_conta')
     .select(`
       *,
-      produtores(nome, cpf),
+      contas_produtor(
+        produtor_id,
+        produtores(nome, cpf)
+      ),
       produtos(nome, unidade, fator_saca)
     `)
     .eq('organizacao_id', orgId)

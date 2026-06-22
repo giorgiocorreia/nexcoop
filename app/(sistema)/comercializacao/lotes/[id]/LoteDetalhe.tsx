@@ -273,7 +273,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                         />
                       </td>
                     )}
-                    <td style={{ padding: '10px 16px' }}>{entrega.produtores?.nome ?? '—'}</td>
+                    <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
                     <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', color: '#666' }}>
