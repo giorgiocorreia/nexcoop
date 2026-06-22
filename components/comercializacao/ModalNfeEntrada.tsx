@@ -255,11 +255,9 @@ interface BotaoNfeProps {
 }
 
 export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
-  const [nfeStatus, setNfeStatus] = useState<
-    'idle' | 'carregando' | 'sem_nfe' | 'emitindo' | 'autorizada' | 'erro'
-  >('idle')
+  const [nfeStatus, setNfeStatus] = useState<'idle' | 'carregando' | 'autorizada' | 'erro'>('idle')
   const [danfe_url, setDanfeUrl] = useState<string | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
+  const [mostrarModal, setMostrarModal] = useState(false)
 
   useEffect(() => {
     async function verificarStatus() {
@@ -268,99 +266,54 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
         if (nota?.status === 'autorizada') {
           setDanfeUrl((nota.danfe_url as string | null) ?? null)
           setNfeStatus('autorizada')
-        } else if (nota?.status === 'processando') {
-          setNfeStatus('emitindo')
         }
       } catch {}
     }
     verificarStatus()
   }, [movimentacao_id])
 
-  async function verificarEAbrirNfe() {
-    if (nfeStatus === 'autorizada' && danfe_url) {
-      window.open(danfe_url, '_blank')
-      return
-    }
-
-    setNfeStatus('carregando')
-    try {
-      const nota = await getNfeStatus(movimentacao_id)
-
-      const s = nota?.status as string | undefined
-      if (!nota || s === 'pendente' || s === 'erro' || s === 'rejeitada') {
-        // Ainda não emitida ou falhou — emite agora
-        setNfeStatus('emitindo')
-        const resultado = await emitirNfeEntradaAction(movimentacao_id)
-        if (resultado.sucesso && resultado.danfe_url) {
-          setDanfeUrl(resultado.danfe_url)
-          setNfeStatus('autorizada')
-          window.open(resultado.danfe_url, '_blank')
-        } else if (resultado.sucesso) {
-          // Processando (SEFAZ async)
-          setNfeStatus('autorizada')
-        } else {
-          setErro(resultado.erro ?? 'Erro')
-          setNfeStatus('erro')
-        }
-        return
-      }
-
-      if (s === 'autorizada' && nota.danfe_url) {
-        setDanfeUrl(nota.danfe_url as string)
-        setNfeStatus('autorizada')
-        window.open(nota.danfe_url as string, '_blank')
-        return
-      }
-
-      if (s === 'processando') {
-        setNfeStatus('emitindo')
-        return
-      }
-
-      setNfeStatus('sem_nfe')
-    } catch (e: any) {
-      setErro(e.message)
-      setNfeStatus('erro')
-    }
-  }
-
   if (nfeStatus === 'autorizada') {
     return (
-      <button onClick={verificarEAbrirNfe} style={{
-        padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
-        border: '1px solid #bbf7d0', background: '#dcfce7', color: '#166534',
-        fontWeight: 500, whiteSpace: 'nowrap'
-      }}>
+      <button
+        onClick={() => danfe_url && window.open(danfe_url, '_blank')}
+        style={{
+          padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+          border: '1px solid #bbf7d0', background: '#dcfce7', color: '#166534',
+          fontWeight: 500, whiteSpace: 'nowrap'
+        }}
+      >
         Reimprimir NF-e
       </button>
     )
   }
 
-  if (nfeStatus === 'emitindo' || nfeStatus === 'carregando') {
-    return (
-      <span style={{ fontSize: '12px', color: '#6b6b6b' }}>Aguardando...</span>
-    )
-  }
-
-  if (nfeStatus === 'erro') {
-    return (
-      <button onClick={verificarEAbrirNfe} title={erro ?? ''} style={{
-        padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
-        border: '1px solid #fecaca', background: '#fee2e2', color: '#991b1b',
-        fontWeight: 500, whiteSpace: 'nowrap'
-      }}>
-        Erro — Tentar NF-e
-      </button>
-    )
-  }
-
   return (
-    <button onClick={verificarEAbrirNfe} style={{
-      padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
-      border: '1px solid #e5e3dc', background: '#fff', color: '#92400e',
-      fontWeight: 500, whiteSpace: 'nowrap'
-    }}>
-      Emitir NF-e
-    </button>
+    <>
+      <button
+        onClick={() => setMostrarModal(true)}
+        style={{
+          padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+          border: '1px solid #e5e3dc', background: '#fff', color: '#92400e',
+          fontWeight: 500, whiteSpace: 'nowrap'
+        }}
+      >
+        Emitir NF-e
+      </button>
+
+      {mostrarModal && (
+        <ModalNfeEntrada
+          movimentacao_id={movimentacao_id}
+          onClose={() => {
+            setMostrarModal(false)
+            getNfeStatus(movimentacao_id).then(nota => {
+              if (nota?.status === 'autorizada') {
+                setDanfeUrl((nota.danfe_url as string | null) ?? null)
+                setNfeStatus('autorizada')
+              }
+            }).catch(() => {})
+          }}
+        />
+      )}
+    </>
   )
 }
