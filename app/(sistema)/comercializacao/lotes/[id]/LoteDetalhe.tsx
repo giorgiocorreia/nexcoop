@@ -14,11 +14,17 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
 }) {
   const router = useRouter()
   const fatorSaca: number = lote.produtos?.fator_saca ?? 60
+  const podeEditar = lote.status === 'rascunho' || lote.status === 'aberto'
+  const loteFechado = !podeEditar
+  const cardAzul: React.CSSProperties = { background: '#E6F1FB', borderRadius: 12, padding: '1rem', minWidth: 140 }
 
-  const todasEntregas = useMemo(() => [
-    ...entregasDoLote.map((e: any) => ({ ...e, _noLote: true })),
-    ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false })),
-  ], [entregasDoLote, entregasDisponiveis])
+  const todasEntregas = useMemo(() => loteFechado
+    ? entregasDoLote.map((e: any) => ({ ...e, _noLote: true }))
+    : [
+        ...entregasDoLote.map((e: any) => ({ ...e, _noLote: true })),
+        ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false })),
+      ]
+  , [entregasDoLote, entregasDisponiveis, loteFechado])
 
   const [selecionados, setSelecionados] = useState<Set<string>>(() => {
     // Se lote já tem entregas vinculadas (aberto/em_venda), pré-seleciona elas
@@ -105,10 +111,6 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
       setInserindo(null)
     }
   }
-
-  const podeEditar = lote.status === 'rascunho' || lote.status === 'aberto'
-  const loteFechado = !podeEditar
-  const cardAzul: React.CSSProperties = { background: '#E6F1FB', borderRadius: 12, padding: '1rem', minWidth: 140 }
 
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
