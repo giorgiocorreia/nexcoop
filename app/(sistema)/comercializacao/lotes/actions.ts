@@ -237,7 +237,8 @@ export async function buscarLote(loteId: string) {
     .select(`
       *,
       safras(ano, descricao),
-      produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins)
+      produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins),
+      vendas_externas(id, status_nfe, chave_nfe, numero_nfe, serie_nfe, danfe_url)
     `)
     .eq('id', loteId)
     .eq('organizacao_id', orgId)

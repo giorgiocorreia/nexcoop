@@ -16,6 +16,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const fatorSaca: number = lote.produtos?.fator_saca ?? 60
   const podeEditar = lote.status === 'rascunho' || lote.status === 'aberto'
   const loteFechado = !podeEditar
+  const vendaNfe = (lote.vendas_externas as any[])?.[0] ?? null
+  const nfeAutorizada = vendaNfe?.status_nfe === 'autorizada'
   const cardAzul: React.CSSProperties = { background: '#E6F1FB', borderRadius: 12, padding: '1rem', minWidth: 140 }
 
   const todasEntregas = useMemo(() => loteFechado
@@ -188,12 +190,48 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
               </>
             )}
             {lote.status === 'em_venda' && !mostrarVenda && (
-              <button
-                onClick={() => setMostrarVenda(true)}
-                style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff', cursor: 'pointer' }}
-              >
-                Emitir NF-e de saída
-              </button>
+              nfeAutorizada ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: '#d1fae5', color: '#065f46',
+                    borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600
+                  }}>
+                    <i className="ti ti-circle-check" /> NF-e nº {vendaNfe.numero_nfe} autorizada
+                  </span>
+                  <a
+                    href={vendaNfe.danfe_url ?? '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                      borderRadius: 8, border: '1px solid #92400e',
+                      background: 'transparent', color: '#92400e',
+                      textDecoration: 'none', display: 'inline-block'
+                    }}
+                  >
+                    <i className="ti ti-printer" /> Reimprimir DANFE
+                  </a>
+                  <a
+                    href={`/comercializacao/lotes/${lote.id}/nfe`}
+                    style={{
+                      padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                      borderRadius: 8, border: '1px solid #d1d5db',
+                      background: 'transparent', color: '#374151',
+                      textDecoration: 'none', display: 'inline-block'
+                    }}
+                  >
+                    <i className="ti ti-file-invoice" /> Ver NF-e
+                  </a>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setMostrarVenda(true)}
+                  style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff', cursor: 'pointer' }}
+                >
+                  Emitir NF-e de saída
+                </button>
+              )
             )}
           </div>
         </div>
