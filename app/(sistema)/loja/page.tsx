@@ -310,12 +310,12 @@ export default async function LojaHubPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
           {([
-            { label: 'Conferência de Caixa', href: '/loja/conferencia',       icone: 'ti-clipboard-check', cor: '#E07B30' },
-            { label: 'Caixas',               href: '/loja/caixas',            icone: 'ti-cash-register',   cor: '#E07B30' },
-            { label: 'Rel. Vendas',          href: '/loja/relatorio/vendas',  icone: 'ti-chart-bar',       cor: '#E07B30' },
-            { label: 'Rel. Estoque',         href: '/loja/relatorio/estoque', icone: 'ti-packages',        cor: '#E07B30' },
-            { label: 'Rel. Caixa',           href: '/loja/relatorio/caixa',   icone: 'ti-report-money',    cor: '#E07B30' },
-          ] as { label: string; href: string; icone: string; cor: string }[]).map(item => (
+            { label: 'Conferência de Caixa', href: '/loja/conferencia',       icone: 'ti-clipboard-check'  },
+            { label: 'Caixas',               href: '/loja/caixas',            icone: 'ti-cash-register'    },
+            { label: 'Rel. Vendas',          href: '/loja/relatorio/vendas',  icone: 'ti-chart-bar'        },
+            { label: 'Rel. Estoque',         href: '/loja/relatorio/estoque', icone: 'ti-packages'         },
+            { label: 'Rel. Caixa',           href: '/loja/relatorio/caixa',   icone: 'ti-report-money'     },
+          ] as { label: string; href: string; icone: string }[]).map(item => (
             <Link
               key={item.href}
               href={item.href}
@@ -323,12 +323,9 @@ export default async function LojaHubPage() {
                 display: 'flex', alignItems: 'center', gap: 10,
                 background: '#fff', border: '1px solid #e5e3dc', borderRadius: 10,
                 padding: '12px 14px', textDecoration: 'none',
-                transition: 'border-color 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#E07B30')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e3dc')}
             >
-              <i className={`ti ${item.icone}`} style={{ fontSize: 18, color: item.cor, flexShrink: 0 }} />
+              <i className={`ti ${item.icone}`} style={{ fontSize: 18, color: '#E07B30', flexShrink: 0 }} />
               <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>{item.label}</span>
             </Link>
           ))}
