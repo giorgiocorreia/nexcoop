@@ -30,18 +30,35 @@ export default async function ConferenciaPage() {
       total_especie, total_pix, total_cartao,
       valor_fisico_especie, valor_fisico_debito, valor_fisico_credito,
       status_conferencia, observacao_conferencia, conferido_em,
-      usuarios!loja_caixas_usuario_id_fkey ( nome_completo )
+      usuario_id
     `)
-    .eq('organizacao_id', orgId)
+    .eq('org_id', orgId)
     .eq('status', 'fechado')
     .order('fechado_em', { ascending: false })
     .limit(30)
+
+  const usuarioIds = [...new Set((caixas ?? []).map(c => c.usuario_id).filter(Boolean))]
+  const { data: usuarios } = usuarioIds.length > 0
+    ? await admin
+        .from('usuarios')
+        .select('id, nome_completo')
+        .in('id', usuarioIds)
+    : { data: [] }
+
+  const nomePorId = Object.fromEntries(
+    (usuarios ?? []).map(u => [u.id, u.nome_completo])
+  )
+
+  const caixasComNome = (caixas ?? []).map(c => ({
+    ...c,
+    usuarios: c.usuario_id ? { nome_completo: nomePorId[c.usuario_id] ?? '—' } : null
+  }))
 
   return (
     <ConferenciaClient
       orgId={orgId}
       usuarioId={user.id}
-      caixas={(caixas ?? []) as any[]}
+      caixas={caixasComNome as any[]}
     />
   )
 }
