@@ -136,16 +136,15 @@ export default async function LojaHubPage() {
         .btn-pdv:hover { opacity: 0.92; transform: translateY(-1px); }
       `}</style>
 
-      <div style={{ margin: '-2rem', background: C.bg, minHeight: '100vh' }}>
-
-        {/* ═══ HEADER ════════════════════════════════════════════════════════════ */}
-        <div style={{
-          background: '#fff',
-          borderBottom: `1px solid ${C.borda}`,
-          padding: '18px 32px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 12, position: 'sticky', top: 0, zIndex: 10,
-        }}>
+      {/* ═══ HEADER — colado ao topo do <main> ═══════════════════════════════ */}
+      <div style={{
+        margin: '-2rem -2rem 0 -2rem',
+        background: '#fff',
+        borderBottom: `1px solid ${C.borda}`,
+        padding: '18px 32px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 12, position: 'sticky', top: 0, zIndex: 10,
+      }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
               <div style={{
@@ -223,7 +222,8 @@ export default async function LojaHubPage() {
           </div>
         </div>
 
-        <div style={{ padding: '28px 32px', maxWidth: 1200 }}>
+      {/* ═══ CONTEÚDO ══════════════════════════════════════════════════════════ */}
+      <div style={{ margin: '0 -2rem -2rem -2rem', background: C.bg, minHeight: '100vh', padding: '28px 32px' }}>
 
           {/* ═══ KPI CARDS ═══════════════════════════════════════════════════════ */}
           <div style={{
@@ -511,7 +511,6 @@ export default async function LojaHubPage() {
           </div>
 
         </div>
-      </div>
     </>
   )
 }
