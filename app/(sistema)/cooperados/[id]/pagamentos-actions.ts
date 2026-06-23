@@ -127,6 +127,28 @@ export async function registrarPagamentos(
 
   if (error) throw new Error(error.message)
 
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    const parcelasPagas = (inseridos ?? []).filter((p: any) => p.forma_pagamento !== 'promessa' && Number(p.valor_pago) > 0)
+    for (const parcela of parcelasPagas) {
+      await criarLancamento({
+        organizacao_id: orgId,
+        tipo: 'receita' as any,
+        status: 'pago' as any,
+        descricao: `Integralização de cota — Parcela ${(parcela as any).numero_parcela ?? ''}`,
+        valor: Number((parcela as any).valor_pago),
+        data_competencia: new Date().toISOString().split('T')[0],
+        data_pagamento: (parcela as any).data_pagamento ?? new Date().toISOString().split('T')[0],
+        cooperado_id: cooperadoId,
+        numero_documento: ((parcela as any).id as string).slice(0, 8),
+        observacoes: `Cota cooperativa — parcela`,
+        usuario_id: registradoPor,
+      })
+    }
+  } catch (e) {
+    console.error('[contabil] Erro ao criar lançamento cota:', e)
+  }
+
   const { data: todasParcelas } = await supabase
     .from('cota_pagamentos')
     .select('status, valor_pago')

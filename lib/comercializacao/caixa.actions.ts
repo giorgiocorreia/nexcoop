@@ -328,6 +328,24 @@ export async function registrarConversaoESaque(params: {
       .update({ [campo]: (sessao[campo as keyof typeof sessao] as number ?? 0) + params.valor_financeiro } as any)
       .eq('id', params.sessao_id)
   }
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    const tipoPagto = params.forma_pagamento === 'pix' ? 'PIX' : 'Espécie'
+    await criarLancamento({
+      organizacao_id: usuario.organizacao_id!,
+      tipo: 'despesa' as any,
+      status: 'pago' as any,
+      descricao: `Saque produtor — ${tipoPagto}`,
+      valor: Number(params.valor_financeiro),
+      data_competencia: new Date().toISOString().split('T')[0],
+      data_pagamento: new Date().toISOString().split('T')[0],
+      observacoes: params.chave_pix ? `Pix: ${params.chave_pix}` : (params.observacoes ?? 'Conversão de produto e saque'),
+      usuario_id: usuario.id,
+      usuario_email: usuario.email ?? undefined,
+    })
+  } catch (e) {
+    console.error('[contabil] Erro ao criar lançamento saque produtor:', e)
+  }
   return { saque_id: saqueData!.id as string }
 }
 

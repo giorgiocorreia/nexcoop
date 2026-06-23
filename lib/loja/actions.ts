@@ -989,6 +989,24 @@ export async function finalizarVenda(
 
   await registrarLog({ org_id: orgId, usuario_id:operadorId, modulo: 'loja', acao: 'loja_venda_finalizada', dados_depois: { venda_id: vendaId, total: venda.total } })
 
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    await criarLancamento({
+      organizacao_id: orgId,
+      tipo: 'receita' as any,
+      status: 'pago' as any,
+      descricao: `Venda Loja #${vendaId.slice(0, 8)} — ${new Date().toLocaleDateString('pt-BR')}`,
+      valor: Number(venda.total),
+      data_competencia: new Date().toISOString().split('T')[0],
+      data_pagamento: new Date().toISOString().split('T')[0],
+      numero_documento: vendaId.slice(0, 8),
+      observacoes: `Venda finalizada no PDV`,
+      usuario_id: operadorId,
+    })
+  } catch (e) {
+    console.error('[contabil] Erro ao criar lançamento venda loja:', e)
+  }
+
   return { vendaId }
 }
 
