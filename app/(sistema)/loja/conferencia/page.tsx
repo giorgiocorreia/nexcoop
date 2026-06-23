@@ -32,7 +32,7 @@ export default async function ConferenciaPage() {
       status_conferencia, observacao_conferencia, conferido_em,
       usuarios!loja_caixas_usuario_id_fkey ( nome_completo )
     `)
-    .eq('org_id', orgId)
+    .eq('organizacao_id', orgId)
     .eq('status', 'fechado')
     .order('fechado_em', { ascending: false })
     .limit(30)
