@@ -136,7 +136,7 @@ export default async function LojaHubPage() {
         .btn-pdv:hover { opacity: 0.92; transform: translateY(-1px); }
       `}</style>
 
-      <div style={{ margin: '-2rem -2rem 0 -2rem', background: C.bg, minHeight: '100vh' }}>
+      <div style={{ margin: '-2rem', background: C.bg, minHeight: '100vh' }}>
 
         {/* ═══ HEADER ════════════════════════════════════════════════════════════ */}
         <div style={{
@@ -228,7 +228,7 @@ export default async function LojaHubPage() {
           {/* ═══ KPI CARDS ═══════════════════════════════════════════════════════ */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))',
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
             gap: 12, marginBottom: 24,
           }}>
             {kpiCards.map(k => (
