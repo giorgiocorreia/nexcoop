@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { forcarFechamentoCaixa } from './actions'
-import { fmt } from '@/lib/fmt'
+
+function fmtBrl(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 type CaixaAberto = {
   id: string
@@ -107,7 +110,7 @@ export default function CaixasAdminClient({
                       {caixa.usuarios?.nome_completo ?? 'Operador'}
                     </div>
                     <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
-                      Aberto às {fmtHora(caixa.aberto_em)} · Fundo: {fmt.moeda(caixa.valor_abertura)}
+                      Aberto às {fmtHora(caixa.aberto_em)} · Fundo: {fmtBrl(caixa.valor_abertura)}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -158,7 +161,7 @@ export default function CaixasAdminClient({
                       <td style={{ padding: '10px 14px', color: '#6b7280' }}>{fmtData(c.aberto_em)}</td>
                       <td style={{ padding: '10px 14px', color: '#6b7280' }}>{fmtHora(c.aberto_em)}</td>
                       <td style={{ padding: '10px 14px', color: '#6b7280' }}>{c.fechado_em ? fmtHora(c.fechado_em) : '—'}</td>
-                      <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1a1a2e' }}>{fmt.moeda(c.valor_fechamento ?? 0)}</td>
+                      <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1a1a2e' }}>{fmtBrl(c.valor_fechamento ?? 0)}</td>
                       <td style={{ padding: '10px 14px' }}>
                         <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: conf.cor + '18', color: conf.cor }}>
                           {conf.label}
