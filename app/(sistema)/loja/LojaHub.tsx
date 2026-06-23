@@ -226,37 +226,34 @@ export default function LojaHub({ totalProdutos, totalFornecedores, estoqueBaixo
                 titulo:    'Rel. Vendas',
                 descricao: 'Histórico e totais de vendas por período e operador.',
                 icone:     '📈',
-                href:      '/loja/relatorios/vendas',
-                emBreve:   true,
+                href:      '/loja/relatorio/vendas',
               },
               {
                 titulo:    'Rel. Estoque',
                 descricao: 'Posição atual, movimentações e histórico de ajustes.',
                 icone:     '📦',
-                href:      '/loja/relatorios/estoque',
-                emBreve:   true,
+                href:      '/loja/relatorio/estoque',
               },
               {
                 titulo:    'Rel. Caixa',
                 descricao: 'Faturamento, sangrias e fechamentos por sessão.',
                 icone:     '💵',
-                href:      '/loja/relatorios/caixa',
-                emBreve:   true,
+                href:      '/loja/relatorio/caixa',
               },
               {
                 titulo:    'Conferência de Caixa',
-                descricao: 'Confira e aprove os fechamentos de caixa dos operadores.',
+                descricao: 'Confira e aprove os fechamentos dos operadores.',
                 icone:     '✅',
                 href:      '/loja/conferencia',
               },
               {
                 titulo:    'Caixas',
-                descricao: 'Visualize e gerencie todas as sessões de caixa abertas e fechadas.',
+                descricao: 'Sessões abertas e fechadas, forçar fechamento (admin).',
                 icone:     '🗂️',
                 href:      '/loja/caixas',
               },
             ] as ModuloCard[]).map(card => (
-              <CardModulo key={card.titulo} card={card} onClick={card.emBreve ? undefined : () => router.push(card.href)} />
+              <CardModulo key={card.titulo} card={card} onClick={() => router.push(card.href)} />
             ))}
           </div>
         </div>
