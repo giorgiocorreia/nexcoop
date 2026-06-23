@@ -1,5 +1,32 @@
 # NexCoop — Changelog
 
+## 22/06/2026 — NF-e Saída + ZIP + Fixes Comercialização
+
+### Novos arquivos
+- lib/utils/cpf.ts — validação CPF com dígitos verificadores
+- lib/comercializacao/zip-lote.ts — ZIP XMLs + CSV + email
+- app/(sistema)/comercializacao/lotes/[id]/nfe/page.tsx
+- app/(sistema)/comercializacao/lotes/[id]/nfe/NfeSaidaClient.tsx
+- app/(sistema)/comercializacao/lotes/[id]/nfe/actions.ts
+- app/api/nfe/sincronizar/route.ts — reconciliação status Focus NFe
+
+### Arquivos modificados
+- lib/email.ts — suporte a attachments
+- lib/comercializacao/nfe.actions.ts — getCotacaoParaModal
+- lib/comercializacao/compradores.actions.ts — campos fiscais
+- components/comercializacao/ModalNfeEntrada.tsx — BotaoNfe abre modal + overlay fix
+- components/Sidebar.tsx — gestão comercialização restrita a admin
+- app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx — pré-seleção entregas
+- app/(sistema)/comercializacao/compradores/page.tsx — IE + endereço fiscal
+- types/database.ts — notas_entrega: status + campos fiscais
+
+### Fixes de dados (Supabase)
+- notas_entrega: 3 notas sincronizadas via /api/nfe/sincronizar
+- lotes: safra_id vinculado ao Lote 001
+- vendas_externas: status_nfe limpo para reemissão em produção
+
+---
+
 ## [22/06/2026] — Comercialização: NF-e saída, campos fiscais, sidebar, validação CPF
 
 ### Arquivos criados

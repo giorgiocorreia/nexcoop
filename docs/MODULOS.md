@@ -61,17 +61,29 @@
 - CSTs ICMS/PIS/COFINS
 - Emissão real NF-e/NFC-e via Focus NFe
 
-## Comercialização
+## Comercialização 🔄
+Última atualização: 22/06/2026
 
-### Concluído
-- Dashboard com breadcrumb padrão + cotações vigentes
-- Cotações: breadcrumb + formulário oculto para caixa_loja
-- Sidebar com submenu: Dashboard, Cotações, Produtores, Vendas, etc.
-- adminClient em getDashboardComercializacao para cotações
+### ✅ Concluído
+- Cadastro produtores e compradores (com campos fiscais)
+- Cotações de preço por produto/safra
+- Caixa Cacau (sessões + entregas + conversões)
+- Lotes (criação, composição, fechamento)
+- NF-e de entrada por produtor (modal seleção de preço)
+- NF-e de saída por lote (/lotes/[id]/nfe)
+- ZIP XMLs + DANFE + CSV cooperados + email
+- Sincronização status NF-e (/api/nfe/sincronizar)
+- Sidebar: itens de gestão restritos a admin
 
-### Planejado (chat dedicado)
-- Fluxo de saque: solicitação → execução → comprovante 80mm
-- Tela /comercializacao/vendas
+### ❌ Pendente
+- iniciarLote: seleção de safra obrigatória
+- saldo_kg em contas_produtor (estoque à ordem)
+- KPI Custo total: quantidade × cotação (não soma valor_pago)
+- Módulo resultado por safra (receita - custo - taxa)
+- Tela Vender produto (cooperado vende X kg no dia)
+- Dashboard resultado (total vendas, pago, estoque, resultado)
+- Sincronização automática NF-e no BotaoNfe (status processando)
+- Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercialização)
 
 ## Cooperados — Fluxos implementados
 

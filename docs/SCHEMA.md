@@ -28,7 +28,19 @@
 | 047 | índices de performance: cooperados(organizacao_id) e cooperados(organizacao_id, numero_matricula) |
 | 048 | lotes (nullable safra_id/produto_id, +produto_descricao, +data_fechamento), movimentacoes_conta (+lote_id, +chave_nfe_entrada, +xml_nfe_entrada), vendas_externas (+campos NF-e saída), compradores (+endereço completo), produtos (+ncm, +CFOPs, +CSTs, +fator_saca) |
 
-**Próxima migration:** 049
+| 049 | lotes.status CHECK: adiciona 'rascunho' |
+
+**Próxima migration:** 050
+
+### Comercialização — observações (22/06/2026)
+- notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
+- notas_entrega: campos chave_nfe, numero_nfe, serie, xml_url, danfe_url, referencia,
+  motivo_rejeicao, valor_unitario, valor_total, quantidade_kg, cfop, produtor_id já existem
+- vendas_externas: campos fiscais chave_nfe, numero_nfe, serie_nfe, status_nfe,
+  xml_nfe, data_emissao_nfe já existem (sem migration adicional)
+- compradores: campos ie, logradouro, numero, bairro, cep, municipio, uf
+  já existiam no banco — apenas expostos no formulário nesta sessão
+- lotes: safra_id deve ser preenchido ao criar (hoje não é obrigatório na UI)
 
 ### loja_compras — campos fiscais (migration 044)
 - `chave_acesso_nfe` TEXT — chave 44 dígitos

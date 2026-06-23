@@ -11,7 +11,24 @@
 
 ## Estado atual (22/06/2026)
 
-### Em andamento: Comercialização — Lotes MVP + NF-e entrada/saída (22/06/2026)
+### Comercialização — Lote 001
+- BotaoNfe corrigido: abre ModalNfeEntrada com seleção de preço
+- Modal NF-e bloqueia cliques na tabela por baixo (stopPropagation)
+- Rota /api/nfe/sincronizar criada (reconcilia status com Focus NFe)
+- Tela NF-e de saída: /comercializacao/lotes/[id]/nfe/ implementada
+- ZIP XMLs entradas + saída + CSV cooperados + email com nome da org
+- Botões DANFE + ZIP lado a lado no bloco de sucesso
+- NF-e saída testada em homologação ✅ — pendente reemitir em produção
+- Lote 001 fechado (em_venda), safra_id vinculado
+- FOCUSNFE_AMBIENTE=producao no Vercel (ativo)
+- vendas_externas limpa para reemissão em produção
+
+### CSC NFC-e COOPAIBI (22/06/2026)
+- Produção: ID=1 / Token=2BF39D09-64CD-4545-850D-D25BAB7B3215
+- Homologação: ID=1 / Token=1D4F937E-A986-44BA-8099-955413671F0B
+- Salvo em organizacoes.loja_nfce_csc_id e loja_nfce_csc_token
+
+### Histórico desta sessão: Comercialização — Lotes MVP + NF-e entrada/saída (22/06/2026)
 
 Migrations aplicadas: 048 (campos fiscais) + 049 (status 'rascunho' em lotes)
 
@@ -128,33 +145,26 @@ Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/we
 
 Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
-### Próximos passos
-1. **Voltar FOCUSNFE_AMBIENTE=producao no Vercel** — foi alterado para homologação durante testes de saída; restaurar para produção
-2. **iniciarLote: obrigar seleção de safra** — campo safra obrigatório antes de criar rascunho
-3. **saldo_kg em contas_produtor** — campo calculado ou atualizado via trigger
-4. **KPI Custo total** — corrigir cálculo (usa valor_pago mas pode estar incorreto)
-5. **Módulo de resultado por safra** — DRE simplificado por safra
-6. **Tela Vender produto** — painel de venda no LoteDetalhe (fluxo criarVendaExterna)
-7. **Dashboard comercialização** — KPIs globais
-8. **Sincronização automática NF-e no BotaoNfe** — polling ou webhook Focus NFe
-9. **Separação FOCUSNFE_AMBIENTE por módulo** — loja vs comercialização podem precisar de ambientes diferentes
-10. **Gerson/Marcelo** — corrigir vínculo cooperado/produtor após fechamento do lote; CPF do Gerson com 10 dígitos
-11. **ZIP XMLs + PDF relatório para moageira** — download em lote dos XMLs de entrada
+### Próxima sessão
+1. ⚠️ ANTES DE QUALQUER COISA: corrigir Marcelo/Gerson
+   UPDATE produtores SET nome='Gerson de Jesus Santos', cpf='009.749.539-54'
+   WHERE id='2cb5c06e-4f32-49d8-b893-5baa6dfcf88c'
+2. ⚠️ Emitir NF-e de saída Lote 001 em PRODUÇÃO (após negociação Barry Callebaut)
+3. Sessão dedicada comercialização: saldo_kg, resultado safra, iniciarLote com safra
 
 ### Caixa aberto COOPAIBI
 - ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
 
 ### Desbloqueado
-- `FOCUSNFE_AMBIENTE=producao` configurado no Vercel (Production only) — temporariamente em homologação para testes NF-e saída
+- `FOCUSNFE_AMBIENTE=producao` restaurado no Vercel (Production)
 - CSC NFC-e produção: ID 1, token 2BF39D09-64CD-4545-850D-D25BAB7B3215 — configurado no banco COOPAIBI
 - CSC NFC-e homologação: ID 1, token 1D4F937E-A986-44BA-8099-955413671F0B
 - NF-e de saída testada em homologação: autorizada nº 7, R$5.451,06, Barry Callebaut
 
-### Pendências externas
-- CFOP/NCM do cacau: usar 5102 + NCM 18010000 + CST ICMS 41 + CST PIS/COFINS 72 (saída) — confirmar com Marcos antes de emitir em produção
-- CSC NFC-e: configurar no código (NFCE_CSC_ID_PRODUCAO, NFCE_CSC_TOKEN_PRODUCAO)
-- Abertura Nexcoop Tecnologia Ltda (em andamento)
-- CNPJ para verificação Meta Business Manager (aguarda abertura)
+## Pendências externas
+- Marcos/Contabahia: CSC NFC-e, NCMs, CSTs (inalterado)
+- Abertura Nexcoop Tecnologia Ltda
+- CNPJ para verificação Meta Business Manager
 
 ## Workflow desta sessão
 1. Giorgio descreve → Claude planeja → Claude Code executa
