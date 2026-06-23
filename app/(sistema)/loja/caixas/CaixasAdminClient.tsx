@@ -3,8 +3,23 @@
 import { useState } from 'react'
 import { forcarFechamentoCaixa } from './actions'
 
+function fmtHora(iso: string) {
+  const d = new Date(iso)
+  const h = String(d.getUTCHours() - 3).padStart(2, '0')
+  const m = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+function fmtData(iso: string) {
+  const d = new Date(iso)
+  const dia = String(d.getUTCDate()).padStart(2, '0')
+  const mes = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const ano = d.getUTCFullYear()
+  return `${dia}/${mes}/${ano}`
+}
+
 function fmtBrl(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  return 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
 type CaixaAberto = {
@@ -35,13 +50,6 @@ const CONF_LABEL: Record<string, { label: string; cor: string }> = {
   divergente: { label: 'Divergente', cor: '#dc2626' },
 }
 
-function fmtHora(iso: string) {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-}
-
-function fmtData(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR')
-}
 
 export default function CaixasAdminClient({
   abertos,
