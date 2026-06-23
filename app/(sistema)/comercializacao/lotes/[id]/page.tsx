@@ -1,6 +1,8 @@
 import { buscarLote, listarEntregasDoLote, listarEntregasDisponiveis, listarCompradores } from '../actions'
 import LoteDetalhe from './LoteDetalhe'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LoteDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
