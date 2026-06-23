@@ -115,7 +115,7 @@ export async function listarEntregasDoLote(loteId: string) {
   return resultado
 }
 
-export async function iniciarLote(produtoDescricao: string) {
+export async function iniciarLote(produtoDescricao: string, safraId: string) {
   const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
 
@@ -137,6 +137,7 @@ export async function iniciarLote(produtoDescricao: string) {
       organizacao_id:    orgId,
       codigo:            proximoNumero,
       produto_descricao: produtoDescricao,
+      safra_id:          safraId,
       peso_total_kg:     0,
       status:            'rascunho',
     } as any)
@@ -291,4 +292,16 @@ export async function criarVendaExterna(input: {
   if (error) throw new Error(error.message)
   revalidatePath(`/comercializacao/lotes/${input.loteId}`)
   return data
+}
+
+export async function listarSafras() {
+  const orgId = await getOrganizacaoId()
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('safras')
+    .select('id, ano, descricao')
+    .eq('organizacao_id', orgId)
+    .order('ano', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
 }
