@@ -106,6 +106,35 @@ export default async function LojaHubPage() {
         )}
       </div>
 
+      {/* Acesso Rápido */}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+          Relatórios & Gestão
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+          {([
+            { label: 'Conferência de Caixa', href: '/loja/conferencia',       icone: 'ti-clipboard-check'  },
+            { label: 'Caixas',               href: '/loja/caixas',            icone: 'ti-cash-register'    },
+            { label: 'Rel. Vendas',          href: '/loja/relatorio/vendas',  icone: 'ti-chart-bar'        },
+            { label: 'Rel. Estoque',         href: '/loja/relatorio/estoque', icone: 'ti-packages'         },
+            { label: 'Rel. Caixa',           href: '/loja/relatorio/caixa',   icone: 'ti-report-money'     },
+          ] as { label: string; href: string; icone: string }[]).map(item => (
+            <Link
+              key={item.href}
+              href={item.href}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#fff', border: '1px solid #e5e3dc', borderRadius: 10,
+                padding: '12px 14px', textDecoration: 'none',
+              }}
+            >
+              <i className={`ti ${item.icone}`} style={{ fontSize: 18, color: '#E07B30', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Gráfico + Alertas */}
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 300px",
@@ -303,34 +332,6 @@ export default async function LojaHubPage() {
         })}
       </div>
 
-      {/* Acesso Rápido */}
-      <div style={{ marginTop: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-          Relatórios & Gestão
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-          {([
-            { label: 'Conferência de Caixa', href: '/loja/conferencia',       icone: 'ti-clipboard-check'  },
-            { label: 'Caixas',               href: '/loja/caixas',            icone: 'ti-cash-register'    },
-            { label: 'Rel. Vendas',          href: '/loja/relatorio/vendas',  icone: 'ti-chart-bar'        },
-            { label: 'Rel. Estoque',         href: '/loja/relatorio/estoque', icone: 'ti-packages'         },
-            { label: 'Rel. Caixa',           href: '/loja/relatorio/caixa',   icone: 'ti-report-money'     },
-          ] as { label: string; href: string; icone: string }[]).map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                background: '#fff', border: '1px solid #e5e3dc', borderRadius: 10,
-                padding: '12px 14px', textDecoration: 'none',
-              }}
-            >
-              <i className={`ti ${item.icone}`} style={{ fontSize: 18, color: '#E07B30', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#1c1917' }}>{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
 
     </div>
   );
