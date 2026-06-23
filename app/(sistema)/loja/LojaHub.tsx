@@ -14,7 +14,7 @@ const ABAS: { id: Aba; label: string; icone: string }[] = [
   { id: 'estoque',  label: 'Estoque',         icone: '📊' },
   { id: 'compras',  label: 'Compras',         icone: '🧾' },
   { id: 'cadastros',label: 'Cadastros',       icone: '📋' },
-  { id: 'caixa',    label: 'Caixa',           icone: '💰' },
+  { id: 'caixa',    label: 'Relatórios & Gestão', icone: '📊' },
 ]
 
 interface ModuloCard {
@@ -216,7 +216,50 @@ export default function LojaHub({ totalProdutos, totalFornecedores, estoqueBaixo
         </div>
       )}
       {abaAtiva === 'caixa' && (
-        <AbaVazia label="Caixa" icone="💰" />
+        <div>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#1a1a1a', marginBottom: '1rem', marginTop: 0 }}>
+            Relatórios & Gestão
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {([
+              {
+                titulo:    'Rel. Vendas',
+                descricao: 'Histórico e totais de vendas por período e operador.',
+                icone:     '📈',
+                href:      '/loja/relatorios/vendas',
+                emBreve:   true,
+              },
+              {
+                titulo:    'Rel. Estoque',
+                descricao: 'Posição atual, movimentações e histórico de ajustes.',
+                icone:     '📦',
+                href:      '/loja/relatorios/estoque',
+                emBreve:   true,
+              },
+              {
+                titulo:    'Rel. Caixa',
+                descricao: 'Faturamento, sangrias e fechamentos por sessão.',
+                icone:     '💵',
+                href:      '/loja/relatorios/caixa',
+                emBreve:   true,
+              },
+              {
+                titulo:    'Conferência de Caixa',
+                descricao: 'Confira e aprove os fechamentos de caixa dos operadores.',
+                icone:     '✅',
+                href:      '/loja/conferencia',
+              },
+              {
+                titulo:    'Caixas',
+                descricao: 'Visualize e gerencie todas as sessões de caixa abertas e fechadas.',
+                icone:     '🗂️',
+                href:      '/loja/caixas',
+              },
+            ] as ModuloCard[]).map(card => (
+              <CardModulo key={card.titulo} card={card} onClick={card.emBreve ? undefined : () => router.push(card.href)} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
