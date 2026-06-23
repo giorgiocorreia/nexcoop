@@ -39,8 +39,9 @@ export async function calcularDistribuicao(venda_id: string) {
   if (e1 || !venda) throw new Error('Venda não encontrada')
   if (!venda.valor_liquido) throw new Error('Venda sem valor líquido calculado')
 
-  // 2. Buscar movimentações de entrega por conta (distribui por quantidade total entregue)
-  const { data: entregas, error: e3 } = await supabase
+  // 2. Buscar movimentações de entrega por conta, filtrando pelo lote da venda
+  const lote_id = (venda as any).lote_id as string | null
+  const entregasBase = supabase
     .from('movimentacoes_conta')
     .select(`
       conta_id,
@@ -49,6 +50,9 @@ export async function calcularDistribuicao(venda_id: string) {
     `)
     .eq('organizacao_id', usuario.organizacao_id as string)
     .eq('tipo', 'entrega')
+  const { data: entregas, error: e3 } = await (
+    lote_id ? entregasBase.eq('lote_id', lote_id) : entregasBase
+  )
   if (e3) throw new Error(e3.message)
 
   // 4. Agrupar por produtor
@@ -101,7 +105,7 @@ export async function pagarDistribuicao(id: string) {
   // 1. Buscar linha
   const { data: linha, error: e1 } = await supabase
     .from('distribuicao_resultado')
-    .select('*')
+    .select('*, produtores(nome, cooperado_id)')
     .eq('id', id)
     .single()
   if (e1 || !linha) throw new Error('Distribuição não encontrada')
@@ -133,6 +137,33 @@ export async function pagarDistribuicao(id: string) {
     })
     .eq('id', id)
   if (e3) throw new Error(e3.message)
+
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    const produtorInfo = (linha as any).produtores
+    const nomeProdutor = produtorInfo?.nome ?? linha.produtor_id
+
+    const lancamento = await criarLancamento({
+      organizacao_id: usuario.organizacao_id!,
+      tipo: 'despesa' as any,
+      status: 'pago' as any,
+      descricao: `Pagamento produtor — ${nomeProdutor} — Venda ${linha.venda_externa_id.slice(0, 8)}`,
+      valor: Number(linha.valor_liquido),
+      data_competencia: new Date().toISOString().split('T')[0],
+      data_pagamento: new Date().toISOString().split('T')[0],
+      cooperado_id: produtorInfo?.cooperado_id ?? null,
+      observacoes: `Distribuição resultado venda externa`,
+      usuario_id: usuario.id,
+      usuario_email: usuario.email ?? undefined,
+    })
+
+    await supabase
+      .from('distribuicao_resultado')
+      .update({ lancamento_id: lancamento.id } as any)
+      .eq('id', id)
+  } catch (e) {
+    console.error('[contabil] Erro ao criar lançamento distribuição:', e)
+  }
 }
 
 export async function listarVendasPagas() {

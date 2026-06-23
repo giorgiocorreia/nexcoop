@@ -50,3 +50,19 @@ export async function focusGet<T>(path: string): Promise<T> {
   }
   return data as T
 }
+
+export async function focusDelete<T>(path: string, body?: object): Promise<T> {
+  const res = await fetch(`${FOCUS_BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': authHeader(),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(`Focus NFe erro ${res.status}: ${JSON.stringify(data)}`)
+  }
+  return data as T
+}

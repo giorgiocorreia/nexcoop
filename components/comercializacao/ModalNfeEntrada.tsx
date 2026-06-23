@@ -262,7 +262,7 @@ interface BotaoNfeProps {
 }
 
 export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
-  const [nfeStatus, setNfeStatus] = useState<'idle' | 'carregando' | 'autorizada' | 'erro'>('idle')
+  const [nfeStatus, setNfeStatus] = useState<'idle' | 'carregando' | 'autorizada' | 'processando' | 'erro'>('idle')
   const [danfe_url, setDanfeUrl] = useState<string | null>(null)
   const [mostrarModal, setMostrarModal] = useState(false)
 
@@ -273,11 +273,30 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
         if (nota?.status === 'autorizada') {
           setDanfeUrl((nota.danfe_url as string | null) ?? null)
           setNfeStatus('autorizada')
+        } else if (nota?.status === 'processando') {
+          setNfeStatus('processando')
         }
       } catch {}
     }
     verificarStatus()
   }, [movimentacao_id])
+
+  useEffect(() => {
+    if (nfeStatus !== 'processando') return
+    const interval = setInterval(async () => {
+      try {
+        const nota = await getNfeStatus(movimentacao_id)
+        if (nota?.status === 'autorizada') {
+          setDanfeUrl((nota.danfe_url as string | null) ?? null)
+          setNfeStatus('autorizada')
+          clearInterval(interval)
+        } else if (nota?.status !== 'processando') {
+          clearInterval(interval)
+        }
+      } catch {}
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [nfeStatus, movimentacao_id])
 
   if (nfeStatus === 'autorizada') {
     return (

@@ -168,6 +168,34 @@ export async function emitirNfeSaidaAction(vendaId: string): Promise<{
       } as any)
       .eq('id', vendaId)
 
+    try {
+      const { criarLancamento } = await import('@/lib/financeiro/actions')
+      const loteInfo = (venda as any).lotes
+      const compradorInfo = (venda as any).compradores
+      const descricao = `NF-e ${(respostaFinal as any).numero}/${(respostaFinal as any).serie} — ${compradorInfo?.nome ?? 'Comprador'} — Lote ${loteInfo?.codigo ?? ''}`
+
+      const lancamento = await criarLancamento({
+        organizacao_id: usuario.organizacao_id!,
+        tipo: 'receita' as any,
+        status: 'pago' as any,
+        descricao,
+        valor: valor_total,
+        data_competencia: new Date().toISOString().split('T')[0],
+        data_pagamento: new Date().toISOString().split('T')[0],
+        numero_documento: `${(respostaFinal as any).numero}/${(respostaFinal as any).serie}`,
+        observacoes: `NF-e chave: ${(respostaFinal as any).chave_nfe}`,
+        usuario_id: usuario.id,
+        usuario_email: usuario.email ?? undefined,
+      })
+
+      await supabase
+        .from('vendas_externas')
+        .update({ lancamento_id: lancamento.id } as any)
+        .eq('id', vendaId)
+    } catch (e) {
+      console.error('[contabil] Erro ao criar lançamento NF-e saída:', e)
+    }
+
     return { sucesso: true, chave_nfe: (respostaFinal as any).chave_nfe, danfe_url }
   }
 
