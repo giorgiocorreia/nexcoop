@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { confirmarComposicaoLote, fecharLote, criarVendaExterna } from '../actions'
+import { confirmarComposicaoLote, fecharLote, criarVendaExterna, adicionarEntregaAoLote } from '../actions'
 import { BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 import { fmt } from '@/lib/fmt'
 
@@ -41,6 +41,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [compradorId, setCompradorId]   = useState('')
   const [precoKg, setPrecoKg]           = useState('')
   const [salvando, setSalvando]         = useState(false)
+  const [inserindo, setInserindo]       = useState<string | null>(null)
 
   function toggleTodos(marcar: boolean) {
     setSelecionados(marcar ? new Set(todasEntregas.map(e => e.id)) : new Set())
@@ -88,6 +89,19 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
       alert(e.message)
     } finally {
       setSalvando(false)
+    }
+  }
+
+  async function handleAdicionarEntrega(movimentacaoId: string) {
+    if (!confirm('Inserir esta entrega no lote?')) return
+    setInserindo(movimentacaoId)
+    try {
+      await adicionarEntregaAoLote(lote.id, movimentacaoId)
+      router.refresh()
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setInserindo(null)
     }
   }
 
@@ -288,6 +302,36 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                 )
               })}
             </tbody>
+            {loteFechado && entregasDisponiveis.length > 0 && (
+              <>
+                <tbody>
+                  <tr>
+                    <td colSpan={4} style={{ padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', background: '#fef9c3', borderTop: '2px solid #fde047' }}>
+                      Entregas disponíveis fora deste lote
+                    </td>
+                  </tr>
+                  {entregasDisponiveis.map((entrega: any) => (
+                    <tr key={entrega.id} style={{ borderTop: '1px solid #fde047', background: '#fefce8' }}>
+                      <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
+                      <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                        <span style={{ fontSize: 11, color: '#92400e' }}>—</span>
+                      </td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleAdicionarEntrega(entrega.id)}
+                          disabled={inserindo === entrega.id}
+                          style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, borderRadius: 6, border: '1px solid #92400e', background: '#fff', color: '#92400e', cursor: 'pointer' }}
+                        >
+                          {inserindo === entrega.id ? 'Inserindo...' : '+ Inserir no lote'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </>
+            )}
           </table>
         )}
       </div>

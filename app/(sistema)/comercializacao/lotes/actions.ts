@@ -294,6 +294,36 @@ export async function criarVendaExterna(input: {
   return data
 }
 
+export async function adicionarEntregaAoLote(loteId: string, movimentacaoId: string) {
+  const orgId = await getOrganizacaoId()
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('movimentacoes_conta')
+    .update({ lote_id: loteId } as any)
+    .eq('id', movimentacaoId)
+    .eq('organizacao_id', orgId)
+
+  if (error) throw new Error(error.message)
+
+  // Recalcular peso_total_kg do lote
+  const { data: entregas } = await supabase
+    .from('movimentacoes_conta')
+    .select('quantidade_produto')
+    .eq('lote_id', loteId)
+    .eq('organizacao_id', orgId)
+
+  const pesoTotal = (entregas ?? []).reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
+
+  await supabase
+    .from('lotes')
+    .update({ peso_total_kg: pesoTotal } as any)
+    .eq('id', loteId)
+    .eq('organizacao_id', orgId)
+
+  revalidatePath(`/comercializacao/lotes/${loteId}`)
+}
+
 export async function listarSafras() {
   const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
