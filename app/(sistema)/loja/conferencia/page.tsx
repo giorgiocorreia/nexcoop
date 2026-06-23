@@ -26,11 +26,11 @@ export default async function ConferenciaPage() {
   const { data: caixas } = await admin
     .from('loja_caixas')
     .select(`
-      id, aberto_em, fechado_em, valor_abertura, valor_fechamento,
+      id, aberto_em, fechado_em, valor_abertura,
       total_especie, total_pix, total_cartao,
       valor_fisico_especie, valor_fisico_debito, valor_fisico_credito,
       status_conferencia, observacao_conferencia, conferido_em,
-      usuarios ( nome_completo )
+      usuarios!loja_caixas_usuario_id_fkey ( nome_completo )
     `)
     .eq('org_id', orgId)
     .eq('status', 'fechado')
