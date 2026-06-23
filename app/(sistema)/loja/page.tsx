@@ -136,7 +136,7 @@ export default async function LojaHubPage() {
         .btn-pdv:hover { opacity: 0.92; transform: translateY(-1px); }
       `}</style>
 
-      <div style={{ margin: '0 -2rem', background: C.bg, minHeight: '100vh' }}>
+      <div style={{ margin: '-2rem -2rem 0 -2rem', background: C.bg, minHeight: '100vh' }}>
 
         {/* ═══ HEADER ════════════════════════════════════════════════════════════ */}
         <div style={{
@@ -161,7 +161,7 @@ export default async function LojaHubPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            {kpis.caixaAberto && (
+            {kpis.caixaAberto ? (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 background: C.verdeLt, border: `1px solid #BBF7D0`,
@@ -176,6 +176,18 @@ export default async function LojaHubPage() {
                     ? `${(kpis as any).totalCaixasAbertos} caixas abertos · ${kpis.operadorNome}`
                     : `Caixa aberto · ${kpis.operadorNome ?? "—"}`}
                 </span>
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: C.cinzaLt, border: `1px solid ${C.borda}`,
+                borderRadius: 8, padding: '7px 14px',
+              }}>
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  border: `2px solid ${C.cinza}`, display: 'inline-block', flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: C.cinza }}>Nenhum caixa aberto</span>
               </div>
             )}
 
