@@ -1138,7 +1138,8 @@ export interface ResumoFechamento {
 export async function fecharCaixaLoja(
   orgId: string,
   caixaId: string,
-  operadorId: string
+  operadorId: string,
+  forcarComoAdmin?: boolean
 ): Promise<{ ok: boolean; resumo: ResumoFechamento } | { error: string }> {
   const admin = createAdminClient()
 
@@ -1202,7 +1203,7 @@ export async function fecharCaixaLoja(
     vendas_pix:           vendasPix,
   }
 
-  const { error } = await admin
+  let updateQuery = admin
     .from('loja_caixas')
     .update({
       status:              'fechado',
@@ -1218,7 +1219,12 @@ export async function fecharCaixaLoja(
       status_conferencia:  'aguardando',
     })
     .eq('id', caixaId)
-    .eq('usuario_id', operadorId)
+
+  if (!forcarComoAdmin) {
+    updateQuery = updateQuery.eq('usuario_id', operadorId)
+  }
+
+  const { error } = await updateQuery
 
   if (error) return { error: 'Erro ao fechar caixa.' }
 
