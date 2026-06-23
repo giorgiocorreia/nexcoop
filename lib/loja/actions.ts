@@ -693,10 +693,11 @@ export async function abrirCaixaLoja(
     .from('loja_caixas')
     .select('id')
     .eq('org_id', orgId)
+    .eq('usuario_id', usuarioId)
     .eq('status', 'aberto')
     .maybeSingle()
 
-  if (aberto) return { error: 'Já existe um caixa aberto para esta organização.' }
+  if (aberto) return { error: 'Você já possui um caixa aberto.' }
 
   const { data, error } = await admin
     .from('loja_caixas')
@@ -1226,7 +1227,10 @@ export async function fecharCaixaLoja(
 
   const { error } = await updateQuery
 
-  if (error) return { error: 'Erro ao fechar caixa.' }
+  if (error) {
+    console.error('[fecharCaixa] Supabase error:', JSON.stringify(error))
+    return { error: error.message || 'Erro ao fechar caixa.' }
+  }
 
   await registrarLog({
     org_id: orgId,
