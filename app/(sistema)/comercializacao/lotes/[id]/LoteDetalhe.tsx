@@ -49,6 +49,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [salvando, setSalvando]         = useState(false)
   const [inserindo, setInserindo]       = useState<string | null>(null)
   const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
+  const [modalConfirmar, setModalConfirmar] = useState<{ movimentacaoId: string; cotacaoValor: number } | null>(null)
 
   function toggleTodos(marcar: boolean) {
     setSelecionados(marcar ? new Set(todasEntregas.map(e => e.id)) : new Set())
@@ -100,10 +101,15 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   }
 
   async function handleAdicionarEntrega(movimentacaoId: string, cotacaoValor: number) {
-    if (!confirm('Inserir esta entrega no lote?')) return
-    setInserindo(movimentacaoId)
+    setModalConfirmar({ movimentacaoId, cotacaoValor })
+  }
+
+  async function confirmarInsercao() {
+    if (!modalConfirmar) return
+    setInserindo(modalConfirmar.movimentacaoId)
+    setModalConfirmar(null)
     try {
-      await adicionarEntregaAoLote(lote.id, movimentacaoId, cotacaoValor)
+      await adicionarEntregaAoLote(lote.id, modalConfirmar.movimentacaoId, modalConfirmar.cotacaoValor)
       router.refresh()
     } catch (e: any) {
       alert(e.message)
@@ -114,6 +120,36 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
 
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
+
+      {modalConfirmar && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 28, width: 400, maxWidth: '90vw' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#1a1a2e' }}>
+              Inserir entrega no lote?
+            </div>
+            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.5 }}>
+              A entrega será vinculada ao <strong>Lote {lote.codigo}</strong> com cotação de <strong>{fmt.moeda(modalConfirmar.cotacaoValor)}/kg</strong>. O peso total do lote será recalculado.
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setModalConfirmar(null)}
+                style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarInsercao}
+                style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
+              >
+                Confirmar inserção
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cabeçalho */}
       <div style={{ marginBottom: '1.5rem' }}>
