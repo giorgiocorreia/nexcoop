@@ -176,8 +176,8 @@ export async function getLancamentosPendentes(orgId: string) {
   const { data: todos, error } = await supabase
     .from('lancamentos')
     .select('*')
-    .eq('org_id', orgId)
-    .order('data', { ascending: false })
+    .eq('organizacao_id', orgId)
+    .order('data_competencia', { ascending: false })
   if (error) throw new Error(error.message)
 
   const { data: classificados } = await supabase
