@@ -42,6 +42,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [precoKg, setPrecoKg]           = useState('')
   const [salvando, setSalvando]         = useState(false)
   const [inserindo, setInserindo]       = useState<string | null>(null)
+  const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
 
   function toggleTodos(marcar: boolean) {
     setSelecionados(marcar ? new Set(todasEntregas.map(e => e.id)) : new Set())
@@ -92,11 +93,11 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     }
   }
 
-  async function handleAdicionarEntrega(movimentacaoId: string) {
+  async function handleAdicionarEntrega(movimentacaoId: string, cotacaoValor: number) {
     if (!confirm('Inserir esta entrega no lote?')) return
     setInserindo(movimentacaoId)
     try {
-      await adicionarEntregaAoLote(lote.id, movimentacaoId)
+      await adicionarEntregaAoLote(lote.id, movimentacaoId, cotacaoValor)
       router.refresh()
     } catch (e: any) {
       alert(e.message)
@@ -306,29 +307,48 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
               <>
                 <tbody>
                   <tr>
-                    <td colSpan={4} style={{ padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', background: '#fef9c3', borderTop: '2px solid #fde047' }}>
+                    <td colSpan={5} style={{ padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', background: '#fef9c3', borderTop: '2px solid #fde047' }}>
                       Entregas disponíveis fora deste lote
                     </td>
                   </tr>
-                  {entregasDisponiveis.map((entrega: any) => (
-                    <tr key={entrega.id} style={{ borderTop: '1px solid #fde047', background: '#fefce8' }}>
-                      <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
-                      <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                        <span style={{ fontSize: 11, color: '#92400e' }}>—</span>
-                      </td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleAdicionarEntrega(entrega.id)}
-                          disabled={inserindo === entrega.id}
-                          style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, borderRadius: 6, border: '1px solid #92400e', background: '#fff', color: '#92400e', cursor: 'pointer' }}
-                        >
-                          {inserindo === entrega.id ? 'Inserindo...' : '+ Inserir no lote'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {entregasDisponiveis.map((entrega: any) => {
+                    const cotacaoAtual = cotacoesEditaveis[entrega.id] ?? (entrega.cotacao_dia != null ? String(entrega.cotacao_dia) : '')
+                    return (
+                      <tr key={entrega.id} style={{ borderTop: '1px solid #fde047', background: '#fefce8' }}>
+                        <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
+                        <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: 12, color: '#666' }}>R$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={cotacaoAtual}
+                              onChange={e => setCotacoesEditaveis(prev => ({ ...prev, [entrega.id]: e.target.value }))}
+                              placeholder="0,00"
+                              style={{ width: 80, padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid #d1d5db', textAlign: 'right' }}
+                            />
+                            <span style={{ fontSize: 12, color: '#666' }}>/kg</span>
+                          </div>
+                          {entrega.cotacao_data && (
+                            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2, textAlign: 'right' }}>
+                              cotação de {entrega.cotacao_data}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleAdicionarEntrega(entrega.id, parseFloat(cotacaoAtual || '0'))}
+                            disabled={inserindo === entrega.id || !cotacaoAtual}
+                            style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, borderRadius: 6, border: '1px solid #92400e', background: '#fff', color: '#92400e', cursor: 'pointer', opacity: !cotacaoAtual ? 0.5 : 1 }}
+                          >
+                            {inserindo === entrega.id ? 'Inserindo...' : '+ Inserir no lote'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </>
             )}
