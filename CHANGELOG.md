@@ -1,5 +1,42 @@
 # NexCoop — Changelog
 
+## [23/06/2026] — Sessão NF-e Saída + Integração Contábil + Multi-caixa Loja
+
+### Migrations
+- **050** — `lancamento_id UUID FK` em `vendas_externas` e `distribuicao_resultado`
+- **051** — campos de fechamento completos em `loja_caixas`
+
+### Novos arquivos
+- `app/(sistema)/comercializacao/fiscal/page.tsx`
+- `app/(sistema)/comercializacao/fiscal/FiscalNfeClient.tsx`
+- `app/(sistema)/comercializacao/fiscal/actions.ts`
+- `app/(sistema)/loja/caixas/page.tsx`
+- `app/(sistema)/loja/caixas/CaixasAdminClient.tsx`
+- `app/(sistema)/loja/caixas/actions.ts`
+- `supabase/migrations/20260622000001_050_lancamentos_comercializacao.sql`
+- `supabase/migrations/20260623000001_051_loja_caixas_campos_fechamento.sql`
+
+### Arquivos modificados
+- `lib/contabil/actions.ts` — bug fix getLancamentosPendentes (org_id → organizacao_id, data → data_competencia)
+- `lib/focusnfe/client.ts` — focusDelete adicionado
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/actions.ts` — criarLancamento após NF-e autorizada
+- `lib/comercializacao/distribuicao.actions.ts` — criarLancamento em pagarDistribuicao + fix lote_id
+- `components/comercializacao/ModalNfeEntrada.tsx` — polling 5s status processando
+- `lib/loja/actions.ts` — abrirCaixaLoja por usuario_id; fecharCaixaLoja com forcarComoAdmin; criarLancamento em finalizarVenda; log erro fechamento
+- `app/(sistema)/cooperados/[id]/pagamentos-actions.ts` — criarLancamento parcelas pagas
+- `lib/comercializacao/caixa.actions.ts` — criarLancamento em registrarConversaoESaque
+- `components/Sidebar.tsx` — link NF-e Saída em Comercialização; painel Caixas em Loja; simplificação menu Loja
+
+### Bugs corrigidos
+- Escrituração contábil não listava lançamentos (campo errado org_id → organizacao_id)
+- calcularDistribuicao usava todas as entregas da org (não filtrava por lote)
+- fecharCaixaLoja bloqueava fechamento por outro usuário (filtro usuario_id removido para admin)
+- abrirCaixaLoja bloqueava abertura de segundo caixa na org (agora por usuario)
+- Erro hidratação React #418 em CaixasAdminClient (toLocaleString removido)
+- loja_caixas sem colunas de fechamento (migration 051)
+
+---
+
 ## 22/06/2026 — NF-e Saída + ZIP + Fixes Comercialização
 
 ### Novos arquivos
