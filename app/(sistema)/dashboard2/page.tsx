@@ -428,7 +428,7 @@ export default function Dashboard2Page() {
   const [tab, setTab] = useState('geral')
 
   return (
-    <div style={{ margin: '-2rem -2rem 0 -2rem' }}>
+    <div style={{ margin: '0 -2rem' }}>
       <style>{`
         .d2tab { display:flex; align-items:center; height:42px; padding:0 18px; font-size:13px; font-weight:500; color:#78716c; border:none; border-bottom:2px solid transparent; background:none; cursor:pointer; font-family:inherit; white-space:nowrap; transition:color .15s,border-color .15s; }
         .d2tab:hover { color:#1c1917; }
