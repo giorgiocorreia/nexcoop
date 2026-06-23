@@ -98,7 +98,9 @@ export default async function LojaHubPage() {
               boxShadow: "0 0 0 3px rgba(22,163,74,0.2)",
             }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>
-              Caixa aberto{kpis.operadorNome ? ` · ${kpis.operadorNome}` : ""}
+              {(kpis as any).totalCaixasAbertos > 1
+                ? `${(kpis as any).totalCaixasAbertos} caixas abertos · ${kpis.operadorNome}`
+                : `Caixa aberto · ${kpis.operadorNome ?? "—"}`}
             </span>
           </div>
         )}

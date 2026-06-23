@@ -1,54 +1,48 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function getHubKpis(orgId: string) {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const hoje = new Date();
   const inicioDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toISOString();
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
 
-  const { data: vendas } = await supabase
+  const { data: vendas } = await admin
     .from("loja_vendas")
     .select("total, criado_em, pago_especie, pago_pix, pago_cartao, pago_saldo, status")
     .eq("org_id", orgId)
     .eq("status", "concluida");
 
-  const { data: caixa } = await supabase
+  // Multi-caixa: busca todos os caixas abertos da org
+  const { data: caixasAbertos } = await admin
     .from("loja_caixas")
-    .select("id, valor_abertura, usuario_id")
+    .select("id, valor_abertura, usuario_id, usuarios!loja_caixas_usuario_id_fkey(nome_completo)")
     .eq("org_id", orgId)
-    .eq("status", "aberto")
-    .maybeSingle();
+    .eq("status", "aberto");
 
   const vendasHoje = (vendas ?? []).filter(v => v.criado_em >= inicioDia);
   const vendasMes  = (vendas ?? []).filter(v => v.criado_em >= inicioMes);
 
-  const fatHoje = vendasHoje.reduce((s, v) => s + Number(v.total), 0);
-  const fatMes  = vendasMes.reduce((s, v) => s + Number(v.total), 0);
-  const ticketMedio = vendasMes.length > 0 ? fatMes / vendasMes.length : 0;
-
-  // Vendas em conta = soma de pago_saldo do mês
+  const fatHoje       = vendasHoje.reduce((s, v) => s + Number(v.total), 0);
+  const fatMes        = vendasMes.reduce((s, v) => s + Number(v.total), 0);
+  const ticketMedio   = vendasMes.length > 0 ? fatMes / vendasMes.length : 0;
   const vendasEmConta = vendasMes.reduce((s, v) => s + Number(v.pago_saldo ?? 0), 0);
 
-  // Saldo estimado em caixa: fundo + dinheiro + pix de hoje
   const vendasDinheiroHoje = vendasHoje.reduce(
     (s, v) => s + Number(v.pago_especie ?? 0) + Number(v.pago_pix ?? 0), 0
   );
-  const saldoCaixa = caixa
-    ? Number(caixa.valor_abertura) + vendasDinheiroHoje
+
+  const totalAbertura = (caixasAbertos ?? []).reduce((s, c) => s + Number(c.valor_abertura), 0);
+  const saldoCaixa = (caixasAbertos ?? []).length > 0
+    ? totalAbertura + vendasDinheiroHoje
     : 0;
 
-  // Nome do operador (via caixa aberto)
-  let operadorNome: string | null = null;
-  if (caixa?.usuario_id) {
-    const { data: usr } = await supabase
-      .from("usuarios")
-      .select("nome_completo")
-      .eq("id", caixa.usuario_id)
-      .single();
-    operadorNome = usr?.nome_completo ?? null;
-  }
+  const operadores = (caixasAbertos ?? []).map(c =>
+    (c.usuarios as any)?.nome_completo ?? "—"
+  );
 
   return {
     fatHoje,
@@ -57,8 +51,9 @@ export async function getHubKpis(orgId: string) {
     saldoCaixa,
     vendasEmConta,
     transacoesHoje: vendasHoje.length,
-    caixaAberto: !!caixa,
-    operadorNome,
+    caixaAberto: (caixasAbertos ?? []).length > 0,
+    operadorNome: operadores.length > 0 ? operadores.join(", ") : null,
+    totalCaixasAbertos: (caixasAbertos ?? []).length,
   };
 }
 
