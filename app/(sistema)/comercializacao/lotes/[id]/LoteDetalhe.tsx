@@ -30,7 +30,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const kpis = useMemo(() => {
     const sel = todasEntregas.filter(e => selecionados.has(e.id))
     const pesoTotal  = sel.reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
-    const valorTotal = sel.reduce((acc, e) => acc + (e.valor_pago ?? 0), 0)
+    const valorTotal = sel.reduce((acc, e) => acc + ((e.cotacao_dia ?? 0) * (e.quantidade_produto ?? 0)), 0)
     const sacas      = Math.floor(pesoTotal / fatorSaca)
     const resto      = pesoTotal % fatorSaca
     const precoMedio = pesoTotal > 0 ? valorTotal / pesoTotal : 0
@@ -163,7 +163,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
         <div style={cardAzul}>
           <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', marginBottom: 4 }}>Custo total</div>
           <div style={{ fontSize: 24, fontWeight: 500, color: '#042C53' }}>{fmt.moeda(kpis.valorTotal)}</div>
-          <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>preço médio {fmt.moeda(kpis.precoMedio)}/kg</div>
+          <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>valor ref. cotação · médio {fmt.moeda(kpis.precoMedio)}/kg</div>
         </div>
         {mostrarVenda && precoKg && !isNaN(parseFloat(precoKg)) && (
           <div style={{ ...cardAzul, background: '#E1F5EE' }}>
@@ -245,8 +245,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Produtor</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Data</th>
                 <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Kg</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Kg líquido</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Valor pago</th>
+                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Cotação do dia</th>
                 <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 500, color: '#555' }}>NF-e entrada</th>
               </tr>
             </thead>
@@ -277,10 +276,11 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
                     <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right', color: '#666' }}>
-                      {fmt.peso(entrega.quantidade_produto ?? 0)}
+                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                      {entrega.cotacao_dia != null
+                        ? <span title={`Cotação de ${entrega.cotacao_data}`}>{fmt.moeda(entrega.cotacao_dia)}/kg</span>
+                        : <span style={{ color: '#dc2626', fontSize: 11 }}>Sem cotação</span>}
                     </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmt.moeda(entrega.valor_pago)}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                       <BotaoNfe movimentacao_id={entrega.movimentacao_id ?? entrega.id} />
                     </td>

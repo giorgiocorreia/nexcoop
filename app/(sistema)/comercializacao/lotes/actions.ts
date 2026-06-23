@@ -72,7 +72,7 @@ export async function listarEntregasDoLote(loteId: string) {
       *,
       contas_produtor(
         produtor_id,
-        produtores(nome, cpf)
+        produtores(nome, cpf, cooperado_id)
       ),
       produtos(nome, unidade, fator_saca)
     `)
@@ -84,22 +84,35 @@ export async function listarEntregasDoLote(loteId: string) {
   if (error) throw new Error(error.message)
 
   const entregas = data ?? []
-
   if (entregas.length === 0) return []
 
-  const { data: conversoes } = await supabase
-    .from('movimentacoes_conta')
-    .select('conta_id, sessao_caixa_id, valor_financeiro')
-    .eq('organizacao_id', orgId)
-    .eq('tipo', 'conversao')
-    .in('sessao_caixa_id', entregas.map(e => e.sessao_caixa_id).filter((id): id is string => id !== null))
+  // Buscar cotação mais recente <= data de cada entrega
+  const resultado = await Promise.all(entregas.map(async (e) => {
+    const dataEntrega = e.created_at.split('T')[0]
+    const isCooperado = !!(e.contas_produtor as any)?.produtores?.cooperado_id
 
-  return entregas.map(e => ({
-    ...e,
-    valor_pago: conversoes?.find(
-      c => c.conta_id === e.conta_id && c.sessao_caixa_id === e.sessao_caixa_id
-    )?.valor_financeiro ?? 0
+    const { data: cotacao } = await supabase
+      .from('cotacoes')
+      .select('preco_externo, preco_cooperado, data')
+      .eq('organizacao_id', orgId)
+      .lte('data', dataEntrega)
+      .order('data', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const cotacaoDia = cotacao
+      ? (isCooperado ? Number(cotacao.preco_cooperado) : Number(cotacao.preco_externo))
+      : null
+
+    return {
+      ...e,
+      cotacao_dia: cotacaoDia,
+      cotacao_data: cotacao?.data ?? null,
+      is_cooperado: isCooperado,
+    }
   }))
+
+  return resultado
 }
 
 export async function iniciarLote(produtoDescricao: string) {
