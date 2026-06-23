@@ -17,13 +17,13 @@
 | Audit logs | ✅ Completo | — |
 | Gestão de usuários | ✅ Completo | 20/06/2026 |
 | Loja Agropecuária Fases 0–5 | ✅ Completo | 18/06/2026 |
-| Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 21/06/2026 |
+| Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
 | Portal do Filiado | ❌ Planejado | — |
 | Fluxo de Saque / Vendas Comercialização | ❌ Planejado | — |
 
 ## Loja Agropecuária — Fase 6 (em andamento)
 
-### Concluído
+### Concluído (23/06/2026)
 - Migration 040: NCM/CFOP em loja_produtos, colunas fiscais em organizacoes, loja_notas_fiscais
 - Migration 041: campos de pagamento completo em loja_vendas
 - Migration 042: conferência de caixa (status_conferencia, valor_fisico_*, conferido_por)
@@ -45,6 +45,12 @@
 - Botão Editar na listagem de produtos
 - Tela Entradas NF-e (/loja/entradas) — KPIs, tabela com status fiscal, modal vincular com consulta SEFAZ, modal ver dados salvos (21/06/2026)
 - LojaHub: aba Compras ativa com cards Nova Compra, Histórico e Entradas NF-e (21/06/2026)
+- Migration 051: campos de fechamento completos em loja_caixas (valor_fechamento, total_especie/pix/cartao/saldo/sangrias/aportes, saldo_final_especie, conferência)
+- Painel admin de caixas (/loja/caixas): visualização caixas abertos + forçar fechamento + fechamentos recentes (23/06/2026)
+- Multi-caixa: abrirCaixaLoja valida por usuario_id, não por org inteira (23/06/2026)
+- fecharCaixaLoja: suporte a `forcarComoAdmin` sem filtro usuario_id (23/06/2026)
+- criarLancamento em finalizarVenda (integração contábil automática)
+- Menu Loja simplificado: Rel. Vendas/Estoque/Caixa e Conferência removidos do sidebar (acessíveis via Hub)
 
 ### Pendente no módulo
 - Campo status_nfe na tela Nova Compra (verificar se foi implementado)
@@ -62,7 +68,7 @@
 - Emissão real NF-e/NFC-e via Focus NFe
 
 ## Comercialização 🔄
-Última atualização: 22/06/2026
+Última atualização: 23/06/2026
 
 ### ✅ Concluído
 - Cadastro produtores e compradores (com campos fiscais)
@@ -74,6 +80,14 @@
 - ZIP XMLs + DANFE + CSV cooperados + email
 - Sincronização status NF-e (/api/nfe/sincronizar)
 - Sidebar: itens de gestão restritos a admin
+- Polling 5s no BotaoNfe quando status = processando (23/06/2026)
+- Tela gestão NF-e Saída (/comercializacao/fiscal): KPIs, tabela, cancelamento, downloads XML/DANFE (23/06/2026)
+- focusDelete: cancelamento NF-e via DELETE /v2/nfe/{ref} (23/06/2026)
+- criarLancamento após NF-e saída autorizada (integração contábil automática)
+- criarLancamento em pagarDistribuicao (integração contábil automática)
+- criarLancamento em registrarConversaoESaque (integração contábil automática)
+- Fix calcularDistribuicao: filtro por lote_id (antes usava todas entregas da org)
+- Bug fix getLancamentosPendentes: org_id → organizacao_id, data → data_competencia
 
 ### ❌ Pendente
 - iniciarLote: seleção de safra obrigatória
@@ -82,7 +96,6 @@
 - Módulo resultado por safra (receita - custo - taxa)
 - Tela Vender produto (cooperado vende X kg no dia)
 - Dashboard resultado (total vendas, pago, estoque, resultado)
-- Sincronização automática NF-e no BotaoNfe (status processando)
 - Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercialização)
 
 ## Cooperados — Fluxos implementados
