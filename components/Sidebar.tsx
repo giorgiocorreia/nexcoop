@@ -138,17 +138,6 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     if (isAdmin || isGerenteLoja)
       lojaChildren.push({ label: 'Entradas NF-e', href: '/loja/entradas', icone: '🚚' })
 
-    if (isAdmin || isGerenteLoja || isCaixaLoja)
-      lojaChildren.push({ label: 'Rel. Vendas', href: '/loja/relatorios/vendas', icone: '💰' })
-
-    if (isAdmin || isGerenteLoja || isEstoquistaLoja)
-      lojaChildren.push({ label: 'Rel. Estoque', href: '/loja/relatorios/estoque', icone: '📦' })
-
-    if (isAdmin || isGerenteLoja || isCaixaLoja)
-      lojaChildren.push({ label: 'Rel. Caixa', href: '/loja/relatorios/caixa', icone: '🗃' })
-
-    if (isAdmin || isGerenteLoja)
-      lojaChildren.push({ label: 'Conferência', href: '/loja/conferencia', icone: '🔍' })
     if (isAdmin)
       lojaChildren.push({ label: 'Caixas', href: '/loja/caixas', icone: '🗃️' })
 
