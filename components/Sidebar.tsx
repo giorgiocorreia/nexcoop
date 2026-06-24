@@ -236,6 +236,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
     } else if (pathname.startsWith('/comercializacao')) {
       setExpandedGroup('Comercialização')
     }
+    setMobileOpen(false)
   }, [pathname])
 
   useEffect(() => {
