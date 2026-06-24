@@ -250,7 +250,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
         position: "sticky", top: 0, zIndex: 10,
         background: "#fff", borderBottom: `1px solid ${C.borda}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 12,
+        gap: 12, margin: "0 -2rem 0 -2rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
