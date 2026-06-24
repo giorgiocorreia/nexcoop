@@ -195,7 +195,6 @@ export default async function SistemaLayout({
         <main style={{
           flex: 1,
           padding: '0 2rem 2rem 2rem',
-          overflowY: 'auto',
           background: '#f8f7f4',
         }}>
           {children}
