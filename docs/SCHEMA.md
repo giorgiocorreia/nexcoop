@@ -31,8 +31,9 @@
 | 049 | lotes.status CHECK: adiciona 'rascunho' |
 | 050 | lancamento_id FK em vendas_externas e distribuicao_resultado |
 | 051 | loja_caixas: campos de fechamento completos (valor_fechamento, totais por forma, saldo_final_especie, conferência) |
+| 052 | cotacoes: data→vigente_a_partir_de (timestamptz); movimentacoes_conta: +cotacao_id; lotes: -produto_id, +lote_itens (multi-produto); saldos_produtor_snapshot; resultado_safra_snapshot; triggers; vw_saldos_produtor; vw_resultado_safra |
 
-**Próxima migration:** 052
+**Próxima migration:** 053
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -69,7 +70,28 @@
 - `movimentacoes_conta` — tipo='entrega' vincula ao lote via lote_id; campos +chave_nfe_entrada, +xml_nfe_entrada
 - `compradores` — +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
 - `vendas_externas` — +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
-- `cotacoes` (produto_id, data, preco_externo, preco_cooperado)
+- `cotacoes` — (org, produto, vigente_a_partir_de timestamptz, preco_externo, preco_cooperado)
+  - SEM campo `data` — removido na migration 052
+  - Cotação ativa: WHERE vigente_a_partir_de <= now() ORDER BY vigente_a_partir_de DESC LIMIT 1
+  - UNIQUE antigo (org, produto, data) removido — múltiplas cotações no mesmo dia são permitidas
+- `movimentacoes_conta` — +cotacao_id uuid FK → cotacoes (nullable; obrigatório apenas em tipo='conversao', validado na action)
+- `lotes` — codigo, peso_total_kg (mantido por trigger), status (rascunho|aberto|em_venda|entregue), produto_descricao (legacy, só para NF-es emitidas antes de 052), data_fechamento, safra_id
+  - SEM produto_id — removido na migration 052
+  - Produtos do lote vivem em `lote_itens`
+- `lote_itens` (NOVA — migration 052) — lote_id FK, produto_id FK, peso_kg
+  - UNIQUE (lote_id, produto_id)
+  - Trigger trg_sincronizar_peso_lote mantém lotes.peso_total_kg atualizado
+- `saldos_produtor_snapshot` (NOVA — migration 052)
+  - (org, produtor, produto, safra) UNIQUE
+  - kg_entregue, kg_convertido, saldo_kg (GENERATED), valor_convertido_rs
+  - Mantida por trigger trg_atualizar_saldos_produtor_snapshot em movimentacoes_conta
+- `resultado_safra_snapshot` (NOVA — migration 052)
+  - (org, safra, produto) UNIQUE
+  - receita_bruta_rs, custo_aquisicao_rs, taxa_cooperativa_rs, funrural_rs
+  - resultado_liquido_rs (GENERATED), preco_medio_kg (GENERATED), total_kg_vendido
+  - Mantida por trigger trg_atualizar_resultado_safra_snapshot em vendas_externas
+- `vw_saldos_produtor` (VIEW) — snapshot + JOIN produtores, produtos, safras
+- `vw_resultado_safra` (VIEW) — snapshot + JOIN produtos, safras
 - `produtos` — cacau, agrofloresta; +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca (default 60)
 
 ### Loja Agropecuária
@@ -111,3 +133,11 @@ organizacao_id = auth_org_id()
 
 - `loja_caixas → usuarios`: DUAS FKs — `usuario_id` (operador) e `conferido_por` (gerente). Join PostgREST quebra silenciosamente mesmo com hint. Solução definitiva: query separada (fetch caixas → collect usuario_ids → fetch usuarios → merge manual).
 - Migration 042 adicionou `conferido_por` FK → causou ambiguidade
+
+## Joins com ambiguidade conhecida
+
+| Tabela | Situação | Solução |
+|---|---|---|
+| `movimentacoes_conta` | múltiplas FKs para `usuarios` | usar hint explícito quando necessário |
+| `lote_itens` | join via lote para chegar em org | subquery em RLS policy |
+| `saldos_produtor_snapshot` | escrita apenas via trigger/service_role | nunca usar createClient() para escrita |
