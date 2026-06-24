@@ -29,8 +29,10 @@
 | 048 | lotes (nullable safra_id/produto_id, +produto_descricao, +data_fechamento), movimentacoes_conta (+lote_id, +chave_nfe_entrada, +xml_nfe_entrada), vendas_externas (+campos NF-e saída), compradores (+endereço completo), produtos (+ncm, +CFOPs, +CSTs, +fator_saca) |
 
 | 049 | lotes.status CHECK: adiciona 'rascunho' |
+| 050 | lancamento_id FK em vendas_externas e distribuicao_resultado |
+| 051 | loja_caixas: campos de fechamento completos (valor_fechamento, totais por forma, saldo_final_especie, conferência) |
 
-**Próxima migration:** 050
+**Próxima migration:** 052
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -38,6 +40,7 @@
   motivo_rejeicao, valor_unitario, valor_total, quantidade_kg, cfop, produtor_id já existem
 - vendas_externas: campos fiscais chave_nfe, numero_nfe, serie_nfe, status_nfe,
   xml_nfe, data_emissao_nfe já existem (sem migration adicional)
+- `danfe_url` NÃO existe em vendas_externas — gerar URL via `https://focusnfe.com.br/danfe/{chave_nfe}`
 - compradores: campos ie, logradouro, numero, bairro, cep, municipio, uf
   já existiam no banco — apenas expostos no formulário nesta sessão
 - lotes: safra_id deve ser preenchido ao criar (hoje não é obrigatório na UI)
@@ -106,5 +109,5 @@ organizacao_id = auth_org_id()
 
 ## Joins ambíguos conhecidos
 
-- `loja_caixas → usuarios`: usar `usuarios!loja_caixas_usuario_id_fkey`
+- `loja_caixas → usuarios`: DUAS FKs — `usuario_id` (operador) e `conferido_por` (gerente). Join PostgREST quebra silenciosamente mesmo com hint. Solução definitiva: query separada (fetch caixas → collect usuario_ids → fetch usuarios → merge manual).
 - Migration 042 adicionou `conferido_por` FK → causou ambiguidade
