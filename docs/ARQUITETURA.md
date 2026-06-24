@@ -84,6 +84,50 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - Breadcrumb substituído pelo header sticky nas páginas hub
 - Subpáginas mantêm breadcrumb padrão: `Módulo / SubPágina`
 
+## Responsividade Mobile (a partir de 24/06/2026)
+
+### Breakpoints padrão
+- `1024px` — tablet: KPI grid 3 colunas, chart-row em coluna única
+- `640px` — mobile: KPI grid 2 colunas, padding reduzido, elementos secundários ocultos
+
+### Sidebar mobile
+- Abaixo de `768px` o sidebar vira drawer (slide-in da esquerda)
+- Implementado em `components/Sidebar.tsx` + `app/(sistema)/MainContent.tsx`
+- Hamburger button fixo `top:12 left:12 zIndex:201` — renderizado no `MainContent`
+- Overlay `rgba(0,0,0,0.45) zIndex:199` fecha o drawer ao clicar fora
+- Botão de retração (collapse/expand) oculto no mobile (`ToggleBtn` retorna `null` quando `isMobile`)
+- Evento customizado `sidebar-mobile-toggle` (CustomEvent) dispara o drawer — usar `window.dispatchEvent`
+
+### Header de página no mobile
+- Toda página com header sticky DEVE ter `padding-left: 56px` no mobile (≤640px) para não colidir com o hamburger
+- Exemplo de regra CSS obrigatória em cada página:
+```css
+@media (max-width: 640px) {
+  .hub-header { padding: 12px 16px 12px 56px; }
+  .hub-content { padding: 16px; }
+}
+```
+
+### CSS padrão completo de responsividade (copiar para cada página)
+```css
+.hub-header  { padding: 18px 32px; }
+.hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #F8F7F4; }
+
+@media (max-width: 1024px) {
+  .hub-kpi-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+  .hub-chart-row { grid-template-columns: 1fr !important; }
+  .hub-two-col   { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 640px) {
+  .hub-header    { padding: 12px 16px 12px 56px; }
+  .hub-content   { padding: 16px; }
+  .hub-date      { display: none; }
+  .kpi-value     { font-size: 20px !important; }
+  .hub-kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .hub-two-col   { grid-template-columns: 1fr !important; }
+}
+```
+
 ## Infraestrutura Vercel
 
 - Hobby: cron máx 1x/dia — schedule `0 H * * *` obrigatório
