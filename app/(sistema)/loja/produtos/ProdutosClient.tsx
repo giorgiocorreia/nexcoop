@@ -226,7 +226,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
   return (
     <>
       <style>{`
-        .prod-header  { padding: 18px 32px; }
+        .prod-header  { padding: 0 32px; min-height: 88px; }
         .prod-content { padding: 28px 32px; }
         .prod-kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
         .kpi-card { transition: transform 0.15s, box-shadow 0.15s; cursor: default; }
@@ -237,7 +237,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
           .prod-kpi-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 640px) {
-          .prod-header  { padding: 12px 16px 12px 56px; }
+          .prod-header  { padding: 0 16px 0 56px; min-height: 60px; }
           .prod-content { padding: 16px; }
           .prod-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
           .prod-toolbar { flex-direction: column; align-items: stretch; }

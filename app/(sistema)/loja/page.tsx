@@ -135,7 +135,7 @@ export default async function LojaHubPage() {
         .btn-pdv { transition: opacity 0.15s, transform 0.1s; }
         .btn-pdv:hover { opacity: 0.92; transform: translateY(-1px); }
 
-        .hub-header  { padding: 18px 32px; }
+        .hub-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
         .hub-content { padding: 28px 32px; }
         .hub-date    { font-size: 12px; color: #78716C; padding-left: 46px; }
         .kpi-value   { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 5px; }
@@ -148,7 +148,7 @@ export default async function LojaHubPage() {
           .hub-chart-row { grid-template-columns: 1fr; }
         }
         @media (max-width: 640px) {
-          .hub-header    { padding: 12px 16px 12px 56px; }
+          .hub-header    { padding: 0 16px 0 56px; min-height: 60px; }
           .hub-content   { padding: 16px; }
           .hub-date      { display: none; }
           .kpi-value     { font-size: 20px; }

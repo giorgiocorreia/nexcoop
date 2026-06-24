@@ -61,7 +61,7 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - Comercialização: `#92400e`
 
 ### Estrutura de página padrão
-1. **Header sticky** — fundo branco, `border-bottom: 1px solid ${C.borda}`, `padding: 18px 32px`, `position: sticky; top: 0; zIndex: 10`. Contém: ícone + título (h1 fontSize 19 fontWeight 800) + data/subtítulo + badges de status + CTA principal.
+1. **Header sticky** — fundo branco, `border-bottom: 1px solid ${C.borda}`, `min-height: 88px; padding: 0 32px`, `position: sticky; top: 0; zIndex: 10`. Altura 88px = mesma do cabeçalho do sidebar (padding 16px + logo 56px + padding 16px). Contém: ícone + título (h1 fontSize 19 fontWeight 800) + subtítulo/breadcrumb + badges de status + CTA principal. Mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px`.
 2. **Conteúdo** — `background: C.bg`, `padding: 28px 32px`, `margin: 0 -2rem -2rem -2rem`.
 3. **KPI cards** — grid 6 colunas, `borderRadius: 14`, borda superior colorida (3px), ícone em quadrado com cor light, valor em fontSize 26 fontWeight 800, label fontSize 12, sub fontSize 10. Hover: `translateY(-2px)`.
 4. **Cards de conteúdo** — `background: #fff`, `borderRadius: 14`, `border: 1px solid ${C.borda}`, `boxShadow: 0 1px 4px rgba(0,0,0,0.04)`, `padding: 20px 22px`.
@@ -100,12 +100,13 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 
 ### Header de página — regras obrigatórias
 - O header sticky DEVE ter `margin: 0 -2rem 0 -2rem` para cancelar o padding do `<main>` e ocupar largura total
-- Toda página com header sticky DEVE ter `padding-left: 56px` no mobile (≤640px) para não colidir com o hamburger
-- Exemplo de regra CSS obrigatória em cada página:
+- O header DEVE ter `min-height: 88px` para alinhar com o cabeçalho do sidebar (16+56+16)
+- No mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px` para não colidir com o hamburger
+- Classe CSS padrão do header:
 ```css
+.page-header { padding: 0 32px; min-height: 88px; }
 @media (max-width: 640px) {
-  .hub-header { padding: 12px 16px 12px 56px; }
-  .hub-content { padding: 16px; }
+  .page-header { padding: 0 16px 0 56px; min-height: 60px; }
 }
 ```
 
