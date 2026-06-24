@@ -467,6 +467,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   }
 
   function ToggleBtn() {
+    if (isMobile) return null
     return (
       <button
         onClick={toggleCollapsed}
