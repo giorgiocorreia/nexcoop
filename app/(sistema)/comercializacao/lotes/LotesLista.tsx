@@ -34,14 +34,14 @@ export default function LotesLista({ lotes }: { lotes: any[] }) {
   const [modalAberto, setModalAberto] = useState(false)
   const [safras, setSafras] = useState<Safra[]>([])
   const [safraId, setSafraId] = useState('')
-  const [descricao, setDescricao] = useState('Cacau amêndoa seca')
+  const [descricao, setDescricao] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
 
   async function abrirModal() {
     setErro('')
     setSafraId('')
-    setDescricao('Cacau amêndoa seca')
+    setDescricao('')
     setModalAberto(true)
     const lista = await listarSafras()
     setSafras(lista)
