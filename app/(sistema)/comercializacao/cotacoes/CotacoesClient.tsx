@@ -8,7 +8,7 @@ import { fmtReal } from '@/lib/comercializacao/fmt'
 type Produto = { id: string; nome: string; unidade: string }
 type Cotacao = {
   id: string
-  data: string
+  vigente_a_partir_de: string
   produto_id: string
   preco_externo: number
   preco_cooperado: number
@@ -28,12 +28,12 @@ function parsePreco(valor: string): number {
 }
 
 export default function CotacoesClient({ podeRegistrar }: { podeRegistrar: boolean }) {
-  const hoje = new Date().toISOString().split('T')[0]
+  const agora = new Date().toISOString().slice(0, 16)
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([])
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [form, setForm] = useState({
     produto_id: '',
-    data: hoje,
+    vigente_a_partir_de: agora,
     preco_externo: '',
     preco_cooperado: '',
     observacoes: ''
@@ -62,7 +62,7 @@ export default function CotacoesClient({ podeRegistrar }: { podeRegistrar: boole
     try {
       await registrarCotacao({
         produto_id: form.produto_id,
-        data: form.data,
+        vigente_a_partir_de: new Date(form.vigente_a_partir_de).toISOString(),
         preco_externo: precoExt,
         preco_cooperado: precoCoop,
         observacoes: form.observacoes
@@ -106,7 +106,7 @@ export default function CotacoesClient({ podeRegistrar }: { podeRegistrar: boole
               {cotacao ? (
                 <>
                   <div style={{ fontSize: '12px', color: '#9a9a9a', marginBottom: '4px' }}>
-                    {new Date(cotacao.data).toLocaleDateString('pt-BR')}
+                    {new Date(cotacao.vigente_a_partir_de).toLocaleString('pt-BR')}
                   </div>
                   <div style={{ fontSize: '13px', color: '#6b6b6b' }}>
                     Externo: <strong>{fmtReal(cotacao.preco_externo)}/{produto.unidade}</strong>
@@ -139,11 +139,11 @@ export default function CotacoesClient({ podeRegistrar }: { podeRegistrar: boole
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Data</label>
+              <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Vigente a partir de</label>
               <input
-                type="date"
-                value={form.data}
-                onChange={e => setForm(f => ({ ...f, data: e.target.value }))}
+                type="datetime-local"
+                value={form.vigente_a_partir_de}
+                onChange={e => setForm(f => ({ ...f, vigente_a_partir_de: e.target.value }))}
                 style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
               />
             </div>
@@ -224,7 +224,7 @@ export default function CotacoesClient({ podeRegistrar }: { podeRegistrar: boole
               return (
                 <tr key={c.id} style={{ borderBottom: '1px solid #f0ede8' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    {new Date(c.data).toLocaleDateString('pt-BR')}
+                    {new Date(c.vigente_a_partir_de).toLocaleString('pt-BR')}
                   </td>
                   <td style={{ padding: '12px 16px' }}>{c.produtos?.nome}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>

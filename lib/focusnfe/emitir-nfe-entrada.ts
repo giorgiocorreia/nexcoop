@@ -100,8 +100,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       .select('preco_cooperado, preco_externo')
       .eq('organizacao_id', params.organizacao_id)
       .eq('produto_id', mov.produto_id as any)
-      .lte('data', dataMovimentacao)
-      .order('data', { ascending: false })
+      .lte('vigente_a_partir_de', new Date().toISOString())
+      .order('vigente_a_partir_de', { ascending: false })
       .limit(1)
       .maybeSingle()
 

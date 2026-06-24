@@ -36,8 +36,8 @@ export async function getCotacaoParaModal(movimentacao_id: string) {
     .select('preco_cooperado, preco_externo')
     .eq('organizacao_id', usuario.organizacao_id as string)
     .eq('produto_id', mov.produto_id as string)
-    .lte('data', dataMovimentacao)
-    .order('data', { ascending: false })
+    .lte('vigente_a_partir_de', new Date().toISOString())
+    .order('vigente_a_partir_de', { ascending: false })
     .limit(1)
     .maybeSingle()
 

@@ -124,10 +124,9 @@ export async function aplicarCotacaoSugerida(params: {
   preco_cooperado: number
   preco_externo: number
 }) {
-  const data = new Date().toISOString().split('T')[0]
   await registrarCotacao({
     produto_id: params.produto_id,
-    data,
+    vigente_a_partir_de: new Date().toISOString(),
     preco_cooperado: params.preco_cooperado,
     preco_externo: params.preco_externo,
     observacoes: 'Aplicado pelo card de cotação do mercado',

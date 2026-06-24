@@ -803,15 +803,15 @@ export interface Produto {
 }
 
 export interface Cotacao {
-  id:              string
-  organizacao_id:  string
-  produto_id:      string
-  data:            string
-  preco_externo:   number
-  preco_cooperado: number
-  registrado_por:  string | null
-  observacoes:     string | null
-  created_at:      string
+  id:                   string
+  organizacao_id:       string
+  produto_id:           string
+  vigente_a_partir_de:  string
+  preco_externo:        number
+  preco_cooperado:      number
+  registrado_por:       string | null
+  observacoes:          string | null
+  created_at:           string
 }
 
 export interface Produtor {
@@ -993,18 +993,24 @@ export interface Comprador {
 }
 
 export interface Lote {
-  id:             string
-  organizacao_id: string
-  safra_id:       string | null
-  produto_id:     string | null
-  codigo:         string
-  peso_total_kg:  number
-  status:         StatusLote
-  observacoes:    string | null
-  created_at:     string
-  // migration 048
+  id:                string
+  organizacao_id:    string
+  safra_id:          string | null
+  codigo:            string
+  peso_total_kg:     number
+  status:            StatusLote
+  observacoes:       string | null
+  created_at:        string
   produto_descricao: string | null
   data_fechamento:   string | null
+}
+
+export interface LoteItem {
+  id:         string
+  lote_id:    string
+  produto_id: string
+  peso_kg:    number
+  created_at: string
 }
 
 export interface VendaExterna {
@@ -1300,6 +1306,9 @@ export type Database = {
       safras:                      TableDef<Safra>
       compradores:                 TableDef<Comprador>
       lotes:                       TableDef<Lote>
+      lote_itens:                  TableDef<LoteItem>
+      saldos_produtor_snapshot:    TableDef<any>
+      resultado_safra_snapshot:    TableDef<any>
       vendas_externas:             TableDef<VendaExterna>
       distribuicao_resultado:      TableDef<DistribuicaoResultado>
       // ── Comercialização (027) ──────────────────────────────────────────────

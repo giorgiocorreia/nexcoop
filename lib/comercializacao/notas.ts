@@ -222,7 +222,7 @@ export async function buscarDadosComprovante(nota_id: string): Promise<DadosComp
       .select('preco_cooperado, preco_externo')
       .eq('organizacao_id', nota.organizacao_id)
       .eq('produto_id', produtoId)
-      .order('data', { ascending: false })
+      .order('vigente_a_partir_de', { ascending: false })
       .limit(1)
       .maybeSingle()
     cotacao_atual = isCooperado
