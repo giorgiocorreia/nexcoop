@@ -200,7 +200,9 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <i className="ti ti-circle-check" /> NF-e nº {vendaNfe.numero_nfe} autorizada
                   </span>
                   <a
-                    href={vendaNfe.danfe_url ?? '#'}
+                    href={vendaNfe.chave_nfe
+                      ? `https://focusnfe.com.br/danfe/${vendaNfe.chave_nfe}`
+                      : '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
