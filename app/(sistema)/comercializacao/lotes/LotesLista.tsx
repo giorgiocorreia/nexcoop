@@ -97,7 +97,7 @@ export default function LotesLista({ lotes }: { lotes: any[] }) {
                 type="text"
                 value={descricao}
                 onChange={e => setDescricao(e.target.value)}
-                placeholder="Ex: Cacau amêndoa seca"
+                placeholder="Ex: Cacau amêndoa seca, Melancia, Milho..."
                 style={inp}
               />
             </div>
