@@ -214,7 +214,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
   return (
     <>
       <style>{`
-        .prod-header  { padding: 0 32px; min-height: 88px; }
+        .prod-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
         .prod-content { padding: 28px 32px; }
         .prod-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
         .prod-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -264,7 +264,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
       </header>
 
       {/* Conteúdo */}
-      <div className="prod-content" style={{ background: C.bg, margin: "0 -2rem -2rem -2rem", minHeight: "calc(100vh - 73px)" }}>
+      <div className="prod-content" style={{ background: C.bg, margin: "0 -2rem -2rem -2rem", minHeight: "calc(100vh - 88px)" }}>
 
         {/* Toolbar: filtros + busca */}
         <div className="prod-toolbar">

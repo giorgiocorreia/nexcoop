@@ -53,7 +53,7 @@ export default function ComprasLista({ compras, fornecedores, sucesso }: Props) 
   return (
     <>
       <style>{`
-        .comp-header  { padding: 0 32px; min-height: 88px; }
+        .comp-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
         .comp-content { padding: 28px 32px; }
         @media (max-width: 640px) {
           .comp-header  { padding: 0 16px 0 56px; min-height: 60px; }
