@@ -174,11 +174,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "criticos" | "inativos">("todos");
 
-  const total    = produtos.length;
-  const ativos   = produtos.filter(p => p.ativo).length;
-  const inativos = produtos.filter(p => !p.ativo).length;
   const criticos = produtos.filter(p => p.ativo && p.estoque <= p.minimo).length;
-  const semNcm   = produtos.filter(p => !p.ncm && p.ativo).length;
 
   const filtrados = produtos.filter(p => {
     const matchBusca  = p.nome.toLowerCase().includes(busca.toLowerCase());
@@ -210,36 +206,21 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
   };
 
   const filtrosBtns = [
-    { key: "todos",    label: `Todos (${total})` },
+    { key: "todos",    label: `Todos (${produtos.length})` },
     { key: "criticos", label: `⚠ Críticos (${criticos})` },
-    { key: "inativos", label: `Inativos (${inativos})` },
+    { key: "inativos", label: `Inativos (${produtos.filter(p => !p.ativo).length})` },
   ] as const;
-
-  const kpis = [
-    { icon: "ti-box", label: "Total", value: total,    cor: C.laranja,   corLt: C.laranjaLt },
-    { icon: "ti-circle-check", label: "Ativos", value: ativos, cor: "#16A34A", corLt: "#F0FDF4" },
-    { icon: "ti-circle-x",    label: "Inativos", value: inativos, cor: "#78716C", corLt: "#F5F5F4" },
-    { icon: "ti-alert-triangle", label: "Estoque crítico", value: criticos, cor: "#D97706", corLt: "#FFFBEB" },
-    { icon: "ti-file-unknown", label: "Sem NCM", value: semNcm, cor: "#2563EB", corLt: "#EFF6FF" },
-  ];
 
   return (
     <>
       <style>{`
         .prod-header  { padding: 0 32px; min-height: 88px; }
         .prod-content { padding: 28px 32px; }
-        .prod-kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .kpi-card { transition: transform 0.15s, box-shadow 0.15s; cursor: default; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
         .prod-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
         .prod-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
-        @media (max-width: 1024px) {
-          .prod-kpi-grid { grid-template-columns: repeat(3, 1fr); }
-        }
         @media (max-width: 640px) {
           .prod-header  { padding: 0 16px 0 56px; min-height: 60px; }
           .prod-content { padding: 16px; }
-          .prod-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
           .prod-toolbar { flex-direction: column; align-items: stretch; }
           .prod-filtros { overflow-x: auto; flex-wrap: nowrap; }
         }
@@ -284,32 +265,6 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
 
       {/* Conteúdo */}
       <div className="prod-content" style={{ background: C.bg, margin: "0 -2rem -2rem -2rem", minHeight: "calc(100vh - 73px)" }}>
-
-        {/* KPIs */}
-        <div className="prod-kpi-grid">
-          {kpis.map(k => (
-            <div key={k.label} className="kpi-card" style={{
-              background: "#fff", borderRadius: 14, padding: "16px 18px",
-              border: `1px solid ${C.borda}`, borderTop: `3px solid ${k.cor}`,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: C.txtSub }}>
-                  {k.label}
-                </span>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8,
-                  background: k.corLt, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <i className={`ti ${k.icon}`} style={{ fontSize: 15, color: k.cor }} />
-                </div>
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, letterSpacing: "-0.03em", lineHeight: 1 }}>
-                {k.value}
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* Toolbar: filtros + busca */}
         <div className="prod-toolbar">
