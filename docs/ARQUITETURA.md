@@ -104,11 +104,14 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - No mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px` para não colidir com o hamburger
 - Classe CSS padrão do header:
 ```css
-.page-header { padding: 0 32px; min-height: 88px; }
+.page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
 @media (max-width: 640px) {
   .page-header { padding: 0 16px 0 56px; min-height: 60px; }
 }
 ```
+- `min-height: 88px` = 16px (padding sidebar) + 56px (logo sidebar) + 16px (padding sidebar)
+- Mobile: `60px` para não ocupar espaço excessivo em telas pequenas
+- `display: flex; align-items: center` DEVE estar na CSS class, não só no inline style
 
 ### KPI cards — quando usar
 - **Usar:** páginas com dados agregáveis úteis — produtos, compras, estoque, caixas, conferência
