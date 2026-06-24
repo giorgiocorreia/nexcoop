@@ -134,14 +134,34 @@ export default async function LojaHubPage() {
         .bar-fill { transition: width 0.5s ease; }
         .btn-pdv { transition: opacity 0.15s, transform 0.1s; }
         .btn-pdv:hover { opacity: 0.92; transform: translateY(-1px); }
+
+        .hub-header  { padding: 18px 32px; }
+        .hub-content { padding: 28px 32px; }
+        .hub-date    { font-size: 12px; color: #78716C; padding-left: 46px; }
+        .kpi-value   { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 5px; }
+        .hub-kpi-grid   { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .hub-chart-row  { display: grid; grid-template-columns: 1fr 300px; gap: 16px; margin-bottom: 24px; }
+        .hub-two-col    { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+        @media (max-width: 1024px) {
+          .hub-kpi-grid  { grid-template-columns: repeat(3, 1fr); }
+          .hub-chart-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+          .hub-header    { padding: 12px 16px; }
+          .hub-content   { padding: 16px; }
+          .hub-date      { display: none; }
+          .kpi-value     { font-size: 20px; }
+          .hub-kpi-grid  { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+          .hub-two-col   { grid-template-columns: 1fr; }
+        }
       `}</style>
 
       {/* ═══ HEADER — colado ao topo do <main> ═══════════════════════════════ */}
-      <div style={{
+      <div className="hub-header" style={{
         margin: '0 -2rem 0 -2rem',
         background: '#fff',
         borderBottom: `1px solid ${C.borda}`,
-        padding: '18px 32px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: 12, position: 'sticky', top: 0, zIndex: 10,
       }}>
@@ -156,7 +176,7 @@ export default async function LojaHubPage() {
                 Loja Agropecuária
               </h1>
             </div>
-            <div style={{ fontSize: 12, color: C.txtSub, paddingLeft: 46 }}>{hoje}</div>
+            <div className="hub-date">{hoje}</div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -223,14 +243,10 @@ export default async function LojaHubPage() {
         </div>
 
       {/* ═══ CONTEÚDO ══════════════════════════════════════════════════════════ */}
-      <div style={{ margin: '0 -2rem -2rem -2rem', background: C.bg, minHeight: '100vh', padding: '28px 32px' }}>
+      <div className="hub-content" style={{ margin: '0 -2rem -2rem -2rem', background: C.bg, minHeight: '100vh' }}>
 
           {/* ═══ KPI CARDS ═══════════════════════════════════════════════════════ */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-            gap: 12, marginBottom: 24,
-          }}>
+          <div className="hub-kpi-grid">
             {kpiCards.map(k => (
               <div
                 key={k.label}
@@ -255,8 +271,7 @@ export default async function LojaHubPage() {
                     fontSize: 19,
                   }}>{k.icon}</div>
                 </div>
-                <div style={{
-                  fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 5,
+                <div className="kpi-value" style={{
                   color: k.label === 'Estoque crítico' && alertas.length > 0 ? C.vermelho : C.txt,
                 }}>
                   {k.value}
@@ -268,7 +283,7 @@ export default async function LojaHubPage() {
           </div>
 
           {/* ═══ GRÁFICO + ALERTAS ═══════════════════════════════════════════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16, marginBottom: 24 }}>
+          <div className="hub-chart-row">
 
             <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.borda}`, padding: '22px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ marginBottom: 18 }}>
@@ -344,7 +359,7 @@ export default async function LojaHubPage() {
           </div>
 
           {/* ═══ TOP PRODUTOS + ÚLTIMAS VENDAS ═══════════════════════════════════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <div className="hub-two-col">
 
             <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.borda}`, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
