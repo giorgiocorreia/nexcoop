@@ -138,7 +138,7 @@ export default async function LojaHubPage() {
 
       {/* ═══ HEADER — colado ao topo do <main> ═══════════════════════════════ */}
       <div style={{
-        margin: '-2rem -2rem 0 -2rem',
+        margin: '0 -2rem 0 -2rem',
         background: '#fff',
         borderBottom: `1px solid ${C.borda}`,
         padding: '18px 32px',
