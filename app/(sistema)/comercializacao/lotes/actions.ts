@@ -13,7 +13,8 @@ export async function listarLotes() {
     .select(`
       *,
       safras(ano, descricao),
-      produtos(nome, unidade, fator_saca)
+      produtos(nome, unidade, fator_saca),
+      vendas_externas(id, status_nfe, numero_nfe)
     `)
     .eq('organizacao_id', orgId)
     .order('created_at', { ascending: false })

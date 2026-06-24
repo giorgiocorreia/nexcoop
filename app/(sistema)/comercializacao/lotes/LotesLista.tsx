@@ -175,6 +175,21 @@ export default function LotesLista({ lotes }: { lotes: any[] }) {
                 }}>
                   {STATUS_LABEL[lote.status] ?? lote.status}
                 </span>
+                {(() => {
+                  const vendas = (lote.vendas_externas as any[]) ?? []
+                  const autorizada = vendas.find((v: any) => v.status_nfe === 'autorizada')
+                  if (!autorizada) return null
+                  return (
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                      borderRadius: 20, background: '#d1fae5', color: '#065f46',
+                      display: 'inline-flex', alignItems: 'center', gap: 4
+                    }}>
+                      <i className="ti ti-circle-check" style={{ fontSize: 12 }} />
+                      NF-e nº {autorizada.numero_nfe}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
           ))}
