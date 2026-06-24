@@ -28,15 +28,61 @@
 - Server actions: sempre `"use server"` + try/catch + `traduzirErro()`
 - Migrations: sequenciais, nunca pular número, aplicar manualmente no Dashboard
 
-## Padrão visual
+## Padrão visual — Design System (a partir de 24/06/2026)
 
-- Fundo: `#f8f7f4`
-- Cards: branco, `border: 1px solid #e5e3dc`, `border-radius: 12px`, `font-family: system-ui`
+Todas as páginas novas devem seguir o padrão da página `/loja` (LojaHubPage).
+
+### Tokens de cor
+```ts
+const C = {
+  laranja:    '#E07B30',  // Loja
+  laranjaLt:  '#FFF7ED',
+  verde:      '#16A34A',
+  verdeLt:    '#F0FDF4',
+  azul:       '#2563EB',
+  azulLt:     '#EFF6FF',
+  roxo:       '#7C3AED',
+  roxoLt:     '#F5F3FF',
+  vermelho:   '#DC2626',
+  vermelhoLt: '#FEF2F2',
+  cinza:      '#78716C',
+  cinzaLt:    '#F5F5F4',
+  borda:      '#E5E3DC',
+  bg:         '#F8F7F4',
+  txt:        '#1C1917',
+  txtSub:     '#78716C',
+}
+```
+Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
+- Sidebar: `#635BFF`
+- Captação: `#1D9E75`
+- Contábil: `#0F766E`
+- Loja: `#E07B30`
+- Comercialização: `#92400e`
+
+### Estrutura de página padrão
+1. **Header sticky** — fundo branco, `border-bottom: 1px solid ${C.borda}`, `padding: 18px 32px`, `position: sticky; top: 0; zIndex: 10`. Contém: ícone + título (h1 fontSize 19 fontWeight 800) + data/subtítulo + badges de status + CTA principal.
+2. **Conteúdo** — `background: C.bg`, `padding: 28px 32px`, `margin: 0 -2rem -2rem -2rem`.
+3. **KPI cards** — grid 6 colunas, `borderRadius: 14`, borda superior colorida (3px), ícone em quadrado com cor light, valor em fontSize 26 fontWeight 800, label fontSize 12, sub fontSize 10. Hover: `translateY(-2px)`.
+4. **Cards de conteúdo** — `background: #fff`, `borderRadius: 14`, `border: 1px solid ${C.borda}`, `boxShadow: 0 1px 4px rgba(0,0,0,0.04)`, `padding: 20px 22px`.
+5. **Cards de navegação (link-card)** — `borderRadius: 12`, ícone 38×38 com cor light, label fontSize 13 fontWeight 700, desc fontSize 11. Hover: `border-color` da cor do módulo.
+6. **Section labels** — `fontSize: 11`, `fontWeight: 700`, `textTransform: uppercase`, `letterSpacing: 0.08em`, `color: C.txtSub`.
+7. **Badges de status** — `fontSize: 11`, `fontWeight: 600`, `padding: 3px 9px`, `borderRadius: 6`, cor bg + txt do status.
+
+### CSS classes reutilizáveis (via `<style>` inline na página)
+```css
+.kpi-card:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07) }
+.link-card:hover { border-color: <cor-modulo>; box-shadow: 0 4px 12px rgba(<cor>,0.12) }
+.btn-pdv:hover   { opacity: 0.92; transform: translateY(-1px) }
+```
+
+### Regras gerais
 - Sem libs UI externas — tudo inline styles
-- Cores por módulo: sidebar `#635BFF` | captação `#1D9E75` | contábil `#0F766E` | loja `#E07B30` | comercialização `#92400e`
-- Ícones: Tabler Icons via CDN em `layout.tsx`
-- Componente `Btn`/`BtnLink` em `components/ui/Btn.tsx`
-- Breadcrumb padrão: NexCoop / Módulo / SubPágina (substitui `<h1>` solto)
+- Ícones: Tabler Icons via CDN (`ti ti-*`)
+- Font: system-ui (não especificar)
+- Animações via `@keyframes` inline na própria página
+- Breadcrumb substituído pelo header sticky nas páginas hub
+- Subpáginas mantêm breadcrumb padrão: `Módulo / SubPágina`
 
 ## Infraestrutura Vercel
 
