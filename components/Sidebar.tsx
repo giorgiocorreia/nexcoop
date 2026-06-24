@@ -491,23 +491,31 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
   return (
     <>
+      <style>{`
+        .nxc-sidebar { transition: width 0.2s ease; }
+        @media (max-width: 767px) {
+          .nxc-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+          .nxc-sidebar.nxc-sidebar-open { transform: translateX(0); }
+        }
+      `}</style>
     {isMobile && mobileOpen && (
       <div
         onClick={() => setMobileOpen(false)}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 199 }}
       />
     )}
-    <aside style={{
-      width: isMobile ? 240 : `${W}px`,
-      height: '100vh', background: '#ffffff',
-      borderRight: '1px solid #e5e3dc', position: 'fixed', top: 0, left: 0,
-      display: 'flex', flexDirection: 'column',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      zIndex: isMobile ? 200 : 100,
-      transition: isMobile ? 'transform 0.25s ease' : 'width 0.2s ease',
-      transform: isMobile ? (mobileOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-      overflow: 'hidden',
-    }}>
+    <aside
+      className={`nxc-sidebar${mobileOpen ? ' nxc-sidebar-open' : ''}`}
+      style={{
+        width: isMobile ? 240 : `${W}px`,
+        height: '100vh', background: '#ffffff',
+        borderRight: '1px solid #e5e3dc', position: 'fixed', top: 0, left: 0,
+        display: 'flex', flexDirection: 'column',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        zIndex: isMobile ? 200 : 100,
+        overflow: 'hidden',
+      }}
+    >
 
       {/* Cabeçalho */}
       {collapsed ? (

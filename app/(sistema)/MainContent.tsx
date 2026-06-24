@@ -31,6 +31,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
 
   return (
     <ToastProvider>
+      <style>{`
+        .nxc-main { transition: margin-left 0.2s ease; }
+        @media (max-width: 767px) { .nxc-main { margin-left: 0 !important; } }
+      `}</style>
       {isMobile && (
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('sidebar-mobile-toggle'))}
@@ -45,14 +49,16 @@ export default function MainContent({ children }: { children: React.ReactNode })
           <i className="ti ti-menu-2" style={{ fontSize: 18, color: '#444' }} />
         </button>
       )}
-      <div style={{
-        flex: 1,
-        marginLeft: isMobile ? 0 : (collapsed ? '56px' : '240px'),
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        transition: 'margin-left 0.2s ease',
-      }}>
+      <div
+        className="nxc-main"
+        style={{
+          flex: 1,
+          marginLeft: isMobile ? 0 : (collapsed ? '56px' : '240px'),
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
+      >
         {children}
       </div>
     </ToastProvider>
