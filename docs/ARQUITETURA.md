@@ -103,6 +103,14 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - WhatsApp NexCoop: número 73999693548, conectado via Evolution API
 - Meta Business Manager: conta criada, Instagram conectado, WhatsApp pendente de CNPJ
 
+## Histórico de decisões arquiteturais
+
+| Data | Decisão | Motivo |
+|---|---|---|
+| 2026-06-24 | `cotacoes.data` → `vigente_a_partir_de (timestamptz)` | Suporte a cotação intraday; rastreabilidade fiscal imutável por `cotacao_id` |
+| 2026-06-24 | Lotes multi-produto via `lote_itens` | Cooperativas operam lotes com múltiplos produtos (ex: merenda escolar) |
+| 2026-06-24 | Snapshots de agregação com triggers Postgres | Escalabilidade: evita SUM full-scan em volumes crescentes; consistência transacional garantida pelo banco |
+
 ## Modelo Produtor/Cooperado/Usuário
 
 - `produtores` = identidade cadastral (base de tudo)
@@ -113,6 +121,54 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
   2. `criarUsuarioComCooperadoOpcional` — usuário com checkbox "é cooperado?"
   3. `promoverProdutorACooperado` — promoção de produtor externo
   4. `vincularUsuarioComoCooperado` — usuário existente → cooperado (Configurações → Usuários)
+
+## Modelo de dados — Comercialização
+
+### Cotações (`cotacoes`)
+
+**REGRA PERMANENTE:** cotações usam `vigente_a_partir_de (timestamptz)`, NÃO um campo `data (date)`.
+
+- Uma cotação pode mudar múltiplas vezes no mesmo dia (intraday)
+- A cotação ativa para um produto é sempre:
+  ```sql
+  SELECT * FROM cotacoes
+  WHERE organizacao_id = $org AND produto_id = $produto
+    AND vigente_a_partir_de <= now()
+  ORDER BY vigente_a_partir_de DESC
+  LIMIT 1
+  ```
+- Toda conversão de kg→R$ em `movimentacoes_conta` DEVE gravar `cotacao_id` (FK para a cotação ativa no momento exato)
+- Registros históricos anteriores à migration 052 têm `cotacao_id = NULL` — aceitável, sem possibilidade de recuperação
+
+### Lotes (`lotes` + `lote_itens`)
+
+**REGRA PERMANENTE:** lotes são multi-produto. `produto_id` NÃO existe em `lotes`.
+
+- Produtos de um lote vivem em `lote_itens (lote_id, produto_id, peso_kg)`
+- `lotes.peso_total_kg` é mantido automaticamente por trigger (`trg_sincronizar_peso_lote`)
+- `lotes.produto_descricao` existe apenas para compatibilidade com NF-es emitidas antes da migration 052 — NÃO usar para novos lotes
+- Para buscar os produtos de um lote: `SELECT produto_id, peso_kg FROM lote_itens WHERE lote_id = $id`
+
+### Snapshots de agregação
+
+**REGRA PERMANENTE:** nunca calcular saldos/resultados em tempo real via SUM sobre `movimentacoes_conta`. Usar snapshots.
+
+- `saldos_produtor_snapshot` — kg_entregue, kg_convertido, saldo_kg (gerado), valor_convertido_rs por (org, produtor, produto, safra)
+- `resultado_safra_snapshot` — receita, custo, taxa, FUNRURAL, resultado_liquido (gerado), preco_medio (gerado) por (org, safra, produto)
+- Ambos atualizados por triggers Postgres (`trg_atualizar_saldos_produtor_snapshot`, `trg_atualizar_resultado_safra_snapshot`)
+- Server actions NUNCA atualizam snapshots diretamente — apenas inserem nas tabelas fonte
+
+### Views leves
+
+- `vw_saldos_produtor` — snapshot + JOIN produtores, produtos, safras
+- `vw_resultado_safra` — snapshot + JOIN produtos, safras
+- Views fazem apenas enriquecimento com nomes — zero agregação
+
+### FUNRURAL
+
+- Taxa fixa: **1,63%** sobre receita bruta
+- Obrigação da cooperativa como substituta tributária — NÃO deduzida do produtor
+- Calculada e gravada em `resultado_safra_snapshot.funrural_rs` no momento da venda
 
 ## NF-e entrada (Focus NFe)
 
