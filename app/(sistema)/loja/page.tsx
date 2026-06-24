@@ -148,7 +148,7 @@ export default async function LojaHubPage() {
           .hub-chart-row { grid-template-columns: 1fr; }
         }
         @media (max-width: 640px) {
-          .hub-header    { padding: 12px 16px; }
+          .hub-header    { padding: 12px 16px 12px 56px; }
           .hub-content   { padding: 16px; }
           .hub-date      { display: none; }
           .kpi-value     { font-size: 20px; }

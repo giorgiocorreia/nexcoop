@@ -227,6 +227,8 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   const [collapsed, setCollapsed] = useState(false)
   const [nomeDisplay, setNomeDisplay] = useState(usuario?.nome_completo || '')
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     if (pathname.startsWith('/loja')) {
@@ -239,6 +241,18 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   useEffect(() => {
     const saved = localStorage.getItem(SIDEBAR_KEY)
     if (saved === 'true') setCollapsed(true)
+
+    function checkMobile() { setIsMobile(window.innerWidth < 768) }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    function handleMobileToggle() { setMobileOpen(prev => !prev) }
+    window.addEventListener('sidebar-mobile-toggle', handleMobileToggle)
+
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+      window.removeEventListener('sidebar-mobile-toggle', handleMobileToggle)
+    }
   }, [])
 
   function toggleCollapsed() {
@@ -474,12 +488,22 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   }
 
   return (
+    <>
+    {isMobile && mobileOpen && (
+      <div
+        onClick={() => setMobileOpen(false)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 199 }}
+      />
+    )}
     <aside style={{
-      width: `${W}px`, height: '100vh', background: '#ffffff',
+      width: isMobile ? 240 : `${W}px`,
+      height: '100vh', background: '#ffffff',
       borderRight: '1px solid #e5e3dc', position: 'fixed', top: 0, left: 0,
       display: 'flex', flexDirection: 'column',
-      fontFamily: 'system-ui, -apple-system, sans-serif', zIndex: 100,
-      transition: 'width 0.2s ease',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      zIndex: isMobile ? 200 : 100,
+      transition: isMobile ? 'transform 0.25s ease' : 'width 0.2s ease',
+      transform: isMobile ? (mobileOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
       overflow: 'hidden',
     }}>
 
@@ -598,6 +622,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         </div>
       )}
     </aside>
+    </>
   )
 }
 
