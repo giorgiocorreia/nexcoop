@@ -76,6 +76,7 @@ type PrevisaoSaldo = {
 
 type FormEdit = {
   nome: string
+  cpf: string
   email: string
   telefone: string
   tipo: string
@@ -139,6 +140,7 @@ function KgDisplay({ valor, fontSize = 22, cor }: { valor: number; fontSize?: nu
 function initFormEdit(p: Produtor): FormEdit {
   return {
     nome: p.nome,
+    cpf: p.cpf ? p.cpf.replace(/\D/g, '') : '',
     email: p.email ?? '',
     telefone: p.telefone ? mascararTelefone(p.telefone) : '',
     tipo: p.tipo || 'externo',
@@ -210,7 +212,7 @@ function BlocoHeader({ children }: { children: React.ReactNode }) {
 }
 
 const FORM_VAZIO: FormEdit = {
-  nome: '', email: '', telefone: '', tipo: 'externo',
+  nome: '', cpf: '', email: '', telefone: '', tipo: 'externo',
   municipio: '', endereco: '', nome_propriedade: '',
   area_total_ha: '', area_cacau_ha: '', tipo_posse: '',
   ie_produtor_rural: '', tem_certificacao: false,
@@ -318,6 +320,7 @@ export default function PerfilProdutorPage() {
     try {
       await editarProdutor(produtor.id, {
         nome: formEdit.nome.trim() || undefined,
+        cpf: formEdit.cpf.replace(/\D/g, '') || undefined,
         email: formEdit.email.trim() || undefined,
         telefone: formEdit.telefone ? formEdit.telefone.replace(/\D/g, '') : undefined,
         tipo: formEdit.tipo as 'externo' | 'cooperado',
@@ -596,7 +599,7 @@ export default function PerfilProdutorPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
-                <input value={exibirCPF(produtor.cpf) ?? ''} disabled style={{ ...inp, background: '#f8f7f4', color: '#9a9a9a', cursor: 'not-allowed' }} />
+                <input value={mascararCPF(f.cpf)} onChange={e => setF({ cpf: e.target.value.replace(/\D/g, '').slice(0, 11) })} placeholder="000.000.000-00" style={inp} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
