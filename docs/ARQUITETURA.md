@@ -98,7 +98,8 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - Botão de retração (collapse/expand) oculto no mobile (`ToggleBtn` retorna `null` quando `isMobile`)
 - Evento customizado `sidebar-mobile-toggle` (CustomEvent) dispara o drawer — usar `window.dispatchEvent`
 
-### Header de página no mobile
+### Header de página — regras obrigatórias
+- O header sticky DEVE ter `margin: 0 -2rem 0 -2rem` para cancelar o padding do `<main>` e ocupar largura total
 - Toda página com header sticky DEVE ter `padding-left: 56px` no mobile (≤640px) para não colidir com o hamburger
 - Exemplo de regra CSS obrigatória em cada página:
 ```css
@@ -107,6 +108,10 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
   .hub-content { padding: 16px; }
 }
 ```
+
+### KPI cards — quando usar
+- **Usar:** páginas com dados agregáveis úteis — produtos, compras, estoque, caixas, conferência
+- **Não usar:** páginas de cadastro simples — fornecedores, categorias, unidades, etc.
 
 ### CSS padrão completo de responsividade (copiar para cada página)
 ```css
