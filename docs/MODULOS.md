@@ -51,6 +51,7 @@
 - fecharCaixaLoja: suporte a `forcarComoAdmin` sem filtro usuario_id (23/06/2026)
 - criarLancamento em finalizarVenda (integração contábil automática)
 - Menu Loja simplificado: Rel. Vendas/Estoque/Caixa e Conferência removidos do sidebar (acessíveis via Hub)
+- Join PostgREST conferencia corrigido — query separada para usuarios (24/06/2026)
 
 ### Pendente no módulo
 - Campo status_nfe na tela Nova Compra (verificar se foi implementado)
@@ -88,6 +89,9 @@
 - criarLancamento em registrarConversaoESaque (integração contábil automática)
 - Fix calcularDistribuicao: filtro por lote_id (antes usava todas entregas da org)
 - Bug fix getLancamentosPendentes: org_id → organizacao_id, data → data_competencia
+- Botão NF-e saída alterna para Reimprimir após autorização (24/06/2026)
+- Badge NF-e autorizada no card de lote na listagem (24/06/2026)
+- iniciarLote: descrição sem padrão hardcoded (24/06/2026)
 
 ### ❌ Pendente
 - iniciarLote: seleção de safra obrigatória
@@ -97,6 +101,9 @@
 - Tela Vender produto (cooperado vende X kg no dia)
 - Dashboard resultado (total vendas, pago, estoque, resultado)
 - Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercialização)
+- vw_saldos_produtor: view PostgreSQL saldo_kg por produtor/produto (migration 052) — próximo chat
+- Módulo resultado por safra: receita − custo − taxa − FUNRURAL — próximo chat
+- DRE integrado (comercialização + loja + custos operacionais) — chat dedicado com Marcos
 
 ## Cooperados — Fluxos implementados
 
