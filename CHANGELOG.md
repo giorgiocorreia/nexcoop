@@ -1,5 +1,23 @@
 # NexCoop — Changelog
 
+## [24/06/2026] — Bugs Conferência + NF-e Saída + Badge Lote + Iniciar Lote
+
+### Bugs corrigidos
+- `/loja/conferencia` — join PostgREST `usuarios!loja_caixas_usuario_id_fkey` quebrava silenciosamente (tabela tem duas FKs para `usuarios`: `usuario_id` + `conferido_por`). Fix: query separada — busca `loja_caixas` sem join, coleta `usuario_id`s, busca `usuarios` separadamente, merge manual.
+- `LoteDetalhe` — botão "Emitir NF-e de saída" não alternava para "Reimprimir" após autorização. Fix: `buscarLote` agora inclui `vendas_externas(id, status_nfe, chave_nfe, numero_nfe, serie_nfe)` + lógica `nfeAutorizada` no componente.
+- Runtime error na página do lote — campo `danfe_url` inexistente em `vendas_externas`. Fix: removido do select, URL DANFE gerada via `https://focusnfe.com.br/danfe/{chave_nfe}`.
+- Registro fantasma `vendas_externas` id `68f72b00` com todos campos nulos deletado do banco (causava `buscarLote` pegar venda null em vez da autorizada).
+
+### Features
+- Badge "NF-e nº X autorizada" no card de lote na listagem — `listarLotes` agora traz `vendas_externas(id, status_nfe, numero_nfe)`
+- `iniciarLote`: descrição sem valor padrão hardcoded ('Cacau amêndoa seca' removido), placeholder genérico
+
+### Arquivos modificados
+- `app/(sistema)/loja/conferencia/page.tsx` — query separada para usuarios
+- `app/(sistema)/comercializacao/lotes/actions.ts` — buscarLote + listarLotes com vendas_externas
+- `app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx` — lógica nfeAutorizada + botão condicional
+- `app/(sistema)/comercializacao/lotes/LotesLista.tsx` — badge NF-e + descrição sem padrão
+
 ## [23/06/2026] — Sessão NF-e Saída + Integração Contábil + Multi-caixa Loja
 
 ### Migrations
