@@ -96,6 +96,17 @@ type FormEdit = {
   chave_pix: string
 }
 
+function validarCPF(cpf: string): boolean {
+  const d = cpf.replace(/\D/g, '')
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false
+  const calc = (len: number) => {
+    const sum = d.slice(0, len).split('').reduce((acc, n, i) => acc + +n * (len + 1 - i), 0)
+    const r = (sum * 10) % 11
+    return r === 10 || r === 11 ? 0 : r
+  }
+  return calc(9) === +d[9] && calc(10) === +d[10]
+}
+
 function mascararCPF(v: string) {
   return v.replace(/\D/g, '').slice(0, 11)
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -315,6 +326,10 @@ export default function PerfilProdutorPage() {
 
   async function handleSalvarEdicao() {
     if (!produtor) return
+    if (formEdit.cpf && !validarCPF(formEdit.cpf)) {
+      setErroEdit('CPF inválido. Verifique os dígitos informados.')
+      return
+    }
     setSalvando(true)
     setErroEdit('')
     try {
