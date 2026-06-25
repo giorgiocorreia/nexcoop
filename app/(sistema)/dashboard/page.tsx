@@ -116,14 +116,41 @@ export default async function DashboardPage() {
   const hoje = new Date()
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'right', marginBottom: '1.25rem' }}>
-        <span style={{ fontSize: '12px', color: '#bbb' }}>
-          {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </span>
-      </div>
+    <>
+      <style>{`
+        .dash-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .dash-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .dash-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .dash-content { padding: 16px; }
+          .dash-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+          .dash-main-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: resumoCotas ? '1rem' : '2rem' }}>
+      <header className="dash-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-layout-dashboard" style={{ fontSize: 20, color: '#635BFF' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Dashboard</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="dash-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+
+      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: resumoCotas ? '1rem' : '2rem' }}>
         <CardResumo label="Total de filiados" valor={String(totalCooperados || 0)} sub={`${cooperadosAtivos || 0} ativos`} cor="#635BFF" bg="#EEF0FF" />
         <CardResumo label="A receber" valor={formatBRL(totalReceber)} sub="Lançamentos pendentes" cor="#185FA5" bg="#E6F1FB" />
         <CardResumo label="A pagar" valor={formatBRL(totalPagar)} sub="Lançamentos pendentes" cor="#993C1D" bg="#FAECE7" />
@@ -182,7 +209,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>Últimos lançamentos</h2>
@@ -275,7 +302,9 @@ export default async function DashboardPage() {
           usdBrl={usdBrl}
         />
       )}
-    </div>
+      </div>{/* maxWidth */}
+      </div>{/* dash-content */}
+    </>
   )
 }
 
