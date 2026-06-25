@@ -720,3 +720,10 @@ Decisões registradas:
 | Loja Agropecuária — Fase 4 PDV | ✅ | 038 |
 | Comercialização — Tesouraria | ✅ | 025–028 |
 | Comercialização — Notas/NF-e | ✅ | 029–030 |
+
+### Fix ciclo de vida lote — 25/06/2026 (commits 9eb3172, 9693d20+)
+- `LoteDetalhe.tsx`: guard expandido para `em_venda || entregue || pago` — botões fiscais visíveis em todos os estados pós-fechamento
+- `STATUS` map: adicionado `pago` com ícone `ti-cash` verde
+- `fn_atualizar_status_lote`: adicionada transição `pago` (migration 054c)
+- `lib/comercializacao/devolucao.ts`: `processarPagamentoVendaAction` atualiza `lotes.status = 'pago'` além de `vendas_externas`
+- **Causa raiz:** trigger `fn_atualizar_status_lote` avançava `lote.status` para `entregue` mas guard do header só aceitava `em_venda`
