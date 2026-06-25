@@ -315,11 +315,11 @@ export default function PDVPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', background: '#f8f7f4', overflow: 'hidden' }}>
       <style>{`
-        .pdv-header { padding: 0 20px; }
+        .pdv-header { padding: 0 32px; }
         @media (max-width: 640px) { .pdv-header { padding: 0 16px 0 56px; } }
       `}</style>
 
-      <div className="pdv-header" style={{ background: '#fff', borderBottom: '1px solid #E5E3DC', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
+      <div className="pdv-header" style={{ background: '#fff', borderBottom: '1px solid #E5E3DC', minHeight: 88, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12, margin: '0 -2rem 0 -2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <i className="ti ti-shopping-bag" style={{ fontSize: 20, color: '#E07B30' }} />
@@ -336,7 +336,7 @@ export default function PDVPage() {
             Sangria / Aporte
           </Btn>
           <Btn icone="ti-lock" tamanho="sm" onClick={handleFecharCaixa} disabled={fechandoCaixa}
-            style={{ background: '#1a1a2e', color: '#fff', border: '1.5px solid #1a1a2e' }}>
+            style={{ background: '#DC2626', color: '#fff', border: '1.5px solid #DC2626' }}>
             {fechandoCaixa ? 'Fechando...' : 'Fechar Caixa'}
           </Btn>
         </div>
