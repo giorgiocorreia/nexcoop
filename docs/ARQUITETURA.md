@@ -54,10 +54,11 @@ const C = {
 }
 ```
 Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
-- Sidebar: `#635BFF`
+- Sidebar / Dashboard / Cooperados / Financeiro / Mensalidades: `#635BFF` (roxo) — light `#EEF0FF`
+- Assembleias / Documentos: `#185FA5` (azul) — light `#E6F1FB`
 - Captação: `#1D9E75`
 - Contábil: `#0F766E`
-- Loja: `#E07B30`
+- Loja: `#E07B30` — light `#FFF7ED`
 - Comercialização: `#92400e`
 
 ### Estrutura de página padrão
@@ -102,6 +103,7 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - O header sticky DEVE ter `margin: 0 -2rem 0 -2rem` para cancelar o padding do `<main>` e ocupar largura total
 - O header DEVE ter `min-height: 88px` para alinhar com o cabeçalho do sidebar (16+56+16)
 - No mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px` para não colidir com o hamburger
+- **Caso especial — layout full-screen (ex: PDV):** quando o root div tem `overflow: hidden` (necessário para conter scroll interno), o `margin: 0 -2rem 0 -2rem` no header filho é cortado pelo clipping. Solução: colocar `margin: 0 -2rem -2rem -2rem` no **root div** e usar apenas `padding: 0 32px` no header via CSS class. Isso distribui a expansão para toda a área raiz, não para o header isolado.
 - Classe CSS padrão do header:
 ```css
 .page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
@@ -160,6 +162,7 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 
 | Data | Decisão | Motivo |
 |---|---|---|
+| 2026-06-24 | Padrão visual sticky-header aplicado a todos os módulos (Loja, Dashboard, Cooperados, Financeiro, Mensalidades, Assembleias, Documentos) | Consistência de UX; PDV usa variante full-screen com margin no root div por causa de overflow:hidden |
 | 2026-06-24 | `cotacoes.data` → `vigente_a_partir_de (timestamptz)` | Suporte a cotação intraday; rastreabilidade fiscal imutável por `cotacao_id` |
 | 2026-06-24 | Lotes multi-produto via `lote_itens` | Cooperativas operam lotes com múltiplos produtos (ex: merenda escolar) |
 | 2026-06-24 | Snapshots de agregação com triggers Postgres | Escalabilidade: evita SUM full-scan em volumes crescentes; consistência transacional garantida pelo banco |
