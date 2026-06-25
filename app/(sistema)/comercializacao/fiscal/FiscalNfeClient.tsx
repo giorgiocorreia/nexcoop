@@ -175,7 +175,7 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                         )}
                         {nfe.chave_nfe && nfe.status_nfe === 'autorizada' && (
                           <a
-                            href={`${process.env.NEXT_PUBLIC_FOCUSNFE_AMBIENTE === 'producao' ? 'https://api.focusnfe.com.br' : 'https://homologacao.focusnfe.com.br'}/danfe/${nfe.chave_nfe}`}
+                            href={`${nfe.xml_nfe ? nfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : ''}`}
                             target="_blank" rel="noopener noreferrer"
                             style={{
                               padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,

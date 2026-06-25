@@ -201,7 +201,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                   </span>
                   <a
                     href={vendaNfe.chave_nfe
-                      ? `${process.env.NEXT_PUBLIC_FOCUSNFE_AMBIENTE === 'producao' ? 'https://api.focusnfe.com.br' : 'https://homologacao.focusnfe.com.br'}/danfe/${vendaNfe.chave_nfe}`
+                      ? `${vendaNfe.xml_nfe ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : ''}`
                       : '#'}
                     target="_blank"
                     rel="noopener noreferrer"
