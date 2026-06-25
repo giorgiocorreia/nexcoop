@@ -705,7 +705,7 @@ export default function NovoCooperadoPage() {
                   background: '#635BFF', color: '#fff', fontSize: '13px',
                   fontWeight: '600', cursor: 'pointer',
                 }}
-                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
+                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#4840CC')}
                 onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
               >
                 Próximo →
