@@ -138,8 +138,8 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>NF-e Saída</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>Notas fiscais emitidas na comercialização</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Notas Fiscais</h1>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>NF-e de entrada e saída da comercialização</p>
         </div>
 
         {mensagem && (

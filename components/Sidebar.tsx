@@ -106,7 +106,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
           { label: 'Lotes',       href: '/comercializacao/lotes',         icone: '📦' },
           { label: 'Compradores', href: '/comercializacao/compradores',   icone: '🏭' },
           { label: 'Vendas',      href: '/comercializacao/vendas',        icone: '💰' },
-          { label: 'NF-e Saída',  href: '/comercializacao/fiscal',        icone: '🧾' },
+          { label: 'Notas Fiscais', href: '/comercializacao/fiscal',        icone: '🧾' },
         ] : []),
       ],
     })

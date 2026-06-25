@@ -200,8 +200,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <i className="ti ti-circle-check" /> NF-e nº {vendaNfe.numero_nfe} autorizada
                   </span>
                   <a
-                    href={vendaNfe.chave_nfe
-                      ? `${vendaNfe.xml_nfe ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : ''}`
+                    href={vendaNfe.xml_nfe
+                      ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf')
                       : '#'}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -215,7 +215,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     <i className="ti ti-printer" /> Reimprimir DANFE
                   </a>
                   <a
-                    href={`/comercializacao/lotes/${lote.id}/nfe`}
+                    href={`/comercializacao/fiscal`}
                     style={{
                       padding: '8px 16px', fontSize: 13, fontWeight: 600,
                       borderRadius: 8, border: '1px solid #d1d5db',
@@ -223,7 +223,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                       textDecoration: 'none', display: 'inline-block'
                     }}
                   >
-                    <i className="ti ti-file-invoice" /> Ver NF-e
+                    <i className="ti ti-file-invoice" /> Ver notas fiscais
                   </a>
                 </div>
               ) : (
