@@ -47,6 +47,13 @@
 - Adaptar `iniciarLote` para criar `lote_itens` ao vincular entregas
 - Construir tela `/comercializacao/resultado`
 
+### Correções aplicadas (2026-06-25)
+- `vendas_externas.status` avança automaticamente para `confirmada` quando NF-e é autorizada pela SEFAZ
+- Lançamento contábil criado na autorização da NF-e agora usa `status='pendente'` (não 'pago')
+- `listarLotes` corrigida: join `produtos(...)` removido, usa `lote_itens(...)`
+- Venda da COOPAIBI (id: 9f3c0b0e) corrigida manualmente para `confirmada`
+- Lançamento correspondente corrigido manualmente para `pendente`
+
 #### Pendências gerais
 - Campo CPF editável na ficha do produtor quando nulo
 - Matrículas 266015/266016 → corrigir para 26015/26016 no banco
