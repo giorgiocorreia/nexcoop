@@ -10,6 +10,7 @@ import {
   fecharCaixaLoja,
 } from '@/lib/loja/actions'
 import type { ResumoFechamento } from '@/lib/loja/actions'
+import { getDetalhesSessao } from '@/lib/loja/caixa-relatorio-actions'
 import { podeVenderLoja, orgTemModulo } from '@/lib/permissoes'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
@@ -71,6 +72,9 @@ export default function PDVPage() {
 
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [painelAtivo, setPainelAtivo] = useState<'produtos' | 'vendas'>('produtos')
+  const [vendasSessao, setVendasSessao] = useState<any[]>([])
+  const [carregandoVendas, setCarregandoVendas] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -250,6 +254,7 @@ export default function PDVPage() {
     if ('error' in res) { toast('error', 'Erro ao finalizar venda.'); return }
     setVendaIdFinalizada(res.vendaId)
     setModal('comprovante')
+    if (painelAtivo === 'vendas') await carregarVendasSessao()
     setCarrinho([])
     setCooperado(null)
     setProdutos(prev => prev.map(p => {
@@ -281,6 +286,19 @@ export default function PDVPage() {
     if ('error' in res) { toast('error', res.error); return }
     setResumoFechamento(res.resumo)
     setModal('fechamento' as any)
+  }
+
+  async function carregarVendasSessao() {
+    if (!caixa) return
+    setCarregandoVendas(true)
+    const det = await getDetalhesSessao(caixa.id)
+    setVendasSessao(det.vendas)
+    setCarregandoVendas(false)
+  }
+
+  async function handleAbrirVendas() {
+    setPainelAtivo('vendas')
+    await carregarVendasSessao()
   }
 
   if (carregando) return (
@@ -345,11 +363,80 @@ export default function PDVPage() {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         <div style={{ width: '60%', borderRight: '1px solid #e5e3dc', background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <PainelProdutos
-            produtos={produtos}
-            cooperadoIdentificado={!!cooperado}
-            onSelecionarProduto={p => { setProdutoSelecionado(p); setModal('quantidade') }}
-          />
+          {/* Toggle Produtos / Vendas */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #e5e3dc', flexShrink: 0 }}>
+            {(['produtos', 'vendas'] as const).map(aba => (
+              <button
+                key={aba}
+                onClick={() => aba === 'vendas' ? handleAbrirVendas() : setPainelAtivo('produtos')}
+                style={{
+                  flex: 1, padding: '10px', fontSize: 13, fontWeight: painelAtivo === aba ? 700 : 400,
+                  color: painelAtivo === aba ? '#E07B30' : '#6b7280',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  borderBottom: painelAtivo === aba ? '2px solid #E07B30' : '2px solid transparent',
+                  marginBottom: -1,
+                }}
+              >
+                {aba === 'produtos' ? '🛒 Produtos' : '📋 Vendas do dia'}
+              </button>
+            ))}
+          </div>
+
+          {painelAtivo === 'produtos' && (
+            <PainelProdutos
+              produtos={produtos}
+              cooperadoIdentificado={!!cooperado}
+              onSelecionarProduto={p => { setProdutoSelecionado(p); setModal('quantidade') }}
+            />
+          )}
+
+          {painelAtivo === 'vendas' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+              {carregandoVendas ? (
+                <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 13, padding: '2rem 0' }}>Carregando...</div>
+              ) : vendasSessao.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 13, padding: '2rem 0' }}>
+                  Nenhuma venda registrada nesta sessão.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* Totalizador */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fff7ed', borderRadius: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>{vendasSessao.length} venda{vendasSessao.length !== 1 ? 's' : ''}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e' }}>
+                      {vendasSessao.reduce((s, v) => s + v.total, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  {vendasSessao.map(v => (
+                    <div key={v.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 12px', background: '#f8f7f4', borderRadius: 8,
+                      border: '1px solid #e5e3dc',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>
+                          {v.num} <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 400 }}>· {v.hora}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{v.forma}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>
+                          {v.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <button
+                          onClick={() => window.open(`/api/loja/comprovante/${v.id}`, '_blank')}
+                          title="Reimprimir recibo"
+                          style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer' }}
+                        >
+                          <i className="ti ti-printer" style={{ fontSize: 13 }} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ width: '40%', background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
