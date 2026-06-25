@@ -8,6 +8,22 @@ import { marcarVendaEntregueAction } from '@/lib/comercializacao/devolucao'
 import { BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 import { fmt } from '@/lib/fmt'
 
+const C = {
+  cor:   '#92400e',
+  corLt: '#FDF8F4',
+  borda: '#E5E3DC',
+  bg:    '#F8F7F4',
+  txt:   '#1C1917',
+  sub:   '#78716C',
+}
+
+const STATUS: Record<string, { label: string; bg: string; cor: string; icon: string }> = {
+  rascunho: { label: 'Rascunho', bg: '#F3F4F6', cor: '#6B7280',   icon: 'ti-pencil'         },
+  aberto:   { label: 'Aberto',   bg: '#F0FDF4', cor: '#16A34A',   icon: 'ti-lock-open'      },
+  em_venda: { label: 'Em venda', bg: '#FFF7ED', cor: '#C2410C',   icon: 'ti-arrow-up-right'  },
+  entregue: { label: 'Entregue', bg: '#EFF6FF', cor: '#185FA5',   icon: 'ti-circle-check'   },
+}
+
 export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis, compradores }: {
   lote: any
   entregasDoLote: any[]
@@ -15,12 +31,12 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   compradores: any[]
 }) {
   const router = useRouter()
-  const fatorSaca: number = lote.produtos?.fator_saca ?? 60
-  const podeEditar = lote.status === 'rascunho' || lote.status === 'aberto'
-  const loteFechado = !podeEditar
-  const vendaNfe = (lote.vendas_externas as any[])?.[0] ?? null
-  const nfeAutorizada = vendaNfe?.status_nfe === 'autorizada'
-  const cardAzul: React.CSSProperties = { background: '#E6F1FB', borderRadius: 12, padding: '1rem', minWidth: 140 }
+  const fatorSaca: number  = lote.produtos?.fator_saca ?? 60
+  const podeEditar         = lote.status === 'rascunho' || lote.status === 'aberto'
+  const loteFechado        = !podeEditar
+  const vendaNfe           = (lote.vendas_externas as any[])?.[0] ?? null
+  const nfeAutorizada      = vendaNfe?.status_nfe === 'autorizada'
+  const st                 = STATUS[lote.status] ?? STATUS.rascunho
 
   const todasEntregas = useMemo(() => loteFechado
     ? entregasDoLote.map((e: any) => ({ ...e, _noLote: true }))
@@ -31,14 +47,12 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   , [entregasDoLote, entregasDisponiveis, loteFechado])
 
   const [selecionados, setSelecionados] = useState<Set<string>>(() => {
-    // Se lote já tem entregas vinculadas (aberto/em_venda), pré-seleciona elas
-    // Se rascunho, pré-seleciona todas as disponíveis
     const base = entregasDoLote.length > 0 ? entregasDoLote : entregasDisponiveis
     return new Set(base.map((e: any) => e.id))
   })
 
   const kpis = useMemo(() => {
-    const sel = todasEntregas.filter(e => selecionados.has(e.id))
+    const sel        = todasEntregas.filter(e => selecionados.has(e.id))
     const pesoTotal  = sel.reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
     const valorTotal = sel.reduce((acc, e) => acc + ((e.cotacao_dia ?? 0) * (e.quantidade_produto ?? 0)), 0)
     const sacas      = Math.floor(pesoTotal / fatorSaca)
@@ -47,11 +61,11 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     return { pesoTotal, valorTotal, sacas, resto, precoMedio, qtd: sel.length }
   }, [selecionados, todasEntregas, fatorSaca])
 
-  const [mostrarVenda, setMostrarVenda] = useState(false)
-  const [compradorId, setCompradorId]   = useState('')
-  const [precoKg, setPrecoKg]           = useState('')
-  const [salvando, setSalvando]         = useState(false)
-  const [inserindo, setInserindo]       = useState<string | null>(null)
+  const [mostrarVenda, setMostrarVenda]     = useState(false)
+  const [compradorId, setCompradorId]       = useState('')
+  const [precoKg, setPrecoKg]               = useState('')
+  const [salvando, setSalvando]             = useState(false)
+  const [inserindo, setInserindo]           = useState<string | null>(null)
   const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
   const [modalConfirmar, setModalConfirmar] = useState<{ movimentacaoId: string; cotacaoValor: number } | null>(null)
   const [showModalPagamento, setShowModalPagamento] = useState(false)
@@ -60,25 +74,15 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   function toggleTodos(marcar: boolean) {
     setSelecionados(marcar ? new Set(todasEntregas.map(e => e.id)) : new Set())
   }
-
   function toggleEntrega(id: string) {
-    setSelecionados(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+    setSelecionados(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
   async function handleSalvarComposicao() {
     setSalvando(true)
-    try {
-      await confirmarComposicaoLote(lote.id, Array.from(selecionados))
-      router.refresh()
-    } catch (e: any) {
-      alert(e.message)
-    } finally {
-      setSalvando(false)
-    }
+    try { await confirmarComposicaoLote(lote.id, Array.from(selecionados)); router.refresh() }
+    catch (e: any) { alert(e.message) }
+    finally { setSalvando(false) }
   }
 
   async function handleFecharLote() {
@@ -92,18 +96,14 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     setSalvando(true)
     try {
       const venda = await criarVendaExterna({
-        loteId:       lote.id,
-        compradorId,
+        loteId: lote.id, compradorId,
         dataVenda:    new Date().toISOString().split('T')[0],
         quantidadeKg: lote.peso_total_kg,
         precoKg:      parseFloat(precoKg),
       })
       router.push(`/comercializacao/lotes/${lote.id}/nfe?venda=${venda.id}`)
-    } catch (e: any) {
-      alert(e.message)
-    } finally {
-      setSalvando(false)
-    }
+    } catch (e: any) { alert(e.message) }
+    finally { setSalvando(false) }
   }
 
   async function handleMarcarEntregue() {
@@ -115,341 +115,293 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     else alert(res.error ?? 'Erro ao marcar como entregue')
   }
 
-  async function handleAdicionarEntrega(movimentacaoId: string, cotacaoValor: number) {
-    setModalConfirmar({ movimentacaoId, cotacaoValor })
-  }
-
   async function confirmarInsercao() {
     if (!modalConfirmar) return
     setInserindo(modalConfirmar.movimentacaoId)
     setModalConfirmar(null)
-    try {
-      await adicionarEntregaAoLote(lote.id, modalConfirmar.movimentacaoId, modalConfirmar.cotacaoValor)
-      router.refresh()
-    } catch (e: any) {
-      alert(e.message)
-    } finally {
-      setInserindo(null)
-    }
+    try { await adicionarEntregaAoLote(lote.id, modalConfirmar.movimentacaoId, modalConfirmar.cotacaoValor); router.refresh() }
+    catch (e: any) { alert(e.message) }
+    finally { setInserindo(null) }
   }
 
+  const btnSec = (label: string, onClick: () => void, disabled = false) => (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 9,
+      border: `1px solid ${C.borda}`, background: '#fff', color: C.txt,
+      cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1,
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+    }}>{label}</button>
+  )
+  const btnPri = (label: string, onClick: () => void, disabled = false, bg = C.cor) => (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '8px 16px', fontSize: 13, fontWeight: 700, borderRadius: 9,
+      border: 'none', background: bg, color: '#fff',
+      cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1,
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+    }}>{label}</button>
+  )
+
   return (
-    <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ background: C.bg, minHeight: '100vh' }}>
 
-      {modalConfirmar && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{ background: '#fff', borderRadius: 14, padding: 28, width: 400, maxWidth: '90vw' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: '#1a1a2e' }}>
-              Inserir entrega no lote?
+      {/* Header sticky */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: `1px solid ${C.borda}` }}>
+        <div style={{ padding: '0 32px', minHeight: 88, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+
+          {/* Esquerda: back + título */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={() => router.push('/comercializacao/lotes')}
+              style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${C.borda}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            >
+              <i className="ti ti-arrow-left" style={{ fontSize: 16, color: C.sub }} />
+            </button>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: st.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className={`ti ${st.icon}`} style={{ fontSize: 20, color: st.cor }} />
             </div>
-            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.5 }}>
-              A entrega será vinculada ao <strong>Lote {lote.codigo}</strong> com cotação de <strong>{fmt.moeda(modalConfirmar.cotacaoValor)}/kg</strong>. O peso total do lote será recalculado.
-            </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setModalConfirmar(null)}
-                style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmarInsercao}
-                style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
-              >
-                Confirmar inserção
-              </button>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h1 style={{ fontSize: 18, fontWeight: 800, color: C.txt, margin: 0 }}>Lote {lote.codigo}</h1>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 7, background: st.bg, color: st.cor }}>
+                  {st.label}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
+                {lote.produto_descricao ?? '—'}{lote.safras ? ` · Safra ${lote.safras.ano}` : ''}
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Cabeçalho */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => router.push('/comercializacao/lotes')}
-          style={{ fontSize: 12, color: '#888', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 8 }}
-        >
-          ← Lotes
-        </button>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Lote {lote.codigo}</h1>
-            <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
-              {lote.produto_descricao ?? '—'}
-              {lote.safras ? ` · Safra ${lote.safras.ano}` : ''}
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          {/* Direita: ações */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             {podeEditar && (
               <>
-                <button
-                  onClick={handleSalvarComposicao}
-                  disabled={salvando}
-                  style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer' }}
-                >
-                  {lote.status === 'rascunho' ? 'Confirmar lote' : 'Atualizar composição'}
-                </button>
-                {lote.status === 'aberto' && selecionados.size > 0 && (
-                  <button
-                    onClick={handleFecharLote}
-                    style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
-                  >
-                    Fechar lote
-                  </button>
-                )}
+                {btnSec(salvando ? 'Salvando...' : (lote.status === 'rascunho' ? 'Confirmar lote' : 'Atualizar composição'), handleSalvarComposicao, salvando)}
+                {lote.status === 'aberto' && selecionados.size > 0 && btnPri('Fechar lote', handleFecharLote)}
               </>
             )}
             {lote.status === 'em_venda' && !mostrarVenda && (
               nfeAutorizada ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: '#d1fae5', color: '#065f46',
-                    borderRadius: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600
-                  }}>
-                    <i className="ti ti-circle-check" /> NF-e nº {vendaNfe.numero_nfe} autorizada
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 8, background: '#F0FDF4', color: '#16A34A', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <i className="ti ti-file-check" style={{ fontSize: 12 }} />
+                    NF-e nº {vendaNfe.numero_nfe} autorizada
                   </span>
                   <a
-                    href={vendaNfe.xml_nfe
-                      ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf')
-                      : '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      padding: '8px 16px', fontSize: 13, fontWeight: 600,
-                      borderRadius: 8, border: '1px solid #92400e',
-                      background: 'transparent', color: '#92400e',
-                      textDecoration: 'none', display: 'inline-block'
-                    }}
+                    href={vendaNfe.xml_nfe ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : '#'}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ padding: '8px 14px', fontSize: 13, fontWeight: 600, borderRadius: 9, border: `1px solid ${C.borda}`, background: '#fff', color: C.txt, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   >
-                    <i className="ti ti-printer" /> Reimprimir DANFE
+                    <i className="ti ti-printer" style={{ fontSize: 13 }} /> DANFE
                   </a>
                   <a
-                    href={`/comercializacao/fiscal`}
-                    style={{
-                      padding: '8px 16px', fontSize: 13, fontWeight: 600,
-                      borderRadius: 8, border: '1px solid #d1d5db',
-                      background: 'transparent', color: '#374151',
-                      textDecoration: 'none', display: 'inline-block'
-                    }}
+                    href="/comercializacao/fiscal"
+                    style={{ padding: '8px 14px', fontSize: 13, fontWeight: 600, borderRadius: 9, border: `1px solid ${C.borda}`, background: '#fff', color: C.txt, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   >
-                    <i className="ti ti-file-invoice" /> Ver notas fiscais
+                    <i className="ti ti-file-invoice" style={{ fontSize: 13 }} /> Notas fiscais
                   </a>
-                  {vendaNfe?.status === 'confirmada' && (
-                    <button
-                      onClick={handleMarcarEntregue}
-                      disabled={processandoEntrega}
-                      style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff', cursor: 'pointer' }}
-                    >
-                      {processandoEntrega ? 'Processando...' : 'Marcar como entregue'}
-                    </button>
-                  )}
-                  {vendaNfe?.status === 'entregue' && (
-                    <button
-                      onClick={() => setShowModalPagamento(true)}
-                      style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
-                    >
-                      Informar pagamento
-                    </button>
-                  )}
+                  {vendaNfe?.status === 'confirmada' && btnPri(processandoEntrega ? 'Processando...' : 'Marcar entregue', handleMarcarEntregue, processandoEntrega, '#16A34A')}
+                  {vendaNfe?.status === 'entregue'   && btnPri('Informar pagamento', () => setShowModalPagamento(true))}
                 </div>
               ) : (
-                <button
-                  onClick={() => setMostrarVenda(true)}
-                  style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff', cursor: 'pointer' }}
-                >
-                  Emitir NF-e de saída
-                </button>
+                btnPri('Emitir NF-e de saída', () => setMostrarVenda(true), false, '#16A34A')
               )
             )}
           </div>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <div style={cardAzul}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', marginBottom: 4 }}>Peso total</div>
-          <div style={{ fontSize: 24, fontWeight: 500, color: '#042C53' }}>{fmt.peso(kpis.pesoTotal)}</div>
-          <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>
-            {kpis.sacas} sacas{kpis.resto > 0.001 ? ` + ${fmt.peso(kpis.resto)}` : ''}
-          </div>
-        </div>
-        <div style={cardAzul}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', marginBottom: 4 }}>Entradas</div>
-          <div style={{ fontSize: 24, fontWeight: 500, color: '#042C53' }}>{kpis.qtd}</div>
-          <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>registros selecionados</div>
-        </div>
-        <div style={cardAzul}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', marginBottom: 4 }}>Custo total</div>
-          <div style={{ fontSize: 24, fontWeight: 500, color: '#042C53' }}>{fmt.moeda(kpis.valorTotal)}</div>
-          <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>valor ref. cotação · médio {fmt.moeda(kpis.precoMedio)}/kg</div>
-        </div>
-        {mostrarVenda && precoKg && !isNaN(parseFloat(precoKg)) && (
-          <div style={{ ...cardAzul, background: '#E1F5EE' }}>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#0F6E56', textTransform: 'uppercase', marginBottom: 4 }}>Resultado bruto</div>
-            <div style={{ fontSize: 24, fontWeight: 500, color: '#04342C' }}>
-              {fmt.moeda((parseFloat(precoKg) * kpis.pesoTotal) - kpis.valorTotal)}
+      <div style={{ padding: '28px 32px' }}>
+
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${mostrarVenda && precoKg && !isNaN(parseFloat(precoKg)) ? 4 : 3}, 1fr)`, gap: 14, marginBottom: 24 }}>
+          {[
+            {
+              label: 'Peso total', icon: 'ti-weight', cor: '#185FA5', bg: '#EFF6FF',
+              valor: fmt.peso(kpis.pesoTotal),
+              sub: `${kpis.sacas} sacas${kpis.resto > 0.001 ? ` + ${fmt.peso(kpis.resto)}` : ''}`,
+            },
+            {
+              label: 'Entregas', icon: 'ti-package', cor: C.cor, bg: C.corLt,
+              valor: String(kpis.qtd),
+              sub: 'registros selecionados',
+            },
+            {
+              label: 'Custo ref. cotação', icon: 'ti-coin', cor: '#16A34A', bg: '#F0FDF4',
+              valor: fmt.moeda(kpis.valorTotal),
+              sub: `médio ${fmt.moeda(kpis.precoMedio)}/kg`,
+            },
+            ...(mostrarVenda && precoKg && !isNaN(parseFloat(precoKg)) ? [{
+              label: 'Resultado bruto', icon: 'ti-trending-up', cor: '#0F766E', bg: '#F0FDFA',
+              valor: fmt.moeda((parseFloat(precoKg) * kpis.pesoTotal) - kpis.valorTotal),
+              sub: `${fmt.moeda(parseFloat(precoKg))}/kg negociado`,
+            }] : []),
+          ].map(k => (
+            <div key={k.label} style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</span>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className={`ti ${k.icon}`} style={{ fontSize: 14, color: k.cor }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.txt }}>{k.valor}</div>
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>{k.sub}</div>
             </div>
-            <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 2 }}>
-              {fmt.moeda(parseFloat(precoKg))}/kg negociado
+          ))}
+        </div>
+
+        {/* Painel de venda */}
+        {mostrarVenda && (
+          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ti ti-receipt" style={{ color: C.cor }} />
+              Registrar venda
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: C.sub, display: 'block', marginBottom: 5 }}>Comprador</label>
+                <select
+                  value={compradorId}
+                  onChange={e => setCompradorId(e.target.value)}
+                  style={{ padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${C.borda}`, fontSize: 13, minWidth: 220, background: '#fff', color: C.txt }}
+                >
+                  <option value="">Selecione o comprador...</option>
+                  {compradores.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: C.sub, display: 'block', marginBottom: 5 }}>Valor negociado (R$/kg)</label>
+                <input
+                  type="number" step="0.01" value={precoKg}
+                  onChange={e => setPrecoKg(e.target.value)}
+                  placeholder="0,00"
+                  style={{ padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${C.borda}`, fontSize: 13, width: 130, background: '#fff' }}
+                />
+              </div>
+              {btnPri(salvando ? 'Criando...' : 'Avançar para NF-e →', handleCriarVenda, salvando || !compradorId || !precoKg)}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Painel de venda */}
-      {mostrarVenda && (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.25rem', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: '1rem' }}>Venda do lote</div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div>
-              <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>Comprador</label>
-              <select
-                value={compradorId}
-                onChange={e => setCompradorId(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, minWidth: 200 }}
-              >
-                <option value="">Selecione...</option>
-                {compradores.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
+        {/* Tabela de entregas */}
+        <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.borda}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ti ti-list-details" style={{ color: C.cor, fontSize: 16 }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.txt }}>
+                Entregas {loteFechado ? 'do lote' : 'disponíveis'}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: C.corLt, color: C.cor }}>
+                {todasEntregas.length}
+              </span>
             </div>
-            <div>
-              <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>Valor negociado (R$/kg)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={precoKg}
-                onChange={e => setPrecoKg(e.target.value)}
-                placeholder="0,00"
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, width: 120 }}
-              />
-            </div>
-            <button
-              onClick={handleCriarVenda}
-              disabled={salvando || !compradorId || !precoKg}
-              style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer', opacity: (salvando || !compradorId || !precoKg) ? 0.6 : 1 }}
-            >
-              Avançar para NF-e →
-            </button>
+            {!loteFechado && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={() => toggleTodos(true)}  style={{ fontSize: 12, fontWeight: 600, color: '#185FA5', background: 'none', border: 'none', cursor: 'pointer' }}>Marcar todas</button>
+                <span style={{ color: C.borda }}>|</span>
+                <button onClick={() => toggleTodos(false)} style={{ fontSize: 12, fontWeight: 600, color: C.sub, background: 'none', border: 'none', cursor: 'pointer' }}>Desmarcar</button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* Tabela de entregas */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e5e3dc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 14, fontWeight: 500 }}>
-            Entregas {loteFechado ? 'do lote' : 'disponíveis'}
-          </span>
-          {!loteFechado && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => toggleTodos(true)}  style={{ fontSize: 12, color: '#185FA5', background: 'none', border: 'none', cursor: 'pointer' }}>Marcar todas</button>
-              <span style={{ color: '#ccc' }}>|</span>
-              <button onClick={() => toggleTodos(false)} style={{ fontSize: 12, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>Desmarcar todas</button>
+          {todasEntregas.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: C.sub, fontSize: 13 }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
+              Nenhuma entrega disponível.
             </div>
-          )}
-        </div>
-
-        {todasEntregas.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#888', fontSize: 13 }}>
-            Nenhuma entrega disponível.
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#f8f7f4' }}>
-                {!loteFechado && <th style={{ width: 40, padding: '10px 16px' }}></th>}
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Produtor</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500, color: '#555' }}>Data</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Kg</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: '#555' }}>Cotação do dia</th>
-                <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 500, color: '#555' }}>NF-e entrada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {todasEntregas.map((entrega: any) => {
-                const sel = selecionados.has(entrega.id)
-                return (
-                  <tr
-                    key={entrega.id}
-                    onClick={() => !loteFechado && toggleEntrega(entrega.id)}
-                    style={{
-                      borderTop: '1px solid #f0ede8',
-                      background: sel ? '#f0faf5' : '#fff',
-                      cursor: loteFechado ? 'default' : 'pointer',
-                      opacity: loteFechado || sel ? 1 : 0.6,
-                    }}
-                  >
-                    {!loteFechado && (
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={sel}
-                          onChange={() => toggleEntrega(entrega.id)}
-                          onClick={e => e.stopPropagation()}
-                        />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: C.bg }}>
+                  {!loteFechado && <th style={{ width: 44, padding: '10px 16px' }} />}
+                  <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub }}>Produtor</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub }}>Data</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub }}>Kg</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub }}>Cotação</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub }}>NF-e entrada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {todasEntregas.map((entrega: any) => {
+                  const sel = selecionados.has(entrega.id)
+                  return (
+                    <tr
+                      key={entrega.id}
+                      onClick={() => !loteFechado && toggleEntrega(entrega.id)}
+                      style={{
+                        borderTop: `1px solid ${C.borda}`,
+                        background: sel ? '#F0FDF4' : '#fff',
+                        cursor: loteFechado ? 'default' : 'pointer',
+                        opacity: loteFechado || sel ? 1 : 0.55,
+                      }}
+                    >
+                      {!loteFechado && (
+                        <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                          <input
+                            type="checkbox" checked={sel}
+                            onChange={() => toggleEntrega(entrega.id)}
+                            onClick={e => e.stopPropagation()}
+                            style={{ accentColor: '#16A34A', width: 15, height: 15 }}
+                          />
+                        </td>
+                      )}
+                      <td style={{ padding: '10px 16px', fontWeight: 600, color: C.txt }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
+                      <td style={{ padding: '10px 16px', color: C.sub }}>{fmt.data(entrega.created_at)}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: C.txt }}>{fmt.peso(entrega.quantidade_produto)}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                        {entrega.cotacao_dia != null
+                          ? <span style={{ color: C.txt }} title={`Cotação de ${entrega.cotacao_data}`}>{fmt.moeda(entrega.cotacao_dia)}/kg</span>
+                          : <span style={{ color: '#DC2626', fontSize: 11, fontWeight: 600 }}>Sem cotação</span>}
                       </td>
-                    )}
-                    <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
-                    <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                      {entrega.cotacao_dia != null
-                        ? <span title={`Cotação de ${entrega.cotacao_data}`}>{fmt.moeda(entrega.cotacao_dia)}/kg</span>
-                        : <span style={{ color: '#dc2626', fontSize: 11 }}>Sem cotação</span>}
-                    </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      <BotaoNfe movimentacao_id={entrega.movimentacao_id ?? entrega.id} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-            {loteFechado && entregasDisponiveis.length > 0 && (
-              <>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <BotaoNfe movimentacao_id={entrega.movimentacao_id ?? entrega.id} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+
+              {/* Entregas disponíveis fora do lote */}
+              {loteFechado && entregasDisponiveis.length > 0 && (
                 <tbody>
                   <tr>
-                    <td colSpan={5} style={{ padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', background: '#fef9c3', borderTop: '2px solid #fde047' }}>
+                    <td colSpan={5} style={{
+                      padding: '8px 16px', fontSize: 11, fontWeight: 700,
+                      color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em',
+                      background: '#FEF9C3', borderTop: `2px solid #FDE047`,
+                    }}>
                       Entregas disponíveis fora deste lote
                     </td>
                   </tr>
                   {entregasDisponiveis.map((entrega: any) => {
                     const cotacaoAtual = cotacoesEditaveis[entrega.id] ?? (entrega.cotacao_dia != null ? String(entrega.cotacao_dia) : '')
                     return (
-                      <tr key={entrega.id} style={{ borderTop: '1px solid #fde047', background: '#fefce8' }}>
-                        <td style={{ padding: '10px 16px' }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
-                        <td style={{ padding: '10px 16px', color: '#666' }}>{fmt.data(entrega.created_at)}</td>
-                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>{fmt.peso(entrega.quantidade_produto)}</td>
+                      <tr key={entrega.id} style={{ borderTop: '1px solid #FDE047', background: '#FEFCE8' }}>
+                        <td style={{ padding: '10px 16px', fontWeight: 600, color: C.txt }}>{(entrega.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
+                        <td style={{ padding: '10px 16px', color: C.sub }}>{fmt.data(entrega.created_at)}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: C.txt }}>{fmt.peso(entrega.quantidade_produto)}</td>
                         <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: 12, color: '#666' }}>R$</span>
+                            <span style={{ fontSize: 12, color: C.sub }}>R$</span>
                             <input
-                              type="number"
-                              step="0.01"
-                              value={cotacaoAtual}
+                              type="number" step="0.01" value={cotacaoAtual}
                               onChange={e => setCotacoesEditaveis(prev => ({ ...prev, [entrega.id]: e.target.value }))}
                               placeholder="0,00"
-                              style={{ width: 80, padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid #d1d5db', textAlign: 'right' }}
+                              style={{ width: 80, padding: '5px 8px', fontSize: 12, borderRadius: 6, border: `1px solid ${C.borda}`, textAlign: 'right' }}
                             />
-                            <span style={{ fontSize: 12, color: '#666' }}>/kg</span>
+                            <span style={{ fontSize: 12, color: C.sub }}>/kg</span>
                           </div>
                           {entrega.cotacao_data && (
-                            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2, textAlign: 'right' }}>
-                              cotação de {entrega.cotacao_data}
-                            </div>
+                            <div style={{ fontSize: 10, color: '#92400e', marginTop: 2, textAlign: 'right' }}>cotação de {entrega.cotacao_data}</div>
                           )}
                         </td>
                         <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                           <button
-                            onClick={() => handleAdicionarEntrega(entrega.id, parseFloat(cotacaoAtual || '0'))}
+                            onClick={() => setModalConfirmar({ movimentacaoId: entrega.id, cotacaoValor: parseFloat(cotacaoAtual || '0') })}
                             disabled={inserindo === entrega.id || !cotacaoAtual}
-                            style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, borderRadius: 6, border: '1px solid #92400e', background: '#fff', color: '#92400e', cursor: 'pointer', opacity: !cotacaoAtual ? 0.5 : 1 }}
+                            style={{ padding: '5px 12px', fontSize: 12, fontWeight: 700, borderRadius: 7, border: `1px solid ${C.cor}`, background: '#fff', color: C.cor, cursor: 'pointer', opacity: !cotacaoAtual ? 0.5 : 1 }}
                           >
                             {inserindo === entrega.id ? 'Inserindo...' : '+ Inserir no lote'}
                           </button>
@@ -458,20 +410,37 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                     )
                   })}
                 </tbody>
-              </>
-            )}
-          </table>
-        )}
+              )}
+            </table>
+          )}
+        </div>
       </div>
 
+      {/* Modal confirmar inserção */}
+      {modalConfirmar && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '28px 32px', width: 420, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8, color: C.txt }}>Inserir entrega no lote?</div>
+            <div style={{ fontSize: 13, color: C.sub, marginBottom: 24, lineHeight: 1.6 }}>
+              A entrega será vinculada ao <strong style={{ color: C.txt }}>Lote {lote.codigo}</strong> com cotação de{' '}
+              <strong style={{ color: C.txt }}>{fmt.moeda(modalConfirmar.cotacaoValor)}/kg</strong>. O peso total será recalculado.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setModalConfirmar(null)} style={{ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 600, borderRadius: 9, border: `1px solid ${C.borda}`, background: '#fff', color: C.txt, cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarInsercao} style={{ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 700, borderRadius: 9, border: 'none', background: C.cor, color: '#fff', cursor: 'pointer' }}>
+                Confirmar inserção
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pagamento */}
       {showModalPagamento && vendaNfe && (
         <ModalInformarPagamento
-          venda={{
-            id: vendaNfe.id,
-            quantidade_kg: vendaNfe.quantidade_kg,
-            valor_bruto: vendaNfe.valor_bruto,
-            lote_codigo: lote.codigo,
-          }}
+          venda={{ id: vendaNfe.id, quantidade_kg: vendaNfe.quantidade_kg, valor_bruto: vendaNfe.valor_bruto, lote_codigo: lote.codigo }}
           orgId={lote.organizacao_id}
           onClose={() => setShowModalPagamento(false)}
           onSuccess={() => { setShowModalPagamento(false); router.refresh() }}
