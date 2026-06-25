@@ -165,7 +165,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Lote {lote.codigo}</h1>
             <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>
-              {lote.produto_descricao ?? lote.produtos?.nome ?? '—'}
+              {lote.produto_descricao ?? '—'}
               {lote.safras ? ` · Safra ${lote.safras.ano}` : ''}
             </p>
           </div>

@@ -296,9 +296,20 @@ export async function registrarConversaoESaque(params: {
     preco_unitario: params.preco_unitario,
     observacoes: params.observacoes
   }
+  const { data: cotacao } = await supabase
+    .from('cotacoes')
+    .select('id')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+    .eq('produto_id', params.produto_id)
+    .lte('vigente_a_partir_de', new Date().toISOString())
+    .order('vigente_a_partir_de', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const cotacaoId = cotacao?.id ?? null
+
   const { error: e1 } = await supabase
     .from('movimentacoes_conta')
-    .insert({ ...base, tipo: 'conversao', valor_financeiro: params.valor_financeiro })
+    .insert({ ...base, tipo: 'conversao', valor_financeiro: params.valor_financeiro, cotacao_id: cotacaoId })
   if (e1) throw new Error(e1.message)
   const tipoSaque = params.forma_pagamento === 'pix' ? 'saque_pix' : 'saque_especie'
   const { data: saqueData, error: e2 } = await supabase

@@ -66,7 +66,7 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
       </button>
 
       <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 4px' }}>NF-e de Saída</h1>
-      <p style={{ fontSize: 13, color: '#888', margin: '0 0 24px' }}>{lote.produto_descricao}</p>
+      <p style={{ fontSize: 13, color: '#888', margin: '0 0 24px' }}>{lote.produto_descricao ?? 'Lote multi-produto'}</p>
 
       {/* KPIs da venda */}
       {venda && (

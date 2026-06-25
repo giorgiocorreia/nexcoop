@@ -156,7 +156,7 @@ export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: b
     html: `
       <h2>${nomeOrg} — Documentos Fiscais</h2>
       <p><strong>Lote:</strong> ${nomeLote}</p>
-      <p><strong>Produto:</strong> ${lote.produto_descricao}</p>
+      <p><strong>Produto:</strong> ${lote.produto_descricao ?? 'Multi-produto'}</p>
       <p><strong>Data:</strong> ${dataHoje}</p>
       <p>Segue em anexo o pacote ZIP contendo:</p>
       <ul>

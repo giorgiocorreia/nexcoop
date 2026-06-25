@@ -25,11 +25,27 @@
 
 ### Pendências abertas
 
-#### Próximo chat dedicado — Resultado Comercialização
-- `vw_saldos_produtor`: view simples PostgreSQL calculando `saldo_kg`, `kg_entregue`, `kg_convertido`, `total_convertido_reais` por conta/produtor/produto
-- Módulo resultado por safra: receita (vendas_externas) − custo aquisição (movimentacoes_conta) − taxa cooperativa − FUNRURAL
-- Migration 052: criar view `vw_saldos_produtor`
-- DRE completo (chat dedicado futuro com Marcos): integrar loja + comercialização + custos operacionais
+### Módulo Comercialização — estado atual (2026-06-24)
+
+**Migration 052 aplicada:**
+- `cotacoes`: campo `data` removido, substituído por `vigente_a_partir_de (timestamptz)`. Suporte a múltiplas cotações no mesmo dia.
+- `movimentacoes_conta`: +`cotacao_id` FK — rastreabilidade da cotação no momento da conversão.
+- `lotes`: removido `produto_id`. Lotes agora são multi-produto via `lote_itens`.
+- Novas tabelas: `lote_itens`, `saldos_produtor_snapshot`, `resultado_safra_snapshot`.
+- Triggers: `trg_sincronizar_peso_lote`, `trg_atualizar_saldos_produtor_snapshot`, `trg_atualizar_resultado_safra_snapshot`.
+- Views: `vw_saldos_produtor`, `vw_resultado_safra`.
+
+**10 arquivos TypeScript adaptados:**
+- `lib/comercializacao/cotacoes.actions.ts` — reescrito com `getCotacaoAtiva` + alias `getCotacaoHoje`
+- `types/database.ts` — `Cotacao`, `Lote`, novo `LoteItem`, novas tabelas no schema
+- `CotacoesClient.tsx` — datetime-local, `vigente_a_partir_de`
+- `emitir-nfe-entrada.ts`, `nfe.actions.ts`, `notas.ts`, `cotacoes-mercado-actions.ts` — queries atualizadas
+- `lotes/actions.ts`, `LotesLista.tsx`, `LoteDetalhe.tsx`, `nfe/actions.ts`, `NfeSaidaClient.tsx`, `FiscalNfeClient.tsx`, `zip-lote.ts`, `caixa.actions.ts` — adaptados para multi-produto
+
+**Próximos passos:**
+- Adaptar tela `/comercializacao/cotacoes` para input datetime-local e exibir hora
+- Adaptar `iniciarLote` para criar `lote_itens` ao vincular entregas
+- Construir tela `/comercializacao/resultado`
 
 #### Pendências gerais
 - Campo CPF editável na ficha do produtor quando nulo

@@ -29,7 +29,7 @@ export async function emitirNfeSaidaAction(vendaId: string): Promise<{
     .select(`
       id, quantidade_kg, preco_kg, valor_bruto, lote_id,
       compradores(id, nome, cnpj, ie, logradouro, numero, bairro, cep, municipio, uf),
-      lotes(codigo, produto_descricao, safras(ano))
+      lotes(codigo, produto_descricao, safras(ano), lote_itens(produto_id, peso_kg, produtos(nome, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins)))
     `)
     .eq('id', vendaId)
     .single()

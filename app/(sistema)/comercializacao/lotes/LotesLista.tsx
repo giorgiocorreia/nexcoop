@@ -160,7 +160,7 @@ export default function LotesLista({ lotes }: { lotes: any[] }) {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 500 }}>Lote {lote.codigo}</div>
                 <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
-                  {lote.produto_descricao ?? lote.produtos?.nome ?? '—'} · {fmt.peso(lote.peso_total_kg)}
+                  {lote.produto_descricao ?? '—'} · {fmt.peso(lote.peso_total_kg)}
                 </div>
                 {lote.safras && (
                   <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>Safra {lote.safras.ano}</div>

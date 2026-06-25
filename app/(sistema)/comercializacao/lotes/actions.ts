@@ -13,7 +13,6 @@ export async function listarLotes() {
     .select(`
       *,
       safras(ano, descricao),
-      produtos(nome, unidade, fator_saca),
       vendas_externas(id, status_nfe, numero_nfe)
     `)
     .eq('organizacao_id', orgId)
@@ -49,17 +48,15 @@ export async function listarEntregasDisponiveis() {
 
   // Buscar cotação mais recente <= data de cada entrega
   const resultado = await Promise.all(entregas.map(async (e) => {
-    const dataEntrega = new Date(e.created_at)
-      .toLocaleDateString('sv-SE', { timeZone: 'America/Bahia' })
     const isCooperado = !!(e.contas_produtor as any)?.produtores?.cooperado_id
 
     const { data: cotacao } = await supabase
       .from('cotacoes')
-      .select('preco_externo, preco_cooperado, data')
+      .select('preco_externo, preco_cooperado, vigente_a_partir_de')
       .eq('organizacao_id', orgId)
       .eq('produto_id', e.produto_id ?? '')
-      .lte('data', dataEntrega)
-      .order('data', { ascending: false })
+      .lte('vigente_a_partir_de', new Date().toISOString())
+      .order('vigente_a_partir_de', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -70,7 +67,7 @@ export async function listarEntregasDisponiveis() {
     return {
       ...e,
       cotacao_dia: cotacaoDia,
-      cotacao_data: cotacao?.data ?? null,
+      cotacao_vigente_a_partir_de: cotacao?.vigente_a_partir_de ?? null,
       is_cooperado: isCooperado,
     }
   }))
@@ -104,17 +101,15 @@ export async function listarEntregasDoLote(loteId: string) {
 
   // Buscar cotação mais recente <= data de cada entrega
   const resultado = await Promise.all(entregas.map(async (e) => {
-    const dataEntrega = new Date(e.created_at)
-      .toLocaleDateString('sv-SE', { timeZone: 'America/Bahia' })
     const isCooperado = !!(e.contas_produtor as any)?.produtores?.cooperado_id
 
     const { data: cotacao } = await supabase
       .from('cotacoes')
-      .select('preco_externo, preco_cooperado, data')
+      .select('preco_externo, preco_cooperado, vigente_a_partir_de')
       .eq('organizacao_id', orgId)
       .eq('produto_id', e.produto_id ?? '')
-      .lte('data', dataEntrega)
-      .order('data', { ascending: false })
+      .lte('vigente_a_partir_de', new Date().toISOString())
+      .order('vigente_a_partir_de', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -125,7 +120,7 @@ export async function listarEntregasDoLote(loteId: string) {
     return {
       ...e,
       cotacao_dia: cotacaoDia,
-      cotacao_data: cotacao?.data ?? null,
+      cotacao_vigente_a_partir_de: cotacao?.vigente_a_partir_de ?? null,
       is_cooperado: isCooperado,
     }
   }))
@@ -238,7 +233,7 @@ export async function buscarLote(loteId: string) {
     .select(`
       *,
       safras(ano, descricao),
-      produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins),
+      lote_itens(produto_id, peso_kg, produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins)),
       vendas_externas(id, status_nfe, chave_nfe, numero_nfe, serie_nfe)
     `)
     .eq('id', loteId)

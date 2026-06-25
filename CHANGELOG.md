@@ -1,5 +1,17 @@
 # NexCoop — Changelog
 
+## 2026-06-24
+
+### Migration 052 — Resultado por Safra: schema base
+- `cotacoes`: `data (date)` → `vigente_a_partir_de (timestamptz)`; suporte intraday; UNIQUE antigo removido
+- `movimentacoes_conta`: +`cotacao_id uuid FK`
+- `lotes`: -`produto_id`; nova tabela `lote_itens (lote_id, produto_id, peso_kg)`; trigger `trg_sincronizar_peso_lote`
+- Nova tabela `saldos_produtor_snapshot` com `saldo_kg GENERATED` e trigger `trg_atualizar_saldos_produtor_snapshot`
+- Nova tabela `resultado_safra_snapshot` com `resultado_liquido_rs` e `preco_medio_kg` GENERATED; trigger `trg_atualizar_resultado_safra_snapshot`
+- Views: `vw_saldos_produtor`, `vw_resultado_safra`
+- Backfill histórico incluído na migration
+- 10 arquivos TypeScript adaptados (cotacoes, lotes, NF-e, caixa)
+
 ## [24/06/2026] — Bugs Conferência + NF-e Saída + Badge Lote + Iniciar Lote
 
 ### Bugs corrigidos

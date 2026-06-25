@@ -16,7 +16,7 @@ type NfeSaida = {
   preco_kg: number
   valor_bruto: number
   compradores: { id: string; nome: string; cnpj: string } | null
-  lotes: { codigo: string; produto_descricao: string; safras: { ano: number } | null } | null
+  lotes: { codigo: string; produto_descricao: string | null; safras: { ano: number } | null } | null
 }
 
 type Kpis = {
@@ -152,7 +152,7 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ color: '#374151' }}>{nfe.lotes?.codigo ?? '—'}</div>
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                        {nfe.lotes?.produto_descricao ?? ''}{(nfe.lotes as any)?.safras?.ano ? ` · Safra ${(nfe.lotes as any).safras.ano}` : ''}
+                        {nfe.lotes?.produto_descricao ?? 'Multi-produto'}{(nfe.lotes as any)?.safras?.ano ? ` · Safra ${(nfe.lotes as any).safras.ano}` : ''}
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1a1a2e' }}>{fmt.moeda(Number(nfe.valor_bruto))}</td>
