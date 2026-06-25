@@ -23,6 +23,7 @@ const STATUS: Record<string, { label: string; bg: string; cor: string; icon: str
   aberto:   { label: 'Aberto',   bg: '#F0FDF4', cor: '#16A34A',  icon: 'ti-lock-open'      },
   em_venda: { label: 'Em venda', bg: '#FFF7ED', cor: '#C2410C',  icon: 'ti-arrow-up-right'  },
   entregue: { label: 'Entregue', bg: '#EFF6FF', cor: '#185FA5',  icon: 'ti-circle-check'   },
+  pago:     { label: 'Pago',     bg: '#F0FDF4', cor: '#16A34A',  icon: 'ti-cash'            },
 }
 
 export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis, compradores }: {
@@ -162,7 +163,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
               {lote.status === 'aberto' && selecionados.size > 0 && btnPri('Fechar lote', handleFecharLote)}
             </>
           )}
-          {lote.status === 'em_venda' && !mostrarVenda && (
+          {(lote.status === 'em_venda' || lote.status === 'entregue' || lote.status === 'pago') && !mostrarVenda && (
             nfeAutorizada ? (
               <>
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 7, background: '#F0FDF4', color: '#16A34A', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
