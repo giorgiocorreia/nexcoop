@@ -90,6 +90,8 @@ export async function processarPagamentoVendaAction(
       if (errUpd) throw new Error("Erro ao atualizar venda: " + errUpd.message)
     }
 
+    await supabase.from("lotes").update({ status: "pago" } as any).eq("id", venda.lote_id).eq("organizacao_id", input.orgId)
+
     const { criarLancamento } = await import("@/lib/financeiro/actions")
     await criarLancamento({
       organizacao_id:   input.orgId,
