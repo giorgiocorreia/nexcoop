@@ -28,7 +28,7 @@ type Venda = {
 }
 
 type Safra = { id: string; ano: number; descricao: string | null; status: string }
-type Lote = { id: string; codigo: string; safra_id: string; status: string; produtos: { nome: string } | null }
+type Lote = { id: string; codigo: string; safra_id: string; status: string }
 type Comprador = { id: string; nome: string; tipo: string; ativo: boolean }
 
 const STATUS_LABEL: Record<string, string> = {

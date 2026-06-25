@@ -177,11 +177,10 @@ export async function emitirNfeSaidaAction(vendaId: string): Promise<{
       const lancamento = await criarLancamento({
         organizacao_id: usuario.organizacao_id!,
         tipo: 'receita' as any,
-        status: 'pago' as any,
+        status: 'pendente' as any,
         descricao,
         valor: valor_total,
         data_competencia: new Date().toISOString().split('T')[0],
-        data_pagamento: new Date().toISOString().split('T')[0],
         numero_documento: `${(respostaFinal as any).numero}/${(respostaFinal as any).serie}`,
         observacoes: `NF-e chave: ${(respostaFinal as any).chave_nfe}`,
         usuario_id: usuario.id,
@@ -192,6 +191,13 @@ export async function emitirNfeSaidaAction(vendaId: string): Promise<{
         .from('vendas_externas')
         .update({ lancamento_id: lancamento.id } as any)
         .eq('id', vendaId)
+
+      // Avançar status da venda para confirmada automaticamente na autorização da NF-e
+      await supabase
+        .from('vendas_externas')
+        .update({ status: 'confirmada' } as any)
+        .eq('id', vendaId)
+        .eq('status', 'rascunho')
     } catch (e) {
       console.error('[contabil] Erro ao criar lançamento NF-e saída:', e)
     }
