@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { fmt } from '@/lib/fmt'
-import { cancelarNfe, buscarDocsLoteAction, gerarZipLoteAction, enviarZipEmailAction } from './actions'
+import { cancelarNfe, buscarDocsLoteAction, gerarZipLoteAction, enviarZipEmailAction, listarNfeSaida, kpisNfeSaida } from './actions'
 
 type NfeSaida = {
   id: string
@@ -35,14 +35,23 @@ const STATUS_LABEL: Record<string, { label: string; cor: string }> = {
   erro:        { label: 'Erro',        cor: '#9a3412' },
 }
 
-export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis: Kpis; usuario: any }) {
+export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedded }: { nfes?: NfeSaida[]; kpis?: Kpis; usuario?: any; embedded?: boolean }) {
   const [filtroStatus, setFiltroStatus] = useState('')
   const [busca, setBusca] = useState('')
   const [modalCancelar, setModalCancelar] = useState<NfeSaida | null>(null)
   const [justificativa, setJustificativa] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
-  const [lista, setLista] = useState(nfes)
+  const [kpisState, setKpisState] = useState<Kpis>(kpisProp ?? { total: 0, autorizadas: 0, canceladas: 0, processando: 0, valorTotal: 0 })
+  const [lista, setLista] = useState<NfeSaida[]>(nfesProp ?? [])
+
+  useEffect(() => {
+    if (!embedded) return
+    Promise.all([listarNfeSaida(), kpisNfeSaida()]).then(([n, k]) => {
+      setLista(n as unknown as NfeSaida[])
+      setKpisState(k)
+    })
+  }, [embedded])
   const [erroModal, setErroModal] = useState<string | null>(null)
   const [modalDocs, setModalDocs] = useState<NfeSaida | null>(null)
   const [docsLote, setDocsLote] = useState<{ notasEntrada: any[]; notaSaida: any } | null>(null)
@@ -134,13 +143,15 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
   }
 
   return (
-    <div style={{ padding: '2rem', background: '#f8f7f4', minHeight: '100vh' }}>
+    <div style={embedded ? {} : { padding: '2rem', background: '#f8f7f4', minHeight: '100vh' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Notas Fiscais</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>NF-e de entrada e saída da comercialização</p>
-        </div>
+        {!embedded && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Notas Fiscais</h1>
+            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>NF-e de entrada e saída da comercialização</p>
+          </div>
+        )}
 
         {mensagem && (
           <div style={{
@@ -156,10 +167,10 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
         {/* KPIs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
           {[
-            { label: 'TOTAL EMITIDAS',    valor: String(kpis.total) },
-            { label: 'AUTORIZADAS',       valor: String(kpis.autorizadas) },
-            { label: 'CANCELADAS',        valor: String(kpis.canceladas) },
-            { label: 'VALOR AUTORIZADO',  valor: fmt.moeda(Number(kpis.valorTotal)) },
+            { label: 'TOTAL EMITIDAS',    valor: String(kpisState.total) },
+            { label: 'AUTORIZADAS',       valor: String(kpisState.autorizadas) },
+            { label: 'CANCELADAS',        valor: String(kpisState.canceladas) },
+            { label: 'VALOR AUTORIZADO',  valor: fmt.moeda(Number(kpisState.valorTotal)) },
           ].map(k => (
             <div key={k.label} style={{ background: '#E6F1FB', borderRadius: 12, padding: '1rem' }}>
               <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</div>

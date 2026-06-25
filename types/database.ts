@@ -1035,9 +1035,27 @@ export interface VendaExterna {
   chave_nfe:        string | null
   numero_nfe:       string | null
   serie_nfe:        string | null
-  status_nfe:       'pendente' | 'autorizada' | 'rejeitada' | 'cancelada' | null
+  status_nfe:       'pendente' | 'autorizada' | 'rejeitada' | 'cancelada' | 'devolvida' | null
   xml_nfe:          string | null
   data_emissao_nfe: string | null
+  // migration 054
+  quantidade_kg_original:  number | null
+  quantidade_kg_devolvida: number
+  valor_bruto_original:    number | null
+}
+
+export interface VendaExternaDevolucao {
+  id:                  string
+  organizacao_id:      string
+  venda_id:            string
+  quantidade_kg:       number
+  valor_unitario:      number
+  valor_total:         number
+  chave_nfe_devolucao: string | null
+  xml_nfe_devolucao:   string | null
+  status:              'pendente' | 'processada'
+  processada_em:       string | null
+  created_at:          string
 }
 
 export interface RateioEntrega {

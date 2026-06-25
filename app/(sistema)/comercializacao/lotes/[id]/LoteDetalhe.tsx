@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { confirmarComposicaoLote, fecharLote, criarVendaExterna, adicionarEntregaAoLote } from '../actions'
+import ModalInformarPagamento from '@/components/comercializacao/ModalInformarPagamento'
+import { marcarVendaEntregueAction } from '@/lib/comercializacao/devolucao'
 import { BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 import { fmt } from '@/lib/fmt'
 
@@ -52,6 +54,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [inserindo, setInserindo]       = useState<string | null>(null)
   const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
   const [modalConfirmar, setModalConfirmar] = useState<{ movimentacaoId: string; cotacaoValor: number } | null>(null)
+  const [showModalPagamento, setShowModalPagamento] = useState(false)
+  const [processandoEntrega, setProcessandoEntrega] = useState(false)
 
   function toggleTodos(marcar: boolean) {
     setSelecionados(marcar ? new Set(todasEntregas.map(e => e.id)) : new Set())
@@ -100,6 +104,15 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     } finally {
       setSalvando(false)
     }
+  }
+
+  async function handleMarcarEntregue() {
+    if (!vendaNfe?.id) return
+    setProcessandoEntrega(true)
+    const res = await marcarVendaEntregueAction(vendaNfe.id, lote.organizacao_id)
+    setProcessandoEntrega(false)
+    if (res.success) router.refresh()
+    else alert(res.error ?? 'Erro ao marcar como entregue')
   }
 
   async function handleAdicionarEntrega(movimentacaoId: string, cotacaoValor: number) {
@@ -225,6 +238,23 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                   >
                     <i className="ti ti-file-invoice" /> Ver notas fiscais
                   </a>
+                  {vendaNfe?.status === 'confirmada' && (
+                    <button
+                      onClick={handleMarcarEntregue}
+                      disabled={processandoEntrega}
+                      style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#1D9E75', color: '#fff', cursor: 'pointer' }}
+                    >
+                      {processandoEntrega ? 'Processando...' : 'Marcar como entregue'}
+                    </button>
+                  )}
+                  {vendaNfe?.status === 'entregue' && (
+                    <button
+                      onClick={() => setShowModalPagamento(true)}
+                      style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none', background: '#92400e', color: '#fff', cursor: 'pointer' }}
+                    >
+                      Informar pagamento
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button
@@ -433,6 +463,20 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
           </table>
         )}
       </div>
+
+      {showModalPagamento && vendaNfe && (
+        <ModalInformarPagamento
+          venda={{
+            id: vendaNfe.id,
+            quantidade_kg: vendaNfe.quantidade_kg,
+            valor_bruto: vendaNfe.valor_bruto,
+            lote_codigo: lote.codigo,
+          }}
+          orgId={lote.organizacao_id}
+          onClose={() => setShowModalPagamento(false)}
+          onSuccess={() => { setShowModalPagamento(false); router.refresh() }}
+        />
+      )}
     </div>
   )
 }
