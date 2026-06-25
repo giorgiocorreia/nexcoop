@@ -2,6 +2,12 @@
 
 ## 2026-06-25
 
+### Fix build — 25/06/2026 (commit 9693d20)
+- `lib/comercializacao/devolucao-xml.ts` — utilitário puro extraído (sem `"use server"`): `parsearXmlDevolucao`, `DadosDevolucao`
+- `lib/comercializacao/devolucao.ts` — removida função síncrona; re-exporta `DadosDevolucao` via `devolucao-xml`
+- `components/comercializacao/ModalInformarPagamento.tsx` — import corrigido: `parsearXmlDevolucao` vem de `devolucao-xml`
+- **Causa raiz:** `"use server"` proíbe exportar funções síncronas — Turbopack rejeita em build. Utilitários puros (sem I/O) nunca entram em arquivo `"use server"`.
+
 ### Correções e melhorias — Comercialização
 - `app/(sistema)/comercializacao/lotes/[id]/nfe/actions.ts`: lançamento NF-e saída com `status='pendente'`; venda avança para `confirmada` na autorização
 - `lib/comercializacao/lotes.actions.ts`: `listarLotes` corrigida (join `lote_itens` em vez de `produtos`); `criarLote` sem `produto_id`
