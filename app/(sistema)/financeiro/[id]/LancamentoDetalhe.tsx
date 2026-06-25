@@ -148,21 +148,44 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
     new Date(lancamento.data_vencimento + 'T00:00:00') < new Date()
 
   return (
-    <div style={{ maxWidth: '900px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .ld-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .ld-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .ld-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .ld-content { padding: 16px; }
+        }
+      `}</style>
 
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
-        <button
-          onClick={() => router.push('/financeiro')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0 }}
-        >
-          ← Financeiro
-        </button>
-        <span>/</span>
-        <span style={{ color: '#1a1a1a', fontWeight: '500', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {lancamento.descricao}
-        </span>
-      </div>
+      <header className="ld-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: tipo.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-receipt-2" style={{ fontSize: 20, color: tipo.cor }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{lancamento.descricao}</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/financeiro')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Financeiro</button>
+              {' / '}Detalhe
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: tipo.cor }}>{tipo.sinal}{BRL(lancamento.valor)}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: st.cor, background: st.bg, border: `1px solid ${st.border}`, padding: '3px 10px', borderRadius: 6 }}>
+            {st.label}
+          </span>
+        </div>
+      </header>
+
+      <div className="ld-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '900px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Feedback */}
       {mensagem && (
@@ -465,6 +488,8 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
         <span>Criado em {new Date(lancamento.criado_em).toLocaleDateString('pt-BR')}</span>
         <span>Atualizado em {new Date(lancamento.atualizado_em).toLocaleDateString('pt-BR')}</span>
       </div>
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

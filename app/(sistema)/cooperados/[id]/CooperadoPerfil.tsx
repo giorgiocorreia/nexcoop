@@ -115,18 +115,43 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
     .toUpperCase()
 
   return (
-    <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Breadcrumb + voltar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
-        <button
-          onClick={() => router.push('/cooperados')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
-        >
-          ← {orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'}
-        </button>
-        <span>/</span>
-        <span style={{ color: '#1a1a1a', fontWeight: '500' }}>{cooperado.nome_completo}</span>
-      </div>
+    <>
+      <style>{`
+        .cp-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .cp-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .cp-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .cp-content { padding: 16px; }
+        }
+      `}</style>
+
+      <header className="cp-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-user" style={{ fontSize: 20, color: '#635BFF' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{cooperado.nome_completo}</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/cooperados')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>
+                {orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'}
+              </button>
+              {' / '}Perfil
+            </div>
+          </div>
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 700, color: st.cor, background: st.bg, border: `1px solid ${st.border}`, padding: '3px 10px', borderRadius: 6, flexShrink: 0 }}>
+          {st.label}
+        </span>
+      </header>
+
+      <div className="cp-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Mensagem de feedback */}
       {mensagem && (
@@ -352,6 +377,8 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
       <p style={{ fontSize: '11px', color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
         ID: {cooperado.id}
       </p>
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

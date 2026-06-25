@@ -208,19 +208,41 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
   const hoje    = asm.status === 'agendada' && dias === 0
 
   return (
-    <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .ad-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .ad-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .ad-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .ad-content { padding: 16px; }
+        }
+      `}</style>
 
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', fontSize: '13px', color: '#888' }}>
-        <button onClick={() => router.push('/assembleias')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#635BFF', fontSize: '13px', padding: 0 }}>
-          ← Assembleias
-        </button>
-        <span>/</span>
-        <span style={{ color: '#1a1a1a', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>
-          {asm.titulo}
+      <header className="ad-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-users-group" style={{ fontSize: 20, color: '#185FA5' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{asm.titulo}</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/assembleias')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Assembleias</button>
+              {' / '}Detalhe
+            </div>
+          </div>
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 700, color: st.cor, background: st.bg, border: `1px solid ${st.border}`, padding: '3px 10px', borderRadius: 6, flexShrink: 0 }}>
+          {st.label}
         </span>
-      </div>
+      </header>
+
+      <div className="ad-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Feedback */}
       {mensagem && (
@@ -550,6 +572,8 @@ export default function AssembleiaDetalhe({ assembleia: initial }: Props) {
       <p style={{ fontSize: '11px', color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
         ID: {asm.id}
       </p>
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

@@ -240,47 +240,56 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
 
   // ────────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: '780px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .dd-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .dd-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .dd-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .dd-content { padding: 16px; }
+        }
+      `}</style>
 
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
-        <button onClick={() => router.push('/documentos')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#888', padding: '4px' }}>
-          ←
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '20px' }}>{cat.icone}</span>
-            <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {doc.nome}
-            </h1>
-            <span style={{ fontSize: '11px', fontWeight: '600', color: cat.cor, background: cat.bg, padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
-              {cat.label}
-            </span>
-            {doc.restrito && (
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', padding: '2px 6px', borderRadius: '4px' }}>
-                RESTRITO
-              </span>
-            )}
+      <header className="dd-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-files" style={{ fontSize: 20, color: '#185FA5' }} />
           </div>
-          {doc.numero_documento && (
-            <p style={{ fontSize: '13px', color: '#888', margin: '3px 0 0 28px' }}>nº {doc.numero_documento}</p>
-          )}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{doc.nome}</h1>
+              {doc.restrito && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', padding: '2px 6px', borderRadius: 4 }}>RESTRITO</span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/documentos')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Documentos</button>
+              {' / '}
+              <span style={{ color: cat.cor }}>{cat.label}</span>
+            </div>
+          </div>
         </div>
-
         {!editando && (
-          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button onClick={() => { setEditando(true); setErro('') }}
-              style={{ padding: '8px 16px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#444', cursor: 'pointer', fontWeight: '500' }}>
+              style={{ padding: '8px 16px', border: '1px solid #d5d3cc', borderRadius: 8, background: '#fff', fontSize: 13, color: '#444', cursor: 'pointer', fontWeight: 500 }}>
               ✏️ Editar
             </button>
             <button onClick={() => setConfirmarExclusao(true)}
-              style={{ padding: '8px 16px', border: '1px solid #fca5a5', borderRadius: '8px', background: '#fef2f2', fontSize: '13px', color: '#dc2626', cursor: 'pointer', fontWeight: '500' }}>
+              style={{ padding: '8px 16px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', fontSize: 13, color: '#dc2626', cursor: 'pointer', fontWeight: 500 }}>
               🗑️ Excluir
             </button>
           </div>
         )}
-      </div>
+      </header>
+
+      <div className="dd-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '780px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Banner de alerta de validade */}
       {bannerConfig && !editando && (
@@ -534,6 +543,8 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

@@ -242,7 +242,38 @@ export default function NovoCooperadoPage() {
   const abaIdx = ABAS.findIndex(a => a.id === abaAtiva)
 
   return (
-    <div style={{ maxWidth: '760px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .nc-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .nc-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .nc-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .nc-content { padding: 16px; }
+        }
+      `}</style>
+
+      <header className="nc-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', gap: 12,
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-user-plus" style={{ fontSize: 20, color: '#635BFF' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Novo Filiado</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/cooperados')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Cooperados</button>
+              {' / '}Novo
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="nc-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '760px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {limiteInfo && !limiteInfo.permitido && (
         <BannerLimiteAtingido
@@ -251,22 +282,6 @@ export default function NovoCooperadoPage() {
           limite={limiteInfo.limite!}
         />
       )}
-
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => router.push('/cooperados')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#888', padding: '4px' }}
-        >
-          ←
-        </button>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Novo filiado
-          </h1>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Preencha os dados nas abas abaixo</p>
-        </div>
-      </div>
 
       {/* Abas */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #e5e3dc', paddingBottom: '0' }}>
@@ -712,6 +727,8 @@ export default function NovoCooperadoPage() {
           </div>
         </div>
       </form>
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

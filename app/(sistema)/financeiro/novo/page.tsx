@@ -180,22 +180,38 @@ export default function NovoLancamentoPage() {
   const tipo = TIPO_CONFIG[form.tipo]
 
   return (
-    <div style={{ maxWidth: '680px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => router.push('/financeiro')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#888', padding: '4px' }}
-        >
-          ←
-        </button>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>
-            Novo lançamento
-          </h1>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Registre uma receita, despesa ou transferência</p>
+    <>
+      <style>{`
+        .nl-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .nl-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .nl-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .nl-content { padding: 16px; }
+        }
+      `}</style>
+
+      <header className="nl-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', gap: 12,
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-receipt-2" style={{ fontSize: 20, color: '#635BFF' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Novo Lançamento</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/financeiro')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Financeiro</button>
+              {' / '}Novo
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
+
+      <div className="nl-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '680px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -411,6 +427,8 @@ export default function NovoLancamentoPage() {
           </div>
         </div>
       </form>
-    </div>
+      </div>
+      </div>
+    </>
   )
 }

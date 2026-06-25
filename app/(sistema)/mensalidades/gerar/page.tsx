@@ -150,18 +150,38 @@ export default function GerarMensalidadesPage() {
   const existeCount = preview?.filter(p => p.jaExiste).length  ?? 0
 
   return (
-    <div style={{ maxWidth: '820px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .gm-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .gm-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .gm-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .gm-content { padding: 16px; }
+        }
+      `}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-        <button onClick={() => router.push('/mensalidades')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#888', padding: '4px' }}>
-          ←
-        </button>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Gerar mensalidades</h1>
-          <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Cria cobranças para todos os membros ativos e probatórios</p>
+      <header className="gm-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', gap: 12,
+        margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-calendar-due" style={{ fontSize: 20, color: '#635BFF' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Gerar Mensalidades</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <button onClick={() => router.push('/mensalidades')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Mensalidades</button>
+              {' / '}Gerar
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
+
+      <div className="gm-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      <div style={{ maxWidth: '820px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
         <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 1rem' }}>
@@ -266,6 +286,8 @@ export default function GerarMensalidadesPage() {
           </div>
         </>
       )}
-    </div>
+      </div>
+      </div>
+    </>
   )
 }
