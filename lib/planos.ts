@@ -47,7 +47,7 @@ export const PLANOS: Record<PlanoId, Plano> = {
 }
 
 export function getLimiteFiliados(plano: string): number | null {
-  return PLANOS[plano as PlanoId]?.limite_filiados ?? 10
+  return PLANOS[plano as PlanoId]?.limite_filiados ?? null
 }
 
 export function getProximoPlano(planoAtual: string): Plano | null {

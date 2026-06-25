@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getLimiteFiliados } from '@/lib/planos'
 
 export interface ResultadoLimite {
@@ -11,7 +11,7 @@ export interface ResultadoLimite {
 export async function verificarLimiteFiliados(
   organizacaoId: string
 ): Promise<ResultadoLimite> {
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   const [{ data: org }, { count }] = await Promise.all([
     supabase
@@ -22,7 +22,8 @@ export async function verificarLimiteFiliados(
     supabase
       .from('cooperados')
       .select('*', { count: 'exact', head: true })
-      .eq('organizacao_id', organizacaoId),
+      .eq('organizacao_id', organizacaoId)
+      .eq('status', 'ativo'),
   ])
 
   const plano = org?.plano ?? 'gratuito'
