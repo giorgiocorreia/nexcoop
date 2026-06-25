@@ -1,11 +1,8 @@
 "use client"
 
 import { useState, useRef } from "react"
-import {
-  processarPagamentoVendaAction,
-  parsearXmlDevolucao,
-  type DadosDevolucao,
-} from "@/lib/comercializacao/devolucao"
+import { processarPagamentoVendaAction } from "@/lib/comercializacao/devolucao"
+import { parsearXmlDevolucao, type DadosDevolucao } from "@/lib/comercializacao/devolucao-xml"
 import { fmt } from "@/lib/fmt"
 
 interface Props {
