@@ -1,5 +1,20 @@
 # NexCoop — Changelog
 
+## 2026-06-25
+
+### Correções e melhorias — Comercialização
+- `app/(sistema)/comercializacao/lotes/[id]/nfe/actions.ts`: lançamento NF-e saída com `status='pendente'`; venda avança para `confirmada` na autorização
+- `lib/comercializacao/lotes.actions.ts`: `listarLotes` corrigida (join `lote_itens` em vez de `produtos`); `criarLote` sem `produto_id`
+- `app/(sistema)/comercializacao/vendas/page.tsx`: tipo `Lote` sem `produtos`
+- `app/(sistema)/comercializacao/fiscal/FiscalNfeClient.tsx`: erro cancelamento no modal; modal Docs (XMLs, ZIP, email); email comprador pré-preenchido; mensagem sucesso email com delay
+- `app/(sistema)/comercializacao/fiscal/actions.ts`: `buscarDocsLoteAction`, `gerarZipLoteAction`, `enviarZipEmailAction`
+- `lib/comercializacao/zip-lote.ts`: parâmetro `emailOverride` adicionado
+- `app/(sistema)/comercializacao/lotes/[id]/LoteDetalhe.tsx`: DANFE URL corrigida; "Ver notas fiscais" → `/comercializacao/fiscal`
+- `components/Sidebar.tsx`: "NF-e Saída" → "Notas Fiscais"
+- `app/(sistema)/comercializacao/fiscal/page.tsx`: título atualizado
+- Banco: NF-es 1 e 4 do Lote 001 com `xml_url`/`danfe_url` corrigidas manualmente
+- Banco: `vendas_externas` id `9f3c0b0e` → `confirmada`; lançamento correspondente → `pendente`
+
 ## 2026-06-24
 
 ### Migration 052 — Resultado por Safra: schema base

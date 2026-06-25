@@ -25,34 +25,37 @@
 
 ### Pendências abertas
 
-### Módulo Comercialização — estado atual (2026-06-24)
+### Módulo Comercialização — estado atual (2026-06-25)
 
-**Migration 052 aplicada:**
-- `cotacoes`: campo `data` removido, substituído por `vigente_a_partir_de (timestamptz)`. Suporte a múltiplas cotações no mesmo dia.
-- `movimentacoes_conta`: +`cotacao_id` FK — rastreabilidade da cotação no momento da conversão.
-- `lotes`: removido `produto_id`. Lotes agora são multi-produto via `lote_itens`.
-- Novas tabelas: `lote_itens`, `saldos_produtor_snapshot`, `resultado_safra_snapshot`.
-- Triggers: `trg_sincronizar_peso_lote`, `trg_atualizar_saldos_produtor_snapshot`, `trg_atualizar_resultado_safra_snapshot`.
-- Views: `vw_saldos_produtor`, `vw_resultado_safra`.
+**Migration 052 aplicada (2026-06-24):**
+- `cotacoes`: `vigente_a_partir_de (timestamptz)` — suporte intraday
+- `movimentacoes_conta`: +`cotacao_id` FK
+- `lotes`: multi-produto via `lote_itens`; `produto_id` removido
+- Novas tabelas: `lote_itens`, `saldos_produtor_snapshot`, `resultado_safra_snapshot`
+- Triggers e views: `vw_saldos_produtor`, `vw_resultado_safra`
 
-**10 arquivos TypeScript adaptados:**
-- `lib/comercializacao/cotacoes.actions.ts` — reescrito com `getCotacaoAtiva` + alias `getCotacaoHoje`
-- `types/database.ts` — `Cotacao`, `Lote`, novo `LoteItem`, novas tabelas no schema
-- `CotacoesClient.tsx` — datetime-local, `vigente_a_partir_de`
-- `emitir-nfe-entrada.ts`, `nfe.actions.ts`, `notas.ts`, `cotacoes-mercado-actions.ts` — queries atualizadas
-- `lotes/actions.ts`, `LotesLista.tsx`, `LoteDetalhe.tsx`, `nfe/actions.ts`, `NfeSaidaClient.tsx`, `FiscalNfeClient.tsx`, `zip-lote.ts`, `caixa.actions.ts` — adaptados para multi-produto
+**Correções e melhorias (2026-06-25):**
+- `vendas_externas.status` avança para `confirmada` automaticamente na autorização da NF-e
+- Lançamento contábil da NF-e saída criado com `status='pendente'` (não 'pago')
+- `listarLotes`: join `produtos` removido, usa `lote_itens`
+- `listarLotes` em `lib/comercializacao/lotes.actions.ts`: join corrigido
+- Página "NF-e Saída" renomeada para "Notas Fiscais" (`/comercializacao/fiscal`)
+- Modal "Docs" na página Notas Fiscais: lista XMLs de entrada e saída, baixar ZIP, enviar por email
+- DANFE URL derivada de `xml_nfe` (replace XMLs→DANFEs, -nfe.xml→-nfe.pdf)
+- Erro cancelamento NF-e agora exibido dentro do modal
+- Email comprador pré-preenche campo de envio no modal Docs
+- NF-es 1 e 4 do Lote 001 (José da Silva e João Matheus): `xml_url`/`danfe_url` corrigidas manualmente no banco
+
+**Estado atual da venda COOPAIBI:**
+- Lote 001 · 602kg · Barry Callebaut · NF-e 5/1 autorizada
+- `vendas_externas` status: `confirmada` (aguardando entrega física)
+- Lançamento contábil: `pendente` (aguardando pagamento)
 
 **Próximos passos:**
-- Adaptar tela `/comercializacao/cotacoes` para input datetime-local e exibir hora
-- Adaptar `iniciarLote` para criar `lote_itens` ao vincular entregas
-- Construir tela `/comercializacao/resultado`
-
-### Correções aplicadas (2026-06-25)
-- `vendas_externas.status` avança automaticamente para `confirmada` quando NF-e é autorizada pela SEFAZ
-- Lançamento contábil criado na autorização da NF-e agora usa `status='pendente'` (não 'pago')
-- `listarLotes` corrigida: join `produtos(...)` removido, usa `lote_itens(...)`
-- Venda da COOPAIBI (id: 9f3c0b0e) corrigida manualmente para `confirmada`
-- Lançamento correspondente corrigido manualmente para `pendente`
+- "Marcar entregue" → "Marcar paga": ao marcar paga, lançamento contábil deve virar `pago`
+- Devolução parcial: comprador emite NF-e de devolução, cooperativa registra chave + kg devolvidos
+- `iniciarLote`: criar `lote_itens` ao vincular entregas
+- Tela `/comercializacao/resultado`: UI do resultado por safra (schema pronto na migration 052)
 
 #### Pendências gerais
 - Campo CPF editável na ficha do produtor quando nulo
