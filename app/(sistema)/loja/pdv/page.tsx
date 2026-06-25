@@ -293,14 +293,16 @@ export default function PDVPage() {
 
   if (!caixa) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '70vh' }}>
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: 36, width: 360, textAlign: 'center' }}>
-        <i className="ti ti-cash-register" style={{ fontSize: 48, color: '#E07B30', display: 'block', marginBottom: 12 }} />
-        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: '#1a1a2e' }}>Abrir Caixa</div>
-        <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>Informe o fundo de troco inicial</div>
-        <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', textAlign: 'left', marginBottom: 6 }}>Valor de abertura (R$)</label>
+      <div style={{ background: '#fff', border: '1px solid #E5E3DC', borderRadius: 12, padding: 36, width: 360, textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 14, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+          <i className="ti ti-cash-register" style={{ fontSize: 28, color: '#E07B30' }} />
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, color: '#1C1917' }}>Abrir Caixa</div>
+        <div style={{ fontSize: 13, color: '#78716C', marginBottom: 20 }}>Informe o fundo de troco inicial</div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', textAlign: 'left', marginBottom: 6 }}>Valor de abertura (R$)</label>
         <input type="text" value={valorAbertura} onChange={e => setValorAbertura(e.target.value)} placeholder="0,00" autoFocus
           onKeyDown={e => e.key === 'Enter' && handleAbrirCaixa()}
-          style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 16 }}
+          style={{ width: '100%', padding: '10px 12px', border: `1.5px solid #E5E3DC`, borderRadius: 8, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 16 }}
         />
         <Btn onClick={handleAbrirCaixa} disabled={abrindoCaixa}
           style={{ width: '100%', justifyContent: 'center', background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
@@ -312,8 +314,12 @@ export default function PDVPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', background: '#f8f7f4', overflow: 'hidden' }}>
+      <style>{`
+        .pdv-header { padding: 0 20px; }
+        @media (max-width: 640px) { .pdv-header { padding: 0 16px 0 56px; } }
+      `}</style>
 
-      <div style={{ background: '#fff', borderBottom: '1px solid #E5E3DC', padding: '0 20px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
+      <div className="pdv-header" style={{ background: '#fff', borderBottom: '1px solid #E5E3DC', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <i className="ti ti-shopping-bag" style={{ fontSize: 20, color: '#E07B30' }} />
@@ -470,29 +476,29 @@ export default function PDVPage() {
 
       {modal === 'sangria' && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 380, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: '#1a1a2e' }}>Sangria / Aporte</div>
+          <div style={{ background: '#fff', border: '1px solid #E5E3DC', borderRadius: 12, padding: 28, width: 380, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 20, color: '#1C1917' }}>Sangria / Aporte</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               {(['sangria', 'aporte'] as const).map(t => (
                 <button key={t} onClick={() => setSangriaTipo(t)}
-                  style={{ flex: 1, padding: '8px', borderRadius: 8, border: `2px solid ${sangriaTipo === t ? '#E07B30' : '#e5e3dc'}`, background: sangriaTipo === t ? '#fff8f3' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: sangriaTipo === t ? 700 : 400, color: sangriaTipo === t ? '#92400e' : '#374151', textTransform: 'capitalize' }}>
+                  style={{ flex: 1, padding: '8px', borderRadius: 8, border: `2px solid ${sangriaTipo === t ? '#E07B30' : '#E5E3DC'}`, background: sangriaTipo === t ? '#FFF7ED' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: sangriaTipo === t ? 700 : 400, color: sangriaTipo === t ? '#92400e' : '#78716C', textTransform: 'capitalize' }}>
                   {t}
                 </button>
               ))}
             </div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Valor (R$)</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>Valor (R$)</label>
             <input type="text" value={sangriaValor} onChange={e => setSangriaValor(e.target.value)} placeholder="0,00"
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
             />
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Observacoes (opcional)</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>Observações (opcional)</label>
             <input type="text" value={sangriaObs} onChange={e => setSangriaObs(e.target.value)} placeholder="Motivo..."
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 20 }}
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 20 }}
             />
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Btn variante="cinza" onClick={() => setModal(null)}>Cancelar</Btn>
               <Btn onClick={handleSangriaClick} disabled={!sangriaValor}
                 style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
-                Solicitar autorizacao
+                Solicitar autorização
               </Btn>
             </div>
           </div>
