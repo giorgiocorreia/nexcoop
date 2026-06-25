@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import type { CotaCooperado, CotaPagamento } from '@/types/database'
 import { buscarCotas } from './cotas-actions'
 import { updateCooperadoStatus } from './cotas-actions'
@@ -63,7 +63,8 @@ interface Props {
   usuarioId:   string
 }
 
-export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Props) {
+const PagamentosSection = forwardRef<{ carregar: () => void }, Props>(
+function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
   const [cotas, setCotas]                     = useState<CotaCooperado[]>([])
   const [pagsPorCota, setPagsPorCota]         = useState<Record<string, CotaPagamento[]>>({})
   const [carregando, setCarregando]           = useState(true)
@@ -98,6 +99,8 @@ export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Pro
   }, [cooperadoId])
 
   useEffect(() => { carregar() }, [carregar])
+
+  useImperativeHandle(ref, () => ({ carregar }))
 
   function iniciarForm(cotaId: string) {
     setFormPorCota(prev => ({ ...prev, [cotaId]: [novaParcelaForm()] }))
@@ -562,7 +565,8 @@ export default function PagamentosSection({ cooperadoId, orgId, usuarioId }: Pro
       )}
     </>
   )
-}
+})
+export default PagamentosSection
 
 // ── Estilos ────────────────────────────────────────────────────────────────────
 const cardStyle: React.CSSProperties = {

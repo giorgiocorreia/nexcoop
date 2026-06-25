@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Cooperado, StatusCooperado } from '@/types/database'
@@ -71,6 +71,11 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
   const [alterandoStatus, setAlterandoStatus] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const pagamentosRef = useRef<{ carregar: () => void } | null>(null)
+
+  const handleCotaAtualizada = useCallback(() => {
+    pagamentosRef.current?.carregar()
+  }, [])
 
   // Fecha menu ao clicar fora
   useEffect(() => {
@@ -361,12 +366,17 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
 
       {/* Cotas de Participação — exclusivo cooperativas */}
       {orgTipo === 'cooperativa' && (
-        <CotasSection cooperadoId={cooperado.id} orgId={cooperado.organizacao_id} />
+        <CotasSection
+          cooperadoId={cooperado.id}
+          orgId={cooperado.organizacao_id}
+          onCotaAtualizada={handleCotaAtualizada}
+        />
       )}
 
       {/* Pagamentos de cotas — exclusivo cooperativas */}
       {orgTipo === 'cooperativa' && (
         <PagamentosSection
+          ref={pagamentosRef}
           cooperadoId={cooperado.id}
           orgId={cooperado.organizacao_id}
           usuarioId={usuarioId}

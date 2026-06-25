@@ -44,10 +44,11 @@ type FormCota = {
 interface Props {
   cooperadoId: string
   orgId: string
+  onCotaAtualizada?: () => void
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
-export default function CotasSection({ cooperadoId, orgId }: Props) {
+export default function CotasSection({ cooperadoId, orgId, onCotaAtualizada }: Props) {
   const [cotas, setCotas]           = useState<CotaComGrupo[]>([])
   const [grupos, setGrupos]         = useState<GrupoColaborador[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -134,6 +135,7 @@ export default function CotasSection({ cooperadoId, orgId }: Props) {
         grupo_id:   tipo === 'colaboradora' ? form.grupo_id || null : null,
       })
       await carregar()
+      onCotaAtualizada?.()
       setEditando(null)
       if (alertaRepresentante) setAlerta(alertaRepresentante)
     } catch (e) {
@@ -148,6 +150,7 @@ export default function CotasSection({ cooperadoId, orgId }: Props) {
     try {
       await removerCota(cotaId, cooperadoId)
       await carregar()
+      onCotaAtualizada?.()
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro ao remover')
     }
