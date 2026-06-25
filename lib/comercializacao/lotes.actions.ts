@@ -8,7 +8,7 @@ export async function listarLotes() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('lotes')
-    .select('*, safras(ano, descricao), produtos(nome, unidade)')
+    .select('*, safras(ano, descricao), lote_itens(produto_id, peso_kg, produtos(nome, unidade))')
     .eq('organizacao_id', usuario.organizacao_id as string)
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
@@ -17,16 +17,15 @@ export async function listarLotes() {
 
 export async function criarLote(form: {
   safra_id: string
-  produto_id: string
   codigo: string
-  peso_total_kg: number
+  produto_descricao: string
   observacoes?: string
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('lotes')
-    .insert({ ...form, organizacao_id: usuario.organizacao_id as string, status: 'aberto' })
+    .insert({ ...form, organizacao_id: usuario.organizacao_id as string, status: 'rascunho' })
   if (error) throw new Error(error.message)
 }
 

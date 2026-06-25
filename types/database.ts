@@ -780,7 +780,7 @@ export type StatusSessaoCaixa      = 'aberta' | 'fechada'
 export type StatusSolicitacaoVenda = 'pendente' | 'em_analise' | 'executada' | 'recusada'
 export type StatusSafra            = 'planejamento' | 'em_andamento' | 'encerrada'
 export type TipoComprador          = 'exportador' | 'industria' | 'trader' | 'outro'
-export type StatusLote             = 'aberto' | 'em_venda' | 'entregue'
+export type StatusLote             = 'rascunho' | 'aberto' | 'em_venda' | 'entregue'
 export type StatusVendaExterna     = 'rascunho' | 'confirmada' | 'entregue' | 'paga'
 export type StatusDistribuicao     = 'calculado' | 'pago'
 
