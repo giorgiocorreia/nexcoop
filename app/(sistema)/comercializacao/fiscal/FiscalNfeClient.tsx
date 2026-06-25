@@ -16,7 +16,7 @@ type NfeSaida = {
   preco_kg: number
   valor_bruto: number
   lote_id: string | null
-  compradores: { id: string; nome: string; cnpj: string } | null
+  compradores: { id: string; nome: string; cnpj: string; email: string | null } | null
   lotes: { codigo: string; produto_descricao: string | null; safras: { ano: number } | null } | null
 }
 

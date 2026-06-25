@@ -15,7 +15,7 @@ export async function listarNfeSaida() {
       id, quantidade_kg, preco_kg, valor_bruto,
       chave_nfe, numero_nfe, serie_nfe, status_nfe,
       xml_nfe, data_emissao_nfe, lote_id,
-      compradores(id, nome, cnpj),
+      compradores(id, nome, cnpj, email),
       lotes(codigo, produto_descricao, safras(ano))
     `)
     .eq('organizacao_id', orgId)
