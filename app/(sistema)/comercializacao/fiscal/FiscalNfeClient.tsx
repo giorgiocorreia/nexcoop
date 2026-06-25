@@ -330,7 +330,7 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>
                 Documentos — Lote {modalDocs.lotes?.codigo}
               </h3>
-              <button onClick={() => setModalDocs(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#6b7280' }}>✕</button>
+              <div style={{ width: 24 }} />
             </div>
 
             {loadingDocs ? (
@@ -402,6 +402,14 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                     />
                   </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => { setModalDocs(null); setEmailEnvio('') }}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: '1px solid #d1d5db', background: 'white', color: '#374151',
+                        cursor: 'pointer',
+                      }}
+                    >Fechar</button>
                     <button
                       onClick={handleBaixarZip}
                       disabled={baixandoZip}
