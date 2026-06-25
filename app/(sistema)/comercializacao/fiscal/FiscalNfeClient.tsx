@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { fmt } from '@/lib/fmt'
-import { cancelarNfe } from './actions'
+import { cancelarNfe, buscarDocsLoteAction, gerarZipLoteAction, enviarZipEmailAction } from './actions'
 
 type NfeSaida = {
   id: string
@@ -15,6 +15,7 @@ type NfeSaida = {
   quantidade_kg: number
   preco_kg: number
   valor_bruto: number
+  lote_id: string | null
   compradores: { id: string; nome: string; cnpj: string } | null
   lotes: { codigo: string; produto_descricao: string | null; safras: { ano: number } | null } | null
 }
@@ -43,6 +44,12 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const [lista, setLista] = useState(nfes)
   const [erroModal, setErroModal] = useState<string | null>(null)
+  const [modalDocs, setModalDocs] = useState<NfeSaida | null>(null)
+  const [docsLote, setDocsLote] = useState<{ notasEntrada: any[]; notaSaida: any } | null>(null)
+  const [loadingDocs, setLoadingDocs] = useState(false)
+  const [emailEnvio, setEmailEnvio] = useState('')
+  const [enviandoEmail, setEnviandoEmail] = useState(false)
+  const [baixandoZip, setBaixandoZip] = useState(false)
 
   const filtradas = lista.filter(n => {
     const matchStatus = !filtroStatus || n.status_nfe === filtroStatus
@@ -53,6 +60,61 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
       n.lotes?.codigo.toLowerCase().includes(busca.toLowerCase())
     return matchStatus && matchBusca
   })
+
+  async function handleAbrirDocs(nfe: NfeSaida) {
+    setModalDocs(nfe)
+    setLoadingDocs(true)
+    setEmailEnvio((nfe as any).compradores?.email ?? '')
+    try {
+      const res = await buscarDocsLoteAction(nfe.lote_id!)
+      setDocsLote(res)
+    } catch (e: any) {
+      setMensagem({ tipo: 'erro', texto: e.message })
+    } finally {
+      setLoadingDocs(false)
+    }
+  }
+
+  async function handleBaixarZip() {
+    if (!modalDocs?.lote_id) return
+    setBaixandoZip(true)
+    try {
+      const res = await gerarZipLoteAction(modalDocs.lote_id)
+      if (res.sucesso && res.zipBase64) {
+        const blob = new Blob([Buffer.from(res.zipBase64, 'base64')], { type: 'application/zip' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `lote_${modalDocs.lotes?.codigo ?? 'lote'}.zip`
+        a.click()
+        URL.revokeObjectURL(url)
+      } else {
+        setMensagem({ tipo: 'erro', texto: res.erro ?? 'Erro ao gerar ZIP' })
+      }
+    } catch (e: any) {
+      setMensagem({ tipo: 'erro', texto: e.message })
+    } finally {
+      setBaixandoZip(false)
+    }
+  }
+
+  async function handleEnviarEmail() {
+    if (!modalDocs?.lote_id || !emailEnvio) return
+    setEnviandoEmail(true)
+    try {
+      const res = await enviarZipEmailAction(modalDocs.lote_id, emailEnvio)
+      if (res.sucesso) {
+        setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${emailEnvio}` })
+        setModalDocs(null)
+      } else {
+        setMensagem({ tipo: 'erro', texto: res.erro ?? 'Erro ao enviar email' })
+      }
+    } catch (e: any) {
+      setMensagem({ tipo: 'erro', texto: e.message })
+    } finally {
+      setEnviandoEmail(false)
+    }
+  }
 
   async function handleCancelar() {
     if (!modalCancelar?.chave_nfe) return
@@ -184,6 +246,12 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                               background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', textDecoration: 'none',
                             }}>DANFE</a>
                         )}
+                        {nfe.status_nfe === 'autorizada' && nfe.lote_id && (
+                          <button onClick={() => handleAbrirDocs(nfe)} style={{
+                            padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                            background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', cursor: 'pointer',
+                          }}>Docs</button>
+                        )}
                         {nfe.status_nfe === 'autorizada' && (
                           <button onClick={() => setModalCancelar(nfe)} style={{
                             padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
@@ -248,6 +316,113 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                 }}
               >{carregando ? 'Cancelando...' : 'Confirmar cancelamento'}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Documentos */}
+      {modalDocs && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: '1.5rem', width: 560, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #e5e3dc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>
+                Documentos — Lote {modalDocs.lotes?.codigo}
+              </h3>
+              <button onClick={() => setModalDocs(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#6b7280' }}>✕</button>
+            </div>
+
+            {loadingDocs ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', fontSize: 13 }}>Carregando documentos...</div>
+            ) : (
+              <>
+                {/* NF-e de Saída */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#78716c', marginBottom: '0.5rem' }}>NF-e de Saída</div>
+                  <div style={{ background: '#f8f7f4', borderRadius: 8, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>
+                        NF-e {modalDocs.numero_nfe}/{modalDocs.serie_nfe} — {modalDocs.compradores?.nome}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{modalDocs.chave_nfe}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {modalDocs.xml_nfe && (
+                        <a href={modalDocs.xml_nfe} target="_blank" rel="noopener noreferrer" style={{
+                          padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                          background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', textDecoration: 'none',
+                        }}>XML</a>
+                      )}
+                      {modalDocs.xml_nfe && (
+                        <a href={`${modalDocs.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf')}`} target="_blank" rel="noopener noreferrer" style={{
+                          padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                          background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', textDecoration: 'none',
+                        }}>DANFE</a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* NF-es de Entrada */}
+                {docsLote && docsLote.notasEntrada.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#78716c', marginBottom: '0.5rem' }}>
+                      NF-e de Entrada ({docsLote.notasEntrada.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {docsLote.notasEntrada.map((nota: any, i: number) => (
+                        <div key={i} style={{ background: '#f8f7f4', borderRadius: 8, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a2e' }}>{nota.produtor_nome}</div>
+                            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>NF-e {nota.numero_nfe} · {nota.quantidade_kg} kg</div>
+                          </div>
+                          {nota.xml_url && (
+                            <a href={nota.xml_url} target="_blank" rel="noopener noreferrer" style={{
+                              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                              background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', textDecoration: 'none',
+                            }}>XML</a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Envio */}
+                <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '1rem' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#78716c', marginBottom: '0.5rem' }}>Enviar documentos</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input
+                      type="email"
+                      value={emailEnvio}
+                      onChange={e => setEmailEnvio(e.target.value)}
+                      placeholder="Email do destinatário"
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e3dc', fontSize: 13 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleBaixarZip}
+                      disabled={baixandoZip}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: '1px solid #d1d5db', background: 'white', color: '#374151',
+                        cursor: baixandoZip ? 'not-allowed' : 'pointer', opacity: baixandoZip ? 0.6 : 1,
+                      }}
+                    >{baixandoZip ? 'Gerando...' : '⬇ Baixar ZIP'}</button>
+                    <button
+                      onClick={handleEnviarEmail}
+                      disabled={enviandoEmail || !emailEnvio}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: 'none', background: '#92400e', color: 'white',
+                        cursor: enviandoEmail || !emailEnvio ? 'not-allowed' : 'pointer',
+                        opacity: enviandoEmail || !emailEnvio ? 0.6 : 1,
+                      }}
+                    >{enviandoEmail ? 'Enviando...' : '✉ Enviar por email'}</button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

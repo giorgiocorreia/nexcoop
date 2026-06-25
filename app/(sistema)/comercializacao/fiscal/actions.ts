@@ -88,3 +88,43 @@ export async function cancelarNfe(chave: string, justificativa: string) {
     return { sucesso: false, erro: e.message }
   }
 }
+
+export async function buscarDocsLoteAction(loteId: string) {
+  const supabase = createAdminClient()
+  const usuario = await getUsuarioLogado()
+
+  const { data: movs } = await supabase
+    .from('movimentacoes_conta')
+    .select('id')
+    .eq('lote_id', loteId)
+
+  const movIds = movs?.map(m => m.id) ?? []
+
+  const { data: notasEntrada } = movIds.length > 0 ? await supabase
+    .from('notas_entrega')
+    .select('id, chave_nfe, numero_nfe, xml_url, quantidade_kg, produtores(nome)')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+    .in('movimentacao_id', movIds)
+    .eq('status', 'autorizada') : { data: [] }
+
+  return {
+    notasEntrada: (notasEntrada ?? []).map((n: any) => ({
+      numero_nfe: n.numero_nfe,
+      chave_nfe: n.chave_nfe,
+      xml_url: n.xml_url,
+      quantidade_kg: n.quantidade_kg,
+      produtor_nome: Array.isArray(n.produtores) ? n.produtores[0]?.nome : n.produtores?.nome,
+    })),
+    notaSaida: null,
+  }
+}
+
+export async function gerarZipLoteAction(loteId: string) {
+  const { gerarZipEEnviarEmail } = await import('@/lib/comercializacao/zip-lote')
+  return gerarZipEEnviarEmail(loteId)
+}
+
+export async function enviarZipEmailAction(loteId: string, email: string) {
+  const { gerarZipEEnviarEmail } = await import('@/lib/comercializacao/zip-lote')
+  return gerarZipEEnviarEmail(loteId, email)
+}

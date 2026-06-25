@@ -40,7 +40,7 @@ function construirXmlUrl(chave: string): string {
   return `${base}/arquivos${process.env.FOCUSNFE_AMBIENTE === 'producao' ? '' : '_development'}/${cnpj}_222056/${anoMes === '2606' ? '202606' : anoMes}/XMLs/${chave}-nfe.xml`
 }
 
-export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: boolean; erro?: string; zipBase64?: string }> {
+export async function gerarZipEEnviarEmail(loteId: string, emailOverride?: string): Promise<{ sucesso: boolean; erro?: string; zipBase64?: string }> {
   const supabase = createAdminClient()
 
   // 1. Buscar lote
@@ -146,7 +146,7 @@ export async function gerarZipEEnviarEmail(loteId: string): Promise<{ sucesso: b
 
   // 7. Enviar email
   const comprador = (venda as any)?.compradores
-  const emailDestinatario = getEmailDestinatario(comprador?.email ?? null)
+  const emailDestinatario = emailOverride ?? getEmailDestinatario(comprador?.email ?? null)
   const dataHoje = new Date().toLocaleDateString('pt-BR')
   const nomeLote = `Lote ${lote.codigo}`
 
