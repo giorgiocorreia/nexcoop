@@ -104,17 +104,16 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
     try {
       const res = await enviarZipEmailAction(modalDocs.lote_id, emailEnvio)
       if (res.sucesso) {
-        setModalDocs(null)
-        setTimeout(() => {
-          setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${emailEnvio}` })
-        }, 100)
+        setEnviandoEmail(false)
+        setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${emailEnvio}` })
+        setTimeout(() => setModalDocs(null), 3000)
       } else {
-        setMensagem({ tipo: 'erro', texto: res.erro ?? 'Erro ao enviar email' })
+        setEnviandoEmail(false)
+        setErroModal(res.erro ?? 'Erro ao enviar email')
       }
     } catch (e: any) {
-      setMensagem({ tipo: 'erro', texto: e.message })
-    } finally {
       setEnviandoEmail(false)
+      setErroModal(e.message)
     }
   }
 
