@@ -96,6 +96,8 @@ export default function NovoCooperadoPage() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [limiteInfo, setLimiteInfo] = useState<ResultadoLimite | null>(null)
+  const [carregandoMatricula, setCarregandoMatricula] = useState(false)
+  const [erroCpf, setErroCpf] = useState('')
 
   const set = (campo: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -124,6 +126,19 @@ export default function NovoCooperadoPage() {
     }
   }
 
+  async function gerarProximaMatricula(organizacaoId: string): Promise<string | null> {
+    setCarregandoMatricula(true)
+    try {
+      const res = await fetch(`/api/cooperados/proxima-matricula?org=${organizacaoId}`)
+      const data = await res.json()
+      return data.matricula ?? null
+    } catch {
+      return null
+    } finally {
+      setCarregandoMatricula(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.nome_completo.trim()) {
@@ -132,15 +147,16 @@ export default function NovoCooperadoPage() {
       return
     }
     if (form.tipo === 'pessoa_fisica' && form.cpf) {
-      const erroCpf = cpfInvalidoMsg(form.cpf)
-      if (erroCpf) { setErro(erroCpf); setAbaAtiva('pessoal'); return }
+      const err = cpfInvalidoMsg(form.cpf)
+      if (err) { setErroCpf(err); setAbaAtiva('pessoal'); return }
     }
     if (form.tipo === 'pessoa_juridica' && form.representante_cpf) {
-      const erroCpf = cpfInvalidoMsg(form.representante_cpf)
-      if (erroCpf) { setErro(erroCpf); setAbaAtiva('pessoal'); return }
+      const erroCpfRep = cpfInvalidoMsg(form.representante_cpf)
+      if (erroCpfRep) { setErro(erroCpfRep); setAbaAtiva('pessoal'); return }
     }
     setSalvando(true)
     setErro('')
+    setErroCpf('')
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -156,6 +172,15 @@ export default function NovoCooperadoPage() {
       setErro('Usuário sem organização vinculada.')
       setSalvando(false)
       return
+    }
+
+    let matriculaFinal = form.numero_matricula.trim()
+    if (!matriculaFinal) {
+      const gerada = await gerarProximaMatricula(usuario.organizacao_id)
+      if (gerada) {
+        matriculaFinal = gerada
+        setForm(prev => ({ ...prev, numero_matricula: gerada }))
+      }
     }
 
     // ── GUARD DE LIMITE ──────────────────────────────────────
@@ -201,7 +226,7 @@ export default function NovoCooperadoPage() {
       dap_numero:    form.dap_numero.trim() || null,
       status:        form.status,
       data_admissao: form.data_admissao || null,
-      numero_matricula: form.numero_matricula.trim() || null,
+      numero_matricula: matriculaFinal || null,
       motivo_saida:  form.motivo_saida.trim() || null,
     }
 
@@ -360,9 +385,21 @@ export default function NovoCooperadoPage() {
                           setForm(prev => ({ ...prev, cpf: masked }))
                         }}
                         placeholder="000.000.000-00" maxLength={14} style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
+                        onFocus={e => { e.target.style.borderColor = '#635BFF'; setErroCpf('') }}
+                        onBlur={e => {
+                          e.target.style.borderColor = '#d5d3cc'
+                          if (form.cpf) {
+                            const err = cpfInvalidoMsg(form.cpf)
+                            setErroCpf(err ?? '')
+                            e.target.style.borderColor = err ? '#dc2626' : '#d5d3cc'
+                          } else {
+                            setErroCpf('')
+                          }
+                        }}
                       />
+                      {erroCpf && (
+                        <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px' }}>{erroCpf}</div>
+                      )}
                     </InputGroup>
                     <InputGroup label="RG">
                       <input type="text" value={form.rg} onChange={set('rg')}
@@ -470,17 +507,17 @@ export default function NovoCooperadoPage() {
                     <input
                       type="text" value={form.cep}
                       onChange={e => {
-                        set('cep')(e)
-                        if (e.target.value.replace(/\D/g, '').length === 8) {
-                          buscarCEP(e.target.value)
-                        }
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+                        const masked = digits.length > 5 ? `${digits.slice(0,5)}-${digits.slice(5)}` : digits
+                        setForm(prev => ({ ...prev, cep: masked }))
+                        if (digits.length === 8) buscarCEP(digits)
                       }}
                       placeholder="00000-000" maxLength={9}
                       style={{ ...inputStyle, paddingRight: buscandoCep ? '32px' : undefined }}
                       onFocus={e => (e.target.style.borderColor = '#635BFF')}
                       onBlur={e => {
                         e.target.style.borderColor = '#d5d3cc'
-                        buscarCEP(form.cep)
+                        buscarCEP(form.cep.replace(/\D/g, ''))
                       }}
                     />
                     {buscandoCep && (
@@ -640,11 +677,21 @@ export default function NovoCooperadoPage() {
                   </select>
                 </InputGroup>
                 <InputGroup label="Número de matrícula">
-                  <input type="text" value={form.numero_matricula} onChange={set('numero_matricula')}
-                    placeholder="001" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={carregandoMatricula ? '' : form.numero_matricula}
+                      onChange={set('numero_matricula')}
+                      placeholder={carregandoMatricula ? 'Gerando…' : 'Auto-gerado ao salvar'}
+                      style={{ ...inputStyle, paddingRight: carregandoMatricula ? '32px' : undefined }}
+                      onFocus={e => (e.target.style.borderColor = '#635BFF')}
+                      onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
+                    />
+                    {carregandoMatricula && (
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#635BFF' }}>⟳</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>Deixe em branco para gerar automaticamente (formato: AANNNN)</div>
                 </InputGroup>
               </div>
 
