@@ -42,6 +42,7 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
   const [carregando, setCarregando] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const [lista, setLista] = useState(nfes)
+  const [erroModal, setErroModal] = useState<string | null>(null)
 
   const filtradas = lista.filter(n => {
     const matchStatus = !filtroStatus || n.status_nfe === filtroStatus
@@ -59,12 +60,13 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
     const res = await cancelarNfe(modalCancelar.chave_nfe, justificativa)
     setCarregando(false)
     if (res.sucesso) {
+      setErroModal(null)
       setLista(l => l.map(n => n.chave_nfe === modalCancelar.chave_nfe ? { ...n, status_nfe: 'cancelada' } : n))
       setMensagem({ tipo: 'ok', texto: 'NF-e cancelada com sucesso.' })
       setModalCancelar(null)
       setJustificativa('')
     } else {
-      setMensagem({ tipo: 'erro', texto: res.erro ?? 'Erro ao cancelar' })
+      setErroModal(res.erro ?? 'Erro ao cancelar')
     }
   }
 
@@ -222,9 +224,17 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
             <div style={{ fontSize: 11, color: justificativa.length < 15 ? '#dc2626' : '#15803d', marginBottom: '1rem' }}>
               {justificativa.length}/15 caracteres mínimos
             </div>
+            {erroModal && (
+              <div style={{
+                background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8,
+                padding: '0.75rem', marginBottom: '1rem', fontSize: 12, color: '#dc2626'
+              }}>
+                {erroModal}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
-                onClick={() => { setModalCancelar(null); setJustificativa('') }}
+                onClick={() => { setModalCancelar(null); setJustificativa(''); setErroModal(null) }}
                 style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #d1d5db', background: 'white', color: '#374151', cursor: 'pointer' }}
               >Voltar</button>
               <button
