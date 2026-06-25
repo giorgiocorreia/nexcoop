@@ -175,7 +175,7 @@ export default function FiscalNfeClient({ nfes, kpis }: { nfes: NfeSaida[]; kpis
                         )}
                         {nfe.chave_nfe && nfe.status_nfe === 'autorizada' && (
                           <a
-                            href={`https://focusnfe.com.br/danfe/${nfe.chave_nfe}.pdf`}
+                            href={`${process.env.NEXT_PUBLIC_FOCUSNFE_AMBIENTE === 'producao' ? 'https://api.focusnfe.com.br' : 'https://homologacao.focusnfe.com.br'}/danfe/${nfe.chave_nfe}`}
                             target="_blank" rel="noopener noreferrer"
                             style={{
                               padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
