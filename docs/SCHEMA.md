@@ -32,6 +32,7 @@
 | 050 | lancamento_id FK em vendas_externas e distribuicao_resultado |
 | 051 | loja_caixas: campos de fechamento completos (valor_fechamento, totais por forma, saldo_final_especie, conferência) |
 | 052 | cotacoes: data→vigente_a_partir_de (timestamptz); movimentacoes_conta: +cotacao_id; lotes: -produto_id, +lote_itens (multi-produto); saldos_produtor_snapshot; resultado_safra_snapshot; triggers; vw_saldos_produtor; vw_resultado_safra |
+| 053 | produtores.tipo sincronizado com cooperados.status via trigger trg_sincronizar_tipo_produtor |
 
 **Próxima migration:** 053
 
