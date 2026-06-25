@@ -28,6 +28,12 @@
 - Server actions: sempre `"use server"` + try/catch + `traduzirErro()`
 - Migrations: sequenciais, nunca pular número, aplicar manualmente no Dashboard
 
+### Separação server actions vs utilitários puros
+- Arquivos com `"use server"` só podem exportar funções `async`
+- Funções puras (parse, formatação, cálculo — sem I/O) NUNCA entram em arquivo `"use server"`
+- Padrão: `lib/modulo/feature.ts` (server actions) + `lib/modulo/feature-utils.ts` (utilitários puros importáveis no client)
+- Exemplo: `devolucao.ts` (actions) + `devolucao-xml.ts` (parse XML puro)
+
 ## Padrão visual — Design System (a partir de 24/06/2026)
 
 Todas as páginas novas devem seguir o padrão da página `/loja` (LojaHubPage).
