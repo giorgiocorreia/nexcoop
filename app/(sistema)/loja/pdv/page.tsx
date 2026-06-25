@@ -313,12 +313,16 @@ export default function PDVPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', background: '#f8f7f4', overflow: 'hidden' }}>
 
-      <div style={{ background: '#fff', borderBottom: '1px solid #e5e3dc', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #E5E3DC', padding: '0 20px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <i className="ti ti-shopping-bag" style={{ fontSize: 22, color: '#E07B30' }} />
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="ti ti-shopping-bag" style={{ fontSize: 20, color: '#E07B30' }} />
+          </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>PDV - Loja Agropecuaria</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>Caixa aberto - {new Date(caixa.aberto_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', lineHeight: 1.2 }}>PDV</div>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              Loja Agropecuária · Caixa aberto às {new Date(caixa.aberto_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
