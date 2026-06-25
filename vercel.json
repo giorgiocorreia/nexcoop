@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/cotacoes-cacau",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/indice-nex",
+      "schedule": "0 8 * * *"
     }
   ]
 }

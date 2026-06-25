@@ -1,12 +1,15 @@
 ﻿import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Lancamento, Assembleia, Documento } from '@/types/database'
-import { CardCotacaoCacau } from '@/components/dashboard/CardCotacaoCacau'
+import { IndiceNex } from '@/components/dashboard/IndiceNex'
 import {
-  getCotacaoMercadoAtual,
-  getTendencia7dias,
-  getConfigPrecosSugeridos,
-} from '@/lib/dashboard/cotacoes-mercado-actions'
+  getUltimoIndiceNex,
+  getSinaisAtivos,
+  getCotacoesMoageiras,
+  getPrecoBahia,
+  getUsdBrl,
+  getUltimasCotacoesOrg,
+} from '@/lib/dashboard/indice-nex.actions'
 import {
   verificarInadimplencia,
   buscarResumoCotasDashboard,
@@ -36,29 +39,34 @@ export default async function DashboardPage() {
   if (apenasLoja) redirect('/loja')
   const orgTipo = (usuarioData?.organizacoes as unknown as { tipo?: string } | null)?.tipo
 
-  // Verificar inadimplência e resumo de cotas — só para cooperativas
+  // Buscar organizacao_id e dados específicos de cooperativas
+  let usuarioOrg: { organizacao_id: string | null } | null = null
   let resumoCotas: Awaited<ReturnType<typeof buscarResumoCotasDashboard>> | null = null
   if (orgTipo === 'cooperativa') {
-    const { data: usuarioOrg } = await supabase
+    const { data } = await supabase
       .from('usuarios')
       .select('organizacao_id')
       .eq('id', user.id)
       .single()
+    usuarioOrg = data
     if (usuarioOrg?.organizacao_id) {
       await verificarInadimplencia(usuarioOrg.organizacao_id)
       resumoCotas = await buscarResumoCotasDashboard(usuarioOrg.organizacao_id)
     }
   }
 
-  // Dados de cotação de cacau — só para cooperativas
-  const [cotacaoAtual, tendencia7d, configCotacao] =
-    orgTipo === 'cooperativa'
+  // Índice Nex — só para cooperativas
+  const [snapshot, sinaisNex, cotacoesMoageiras, precoBahia, usdBrl, ultimasCotacoesOrg] =
+    orgTipo === 'cooperativa' && usuarioOrg?.organizacao_id
       ? await Promise.all([
-          getCotacaoMercadoAtual(),
-          getTendencia7dias(),
-          getConfigPrecosSugeridos(),
+          getUltimoIndiceNex(usuarioOrg.organizacao_id),
+          getSinaisAtivos(usuarioOrg.organizacao_id),
+          getCotacoesMoageiras(usuarioOrg.organizacao_id),
+          getPrecoBahia(),
+          getUsdBrl(),
+          getUltimasCotacoesOrg(usuarioOrg.organizacao_id),
         ])
-      : [null, null, null]
+      : [null, [], [], null, null, []]
 
   const [
     { count: totalCooperados },
@@ -258,11 +266,13 @@ export default async function DashboardPage() {
       </div>
 
       {orgTipo === 'cooperativa' && (
-        <CardCotacaoCacau
-          cepea={cotacaoAtual?.cepea ?? null}
-          iceNy={cotacaoAtual?.iceNy ?? null}
-          tendencia={tendencia7d ?? []}
-          config={configCotacao}
+        <IndiceNex
+          snapshot={snapshot}
+          sinais={sinaisNex as Parameters<typeof IndiceNex>[0]['sinais']}
+          cotacoes={cotacoesMoageiras as Parameters<typeof IndiceNex>[0]['cotacoes']}
+          ultimasCotacoesOrg={ultimasCotacoesOrg as Parameters<typeof IndiceNex>[0]['ultimasCotacoesOrg']}
+          precoBahia={precoBahia}
+          usdBrl={usdBrl}
         />
       )}
     </div>

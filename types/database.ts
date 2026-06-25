@@ -1141,7 +1141,7 @@ export interface SolicitacaoAporte {
 export interface CotacaoMercadoExterno {
   id:              string
   produto:         string
-  fonte:           'cepea' | 'ice_ny'
+  fonte:           'cepea' | 'ice_ny' | 'precodocacau' | 'bcb' | 'barry_callebaut' | 'cargill' | 'olam'
   preco_usd:       number | null
   preco_brl:       number | null
   cambio_usd_brl:  number | null
@@ -1184,6 +1184,54 @@ export interface ChangelogEntry {
   modulo:     string
   itens:      Json
   created_at: string
+}
+
+// ── Índice Nex (051) ──────────────────────────────────────────────────────────
+
+export type IndiceNexFaixa = 'forte_baixa' | 'baixa' | 'estavel' | 'alta' | 'forte_alta'
+export type IndiceNexDimensao = 'oferta' | 'demanda' | 'financeiro' | 'macro'
+
+export interface IndiceNexSnapshot {
+  id: string
+  organizacao_id: string
+  commodity: string
+  calculado_em: string
+  score_final: number
+  faixa: IndiceNexFaixa
+  score_oferta: number | null
+  score_demanda: number | null
+  score_financeiro: number | null
+  score_macro: number | null
+  prob_forte_alta: number | null
+  prob_alta: number | null
+  prob_estavel: number | null
+  prob_baixa: number | null
+  prob_forte_baixa: number | null
+}
+
+export interface IndiceNexSinal {
+  id: string
+  snapshot_id: string | null
+  organizacao_id: string
+  dimensao: IndiceNexDimensao
+  fonte: string
+  titulo: string | null
+  descricao: string | null
+  url: string | null
+  valor_raw: string | null
+  impacto: number
+  peso: number
+  coletado_em: string
+}
+
+export interface IndiceNexAlerta {
+  id: string
+  organizacao_id: string
+  snapshot_id: string | null
+  tipo: string
+  mensagem: string
+  enviado_whatsapp: boolean
+  criado_em: string
 }
 
 // ── Agente WhatsApp ───────────────────────────────────────────────────────────
@@ -1329,6 +1377,25 @@ export type Database = {
       changelog_entries:           TableDef<ChangelogEntry>
       // ── Agente WhatsApp ────────────────────────────────────────────────────
       whatsapp_sessoes:            TableDef<WhatsappSessao>
+      // ── Índice Nex (051) ───────────────────────────────────────────────────
+      indice_nex_snapshots: {
+        Row:    IndiceNexSnapshot & Record<string, unknown>
+        Insert: Omit<IndiceNexSnapshot, 'id' | 'calculado_em'> & Record<string, unknown>
+        Update: Partial<Omit<IndiceNexSnapshot, 'id' | 'calculado_em'>> & Record<string, unknown>
+        Relationships: never[]
+      }
+      indice_nex_sinais: {
+        Row:    IndiceNexSinal & Record<string, unknown>
+        Insert: Omit<IndiceNexSinal, 'id' | 'coletado_em'> & Record<string, unknown>
+        Update: Partial<Omit<IndiceNexSinal, 'id' | 'coletado_em'>> & Record<string, unknown>
+        Relationships: never[]
+      }
+      indice_nex_alertas: {
+        Row:    IndiceNexAlerta & Record<string, unknown>
+        Insert: Omit<IndiceNexAlerta, 'id' | 'criado_em'> & Record<string, unknown>
+        Update: Partial<Omit<IndiceNexAlerta, 'id' | 'criado_em'>> & Record<string, unknown>
+        Relationships: never[]
+      }
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
