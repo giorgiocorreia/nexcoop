@@ -1,6 +1,3 @@
-import { createAdminClient } from '@/lib/supabase/admin'
-import { getLimiteFiliados } from '@/lib/planos'
-
 export interface ResultadoLimite {
   permitido: boolean
   totalAtual: number
@@ -11,29 +8,7 @@ export interface ResultadoLimite {
 export async function verificarLimiteFiliados(
   organizacaoId: string
 ): Promise<ResultadoLimite> {
-  const supabase = createAdminClient()
-
-  const [{ data: org }, { count }] = await Promise.all([
-    supabase
-      .from('organizacoes')
-      .select('plano')
-      .eq('id', organizacaoId)
-      .single(),
-    supabase
-      .from('cooperados')
-      .select('*', { count: 'exact', head: true })
-      .eq('organizacao_id', organizacaoId)
-      .eq('status', 'ativo'),
-  ])
-
-  const plano = org?.plano ?? 'gratuito'
-  const limite = getLimiteFiliados(plano)
-  const totalAtual = count ?? 0
-
-  return {
-    permitido: limite === null || totalAtual < limite,
-    totalAtual,
-    limite,
-    plano,
-  }
+  const res = await fetch(`/api/assinatura/limite-filiados?org=${organizacaoId}`)
+  if (!res.ok) throw new Error('Falha ao verificar limite')
+  return res.json()
 }
