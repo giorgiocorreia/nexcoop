@@ -10,7 +10,7 @@ const BORDA = "#E5E3DC"
 
 export default function ImpressosPage() {
   const [modalAberto, setModalAberto] = useState(false)
-  const [paginas, setPaginas] = useState(2)
+  const [paginas, setPaginas] = useState(1)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -91,13 +91,23 @@ export default function ImpressosPage() {
             <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>8 fichas por página A4 · Numeração automática · PDF pronto para impressão</div>
           </div>
 
-          {/* Ficha de Cadastro — em breve */}
-          <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 12, borderTop: "3px solid #6b7280", padding: 24, opacity: 0.6 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <i className="ti ti-user-plus" style={{ fontSize: 22, color: "#6b7280" }} />
+          {/* Card Ficha de Cadastro */}
+          <div
+            onClick={() => {
+              const a = document.createElement("a")
+              a.href = "/impressos/ficha-cadastro-coopaibi.pdf"
+              a.download = "ficha-cadastro-coopaibi.pdf"
+              a.click()
+            }}
+            style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 12, borderTop: `3px solid ${COR}`, padding: 24, cursor: "pointer", transition: "box-shadow 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+          >
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: COR_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+              <i className="ti ti-user-plus" style={{ fontSize: 22, color: COR }} aria-hidden="true" />
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 6 }}>Ficha de Cadastro</div>
-            <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>Formulário de admissão de cooperado · Em breve</div>
+            <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>Admissão de cooperado · Cooperado Pleno e Colaborador · PDF para impressão</div>
           </div>
 
         </div>
