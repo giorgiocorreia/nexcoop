@@ -50,16 +50,18 @@ type Saldo = {
   valor_convertido_rs: number
 }
 
-export default function ResultadoClient({ safras, resultados, saldos }: {
+export default function ResultadoClient({ safras, resultados, saldos, lotesAndamento }: {
   safras: Safra[]
   resultados: Resultado[]
   saldos: Saldo[]
+  lotesAndamento: any[]
 }) {
   const [safraId, setSafraId] = useState(safras[0]?.id ?? '')
 
   const safraAtual = safras.find(s => s.id === safraId)
   const resultadosFiltrados = resultados.filter(r => r.safra_id === safraId)
   const saldosFiltrados = saldos.filter(s => s.safra_id === safraId)
+  const lotesAndamentoFiltrados = lotesAndamento.filter(l => l.safra_id === safraId)
 
   // KPIs totais da safra
   const totalReceita    = resultadosFiltrados.reduce((a, r) => a + Number(r.receita_bruta_rs), 0)
@@ -176,6 +178,75 @@ export default function ResultadoClient({ safras, resultados, saldos }: {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Lotes em andamento */}
+          {lotesAndamentoFiltrados.length > 0 && (
+            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.borda}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 24 }}>
+              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.borda}` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.txtSub }}>
+                  Lotes em andamento
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {lotesAndamentoFiltrados.map((lote: any, i: number) => {
+                  const venda = lote.vendas_externas?.[0] ?? null
+                  const produtos = lote.lote_itens?.map((li: any) => li.produtos?.nome).filter(Boolean).join(', ') || lote.produto_descricao || '—'
+                  const STATUS_LOTE: Record<string, { label: string; cor: string; bg: string }> = {
+                    rascunho:  { label: 'Rascunho',  cor: '#6b7280', bg: '#f3f4f6' },
+                    aberto:    { label: 'Aberto',     cor: '#1e40af', bg: '#dbeafe' },
+                    em_venda:  { label: 'Em venda',   cor: '#92400e', bg: '#fef3c7' },
+                    entregue:  { label: 'Entregue',   cor: '#166534', bg: '#dcfce7' },
+                  }
+                  const st = STATUS_LOTE[lote.status] ?? { label: lote.status, cor: '#6b7280', bg: '#f3f4f6' }
+                  const STEPS = ['rascunho', 'aberto', 'em_venda', 'entregue', 'pago']
+                  const stepAtual = STEPS.indexOf(lote.status)
+                  return (
+                    <div key={lote.id} style={{
+                      padding: '16px 20px',
+                      borderTop: i > 0 ? `1px solid ${C.borda}` : 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: C.txt }}>Lote {lote.codigo}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: st.bg, color: st.cor }}>{st.label}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: C.txtSub }}>{produtos} · {fmtPeso(Number(lote.peso_total_kg))}</div>
+                          {venda && (
+                            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
+                              {venda.compradores?.nome} · {fmtReal(Number(venda.valor_bruto))} · {fmtReal(Number(venda.preco_kg))}/kg
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* Progress steps */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                        {['Rascunho', 'Aberto', 'Em venda', 'Entregue', 'Pago'].map((step, idx) => (
+                          <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 10, fontWeight: 700,
+                              background: idx <= stepAtual ? C.primary : '#e5e7eb',
+                              color: idx <= stepAtual ? '#fff' : '#9ca3af',
+                            }}>{idx + 1}</div>
+                            {idx < 4 && (
+                              <div style={{ width: 24, height: 2, background: idx < stepAtual ? C.primary : '#e5e7eb' }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <a href={`/comercializacao/lotes/${lote.id}`} style={{
+                        padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: `1px solid ${C.primary}`, color: C.primary,
+                        textDecoration: 'none', whiteSpace: 'nowrap',
+                      }}>Ver lote →</a>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
