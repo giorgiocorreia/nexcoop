@@ -396,10 +396,10 @@ export default function CaixaPage() {
         .single()
       const orgId = (usuarioData as any).organizacao_id
       const ext = file.name.split('.').pop()
-      const path = `comprovantes/${orgId}/temp_${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('documentos').upload(path, file)
+      const path = `${orgId}/comercializacao/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('comprovantes').upload(path, file)
       if (error) throw new Error(error.message)
-      const { data: urlData } = supabase.storage.from('documentos').getPublicUrl(path)
+      const { data: urlData } = supabase.storage.from('comprovantes').getPublicUrl(path)
       setFormSaida(f => ({ ...f, comprovante_url: urlData.publicUrl }))
     } catch (err: any) {
       setErroSaida('Erro ao fazer upload: ' + err.message)
