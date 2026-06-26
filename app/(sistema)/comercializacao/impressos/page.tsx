@@ -21,15 +21,11 @@ export default function ImpressosPage() {
       const resultado = await reservarFichasPesagem(paginas)
       if (resultado.erro) { setErro(resultado.erro); return }
 
-      const hoje = new Date()
-      const dataHoje = `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`
-
       const pdfBytes = await gerarFichasPesagemPDF({
         inicio: resultado.inicio,
         fim: resultado.fim,
         orgNome: resultado.orgNome,
         orgLogoUrl: resultado.orgLogo,
-        dataHoje,
       })
 
       const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" })
