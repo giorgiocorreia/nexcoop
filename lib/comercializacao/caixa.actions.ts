@@ -10,6 +10,7 @@ export async function getSessaoAberta() {
     .from('sessoes_caixa')
     .select('*')
     .eq('organizacao_id', usuario.organizacao_id as string)
+    .eq('usuario_id', usuario.id)
     .eq('status', 'aberta')
     .order('created_at', { ascending: false })
     .limit(1)
