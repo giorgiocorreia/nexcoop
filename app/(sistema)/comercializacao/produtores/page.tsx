@@ -175,7 +175,7 @@ export default function ProdutoresPage() {
           </div>
         </div>
         <Btn variante="azul" icone="ti-plus" onClick={() => { setForm(formVazio); setNovoForm(true) }}>
-          + Novo produtor
+          Novo produtor
         </Btn>
       </header>
 

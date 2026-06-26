@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
   buscarProdutor, getContaProdutor, getExtrato,
@@ -636,7 +637,15 @@ export default function CaixaPage() {
   )
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+    <>
+      <style>{`
+        .caixa-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .caixa-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .caixa-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .caixa-content { padding: 16px; }
+        }
+      `}</style>
 
       {modalNfe && (
         <ModalNfeEntrada movimentacao_id={modalNfe} onClose={() => setModalNfe(null)} />
@@ -774,19 +783,33 @@ export default function CaixaPage() {
         </div>
       )}
 
-      {/* CABEÇALHO */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
-          Voltar
-        </Btn>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
-            Aporte / Sangria
-          </Btn>
-          <span style={{ fontSize: '13px', color: '#166534', background: '#dcfce7', padding: '4px 12px', borderRadius: '20px' }}>● Aberto</span>
-          <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}</span>
+      <header className="caixa-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FDF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="ti ti-cash" style={{ fontSize: 20, color: '#92400e' }} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Caixa</h1>
+              <span style={{ fontSize: 13, color: '#166534', background: '#dcfce7', padding: '2px 10px', borderRadius: 20 }}>● Aberto</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <Link href="/comercializacao" style={{ color: '#78716C', textDecoration: 'none' }}>Comercialização</Link>
+              {' / '}Caixa · Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}
+            </div>
+          </div>
         </div>
-      </div>
+        <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
+          Aporte / Sangria
+        </Btn>
+      </header>
+
+      <div className="caixa-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
 
       {/* ABAS */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid #e5e3dc' }}>
@@ -1316,6 +1339,7 @@ export default function CaixaPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
