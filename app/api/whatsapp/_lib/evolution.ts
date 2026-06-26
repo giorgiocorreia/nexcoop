@@ -5,7 +5,7 @@ const EVOLUTION_INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME!
 export async function enviarMensagem(telefone: string, texto: string): Promise<void> {
   const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE_NAME}`
 
-  await fetch(url, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -16,6 +16,8 @@ export async function enviarMensagem(telefone: string, texto: string): Promise<v
       text: texto,
     }),
   })
+  const responseBody = await response.json()
+  console.log('[Evolution] status:', response.status, 'body:', JSON.stringify(responseBody))
 }
 
 export async function configurarWebhook(webhookUrl: string): Promise<void> {
