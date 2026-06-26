@@ -67,6 +67,7 @@ export interface Organizacao {
   loja_regime_tributario: string | null
   loja_nfce_serie:        string | null
   loja_nfe_saida_serie:   string | null
+  ultimo_numero_ficha:    number
   criado_em: string
   atualizado_em: string
 }
