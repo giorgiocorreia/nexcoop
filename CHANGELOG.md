@@ -733,3 +733,8 @@ Decisões registradas:
 - `fn_atualizar_status_lote`: adicionada transição `pago` (migration 054c)
 - `lib/comercializacao/devolucao.ts`: `processarPagamentoVendaAction` atualiza `lotes.status = 'pago'` além de `vendas_externas`
 - **Causa raiz:** trigger `fn_atualizar_status_lote` avançava `lote.status` para `entregue` mas guard do header só aceitava `em_venda`
+
+### Fix FiscalEntradasClient — 25/06/2026
+- `app/api/comercializacao/entradas-nfe/route.ts` — criada API route GET que busca `notas_entrega` autorizadas via `createAdminClient()` com validação de auth
+- **Causa raiz:** client component não pode usar `createAdminClient()` diretamente — precisa de API route ou server action
+

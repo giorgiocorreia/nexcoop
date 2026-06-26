@@ -99,8 +99,8 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
         { label: 'Dashboard',    href: '/comercializacao',                icone: '📊' },
         { label: 'Produtores',   href: '/comercializacao/produtores',     icone: '👨‍🌾' },
         { label: 'Entregas',     href: '/comercializacao/entregas',       icone: '📦', em_breve: true },
-        { label: 'Caixa',        href: '/comercializacao/caixa',          icone: '🗃', em_breve: true },
-        { label: 'NF-e Entrada', href: '/comercializacao/nfe',            icone: '🧾', em_breve: true },
+        { label: 'Caixa',        href: '/comercializacao/caixa',          icone: '🗃' },
+        ...(!isAdmin ? [{ label: 'NF-e Entrada', href: '/comercializacao/fiscal', icone: '🧾' }] : []),
         ...(isAdmin ? [
           { label: 'Cotações',    href: '/comercializacao/cotacoes',      icone: '📋' },
           { label: 'Lotes',       href: '/comercializacao/lotes',         icone: '📦' },
