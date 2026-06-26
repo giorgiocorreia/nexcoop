@@ -11,7 +11,7 @@ import {
   listarSolicitacoesPendentes, getProdutorParaRateio,
   getOperacoesHoje, listarAdminsDaOrg,
   registrarAporteSangria, getAportesESangriasDaSessao,
-  getProdutorPorId,
+  getProdutorPorId, listarCategoriasDesp, registrarSaidaAvulsa,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
@@ -34,6 +34,7 @@ type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; 
 type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
 type AdminOrg = { id: string; nome_completo: string; email: string }
 type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
+type Categoria = { id: string; nome: string; grupo: string | null }
 
 type ParticipanteModal = {
   produtor_id: string
@@ -185,6 +186,21 @@ export default function CaixaPage() {
   const [salvandoAporte, setSalvandoAporte] = useState(false)
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
+  const [modalSaida, setModalSaida] = useState(false)
+  const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [salvandoSaida, setSalvandoSaida] = useState(false)
+  const [erroSaida, setErroSaida] = useState('')
+  const [formSaida, setFormSaida] = useState({
+    descricao: '',
+    valor: '',
+    data_competencia: new Date().toISOString().split('T')[0],
+    categoria_id: '',
+    numero_documento: '',
+    centro_custo: '',
+    observacoes: '',
+    comprovante_url: '',
+  })
+  const [uploadingComprovante, setUploadingComprovante] = useState(false)
   const [ultimaMovimentacaoId, setUltimaMovimentacaoId] = useState<string | null>(null)
   const [ultimaSaqueId, setUltimaSaqueId] = useState<string | null>(null)
   const [modalNfe, setModalNfe] = useState<string | null>(null)
@@ -344,6 +360,76 @@ export default function CaixaPage() {
       setErroAporte(e.message)
     } finally {
       setSalvandoAporte(false)
+    }
+  }
+
+  async function abrirModalSaida() {
+    if (categorias.length === 0) {
+      const cats = await listarCategoriasDesp()
+      setCategorias(cats as Categoria[])
+    }
+    setFormSaida({
+      descricao: '',
+      valor: '',
+      data_competencia: new Date().toISOString().split('T')[0],
+      categoria_id: '',
+      numero_documento: '',
+      centro_custo: '',
+      observacoes: '',
+      comprovante_url: '',
+    })
+    setErroSaida('')
+    setModalSaida(true)
+  }
+
+  async function handleUploadComprovante(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !sessao) return
+    setUploadingComprovante(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: usuarioData } = await supabase
+        .from('usuarios')
+        .select('organizacao_id')
+        .eq('id', user!.id)
+        .single()
+      const orgId = (usuarioData as any).organizacao_id
+      const ext = file.name.split('.').pop()
+      const path = `comprovantes/${orgId}/temp_${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('documentos').upload(path, file)
+      if (error) throw new Error(error.message)
+      const { data: urlData } = supabase.storage.from('documentos').getPublicUrl(path)
+      setFormSaida(f => ({ ...f, comprovante_url: urlData.publicUrl }))
+    } catch (err: any) {
+      setErroSaida('Erro ao fazer upload: ' + err.message)
+    } finally {
+      setUploadingComprovante(false)
+    }
+  }
+
+  async function handleSaidaAvulsa() {
+    if (!sessao || !formSaida.descricao || !formSaida.valor) return
+    setSalvandoSaida(true)
+    setErroSaida('')
+    try {
+      await registrarSaidaAvulsa({
+        sessao_id: sessao.id,
+        descricao: formSaida.descricao,
+        valor: parseFloat(formSaida.valor),
+        data_competencia: formSaida.data_competencia,
+        categoria_id: formSaida.categoria_id || undefined,
+        numero_documento: formSaida.numero_documento || undefined,
+        centro_custo: formSaida.centro_custo || undefined,
+        observacoes: formSaida.observacoes || undefined,
+        comprovante_url: formSaida.comprovante_url || undefined,
+      })
+      setModalSaida(false)
+      await recarregarSessao()
+    } catch (err: any) {
+      setErroSaida(err.message)
+    } finally {
+      setSalvandoSaida(false)
     }
   }
 
@@ -714,6 +800,148 @@ export default function CaixaPage() {
         </div>
       )}
 
+      {/* MODAL SAÍDA AVULSA */}
+      {modalSaida && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '16px' }}>Saída avulsa de caixa</div>
+                <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>Despesa operacional paga em espécie</div>
+              </div>
+              <button onClick={() => setModalSaida(false)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Descrição *</label>
+                <input
+                  placeholder="Ex: Compra de material de escritório"
+                  value={formSaida.descricao}
+                  onChange={e => setFormSaida(f => ({ ...f, descricao: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Valor (R$) *</label>
+                  <input
+                    type="number" step="0.01" placeholder="0,00"
+                    value={formSaida.valor}
+                    onChange={e => setFormSaida(f => ({ ...f, valor: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Data competência *</label>
+                  <input
+                    type="date"
+                    value={formSaida.data_competencia}
+                    onChange={e => setFormSaida(f => ({ ...f, data_competencia: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Categoria</label>
+                <select
+                  value={formSaida.categoria_id}
+                  onChange={e => setFormSaida(f => ({ ...f, categoria_id: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                >
+                  <option value="">Sem categoria</option>
+                  {categorias.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.grupo ? `${c.grupo} — ` : ''}{c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nº documento</label>
+                  <input
+                    placeholder="NF, recibo..."
+                    value={formSaida.numero_documento}
+                    onChange={e => setFormSaida(f => ({ ...f, numero_documento: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Centro de custo</label>
+                  <input
+                    placeholder="Ex: Escritório"
+                    value={formSaida.centro_custo}
+                    onChange={e => setFormSaida(f => ({ ...f, centro_custo: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
+                <textarea
+                  placeholder="Opcional"
+                  value={formSaida.observacoes}
+                  onChange={e => setFormSaida(f => ({ ...f, observacoes: e.target.value }))}
+                  rows={2}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Comprovante (opcional)</label>
+                {formSaida.comprovante_url ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
+                    <i className="ti ti-file-check" style={{ color: '#166534', fontSize: 16 }} />
+                    <span style={{ fontSize: '13px', color: '#166534', flex: 1 }}>Arquivo enviado</span>
+                    <button
+                      onClick={() => setFormSaida(f => ({ ...f, comprovante_url: '' }))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: 16 }}
+                    >×</button>
+                  </div>
+                ) : (
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 12px', border: '1px dashed #d1d5db', borderRadius: '8px',
+                    cursor: uploadingComprovante ? 'wait' : 'pointer', fontSize: '13px', color: '#6b6b6b'
+                  }}>
+                    <i className="ti ti-upload" style={{ fontSize: 16 }} />
+                    {uploadingComprovante ? 'Enviando...' : 'Clique para anexar PDF, imagem ou foto'}
+                    <input
+                      type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+                      onChange={handleUploadComprovante}
+                      disabled={uploadingComprovante}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {erroSaida && (
+              <div style={{ marginTop: '12px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#991b1b' }}>
+                {erroSaida}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <Btn variante="cinza" onClick={() => setModalSaida(false)}>Cancelar</Btn>
+              <Btn
+                variante="marrom"
+                icone="ti-check"
+                disabled={salvandoSaida || !formSaida.descricao || !formSaida.valor || uploadingComprovante}
+                onClick={handleSaidaAvulsa}
+              >
+                {salvandoSaida ? 'Registrando...' : 'Registrar saída'}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL RATEIO */}
       {modalRateio && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -804,9 +1032,14 @@ export default function CaixaPage() {
             </div>
           </div>
         </div>
-        <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
-          Aporte / Sangria
-        </Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
+            Aporte / Sangria
+          </Btn>
+          <Btn variante="cinza" icone="ti-receipt" onClick={abrirModalSaida}>
+            Saída avulsa
+          </Btn>
+        </div>
       </header>
 
       <div className="caixa-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>

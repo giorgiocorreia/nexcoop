@@ -412,6 +412,74 @@ export async function listarSolicitacoesPendentes() {
   return data
 }
 
+export async function listarCategoriasDesp() {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+  const { data, error } = await (supabase as any)
+    .from('financeiro_categorias')
+    .select('id, nome, grupo')
+    .eq('organizacao_id', usuario.organizacao_id as string)
+    .eq('tipo', 'despesa')
+    .eq('ativo', true)
+    .order('nome')
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function registrarSaidaAvulsa(params: {
+  sessao_id: string
+  descricao: string
+  valor: number
+  data_competencia: string
+  categoria_id?: string
+  numero_documento?: string
+  centro_custo?: string
+  observacoes?: string
+  comprovante_url?: string
+}): Promise<{ lancamento_id: string }> {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+
+  const { criarLancamento } = await import('@/lib/financeiro/actions')
+  const lancamento = await criarLancamento({
+    organizacao_id: usuario.organizacao_id!,
+    tipo: 'despesa' as any,
+    status: 'pago' as any,
+    descricao: params.descricao,
+    valor: params.valor,
+    data_competencia: params.data_competencia,
+    data_pagamento: params.data_competencia,
+    numero_documento: params.numero_documento ?? null,
+    observacoes: params.observacoes ?? null,
+    usuario_id: usuario.id,
+    usuario_email: usuario.email ?? undefined,
+  })
+
+  if (params.categoria_id || params.centro_custo || params.comprovante_url) {
+    await supabase
+      .from('lancamentos')
+      .update({
+        ...(params.categoria_id    ? { categoria_id:    params.categoria_id }    : {}),
+        ...(params.centro_custo    ? { centro_custo:    params.centro_custo }    : {}),
+        ...(params.comprovante_url ? { comprovante_url: params.comprovante_url } : {}),
+      })
+      .eq('id', lancamento.id)
+  }
+
+  const { data: sessao } = await supabase
+    .from('sessoes_caixa')
+    .select('total_saidas_especie')
+    .eq('id', params.sessao_id)
+    .single()
+
+  await supabase
+    .from('sessoes_caixa')
+    .update({ total_saidas_especie: (sessao?.total_saidas_especie ?? 0) + params.valor })
+    .eq('id', params.sessao_id)
+
+  return { lancamento_id: lancamento.id }
+}
+
 export async function listarAdminsDaOrg() {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
