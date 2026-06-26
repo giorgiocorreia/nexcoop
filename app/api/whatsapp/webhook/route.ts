@@ -35,10 +35,13 @@ export async function POST(request: NextRequest) {
                   ''
     const nomeContato = mensagem.pushName || null
 
+    console.log('[Webhook] telefone:', telefone, 'texto:', texto)
+
     if (!telefone || !texto.trim()) return NextResponse.json({ ok: true })
 
     // Busca ou cria sessão
     const sessao = await buscarOuCriarSessao(telefone, nomeContato)
+    console.log('[Webhook] sessao:', sessao?.estado)
 
     // Se já foi transferido, não responde automaticamente
     if (sessao.estado === 'transferido') {
@@ -58,9 +61,11 @@ export async function POST(request: NextRequest) {
       historicoAtualizado.slice(0, -1), // histórico sem a última (já é a mensagem atual)
       texto
     )
+    console.log('[Webhook] resposta gerada:', resposta?.slice(0, 50))
 
     // Envia resposta
     await enviarMensagem(telefone, resposta)
+    console.log('[Webhook] mensagem enviada')
 
     // Adiciona resposta ao histórico
     await adicionarMensagemHistorico(
