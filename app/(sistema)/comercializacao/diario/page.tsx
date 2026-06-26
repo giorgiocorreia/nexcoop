@@ -1,75 +1,43 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import {
-  listarSessoesFechadas,
-  getDetalheSessao
-} from '@/lib/comercializacao/diario.actions'
+import Link from 'next/link'
+import { listarSessoesFechadas, getDetalheSessao } from '@/lib/comercializacao/diario.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
-import { Btn } from '@/components/ui/Btn'
 
-const COR = '#92400e'
+const C = {
+  cor: '#92400e', corLt: '#FDF8F4',
+  borda: '#E5E3DC', bg: '#F8F7F4',
+  txt: '#1C1917', sub: '#78716C',
+}
 
 type Sessao = {
-  id: string
-  data: string
-  hora_abertura: string
-  hora_fechamento: string | null
-  saldo_inicial_especie: number
-  saldo_final_especie: number | null
-  saldo_especie_calculado: number | null
-  total_saidas_especie: number
-  total_pix: number
-  observacoes_fechamento: string | null
+  id: string; data: string; hora_abertura: string; hora_fechamento: string | null
+  saldo_inicial_especie: number; saldo_final_especie: number | null; saldo_especie_calculado: number | null
+  total_saidas_especie: number; total_pix: number; observacoes_fechamento: string | null
   usuarios: { id: string; nome_completo: string } | null
 }
 
 type Movimentacao = {
-  id: string
-  tipo: string
-  quantidade_produto: number | null
-  valor_financeiro: number | null
-  forma_pagamento: string | null
-  observacoes: string | null
-  created_at: string
+  id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null
+  forma_pagamento: string | null; observacoes: string | null; created_at: string
   produtos: { nome: string; unidade: string } | null
   contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null
 }
 
 type AporteSangria = {
-  id: string
-  tipo: string
-  valor: number
-  observacoes: string | null
-  created_at: string
-  autorizador: { nome_completo: string } | null
-  executor: { nome_completo: string } | null
+  id: string; tipo: string; valor: number; observacoes: string | null; created_at: string
+  autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null
 }
 
-type TotalProduto = {
-  nome: string
-  unidade: string
-  total_kg: number
-  num_produtores: number
-}
+type TotalProduto = { nome: string; unidade: string; total_kg: number; num_produtores: number }
 
-type Detalhe = {
-  sessao: Sessao
-  movimentacoes: Movimentacao[]
-  aportes: AporteSangria[]
-  totaisPorProduto: TotalProduto[]
-}
+type Detalhe = { sessao: Sessao; movimentacoes: Movimentacao[]; aportes: AporteSangria[]; totaisPorProduto: TotalProduto[] }
 
 const TIPO_LABEL: Record<string, string> = {
-  entrega: 'Entrega',
-  conversao: 'Conversão',
-  saque_especie: 'Saque espécie',
-  saque_pix: 'Saque Pix',
-  ajuste_produto: 'Ajuste produto',
-  ajuste_financeiro: 'Ajuste financeiro',
-  estorno: 'Estorno',
-  compra_loja: 'Compra loja'
+  entrega: 'Entrega', conversao: 'Conversão', saque_especie: 'Saque espécie',
+  saque_pix: 'Saque Pix', ajuste_produto: 'Ajuste produto',
+  ajuste_financeiro: 'Ajuste financeiro', estorno: 'Estorno', compra_loja: 'Compra loja'
 }
 
 function formatarKg(v: number): string {
@@ -78,9 +46,7 @@ function formatarKg(v: number): string {
 }
 
 export default function DiarioCaixaPage() {
-  const router = useRouter()
   const hoje = new Date()
-
   const [mes, setMes] = useState(hoje.getMonth() + 1)
   const [ano, setAno] = useState(hoje.getFullYear())
   const [sessoes, setSessoes] = useState<Sessao[]>([])
@@ -92,332 +58,266 @@ export default function DiarioCaixaPage() {
   useEffect(() => { carregar() }, [mes, ano])
 
   async function carregar() {
-    setCarregando(true)
-    setSessaoAberta(null)
-    setDetalhe(null)
-    try {
-      const data = await listarSessoesFechadas(mes, ano)
-      setSessoes((data ?? []) as unknown as Sessao[])
-    } finally {
-      setCarregando(false)
-    }
+    setCarregando(true); setSessaoAberta(null); setDetalhe(null)
+    try { setSessoes((await listarSessoesFechadas(mes, ano) ?? []) as unknown as Sessao[]) }
+    finally { setCarregando(false) }
   }
 
   async function abrirDetalhe(sessao_id: string) {
-    if (sessaoAberta === sessao_id) {
-      setSessaoAberta(null)
-      setDetalhe(null)
-      return
-    }
-    setSessaoAberta(sessao_id)
-    setDetalhe(null)
-    setCarregandoDetalhe(true)
-    try {
-      const d = await getDetalheSessao(sessao_id)
-      setDetalhe(d as unknown as Detalhe)
-    } finally {
-      setCarregandoDetalhe(false)
-    }
+    if (sessaoAberta === sessao_id) { setSessaoAberta(null); setDetalhe(null); return }
+    setSessaoAberta(sessao_id); setDetalhe(null); setCarregandoDetalhe(true)
+    try { setDetalhe(await getDetalheSessao(sessao_id) as unknown as Detalhe) }
+    finally { setCarregandoDetalhe(false) }
   }
 
-  const meses = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ]
-
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
   const anosDisponiveis = Array.from({ length: 3 }, (_, i) => hoje.getFullYear() - i)
 
-  // Totais do período
-  const totalEntradas = sessoes.reduce((acc, s) => acc + (s.saldo_inicial_especie ?? 0), 0)
-  const totalPix = sessoes.reduce((acc, s) => acc + (s.total_pix ?? 0), 0)
   const totalSaidas = sessoes.reduce((acc, s) => acc + (s.total_saidas_especie ?? 0), 0)
+  const totalPix    = sessoes.reduce((acc, s) => acc + (s.total_pix ?? 0), 0)
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
+    <>
+      <style>{`
+        .diar-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .diar-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .diar-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .diar-content { padding: 16px; }
+        }
+      `}</style>
 
-      {/* CABEÇALHO */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
-          Voltar
-        </Btn>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Diário de Caixa</h1>
-      </div>
-
-      {/* FILTROS */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <select value={mes} onChange={e => setMes(parseInt(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#374151', cursor: 'pointer' }}>
-          {meses.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-        </select>
-        <select value={ano} onChange={e => setAno(parseInt(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff', color: '#374151', cursor: 'pointer' }}>
-          {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <span style={{ fontSize: '13px', color: '#6b6b6b' }}>
-          {sessoes.length} sessão(ões) encontrada(s)
-        </span>
-      </div>
-
-      {/* CARDS RESUMO DO PERÍODO */}
-      {sessoes.length > 0 && (
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Sessões no período</div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{sessoes.length}</div>
+      <header className="diar-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: `1px solid ${C.borda}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: C.corLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="ti ti-notebook" style={{ fontSize: 20, color: C.cor }} />
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total saídas espécie</div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{fmtReal(totalSaidas)}</div>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px', minWidth: '160px' }}>
-            <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Total Pix</div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#111827' }}>{fmtReal(totalPix)}</div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Diário de Caixa</h1>
+            <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
+              <Link href="/comercializacao" style={{ color: C.sub, textDecoration: 'none' }}>Comercialização</Link>
+              {' / '}Diário de Caixa
+            </div>
           </div>
         </div>
-      )}
 
-      {/* LISTA DE SESSÕES */}
-      {carregando ? (
-        <div style={{ padding: '32px', textAlign: 'center', color: '#6b6b6b' }}>Carregando...</div>
-      ) : sessoes.length === 0 ? (
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '48px', textAlign: 'center', color: '#6b6b6b', fontSize: '14px' }}>
-          Nenhuma sessão fechada em {meses[mes - 1]} de {ano}.
+        {/* Filtros no header */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <select value={mes} onChange={e => setMes(parseInt(e.target.value))}
+            style={{ padding: '7px 10px', border: `1px solid ${C.borda}`, borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
+            {meses.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <select value={ano} onChange={e => setAno(parseInt(e.target.value))}
+            style={{ padding: '7px 10px', border: `1px solid ${C.borda}`, borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
+            {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {sessoes.map(s => {
-            const aberta = sessaoAberta === s.id
-            const saldoEsperado = s.saldo_especie_calculado ?? (s.saldo_inicial_especie - s.total_saidas_especie)
-            const temDiferenca = s.saldo_final_especie !== null && Math.abs(s.saldo_final_especie - saldoEsperado) > 0.01
+      </header>
 
-            return (
-              <div key={s.id} style={{ background: '#fff', border: `1px solid ${aberta ? COR : '#e5e3dc'}`, borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.15s' }}>
+      <div className="diar-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
 
-                {/* LINHA DA SESSÃO */}
-                <button
-                  onClick={() => abrirDetalhe(s.id)}
-                  style={{ width: '100%', padding: '16px 20px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}
-                >
-                  {/* Data */}
-                  <div style={{ minWidth: '100px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '15px', color: '#1a1a1a' }}>
-                      {new Date(s.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
-                      {new Date(s.hora_abertura).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      {s.hora_fechamento && ` – ${new Date(s.hora_fechamento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
-                    </div>
-                  </div>
-
-                  {/* Operador */}
-                  <div style={{ flex: 1, minWidth: '120px' }}>
-                    <div style={{ fontSize: '13px', color: '#6b6b6b' }}>Operador</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{(s.usuarios as any)?.nome_completo ?? '—'}</div>
-                  </div>
-
-                  {/* Saldo inicial */}
-                  <div style={{ minWidth: '100px', textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo inicial</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{fmtReal(s.saldo_inicial_especie)}</div>
-                  </div>
-
-                  {/* Saídas espécie */}
-                  <div style={{ minWidth: '100px', textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Saídas espécie</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>{fmtReal(s.total_saidas_especie ?? 0)}</div>
-                  </div>
-
-                  {/* Pix */}
-                  <div style={{ minWidth: '100px', textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Total Pix</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#166534' }}>{fmtReal(s.total_pix ?? 0)}</div>
-                  </div>
-
-                  {/* Diferença */}
-                  {temDiferenca && (
-                    <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e', fontWeight: 500 }}>
-                      Diferença
-                    </span>
-                  )}
-
-                  {/* Chevron */}
-                  <div style={{ fontSize: '16px', color: '#6b6b6b', marginLeft: 'auto', transform: aberta ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</div>
-                </button>
-
-                {/* DETALHE EXPANDIDO */}
-                {aberta && (
-                  <div style={{ borderTop: '1px solid #e5e3dc', padding: '20px' }}>
-                    {carregandoDetalhe ? (
-                      <div style={{ textAlign: 'center', color: '#6b6b6b', fontSize: '13px', padding: '16px' }}>Carregando detalhes...</div>
-                    ) : detalhe ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                        {/* BALANÇO FINANCEIRO */}
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '10px' }}>Balanço financeiro</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                              <span style={{ color: '#6b6b6b' }}>Saldo inicial</span>
-                              <span>{fmtReal(detalhe.sessao.saldo_inicial_especie)}</span>
-                            </div>
-                            {detalhe.aportes.filter(a => a.tipo === 'aporte').length > 0 && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                                <span style={{ color: '#166534' }}>Aportes ({detalhe.aportes.filter(a => a.tipo === 'aporte').length})</span>
-                                <span style={{ color: '#166534' }}>+ {fmtReal(detalhe.aportes.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
-                              </div>
-                            )}
-                            {detalhe.aportes.filter(a => a.tipo === 'sangria').length > 0 && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                                <span style={{ color: '#991b1b' }}>Sangrias ({detalhe.aportes.filter(a => a.tipo === 'sangria').length})</span>
-                                <span style={{ color: '#991b1b' }}>− {fmtReal(detalhe.aportes.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
-                              </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                              <span style={{ color: '#6b6b6b' }}>Saídas espécie</span>
-                              <span>− {fmtReal(detalhe.sessao.total_saidas_especie ?? 0)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                              <span style={{ color: '#6b6b6b' }}>Total Pix</span>
-                              <span>{fmtReal(detalhe.sessao.total_pix ?? 0)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 600 }}>
-                              <span>Saldo esperado</span>
-                              <span style={{ color: COR }}>{fmtReal(saldoEsperado)}</span>
-                            </div>
-                            {detalhe.sessao.saldo_final_especie !== null && (
-                              <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0ede8' }}>
-                                  <span style={{ color: '#6b6b6b' }}>Saldo contado</span>
-                                  <span>{fmtReal(detalhe.sessao.saldo_final_especie)}</span>
-                                </div>
-                                {(() => {
-                                  const dif = detalhe.sessao.saldo_final_especie - saldoEsperado
-                                  if (Math.abs(dif) < 0.01) return (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                                      <span style={{ color: '#166534' }}>Diferença</span>
-                                      <span style={{ color: '#166534', fontWeight: 500 }}>✓ Confere</span>
-                                    </div>
-                                  )
-                                  return (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                                      <span style={{ color: '#991b1b' }}>Diferença</span>
-                                      <span style={{ color: '#991b1b', fontWeight: 500 }}>{dif > 0 ? `Sobra ${fmtReal(dif)}` : `Falta ${fmtReal(Math.abs(dif))}`}</span>
-                                    </div>
-                                  )
-                                })()}
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* TOTAIS POR PRODUTO */}
-                        {detalhe.totaisPorProduto.length > 0 && (
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '10px' }}>Movimentação de produtos</div>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                              {detalhe.totaisPorProduto.map(t => (
-                                <div key={t.nome} style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '12px 16px' }}>
-                                  <div style={{ fontSize: '11px', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{t.nome}</div>
-                                  <div style={{ fontSize: '18px', fontWeight: 700, color: COR }}>{formatarKg(t.total_kg)} {t.unidade}</div>
-                                  <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>{t.num_produtores} produtor(es)</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* APORTES E SANGRIAS */}
-                        {detalhe.aportes.length > 0 && (
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '10px' }}>Aportes e sangrias</div>
-                            <div style={{ background: '#fafaf8', border: '1px solid #e5e3dc', borderRadius: '10px', overflow: 'hidden' }}>
-                              {detalhe.aportes.map(a => (
-                                <div key={a.id} style={{ padding: '10px 14px', borderBottom: '1px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                                  <div>
-                                    <span style={{ fontWeight: 500, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
-                                      {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
-                                    </span>
-                                    <span style={{ color: '#6b6b6b', marginLeft: '8px' }}>
-                                      {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                    {a.autorizador && (
-                                      <span style={{ color: '#9a9a9a', marginLeft: '8px' }}>· Auth: {(a.autorizador as any).nome_completo}</span>
-                                    )}
-                                    {a.observacoes && <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '2px' }}>{a.observacoes}</div>}
-                                  </div>
-                                  <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
-                                    {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* OPERAÇÕES DO DIA */}
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', marginBottom: '10px' }}>
-                            Operações ({detalhe.movimentacoes.length})
-                          </div>
-                          <div style={{ background: '#fafaf8', border: '1px solid #e5e3dc', borderRadius: '10px', overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                              <thead>
-                                <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#f5f4f0' }}>
-                                  <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, color: '#6b6b6b' }}>Horário</th>
-                                  <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, color: '#6b6b6b' }}>Produtor</th>
-                                  <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, color: '#6b6b6b' }}>Operação</th>
-                                  <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500, color: '#6b6b6b' }}>Qtd</th>
-                                  <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500, color: '#6b6b6b' }}>Valor</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {detalhe.movimentacoes.map(m => (
-                                  <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                                    <td style={{ padding: '8px 12px', color: '#6b6b6b', whiteSpace: 'nowrap' }}>
-                                      {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                    </td>
-                                    <td style={{ padding: '8px 12px' }}>
-                                      {(m.contas_produtor as any)?.produtores?.nome ?? '—'}
-                                    </td>
-                                    <td style={{ padding: '8px 12px' }}>
-                                      <div>{TIPO_LABEL[m.tipo] ?? m.tipo}</div>
-                                      {m.produtos && <div style={{ fontSize: '11px', color: '#9a9a9a' }}>{m.produtos.nome}</div>}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#6b6b6b' }}>
-                                      {m.quantidade_produto ? `${formatarKg(m.quantidade_produto)} ${m.produtos?.unidade ?? 'kg'}` : '—'}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                                      {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
-                                    </td>
-                                  </tr>
-                                ))}
-                                {detalhe.movimentacoes.length === 0 && (
-                                  <tr><td colSpan={5} style={{ padding: '16px', textAlign: 'center', color: '#6b6b6b' }}>Nenhuma operação registrada.</td></tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-
-                        {/* OBSERVAÇÕES */}
-                        {detalhe.sessao.observacoes_fechamento && (
-                          <div style={{ background: '#f5f4f0', borderRadius: '8px', padding: '12px 14px', fontSize: '13px', color: '#6b6b6b' }}>
-                            <span style={{ fontWeight: 500, color: '#1a1a1a' }}>Observações: </span>
-                            {detalhe.sessao.observacoes_fechamento}
-                          </div>
-                        )}
-
-                      </div>
-                    ) : null}
-                  </div>
-                )}
+        {/* KPIs resumo */}
+        {sessoes.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            {[
+              { label: 'Sessões no período', valor: String(sessoes.length), cor: C.cor,     bg: C.corLt   },
+              { label: 'Saídas espécie',     valor: fmtReal(totalSaidas),  cor: '#C2410C', bg: '#FFF7ED' },
+              { label: 'Total Pix',          valor: fmtReal(totalPix),     cor: '#166534', bg: '#F0FDF4' },
+            ].map(k => (
+              <div key={k.label} style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '16px 20px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub, marginBottom: 6 }}>{k.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: k.cor }}>{k.valor}</div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* EXPANSÕES FUTURAS: paginação quando volume crescer */}
-    </div>
+        {/* Lista de sessões */}
+        {carregando ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: C.sub }}>Carregando...</div>
+        ) : sessoes.length === 0 ? (
+          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '48px', textAlign: 'center', color: C.sub, fontSize: 14 }}>
+            Nenhuma sessão fechada em {meses[mes - 1]} de {ano}.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {sessoes.map(s => {
+              const aberta = sessaoAberta === s.id
+              const saldoEsperado = s.saldo_especie_calculado ?? (s.saldo_inicial_especie - s.total_saidas_especie)
+              const temDiferenca = s.saldo_final_especie !== null && Math.abs(s.saldo_final_especie - saldoEsperado) > 0.01
+
+              return (
+                <div key={s.id} style={{ background: '#fff', border: `1px solid ${aberta ? C.cor : C.borda}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.15s' }}>
+                  <button onClick={() => abrirDetalhe(s.id)}
+                    style={{ width: '100%', padding: '16px 20px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ minWidth: 100 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: C.txt }}>
+                        {new Date(s.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
+                        {new Date(s.hora_abertura).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {s.hora_fechamento && ` – ${new Date(s.hora_fechamento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontSize: 12, color: C.sub }}>Operador</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>{(s.usuarios as any)?.nome_completo ?? '—'}</div>
+                    </div>
+                    <div style={{ minWidth: 100, textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: C.sub }}>Saldo inicial</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>{fmtReal(s.saldo_inicial_especie)}</div>
+                    </div>
+                    <div style={{ minWidth: 100, textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: C.sub }}>Saídas espécie</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>{fmtReal(s.total_saidas_especie ?? 0)}</div>
+                    </div>
+                    <div style={{ minWidth: 100, textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: C.sub }}>Total Pix</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#166534' }}>{fmtReal(s.total_pix ?? 0)}</div>
+                    </div>
+                    {temDiferenca && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: '#FEF3C7', color: C.cor, fontWeight: 700 }}>Diferença</span>}
+                    <div style={{ fontSize: 16, color: C.sub, marginLeft: 'auto', transform: aberta ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</div>
+                  </button>
+
+                  {aberta && (
+                    <div style={{ borderTop: `1px solid ${C.borda}`, padding: '20px' }}>
+                      {carregandoDetalhe ? (
+                        <div style={{ textAlign: 'center', color: C.sub, fontSize: 13, padding: 16 }}>Carregando detalhes...</div>
+                      ) : detalhe ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                          {/* Balanço financeiro */}
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 10 }}>Balanço financeiro</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                              {[
+                                { label: 'Saldo inicial', valor: fmtReal(detalhe.sessao.saldo_inicial_especie), cor: C.txt },
+                                ...detalhe.aportes.filter(a => a.tipo === 'aporte').length > 0 ? [{ label: `Aportes (${detalhe.aportes.filter(a => a.tipo === 'aporte').length})`, valor: `+ ${fmtReal(detalhe.aportes.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}`, cor: '#166534' }] : [],
+                                ...detalhe.aportes.filter(a => a.tipo === 'sangria').length > 0 ? [{ label: `Sangrias (${detalhe.aportes.filter(a => a.tipo === 'sangria').length})`, valor: `− ${fmtReal(detalhe.aportes.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}`, cor: '#DC2626' }] : [],
+                                { label: 'Saídas espécie', valor: `− ${fmtReal(detalhe.sessao.total_saidas_especie ?? 0)}`, cor: C.txt },
+                                { label: 'Total Pix', valor: fmtReal(detalhe.sessao.total_pix ?? 0), cor: C.txt },
+                              ].map((row, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.borda}` }}>
+                                  <span style={{ color: row.cor }}>{row.label}</span>
+                                  <span style={{ color: row.cor }}>{row.valor}</span>
+                                </div>
+                              ))}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700 }}>
+                                <span style={{ color: C.txt }}>Saldo esperado</span>
+                                <span style={{ color: C.cor }}>{fmtReal(saldoEsperado)}</span>
+                              </div>
+                              {detalhe.sessao.saldo_final_especie !== null && (() => {
+                                const dif = detalhe.sessao.saldo_final_especie - saldoEsperado
+                                return (
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                                    <span style={{ color: Math.abs(dif) < 0.01 ? '#166534' : '#DC2626' }}>Diferença</span>
+                                    <span style={{ color: Math.abs(dif) < 0.01 ? '#166534' : '#DC2626', fontWeight: 600 }}>
+                                      {Math.abs(dif) < 0.01 ? '✓ Confere' : dif > 0 ? `Sobra ${fmtReal(dif)}` : `Falta ${fmtReal(Math.abs(dif))}`}
+                                    </span>
+                                  </div>
+                                )
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Totais por produto */}
+                          {detalhe.totaisPorProduto.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 10 }}>Movimentação de produtos</div>
+                              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                {detalhe.totaisPorProduto.map(t => (
+                                  <div key={t.nome} style={{ background: C.corLt, border: `1px solid ${C.borda}`, borderRadius: 10, padding: '12px 16px' }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: C.cor, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.nome}</div>
+                                    <div style={{ fontSize: 18, fontWeight: 800, color: C.cor }}>{formatarKg(t.total_kg)} {t.unidade}</div>
+                                    <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{t.num_produtores} produtor(es)</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Aportes e sangrias */}
+                          {detalhe.aportes.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 10 }}>Aportes e sangrias</div>
+                              <div style={{ background: '#FAFAF8', border: `1px solid ${C.borda}`, borderRadius: 10, overflow: 'hidden' }}>
+                                {detalhe.aportes.map(a => (
+                                  <div key={a.id} style={{ padding: '10px 14px', borderBottom: `1px solid ${C.borda}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                                    <div>
+                                      <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#DC2626' }}>
+                                        {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
+                                      </span>
+                                      <span style={{ color: C.sub, marginLeft: 8 }}>{new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                      {a.autorizador && <span style={{ color: C.sub, marginLeft: 8 }}>· Auth: {(a.autorizador as any).nome_completo}</span>}
+                                      {a.observacoes && <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{a.observacoes}</div>}
+                                    </div>
+                                    <span style={{ fontWeight: 700, color: a.tipo === 'aporte' ? '#166534' : '#DC2626' }}>
+                                      {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Operações */}
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 10 }}>Operações ({detalhe.movimentacoes.length})</div>
+                            <div style={{ background: '#FAFAF8', border: `1px solid ${C.borda}`, borderRadius: 10, overflow: 'hidden' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                <thead>
+                                  <tr style={{ borderBottom: `1px solid ${C.borda}`, background: '#F5F4F0' }}>
+                                    {['Horário', 'Produtor', 'Operação', 'Qtd', 'Valor'].map((h, i) => (
+                                      <th key={h} style={{ padding: '8px 12px', textAlign: i >= 3 ? 'right' : 'left', fontWeight: 600, color: C.sub }}>{h}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {detalhe.movimentacoes.map(m => (
+                                    <tr key={m.id} style={{ borderBottom: `1px solid ${C.borda}` }}>
+                                      <td style={{ padding: '8px 12px', color: C.sub, whiteSpace: 'nowrap' }}>{new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                                      <td style={{ padding: '8px 12px', color: C.txt }}>{(m.contas_produtor as any)?.produtores?.nome ?? '—'}</td>
+                                      <td style={{ padding: '8px 12px' }}>
+                                        <div style={{ color: C.txt }}>{TIPO_LABEL[m.tipo] ?? m.tipo}</div>
+                                        {m.produtos && <div style={{ fontSize: 11, color: C.sub }}>{m.produtos.nome}</div>}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: C.sub }}>
+                                        {m.quantidade_produto ? `${formatarKg(m.quantidade_produto)} ${m.produtos?.unidade ?? 'kg'}` : '—'}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#DC2626') : C.txt }}>
+                                        {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                  {detalhe.movimentacoes.length === 0 && (
+                                    <tr><td colSpan={5} style={{ padding: 16, textAlign: 'center', color: C.sub }}>Nenhuma operação registrada.</td></tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          {detalhe.sessao.observacoes_fechamento && (
+                            <div style={{ background: '#F5F4F0', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: C.sub }}>
+                              <span style={{ fontWeight: 600, color: C.txt }}>Observações: </span>
+                              {detalhe.sessao.observacoes_fechamento}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import {
   listarVendasPagas,
   listarDistribuicaoPorVenda,
@@ -8,6 +9,12 @@ import {
   pagarDistribuicao
 } from '@/lib/comercializacao/distribuicao.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+
+const C = {
+  cor: '#92400e', corLt: '#FDF8F4',
+  borda: '#E5E3DC', bg: '#F8F7F4',
+  txt: '#1C1917', sub: '#78716C',
+}
 
 type VendaSimples = {
   id: string
@@ -54,19 +61,14 @@ export default function DistribuicaoPage() {
 
   async function handleCalcular() {
     if (!vendaSelecionada) return
-    setCalculando(true)
-    setStatus('idle')
+    setCalculando(true); setStatus('idle')
     try {
       await calcularDistribuicao(vendaSelecionada.id)
       const l = await listarDistribuicaoPorVenda(vendaSelecionada.id)
       setLinhas(l as unknown as Linha[])
       setStatus('sucesso')
-    } catch (e: any) {
-      setErroMsg(e.message)
-      setStatus('erro')
-    } finally {
-      setCalculando(false)
-    }
+    } catch (e: any) { setErroMsg(e.message); setStatus('erro') }
+    finally { setCalculando(false) }
   }
 
   async function handlePagar(id: string) {
@@ -74,163 +76,161 @@ export default function DistribuicaoPage() {
       await pagarDistribuicao(id)
       const l = await listarDistribuicaoPorVenda(vendaSelecionada!.id)
       setLinhas(l as unknown as Linha[])
-    } catch (e: any) {
-      alert(e.message)
-    }
+    } catch (e: any) { alert(e.message) }
   }
 
-  const totalPago = linhas.filter(l => l.status === 'pago').reduce((acc, l) => acc + l.valor_liquido, 0)
+  const totalPago     = linhas.filter(l => l.status === 'pago').reduce((acc, l) => acc + l.valor_liquido, 0)
   const totalPendente = linhas.filter(l => l.status === 'calculado').reduce((acc, l) => acc + l.valor_liquido, 0)
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '24px' }}>Distribuição de Resultado</h1>
+    <>
+      <style>{`
+        .dist-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .dist-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .dist-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .dist-content { padding: 16px; }
+        }
+      `}</style>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', alignItems: 'start' }}>
-
-        {/* Lista de vendas */}
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e3dc', fontSize: '13px', fontWeight: 500, color: '#6b6b6b' }}>
-            Vendas disponíveis
+      <header className="dist-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: `1px solid ${C.borda}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: C.corLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="ti ti-git-branch" style={{ fontSize: 20, color: C.cor }} />
           </div>
-          {vendas.length === 0 ? (
-            <div style={{ padding: '20px 16px', fontSize: '13px', color: '#9a9a9a' }}>Nenhuma venda confirmada.</div>
-          ) : (
-            vendas.map(v => (
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Distribuição de Resultado</h1>
+            <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
+              <Link href="/comercializacao" style={{ color: C.sub, textDecoration: 'none' }}>Comercialização</Link>
+              {' / '}Distribuição
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="dist-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24, alignItems: 'start' }}>
+
+          {/* Lista de vendas */}
+          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.borda}`, fontSize: 13, fontWeight: 600, color: C.sub }}>
+              Vendas disponíveis
+            </div>
+            {vendas.length === 0 ? (
+              <div style={{ padding: '20px 16px', fontSize: 13, color: C.sub }}>Nenhuma venda confirmada.</div>
+            ) : vendas.map(v => (
               <button key={v.id} onClick={() => selecionarVenda(v)} style={{
                 width: '100%', padding: '12px 16px', border: 'none',
-                borderBottom: '1px solid #f0ede8', textAlign: 'left', cursor: 'pointer',
-                background: vendaSelecionada?.id === v.id ? '#fef3c7' : '#fff',
-                borderLeft: vendaSelecionada?.id === v.id ? '3px solid #92400e' : '3px solid transparent'
+                borderBottom: `1px solid ${C.borda}`, textAlign: 'left', cursor: 'pointer',
+                background: vendaSelecionada?.id === v.id ? C.corLt : '#fff',
+                borderLeft: vendaSelecionada?.id === v.id ? `3px solid ${C.cor}` : '3px solid transparent',
               }}>
-                <div style={{ fontSize: '13px', fontWeight: 500, fontFamily: 'monospace' }}>
-                  {v.lotes?.codigo ?? '—'}
-                </div>
-                <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
-                  {v.compradores?.nome ?? '—'}
-                </div>
-                <div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.txt }}>{v.lotes?.codigo ?? '—'}</div>
+                <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{v.compradores?.nome ?? '—'}</div>
+                <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
                   {v.valor_liquido != null ? fmtReal(v.valor_liquido) : '—'}
                 </div>
               </button>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Painel de distribuição */}
-        <div>
-          {!vendaSelecionada ? (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '40px', textAlign: 'center', color: '#9a9a9a', fontSize: '14px' }}>
-              Selecione uma venda para calcular a distribuição.
-            </div>
-          ) : (
-            <div>
-              {/* Header da venda */}
-              <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: '15px' }}>
-                      {vendaSelecionada.lotes?.codigo} — {vendaSelecionada.compradores?.nome}
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
-                      {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: {fmtReal(vendaSelecionada.valor_liquido ?? 0)}
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleCalcular}
-                    disabled={calculando}
-                    style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-                  >
-                    {calculando ? 'Calculando...' : linhas.length > 0 ? 'Recalcular' : 'Calcular distribuição'}
-                  </button>
-                </div>
-                {status === 'sucesso' && (
-                  <div style={{ marginTop: '12px', color: '#166534', fontSize: '13px' }}>Distribuição calculada com sucesso.</div>
-                )}
-                {status === 'erro' && (
-                  <div style={{ marginTop: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>
-                )}
+          {/* Painel de distribuição */}
+          <div>
+            {!vendaSelecionada ? (
+              <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '48px', textAlign: 'center', color: C.sub, fontSize: 14 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🌿</div>
+                Selecione uma venda para calcular a distribuição.
               </div>
-
-              {/* Resumo */}
-              {linhas.length > 0 && (
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Produtores</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a' }}>{linhas.length}</div>
+            ) : (
+              <>
+                {/* Header da venda */}
+                <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '20px', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: C.txt }}>
+                        {vendaSelecionada.lotes?.codigo} — {vendaSelecionada.compradores?.nome}
+                      </div>
+                      <div style={{ fontSize: 13, color: C.sub, marginTop: 2 }}>
+                        {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: {fmtReal(vendaSelecionada.valor_liquido ?? 0)}
+                      </div>
+                    </div>
+                    <button onClick={handleCalcular} disabled={calculando}
+                      style={{ padding: '9px 18px', background: C.cor, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                      {calculando ? 'Calculando...' : linhas.length > 0 ? 'Recalcular' : 'Calcular distribuição'}
+                    </button>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Pago</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#166534' }}>{fmtReal(totalPago)}</div>
-                  </div>
-                  <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '16px 20px' }}>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b' }}>Pendente</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, color: '#92400e' }}>{fmtReal(totalPendente)}</div>
-                  </div>
+                  {status === 'sucesso' && <div style={{ marginTop: 12, color: '#166534', fontSize: 13 }}>Distribuição calculada com sucesso.</div>}
+                  {status === 'erro'   && <div style={{ marginTop: 12, color: '#DC2626', fontSize: 13 }}>{erroMsg}</div>}
                 </div>
-              )}
 
-              {/* Tabela de distribuição */}
-              {linhas.length > 0 && (
-                <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Produtor</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Qtd (kg)</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>%</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Status</th>
-                        <th style={{ padding: '12px 16px' }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linhas.map(l => (
-                        <tr key={l.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                          <td style={{ padding: '12px 16px' }}>
-                            <div style={{ fontWeight: 500 }}>{l.produtores?.nome ?? '—'}</div>
-                            {l.produtores?.chave_pix && (
-                              <div style={{ fontSize: '12px', color: '#9a9a9a' }}>Pix: {l.produtores.chave_pix}</div>
-                            )}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                            {l.quantidade_kg.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                            {l.percentual.toFixed(2)}%
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>
-                            {fmtReal(l.valor_liquido)}
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              fontSize: '12px', padding: '2px 10px', borderRadius: '20px',
-                              background: l.status === 'pago' ? '#dcfce7' : '#fef3c7',
-                              color: l.status === 'pago' ? '#166534' : '#92400e'
-                            }}>
-                              {l.status === 'pago' ? `Pago em ${new Date(l.data_pagamento!).toLocaleDateString('pt-BR')}` : 'Pendente'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                            {l.status === 'calculado' && (
-                              <button
-                                onClick={() => handlePagar(l.id)}
-                                style={{ fontSize: '13px', color: '#166534', background: 'none', border: 'none', cursor: 'pointer' }}
-                              >
-                                Marcar pago
-                              </button>
-                            )}
-                          </td>
+                {/* KPIs resumo */}
+                {linhas.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+                    {[
+                      { label: 'Produtores',   valor: String(linhas.length),   cor: C.cor,     bg: C.corLt   },
+                      { label: 'Pago',         valor: fmtReal(totalPago),      cor: '#166534', bg: '#F0FDF4' },
+                      { label: 'Pendente',     valor: fmtReal(totalPendente),  cor: '#C2410C', bg: '#FFF7ED' },
+                    ].map(k => (
+                      <div key={k.label} style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '16px 20px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub, marginBottom: 6 }}>{k.label}</div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: k.cor }}>{k.valor}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tabela */}
+                {linhas.length > 0 && (
+                  <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${C.borda}`, background: '#FAFAF8' }}>
+                          {['Produtor', 'Qtd (kg)', '%', 'Valor', 'Status', ''].map(h => (
+                            <th key={h} style={{ padding: '10px 16px', textAlign: h === '' || h === 'Status' ? 'left' : h === 'Produtor' ? 'left' : 'right', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.sub }}>{h}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+                      </thead>
+                      <tbody>
+                        {linhas.map(l => (
+                          <tr key={l.id} style={{ borderBottom: `1px solid ${C.borda}` }}>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ fontWeight: 600, color: C.txt }}>{l.produtores?.nome ?? '—'}</div>
+                              {l.produtores?.chave_pix && <div style={{ fontSize: 11, color: C.sub }}>Pix: {l.produtores.chave_pix}</div>}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', color: C.sub }}>{l.quantidade_kg.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', color: C.sub }}>{l.percentual.toFixed(2)}%</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: C.txt }}>{fmtReal(l.valor_liquido)}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99,
+                                background: l.status === 'pago' ? '#DCFCE7' : '#FEF3C7',
+                                color:      l.status === 'pago' ? '#166534' : C.cor }}>
+                                {l.status === 'pago' ? `Pago em ${new Date(l.data_pagamento!).toLocaleDateString('pt-BR')}` : 'Pendente'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                              {l.status === 'calculado' && (
+                                <button onClick={() => handlePagar(l.id)}
+                                  style={{ fontSize: 12, fontWeight: 600, color: '#166534', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                  Marcar pago
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

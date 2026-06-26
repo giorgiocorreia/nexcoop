@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { getContextoUsuario, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
@@ -417,13 +418,36 @@ export default function PerfilProdutorPage() {
   const spanAll: React.CSSProperties = { gridColumn: '1 / -1' }
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <>
+      <style>{`
+        .perf-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+        .perf-content { padding: 28px 32px; }
+        @media (max-width: 640px) {
+          .perf-header  { padding: 0 16px 0 56px; min-height: 60px; }
+          .perf-content { padding: 16px; }
+        }
+      `}</style>
 
-      {/* PARTE 1: Barra de botões — Voltar à esquerda, ações à direita */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.back()}>
-          Voltar
-        </Btn>
+      <header className="perf-header" style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        background: '#fff', borderBottom: '1px solid #E5E3DC',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FDF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="ti ti-user-check" style={{ fontSize: 20, color: '#92400e' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{produtor.nome}</h1>
+            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
+              <Link href="/comercializacao" style={{ color: '#78716C', textDecoration: 'none' }}>Comercialização</Link>
+              {' / '}
+              <Link href="/comercializacao/produtores" style={{ color: '#78716C', textDecoration: 'none' }}>Produtores</Link>
+              {' / '}{produtor.nome}
+            </div>
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
             Registrar entrega
@@ -471,7 +495,9 @@ export default function PerfilProdutorPage() {
             </Btn>
           )}
         </div>
-      </div>
+      </header>
+
+      <div className="perf-content" style={{ background: '#f8f7f4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* Mensagens globais */}
       {okEdit && (
@@ -837,6 +863,8 @@ export default function PerfilProdutorPage() {
         )}
       </div>
 
+      </div>{/* end perf-content */}
+
       {/* Modal Caixa Fechado */}
       <ModalCaixaFechado
         aberto={modalCaixaAcao !== null}
@@ -866,6 +894,6 @@ export default function PerfilProdutorPage() {
           }}
         />
       )}
-    </div>
+    </>
   )
 }
