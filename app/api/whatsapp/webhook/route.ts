@@ -11,11 +11,6 @@ export async function POST(request: NextRequest) {
     request.headers.forEach((value, key) => { headersObj[key] = value })
     console.log('[Headers]', headersObj)
 
-    const apikey = request.headers.get('apikey')
-    if (!apikey || (apikey !== process.env.EVOLUTION_API_KEY && apikey !== process.env.EVOLUTION_INSTANCE_TOKEN)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
 
     // Filtra apenas mensagens recebidas (não enviadas pelo bot)
