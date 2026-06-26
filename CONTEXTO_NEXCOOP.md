@@ -1,93 +1,107 @@
-# NexCoop — Contexto Atual
+   # NexCoop — Contexto Atual
 
-> Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
+   > Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
 
-## Identificação rápida
-- **Org teste:** COOPAIBI — org_id `3ad97dc2-f87f-4e67-950e-387854d5bccc`
-- **Super admin:** gio.pessoal@gmail.com
-- **Org admin:** giorgio@coopaibi.com.br
-- **IA:** claude-haiku-4-5-20251001 via ANTHROPIC_API_KEY
-- **Claude Code:** `claude --dangerously-skip-permissions`
+   ## Identificação rápida
+   - **Org teste:** COOPAIBI — org_id `3ad97dc2-f87f-4e67-950e-387854d5bccc`
+   - **Super admin:** gio.pessoal@gmail.com
+   - **Org admin:** giorgio@coopaibi.com.br
+   - **IA:** claude-haiku-4-5-20251001 via ANTHROPIC_API_KEY
+   - **Claude Code:** `claude --dangerously-skip-permissions`
 
-## Estado atual (24/06/2026)
+   ## Estado atual (21/06/2026)
 
-### Bugs corrigidos nesta sessão
+   ### Loja Agropecuária — Entradas NF-e (21/06/2026)
 
-1. `/loja/conferencia` mostrava "Nenhum caixa fechado" — join PostgREST `usuarios!loja_caixas_usuario_id_fkey` quebrava silenciosamente com duas FKs para `usuarios` (`usuario_id` + `conferido_por`). Fix: query separada para nomes dos operadores.
+   Migration 044 aplicada — campos fiscais em `loja_compras`:
+   - `chave_acesso_nfe` TEXT
+   - `serie_nfe` TEXT
+   - `data_emissao_nfe` DATE
+   - `emitente_nfe` TEXT
+   - `cnpj_emitente` TEXT
+   - `valor_nfe` NUMERIC(12,2)
+   - `status_nfe` TEXT — 'com_chave' | 'sem_chave' | 'sem_nota' (default 'sem_chave')
 
-2. Botão "Emitir NF-e de saída" no lote não alternava para "Reimprimir" após autorização — `buscarLote` não trazia `vendas_externas`. Fix: join adicionado + lógica `nfeAutorizada` no `LoteDetalhe`. Runtime error adicional: campo `danfe_url` inexistente removido, URL gerada via `chave_nfe`. Registro fantasma `vendas_externas` com status null deletado do banco.
+   Arquivos implementados:
+   - `app/(sistema)/loja/entradas/page.tsx` — server component com auth
+   - `app/(sistema)/loja/entradas/EntradasNFeClient.tsx` — UI com KPIs, tabela filtrada, modal vincular (consulta SEFAZ), modal ver
+   - `app/(sistema)/loja/entradas/actions.ts` — listarEntradasNFe, kpisEntradasNFe, consultarNFeNaSEFAZ, vincularNFe
 
-### Features entregues nesta sessão
+   LojaHub atualizado: aba Compras exibe card "Entradas NF-e" → /loja/entradas
 
-- Badge "NF-e nº X" no card de lote na listagem (`listarLotes` agora traz `vendas_externas`)
-- `iniciarLote`: descrição sem valor padrão hardcoded, placeholder genérico
-- Hub Loja: seção "Relatórios & Gestão" já estava implementada (confirmado)
+   Pendências abertas desta feature:
+   - Campo status_nfe na tela Nova Compra (verificar se foi implementado)
+   - Teste do endpoint Focus NFe em homologação para NF-e de terceiros
+   - Ambiente de produção: variável FOCUS_NFE_TOKEN_HOMOLOGACAO deve ser substituída por FOCUS_NFE_TOKEN quando Marcos liberar dados reais
 
-### Pendências abertas
+   ### Landing Page — v2 concluída
 
-### Módulo Comercialização — estado atual (2026-06-25)
+   Reestruturação completa de app/(landing)/page.tsx e criação de app/(landing)/DemoInterativa.tsx.
 
-**Migration 052 aplicada (2026-06-24):**
-- `cotacoes`: `vigente_a_partir_de (timestamptz)` — suporte intraday
-- `movimentacoes_conta`: +`cotacao_id` FK
-- `lotes`: multi-produto via `lote_itens`; `produto_id` removido
-- Novas tabelas: `lote_itens`, `saldos_produtor_snapshot`, `resultado_safra_snapshot`
-- Triggers e views: `vw_saldos_produtor`, `vw_resultado_safra`
+   Nova ordem de seções:
+   1. Navbar — fundo #042C53, CTA WhatsApp verde
+   2. Hero — foto bg-hero.jpg + overlay, mockup dashboard genérico
+   3. Números — 284+ filiados, 13 telas contábeis, 7 dias, 100% nuvem
+   4. Clientes — componente existente sem alteração
+   5. Dores da presidência — 6 cards dor→resolução (NOVA)
+   6. Funcionalidades — card contábil destaque + 12 módulos
+   7. Telas Reais — 4 mockups do sistema sem logo de org (NOVA)
+   8. Demo interativa — client component, 4 abas com useState
+   9. Por que NexCoop — 6 diferenciais sobre foto de fundo
+   10. Depoimento — João Matheus, Presidente COOPAIBI, com logo
+   11. Planos — 4 planos + Enterprise, sem linha "isenção fiscal"
+   12. CTA Final — foto de fundo, CTA único WhatsApp
+   13. Rodapé — 4 colunas completas
+   14. Botão WhatsApp flutuante — position fixed, canto inferior direito
 
-**Migrations 053–055 aplicadas (2026-06-25):**
-- 053: trigger sincronizar tipo produtor
-- 054: tabela `vendas_externas_devolucoes`
-- 054c: trigger lote status pago
-- 055: `fn_atualizar_resultado_safra_snapshot` — `custo_aquisicao_rs` via `notas_entrega.valor_total`; receita apenas para vendas `paga`
+   Fotos de fundo salvas em /public/images/:
+   - bg-hero.jpg, bg-dores.jpg, bg-funcs.jpg, bg-depo.jpg, bg-cta.jpg
 
-**Estado atual da venda COOPAIBI:**
-- Lote 001 · 602kg · Barry Callebaut · NF-e 5/1 autorizada
-- `vendas_externas` status: `entregue` (aguardando pagamento)
-- `lotes` status: `entregue`
-- Lançamento contábil: `pendente` (aguardando pagamento)
-- ⚠️ Pagamento ainda NÃO recebido — NÃO marcar como paga ainda
+   CTA único em toda a página: https://wa.me/5573999693548
+   Número WhatsApp NexCoop: 73999693548
 
-**Correções e melhorias (2026-06-25):**
-- `vendas_externas.status` avança para `confirmada` automaticamente na autorização da NF-e
-- Lançamento contábil da NF-e saída criado com `status='pendente'`
-- `atualizarStatusVenda`: propaga status para lotes + revalida cache
-- `buscarLote`: +`quantidade_kg`, +`valor_bruto`, +`xml_nfe` no select de `vendas_externas`
-- `listarLotes`: join corrigido para `lote_itens`
-- Página "Documentos Fiscais" com tabs: NF-e Saídas, NF-e Entradas, Devoluções
-- Modal "Docs": XMLs de entrada e saída, baixar ZIP, enviar email
-- DANFE URL derivada de `xml_nfe`
-- Erro cancelamento NF-e exibido dentro do modal
-- NF-es 1 e 4 do Lote 001: `xml_url`/`danfe_url` corrigidas manualmente
-- `lote_itens`: inserido manualmente para Lote 001
-- `movimentacoes_conta` tipo `conversao`: `lote_id` atualizado para Lote 001
-- Tela `/comercializacao/resultado`: KPIs, tabela por produto, lotes em andamento com progress steps, participação por produtor
+   ### Razão Social
+   Nexcoop Tecnologia Ltda — escolhida, SLU no Simples Nacional, em abertura.
+   - Verificar disponibilidade: juceb.ba.gov.br
+   - CNPJ necessário para verificação Meta Business Manager
 
-**Próximos passos:**
-- Quando pagamento Barry Callebaut for recebido: marcar venda como `paga` via modal "Informar pagamento"
-- `iniciarLote`: criar `lote_itens` ao vincular entregas (novos lotes)
-- Devolução parcial: fluxo implementado, não testado em produção
-- Tela resultado: testar com venda marcada como `paga`
+   ### Meta Business Manager
+   - Conta criada com perfil pessoal Giorgio Correia
+   - Instagram conectado
+   - WhatsApp pendente — aguarda CNPJ para verificação completa
 
-#### Pendências gerais
-- Campo CPF editável na ficha do produtor quando nulo
-- Matrículas 266015/266016 → corrigir para 26015/26016 no banco
-- FOCUSNFE_AMBIENTE=producao confirmar no Vercel
-- Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercialização)
-- iniciarLote: safra obrigatória já validada no frontend e action
-- KPI Custo total lote: corrigir cálculo (quantidade × cotação, não soma valor_pago)
+   ### Agente WhatsApp — planejado
+   Decisão tomada: Evolution API (Railway, gratuito) + Claude Haiku + webhook Next.js.
+   ManyChat descartado — WhatsApp exclusivo do plano Pro pago.
 
-### Caixa aberto COOPAIBI
-- ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
+   Fluxo planejado:
+   Prospect → WhatsApp 73999693548 → Evolution API → webhook /api/whatsapp/webhook → Claude Haiku → resposta automática → se pedir humano → notifica Giorgio
 
-### Pendências externas
-- Marcos/Contabahia: CSC ID/Token NFC-e, NCMs, regime tributário, CSTs
-- Abertura Nexcoop Tecnologia Ltda
-- CNPJ para verificação Meta Business Manager
+   Script do bot definido com 3 opções de menu: conhecer sistema / ver planos / falar com equipe.
 
-## Workflow desta sessão
-1. Giorgio descreve → Claude planeja → Claude Code executa
-2. Instrução ao Claude Code: sempre como bloco de código copiável
-3. Commit por feature completa (máx 5–6 arquivos), nunca WIP
-4. `npx tsc --noEmit` antes de todo commit
-5. Deploy só após feature set coerente
-6. Docs: atualizar só ao fim de sessão
+   ### Próxima sessão
+   1. Chat dedicado: "NexCoop — Agente WhatsApp Evolution API"
+      - Subir Evolution API no Railway
+      - Conectar número 73999693548 via QR Code
+      - Criar rota /api/whatsapp/webhook
+      - Montar prompt do agente com contexto NexCoop
+      - Lógica de transferência para humano
+      - Deploy e teste
+   2. Verificar landing page v2 no browser após deploy
+   3. Migração multi-org (chat dedicado — ANTES do segundo cliente)
+
+   ### Caixa aberto COOPAIBI
+   - ID: `06ba0c91-47ac-4f10-bc7f-afe412b1b37d` — NÃO deletar
+
+   ### Pendências externas
+   - Marcos/Contabahia: CSC ID/Token NFC-e, NCMs, regime tributário, CSTs (inalterado)
+   - Abertura Nexcoop Tecnologia Ltda (novo)
+   - CNPJ para verificação Meta Business Manager (novo)
+
+   ## Workflow desta sessão
+   1. Giorgio descreve → Claude planeja → Claude Code executa
+   2. Instrução ao Claude Code: sempre como bloco de código copiável
+   3. Commit por feature completa (máx 5–6 arquivos), nunca WIP
+   4. `npx tsc --noEmit` antes de todo commit
+   5. Deploy só após feature set coerente
+   6. Docs: atualizar só ao fim de sessão ou conclusão de fase
