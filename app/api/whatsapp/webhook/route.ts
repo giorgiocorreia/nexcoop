@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     console.log('[Headers]', headersObj)
 
     const body = await request.json()
+    console.log('[Webhook] body completo:', JSON.stringify(body).slice(0, 500))
 
     // Filtra apenas mensagens recebidas (não enviadas pelo bot)
     const evento = body?.event
