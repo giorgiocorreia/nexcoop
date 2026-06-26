@@ -2,6 +2,12 @@
 
 ## 2026-06-25
 
+### Resultado por Safra
+- `app/(sistema)/comercializacao/resultado/page.tsx`: +query lotesAndamento (status rascunho/aberto/em_venda/entregue)
+- `app/(sistema)/comercializacao/resultado/ResultadoClient.tsx`: seção "Lotes em andamento" com progress steps, dados da venda e link para lote
+- `fn_atualizar_resultado_safra_snapshot`: custo_aquisicao_rs via notas_entrega.valor_total; receita filtrada por status='paga'
+- `supabase/migrations/20260625000005_055_trigger_custo_aquisicao_notas_entrada.sql`: migration correspondente
+
 ### Fix build — 25/06/2026 (commit 9693d20)
 - `lib/comercializacao/devolucao-xml.ts` — utilitário puro extraído (sem `"use server"`): `parsearXmlDevolucao`, `DadosDevolucao`
 - `lib/comercializacao/devolucao.ts` — removida função síncrona; re-exporta `DadosDevolucao` via `devolucao-xml`

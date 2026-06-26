@@ -34,28 +34,39 @@
 - Novas tabelas: `lote_itens`, `saldos_produtor_snapshot`, `resultado_safra_snapshot`
 - Triggers e views: `vw_saldos_produtor`, `vw_resultado_safra`
 
-**Correções e melhorias (2026-06-25):**
-- `vendas_externas.status` avança para `confirmada` automaticamente na autorização da NF-e
-- Lançamento contábil da NF-e saída criado com `status='pendente'` (não 'pago')
-- `listarLotes`: join `produtos` removido, usa `lote_itens`
-- `listarLotes` em `lib/comercializacao/lotes.actions.ts`: join corrigido
-- Página "NF-e Saída" renomeada para "Notas Fiscais" (`/comercializacao/fiscal`)
-- Modal "Docs" na página Notas Fiscais: lista XMLs de entrada e saída, baixar ZIP, enviar por email
-- DANFE URL derivada de `xml_nfe` (replace XMLs→DANFEs, -nfe.xml→-nfe.pdf)
-- Erro cancelamento NF-e agora exibido dentro do modal
-- Email comprador pré-preenche campo de envio no modal Docs
-- NF-es 1 e 4 do Lote 001 (José da Silva e João Matheus): `xml_url`/`danfe_url` corrigidas manualmente no banco
+**Migrations 053–055 aplicadas (2026-06-25):**
+- 053: trigger sincronizar tipo produtor
+- 054: tabela `vendas_externas_devolucoes`
+- 054c: trigger lote status pago
+- 055: `fn_atualizar_resultado_safra_snapshot` — `custo_aquisicao_rs` via `notas_entrega.valor_total`; receita apenas para vendas `paga`
 
 **Estado atual da venda COOPAIBI:**
 - Lote 001 · 602kg · Barry Callebaut · NF-e 5/1 autorizada
-- `vendas_externas` status: `confirmada` (aguardando entrega física)
+- `vendas_externas` status: `entregue` (aguardando pagamento)
+- `lotes` status: `entregue`
 - Lançamento contábil: `pendente` (aguardando pagamento)
+- ⚠️ Pagamento ainda NÃO recebido — NÃO marcar como paga ainda
+
+**Correções e melhorias (2026-06-25):**
+- `vendas_externas.status` avança para `confirmada` automaticamente na autorização da NF-e
+- Lançamento contábil da NF-e saída criado com `status='pendente'`
+- `atualizarStatusVenda`: propaga status para lotes + revalida cache
+- `buscarLote`: +`quantidade_kg`, +`valor_bruto`, +`xml_nfe` no select de `vendas_externas`
+- `listarLotes`: join corrigido para `lote_itens`
+- Página "Documentos Fiscais" com tabs: NF-e Saídas, NF-e Entradas, Devoluções
+- Modal "Docs": XMLs de entrada e saída, baixar ZIP, enviar email
+- DANFE URL derivada de `xml_nfe`
+- Erro cancelamento NF-e exibido dentro do modal
+- NF-es 1 e 4 do Lote 001: `xml_url`/`danfe_url` corrigidas manualmente
+- `lote_itens`: inserido manualmente para Lote 001
+- `movimentacoes_conta` tipo `conversao`: `lote_id` atualizado para Lote 001
+- Tela `/comercializacao/resultado`: KPIs, tabela por produto, lotes em andamento com progress steps, participação por produtor
 
 **Próximos passos:**
-- "Marcar entregue" → "Marcar paga": ao marcar paga, lançamento contábil deve virar `pago`
-- Devolução parcial: comprador emite NF-e de devolução, cooperativa registra chave + kg devolvidos
-- `iniciarLote`: criar `lote_itens` ao vincular entregas
-- Tela `/comercializacao/resultado`: UI do resultado por safra (schema pronto na migration 052)
+- Quando pagamento Barry Callebaut for recebido: marcar venda como `paga` via modal "Informar pagamento"
+- `iniciarLote`: criar `lote_itens` ao vincular entregas (novos lotes)
+- Devolução parcial: fluxo implementado, não testado em produção
+- Tela resultado: testar com venda marcada como `paga`
 
 #### Pendências gerais
 - Campo CPF editável na ficha do produtor quando nulo
