@@ -34,13 +34,28 @@ export async function criarVenda(form: {
   if (error) throw new Error(error.message)
 }
 
-export async function atualizarStatusVenda(id: string, status: 'rascunho' | 'confirmada' | 'entregue' | 'paga') {
+export async function atualizarStatusVenda(id: string, novoStatus: 'rascunho' | 'confirmada' | 'entregue' | 'paga') {
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('vendas_externas')
-    .update({ status })
+    .update({ status: novoStatus })
     .eq('id', id)
   if (error) throw new Error(error.message)
+
+  // Propagar status para lotes
+  if (novoStatus === 'entregue') {
+    const { data: venda } = await supabase
+      .from('vendas_externas')
+      .select('lote_id')
+      .eq('id', id)
+      .single()
+    if (venda?.lote_id) {
+      await supabase.from('lotes').update({ status: 'entregue' } as any).eq('id', venda.lote_id)
+    }
+  }
+
+  const { revalidatePath } = await import('next/cache')
+  revalidatePath('/comercializacao/vendas')
 }
 
 export async function editarVenda(id: string, form: {
