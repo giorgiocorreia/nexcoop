@@ -36,7 +36,7 @@ export async function gerarFichasPesagemPDF(params: GerarFichasParams): Promise<
   const COL_GAP = 8
   const ROW_GAP = 6
   const FICHA_W = (PW - MARGIN * 2 - COL_GAP) / 2
-  const FICHA_H = (PH - MARGIN * 2 - ROW_GAP * 3) / 4
+  const FICHA_H = (PH - MARGIN * 2 - ROW_GAP * 3) / 4 - 6
 
   let fichaIdx = 0
 
@@ -48,7 +48,7 @@ export async function gerarFichasPesagemPDF(params: GerarFichasParams): Promise<
         if (fichaIdx >= totalFichas) break
 
         const x = MARGIN + col * (FICHA_W + COL_GAP)
-        const yBase = PH - MARGIN - (row + 1) * FICHA_H - row * ROW_GAP
+        const yBase = PH - MARGIN - FICHA_H - row * (FICHA_H + ROW_GAP)
 
         desenharFicha({
           page, x, y: yBase, w: FICHA_W, h: FICHA_H,
