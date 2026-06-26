@@ -36,7 +36,7 @@ export async function gerarFichasPesagemPDF(params: GerarFichasParams): Promise<
   const COL_GAP = 8
   const ROW_GAP = 6
   const FICHA_W = (PW - MARGIN * 2 - COL_GAP) / 2
-  const FICHA_H = (PH - MARGIN * 2 - ROW_GAP * 3) / 4 - 6
+  const FICHA_H = (PH - MARGIN * 2 - ROW_GAP * 3) / 4
 
   let fichaIdx = 0
 
@@ -157,38 +157,38 @@ function desenharFicha({
     }
   }
 
-  campo("PRODUTOR:", bodyTop - 18, lineW)
-  campo("DATA:", bodyTop - 42, lineW * 0.45, "____/____/________")
-  campo("PRODUTO ENTREGUE:", bodyTop - 66, lineW)
+  campo("PRODUTOR:", bodyTop - 16, lineW)
+  campo("DATA:", bodyTop - 36, lineW * 0.45, "____/____/________")
+  campo("PRODUTO ENTREGUE:", bodyTop - 56, lineW)
 
-  // Divisória
   page.drawLine({
-    start: { x: x + 4, y: bodyTop - 78 },
-    end: { x: x + w - 4, y: bodyTop - 78 },
+    start: { x: x + 4, y: bodyTop - 66 },
+    end: { x: x + w - 4, y: bodyTop - 66 },
     thickness: 0.3,
     color: lightGray,
   })
 
-  campo("PESO BRUTO (kg)", bodyTop - 96, lineW)
+  campo("PESO BRUTO (kg)", bodyTop - 82, lineW)
+  campo("OBSERVAÇÕES:", bodyTop - 100, lineW)
 
-  campo("OBSERVAÇÕES:", bodyTop - 118, lineW)
   page.drawLine({
-    start: { x: lineX, y: bodyTop - 136 },
-    end: { x: lineX + lineW, y: bodyTop - 136 },
+    start: { x: lineX, y: bodyTop - 116 },
+    end: { x: lineX + lineW, y: bodyTop - 116 },
     thickness: 0.5,
     color: lightGray,
   })
+
   page.drawLine({
-    start: { x: lineX, y: bodyTop - 152 },
-    end: { x: lineX + lineW, y: bodyTop - 152 },
+    start: { x: lineX, y: bodyTop - 130 },
+    end: { x: lineX + lineW, y: bodyTop - 130 },
     thickness: 0.5,
     color: lightGray,
   })
 
   // === RODAPÉ ===
   page.drawLine({
-    start: { x: x + 4, y: y + 14 },
-    end: { x: x + w - 4, y: y + 14 },
+    start: { x: x + 4, y: y + 12 },
+    end: { x: x + w - 4, y: y + 12 },
     thickness: 0.3,
     color: lightGray,
   })
