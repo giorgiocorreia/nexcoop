@@ -280,6 +280,36 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       payload
     )
   } catch (err: any) {
+    // A Focus retorna "already_processed" quando a referência já foi autorizada anteriormente.
+    // Nesse caso, consultamos o status real em vez de salvar como erro.
+    if (err.message?.includes('already_processed')) {
+      try {
+        const consultaResp = await consultarNfeEntrada(referencia)
+        if (consultaResp.status === 'autorizado') {
+          await supabase
+            .from('notas_entrega')
+            .update({
+              status: 'autorizada' as any,
+              chave_nfe: consultaResp.chave_nfe,
+              numero_nfe: consultaResp.numero,
+              xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal),
+              danfe_url: urlCompleta(consultaResp.caminho_danfe),
+              emitido_em: new Date().toISOString(),
+            })
+            .eq('id', notaRecord.id)
+
+          return {
+            sucesso: true,
+            nota_id: notaRecord.id,
+            chave_nfe: consultaResp.chave_nfe,
+            danfe_url: urlCompleta(consultaResp.caminho_danfe),
+          }
+        }
+      } catch {
+        // Se a consulta também falhar, cai no tratamento padrão abaixo
+      }
+    }
+
     await supabase
       .from('notas_entrega')
       .update({ status: 'erro' as any, motivo_rejeicao: err.message })

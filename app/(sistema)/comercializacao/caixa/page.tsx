@@ -426,6 +426,7 @@ export default function CaixaPage() {
       })
       setModalSaida(false)
       await recarregarSessao()
+      await carregarOperacoesDia()
     } catch (err: any) {
       setErroSaida(err.message)
     } finally {
