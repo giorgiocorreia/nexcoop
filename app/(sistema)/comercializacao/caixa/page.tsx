@@ -24,7 +24,7 @@ import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
 import { ModalNfeEntrada, BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 
-type Sessao = { id: string; data: string; saldo_inicial_especie: number; total_saidas_especie: number; total_pix: number }
+type Sessao = { id: string; data: string; saldo_inicial_especie: number; saldo_especie_calculado: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
 type SaldoProduto = { produto_id: string; quantidade: number; produtos: { nome: string; unidade: string } }
 type Conta = { id: string; saldo_financeiro: number; saldos_produto: SaldoProduto[] }
@@ -621,12 +621,10 @@ export default function CaixaPage() {
     if (cot) setFormReceber(f => ({ ...f, preco_kg: (cot as any).preco_cooperado.toString() }))
   }
 
-  const saldoEsperado = sessao ? (
-    sessao.saldo_inicial_especie +
-    aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0) -
-    aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0) -
-    (sessao.total_saidas_especie ?? 0)
-  ) : 0
+  // saldo_especie_calculado já acumula saldo_inicial + aportes - sangrias via registrarAporteSangria
+  const saldoEsperado = sessao
+    ? (sessao.saldo_especie_calculado ?? 0) - (sessao.total_saidas_especie ?? 0)
+    : 0
 
   const inputStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff' }
 
