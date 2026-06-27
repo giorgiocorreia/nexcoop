@@ -4,9 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function getDashboardComercializacao(organizacaoId: string) {
   const supabase = await createClient()
-  const hoje = new Date()
-  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toISOString()
-  const fimHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1).toISOString()
+  // "hoje" no fuso de Brasília (UTC-3): dia começa às 03:00 UTC
+  const agora = new Date()
+  const inicioDiaBrasilia = new Date(agora)
+  inicioDiaBrasilia.setUTCHours(3, 0, 0, 0)
+  if (agora.getUTCHours() < 3) {
+    inicioDiaBrasilia.setUTCDate(inicioDiaBrasilia.getUTCDate() - 1)
+  }
+  const fimDiaBrasilia = new Date(inicioDiaBrasilia)
+  fimDiaBrasilia.setUTCDate(fimDiaBrasilia.getUTCDate() + 1)
+  const inicioHoje = inicioDiaBrasilia.toISOString()
+  const fimHoje = fimDiaBrasilia.toISOString()
 
   // Usuário logado e funções
   const { data: { user } } = await supabase.auth.getUser()
@@ -109,9 +117,8 @@ export async function getDashboardComercializacao(organizacaoId: string) {
       produtoresHoje = new Set(movsHoje.map((m: any) => m.contas_produtor?.produtor_id)).size
     }
 
-    const diasAtras7 = new Date(hoje)
-    diasAtras7.setDate(diasAtras7.getDate() - 6)
-    diasAtras7.setHours(0, 0, 0, 0)
+    const diasAtras7 = new Date(inicioDiaBrasilia)
+    diasAtras7.setUTCDate(diasAtras7.getUTCDate() - 6)
 
     const { data: movsSemana } = await supabase
       .from('movimentacoes_conta')
@@ -124,11 +131,13 @@ export async function getDashboardComercializacao(organizacaoId: string) {
       const mapa: Record<string, number> = {}
       for (let i = 0; i < 7; i++) {
         const d = new Date(diasAtras7)
-        d.setDate(d.getDate() + i)
+        d.setUTCDate(d.getUTCDate() + i)
         mapa[d.toISOString().slice(0, 10)] = 0
       }
       for (const m of movsSemana) {
-        const key = (m.created_at ?? '').slice(0, 10)
+        const dtUTC = new Date(m.created_at ?? Date.now())
+        const dtBrasilia = new Date(dtUTC.getTime() - 3 * 60 * 60 * 1000)
+        const key = dtBrasilia.toISOString().slice(0, 10)
         if (key in mapa) mapa[key] += Number(m.quantidade_produto ?? 0)
       }
       entregasSemana = Object.entries(mapa).map(([dia, totalKg]) => ({ dia, totalKg }))
