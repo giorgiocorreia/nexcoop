@@ -7,7 +7,66 @@ import { registrarLog } from '@/lib/audit/logger'
 import { isAdmin } from '@/lib/permissoes'
 import { randomBytes } from 'crypto'
 import { enviarEmail } from '@/lib/email'
+import { traduzirErro } from '@/lib/utils/erros'
 import type { RoleUsuario, StatusCooperado, VinculoUsuario } from '@/types/database'
+
+// ── Criar cooperado (chamado pela página /cooperados/novo) ────────────────────
+
+export async function inserirCooperado(payload: {
+  tipo: 'pessoa_fisica' | 'pessoa_juridica'
+  nome_completo: string
+  cpf: string | null
+  rg: string | null
+  data_nascimento: string | null
+  sexo: 'M' | 'F' | 'outro' | null
+  cnpj_pj: string | null
+  representante_nome: string | null
+  representante_cpf: string | null
+  email: string | null
+  telefone: string | null
+  whatsapp: string | null
+  cep: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
+  cidade: string | null
+  estado: string | null
+  nome_propriedade: string | null
+  area_total_ha: number | null
+  latitude: number | null
+  longitude: number | null
+  caf_numero: string | null
+  caf_situacao: string | null
+  caf_validade: string | null
+  dap_numero: string | null
+  status: StatusCooperado
+  data_admissao: string | null
+  numero_matricula: string | null
+  motivo_saida: string | null
+}): Promise<{ data?: { id: string }; error?: string }> {
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  const admin = createAdminClient()
+  const { data: usuario } = await admin
+    .from('usuarios')
+    .select('organizacao_id')
+    .eq('id', user.id)
+    .single()
+  if (!usuario?.organizacao_id) return { error: 'Usuário sem organização vinculada.' }
+
+  const { data, error } = await admin
+    .from('cooperados')
+    .insert({ ...payload, organizacao_id: usuario.organizacao_id })
+    .select()
+    .single()
+
+  if (error) return { error: traduzirErro(error.message) }
+  revalidatePath('/cooperados')
+  return { data: { id: data.id } }
+}
 
 function gerarSenhaTemporaria(): string {
   return randomBytes(6).toString('hex') // 12 chars hex

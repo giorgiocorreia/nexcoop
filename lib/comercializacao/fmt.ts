@@ -1,10 +1,7 @@
+import { fmt } from '@/lib/fmt'
+
 export function fmtReal(valor: number): string {
-  return valor.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  return fmt.moeda(valor)
 }
 
 export function fmtNum(valor: number, casas = 2): string {

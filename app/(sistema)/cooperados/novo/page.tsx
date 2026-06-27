@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import { vincularCooperadoComoProdutor } from '@/lib/comercializacao/produtores.actions'
+import { inserirCooperado } from '@/lib/cooperados/actions'
 import BannerLimiteAtingido from '@/components/BannerLimiteAtingido'
 import type { ResultadoLimite } from '@/lib/assinatura'
 import type { StatusCooperado } from '@/types/database'
@@ -196,7 +197,6 @@ export default function NovoCooperadoPage() {
     const cpfLimpo = form.tipo === 'pessoa_fisica' ? form.cpf.replace(/\D/g, '') || null : null
 
     const payload = {
-      organizacao_id: usuario.organizacao_id,
       tipo: form.tipo,
       nome_completo: form.nome_completo.trim(),
       cpf:           cpfLimpo,
@@ -230,17 +230,15 @@ export default function NovoCooperadoPage() {
       motivo_saida:  form.motivo_saida.trim() || null,
     }
 
-    const { data, error } = await supabase
-      .from('cooperados')
-      .insert(payload)
-      .select()
-      .single()
+    const resultado = await inserirCooperado(payload)
 
-    if (error) {
-      setErro(traduzirErro(error.message))
+    if (resultado.error) {
+      setErro(resultado.error)
       setSalvando(false)
       return
     }
+
+    const data = resultado.data!
 
     // ── VÍNCULO AUTOMÁTICO COOPERADO → PRODUTOR ──────────────
     try {

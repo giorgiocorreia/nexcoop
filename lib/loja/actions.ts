@@ -8,16 +8,17 @@ import { orgTemModulo, podeGerenciarLoja } from '@/lib/permissoes'
 import type { LojaFornecedor, LojaProduto, LojaLote, LojaCompra, LojaTipoMovimento } from '@/types/database'
 
 async function getCtx() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) throw new Error('Não autenticado')
-  const { data: usuario } = await supabase
+  const admin = createAdminClient()
+  const { data: usuario } = await admin
     .from('usuarios')
     .select('id, organizacao_id')
     .eq('id', user.id)
     .single()
   if (!usuario?.organizacao_id) throw new Error('Usuário sem organização')
-  return { supabase, usuarioId: user.id, orgId: usuario.organizacao_id as string }
+  return { supabase: admin, usuarioId: user.id, orgId: usuario.organizacao_id as string }
 }
 
 // ── Fornecedores ──────────────────────────────────────────────────────────────
@@ -318,7 +319,7 @@ export async function renomearCategoria(oldName: string, newName: string) {
 
 // ── Compras ───────────────────────────────────────────────────────────────────
 
-async function verificarPermissaoGerente(supabase: Awaited<ReturnType<typeof createClient>>, usuarioId: string) {
+async function verificarPermissaoGerente(supabase: ReturnType<typeof createAdminClient>, usuarioId: string) {
   const { data: usuario } = await supabase
     .from('usuarios')
     .select('funcoes, role, organizacoes(modulos_ativos)')
