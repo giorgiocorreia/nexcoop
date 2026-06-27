@@ -263,6 +263,12 @@ export default function PerfilProdutorPage() {
   const [erroEmailBoasVindas, setErroEmailBoasVindas] = useState<string | null>(null)
   const [modalCaixaAcao, setModalCaixaAcao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
 
+  const [modalExtrato, setModalExtrato] = useState(false)
+  const [extratoTipo, setExtratoTipo] = useState<'total' | 'periodo'>('total')
+  const [extratoInicio, setExtratoInicio] = useState('')
+  const [extratoFim, setExtratoFim] = useState('')
+  const [gerandoExtrato, setGerandoExtrato] = useState(false)
+
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -390,6 +396,18 @@ export default function PerfilProdutorPage() {
     }
   }
 
+  function handleGerarExtrato() {
+    setGerandoExtrato(true)
+    let url = `/api/comercializacao/extrato-produtor/${id}?tipo=${extratoTipo}`
+    if (extratoTipo === 'periodo') {
+      if (extratoInicio) url += `&inicio=${extratoInicio}`
+      if (extratoFim) url += `&fim=${extratoFim}`
+    }
+    window.open(url, '_blank')
+    setGerandoExtrato(false)
+    setModalExtrato(false)
+  }
+
   function irParaCaixa(acao: 'entrega' | 'receber' | 'saque') {
     if (!sessao) {
       setModalCaixaAcao(acao)
@@ -449,6 +467,9 @@ export default function PerfilProdutorPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <Btn variante="cinza" icone="ti-file-text" onClick={() => setModalExtrato(true)}>
+            Extrato
+          </Btn>
           <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
             Registrar entrega
           </Btn>
@@ -864,6 +885,56 @@ export default function PerfilProdutorPage() {
       </div>
 
       </div>{/* end perf-content */}
+
+      {/* Modal Extrato PDF */}
+      {modalExtrato && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 420, maxWidth: '95vw' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1C1917' }}>Gerar extrato</div>
+              <button onClick={() => setModalExtrato(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#78716C', lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 8 }}>Período</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setExtratoTipo('total')}
+                  style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'total' ? '#92400e' : '#E5E3DC'}`, background: extratoTipo === 'total' ? '#FDF4E7' : '#fff', color: extratoTipo === 'total' ? '#92400e' : '#78716C', fontWeight: extratoTipo === 'total' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
+                  Extrato total
+                </button>
+                <button
+                  onClick={() => setExtratoTipo('periodo')}
+                  style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'periodo' ? '#92400e' : '#E5E3DC'}`, background: extratoTipo === 'periodo' ? '#FDF4E7' : '#fff', color: extratoTipo === 'periodo' ? '#92400e' : '#78716C', fontWeight: extratoTipo === 'periodo' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
+                  Por período
+                </button>
+              </div>
+            </div>
+
+            {extratoTipo === 'periodo' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 4 }}>Data início</label>
+                  <input type="date" value={extratoInicio} onChange={e => setExtratoInicio(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 4 }}>Data fim</label>
+                  <input type="date" value={extratoFim} onChange={e => setExtratoFim(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+              <Btn variante="cinza" onClick={() => setModalExtrato(false)}>Cancelar</Btn>
+              <Btn variante="azul" icone="ti-file-download" onClick={handleGerarExtrato} disabled={gerandoExtrato}>
+                {gerandoExtrato ? 'Gerando...' : 'Gerar PDF'}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Caixa Fechado */}
       <ModalCaixaFechado
