@@ -78,11 +78,11 @@ const POSSE_LABEL: Record<string, string> = {
   arrendatario: 'Arrendatario',
 }
 
-const COR = rgb(0.573, 0.251, 0.055)
 const PRETO = rgb(0, 0, 0)
+const CINZA_ESC = rgb(0.25, 0.25, 0.25)
 const CINZA = rgb(0.45, 0.45, 0.45)
-const CINZA_CL = rgb(0.90, 0.90, 0.90)
-const VERDE = rgb(0.09, 0.43, 0.34)
+const CINZA_CL = rgb(0.80, 0.80, 0.80)
+const CINZA_BG = rgb(0.92, 0.92, 0.92)
 
 const W = 595
 const H = 842
@@ -127,11 +127,11 @@ export async function GET(
     let y = H - 40
 
     function drawCabecalhoTabela(yy: number) {
-      page.drawText('Data/Hora',   { x: ML + 4,   y: yy, size: 8, font: fontB, color: CINZA })
-      page.drawText('Operacao',    { x: ML + 110, y: yy, size: 8, font: fontB, color: CINZA })
-      page.drawText('Qtd produto', { x: ML + 270, y: yy, size: 8, font: fontB, color: CINZA })
-      page.drawText('Qtd vendida', { x: ML + 355, y: yy, size: 8, font: fontB, color: CINZA })
-      page.drawText('Valor pago',  { x: ML + 440, y: yy, size: 8, font: fontB, color: CINZA })
+      page.drawText('Data/Hora',   { x: ML + 4,   y: yy, size: 8, font: fontB, color: CINZA_ESC })
+      page.drawText('Operacao',    { x: ML + 110, y: yy, size: 8, font: fontB, color: CINZA_ESC })
+      page.drawText('Qtd produto', { x: ML + 270, y: yy, size: 8, font: fontB, color: CINZA_ESC })
+      page.drawText('Qtd vendida', { x: ML + 355, y: yy, size: 8, font: fontB, color: CINZA_ESC })
+      page.drawText('Valor pago',  { x: ML + 440, y: yy, size: 8, font: fontB, color: CINZA_ESC })
     }
 
     function novaPaginaSeNecessario(altura: number = 24) {
@@ -142,7 +142,7 @@ export async function GET(
           x: ML, y, size: 7, font: fontR, color: CINZA,
         })
         y -= 16
-        page.drawRectangle({ x: ML, y: y - 14, width: CW, height: 18, color: CINZA_CL })
+        page.drawRectangle({ x: ML, y: y - 14, width: CW, height: 18, color: CINZA_BG })
         drawCabecalhoTabela(y - 8)
         y -= 20
       }
@@ -152,50 +152,52 @@ export async function GET(
       page.drawLine({ start: { x: ML, y: yy }, end: { x: W - MR, y: yy }, thickness: 0.4, color: CINZA_CL })
     }
 
-    // CABEÇALHO
-    const HEADER_H = 70
-    page.drawRectangle({ x: 0, y: H - HEADER_H, width: W, height: HEADER_H, color: COR })
-
+    // CABEÇALHO — monocromático
     let logoX = ML
+    let logoTopY = H - 40
+
     if (logoImage) {
-      const logoDims = logoImage.scaleToFit(44, 44)
-      page.drawImage(logoImage, {
-        x: ML,
-        y: H - HEADER_H + (HEADER_H - logoDims.height) / 2,
-        width: logoDims.width,
-        height: logoDims.height,
-      })
-      logoX = ML + logoDims.width + 10
+      const logoDims = logoImage.scaleToFit(60, 60)
+      const logoY = H - 40 - logoDims.height
+      page.drawImage(logoImage, { x: ML, y: logoY, width: logoDims.width, height: logoDims.height })
+      logoX = ML + logoDims.width + 12
+      logoTopY = H - 40
     }
 
-    page.drawText(sa(dados.organizacao.nome).toUpperCase(), {
-      x: logoX, y: H - 28, size: 10, font: fontB, color: rgb(1,1,1),
-      maxWidth: W - logoX - 160,
-    })
-    page.drawText(`CNPJ: ${formatarCNPJ(dados.organizacao.cnpj)}`, {
-      x: logoX, y: H - 42, size: 8, font: fontR, color: rgb(0.9,0.9,0.9),
-    })
-
+    // Org à esquerda, título à direita — mesma linha
     const tituloStr = 'EXTRATO DO PRODUTOR'
-    const tW = fontB.widthOfTextAtSize(tituloStr, 13)
-    page.drawText(tituloStr, { x: W - MR - tW, y: H - 28, size: 13, font: fontB, color: rgb(1,1,1) })
+    const tW = fontB.widthOfTextAtSize(tituloStr, 11)
+    page.drawText(sa(dados.organizacao.nome).toUpperCase(), {
+      x: logoX, y: H - 40, size: 11, font: fontB, color: PRETO,
+      maxWidth: W - logoX - tW - MR - 16,
+    })
+    page.drawText(tituloStr, { x: W - MR - tW, y: H - 40, size: 11, font: fontB, color: PRETO })
 
+    // CNPJ à esquerda, período à direita
     let periodoStr = 'Todos os registros'
     if (tipo === 'periodo' && inicio && fim) periodoStr = `${formatarDataInput(inicio)} a ${formatarDataInput(fim)}`
     else if (tipo === 'periodo' && inicio) periodoStr = `A partir de ${formatarDataInput(inicio)}`
     else if (tipo === 'periodo' && fim) periodoStr = `Ate ${formatarDataInput(fim)}`
     const pW = fontR.widthOfTextAtSize(periodoStr, 8)
-    page.drawText(periodoStr, { x: W - MR - pW, y: H - 44, size: 8, font: fontR, color: rgb(0.85,0.85,0.85) })
+    page.drawText(`CNPJ: ${formatarCNPJ(dados.organizacao.cnpj)}`, {
+      x: logoX, y: H - 54, size: 8, font: fontR, color: CINZA,
+    })
+    page.drawText(periodoStr, { x: W - MR - pW, y: H - 54, size: 8, font: fontR, color: CINZA })
 
+    // Data de geração à direita
     const geradoStr = `Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`
     const gW = fontR.widthOfTextAtSize(geradoStr, 7)
-    page.drawText(geradoStr, { x: W - MR - gW, y: H - 57, size: 7, font: fontR, color: rgb(0.75,0.75,0.75) })
+    page.drawText(geradoStr, { x: W - MR - gW, y: H - 65, size: 7, font: fontR, color: CINZA })
 
-    y = H - HEADER_H - 14
+    // Linha separadora
+    const sepY = logoImage ? Math.min(H - 72, logoTopY - logoImage.scaleToFit(60, 60).height - 8) : H - 72
+    page.drawLine({ start: { x: ML, y: sepY }, end: { x: W - MR, y: sepY }, thickness: 0.5, color: CINZA_CL })
+
+    y = sepY - 14
 
     // DADOS DO PRODUTOR
     const PROD_H = dados.cooperado ? 100 : 64
-    page.drawRectangle({ x: ML, y: y - PROD_H, width: CW, height: PROD_H + 6, color: rgb(0.99, 0.97, 0.94), borderColor: COR, borderWidth: 0.5 })
+    page.drawRectangle({ x: ML, y: y - PROD_H, width: CW, height: PROD_H + 6, color: CINZA_BG })
 
     page.drawText(sa(dados.produtor.nome), { x: ML + 8, y: y - 10, size: 12, font: fontB, color: PRETO })
 
@@ -217,7 +219,7 @@ export async function GET(
     if (dados.cooperado) {
       const c = dados.cooperado
       page.drawLine({ start: { x: ML + 8, y: y - 46 }, end: { x: W - MR - 8, y: y - 46 }, thickness: 0.4, color: CINZA_CL })
-      page.drawText('DADOS DO COOPERADO', { x: ML + 8, y: y - 58, size: 7, font: fontB, color: COR })
+      page.drawText('DADOS DO COOPERADO', { x: ML + 8, y: y - 58, size: 7, font: fontB, color: CINZA_ESC })
 
       const coopCols = [
         c.numero_matricula ? `Matricula: ${c.numero_matricula}` : '',
@@ -242,21 +244,21 @@ export async function GET(
 
     // SALDOS ATUAIS
     const boxW = (CW - 8) / 2
-    page.drawRectangle({ x: ML, y: y - 46, width: boxW, height: 52, color: rgb(0.99, 0.97, 0.94), borderColor: COR, borderWidth: 0.5 })
-    page.drawText('SALDO A ORDEM (ATUAL)', { x: ML + 8, y: y - 10, size: 7, font: fontB, color: CINZA })
+    page.drawRectangle({ x: ML, y: y - 46, width: boxW, height: 52, color: CINZA_BG })
+    page.drawText('SALDO A ORDEM (ATUAL)', { x: ML + 8, y: y - 10, size: 7, font: fontB, color: CINZA_ESC })
     page.drawText(dados.produto_nome ? sa(dados.produto_nome) : 'Produto', { x: ML + 8, y: y - 22, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarKg(dados.saldo_atual_produto), { x: ML + 8, y: y - 36, size: 13, font: fontB, color: COR })
+    page.drawText(formatarKg(dados.saldo_atual_produto), { x: ML + 8, y: y - 36, size: 13, font: fontB, color: PRETO })
 
     const bx2 = ML + boxW + 8
-    page.drawRectangle({ x: bx2, y: y - 46, width: boxW, height: 52, color: rgb(0.94, 0.99, 0.96), borderColor: VERDE, borderWidth: 0.5 })
-    page.drawText('SALDO FINANCEIRO (ATUAL)', { x: bx2 + 8, y: y - 10, size: 7, font: fontB, color: CINZA })
+    page.drawRectangle({ x: bx2, y: y - 46, width: boxW, height: 52, color: CINZA_BG })
+    page.drawText('SALDO FINANCEIRO (ATUAL)', { x: bx2 + 8, y: y - 10, size: 7, font: fontB, color: CINZA_ESC })
     page.drawText('Disponivel para saque', { x: bx2 + 8, y: y - 22, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarReal(dados.saldo_atual_financeiro), { x: bx2 + 8, y: y - 36, size: 13, font: fontB, color: VERDE })
+    page.drawText(formatarReal(dados.saldo_atual_financeiro), { x: bx2 + 8, y: y - 36, size: 13, font: fontB, color: PRETO })
 
     y -= 62
 
     // TABELA
-    page.drawRectangle({ x: ML, y: y - 16, width: CW, height: 20, color: CINZA_CL })
+    page.drawRectangle({ x: ML, y: y - 16, width: CW, height: 20, color: CINZA_BG })
     drawCabecalhoTabela(y - 10)
     y -= 22
 
@@ -276,19 +278,19 @@ export async function GET(
       page.drawText(sa(TIPO_LABEL[m.tipo] ?? m.tipo), { x: ML + 110, y: y - 12, size: 8, font: isEntrega ? fontB : fontR, color: isEntrega ? PRETO : CINZA })
 
       if (m.quantidade_produto) {
-        page.drawText(formatarKg(m.quantidade_produto), { x: ML + 270, y: y - 12, size: 8, font: isEntrega ? fontB : fontR, color: isEntrega ? COR : CINZA })
+        page.drawText(formatarKg(m.quantidade_produto), { x: ML + 270, y: y - 12, size: 8, font: isEntrega ? fontB : fontR, color: isEntrega ? PRETO : CINZA })
       } else {
         page.drawText('—', { x: ML + 270, y: y - 12, size: 8, font: fontR, color: CINZA_CL })
       }
 
       if (isSaque && m.quantidade_vendida) {
-        page.drawText(formatarKg(m.quantidade_vendida), { x: ML + 355, y: y - 12, size: 8, font: fontB, color: CINZA })
+        page.drawText(formatarKg(m.quantidade_vendida), { x: ML + 355, y: y - 12, size: 8, font: fontB, color: CINZA_ESC })
       } else {
         page.drawText('—', { x: ML + 355, y: y - 12, size: 8, font: fontR, color: CINZA_CL })
       }
 
       if (m.valor_financeiro && isSaque) {
-        page.drawText(formatarReal(Math.abs(m.valor_financeiro)), { x: ML + 440, y: y - 12, size: 8, font: fontB, color: VERDE })
+        page.drawText(formatarReal(Math.abs(m.valor_financeiro)), { x: ML + 440, y: y - 12, size: 8, font: fontB, color: PRETO })
       } else {
         page.drawText('—', { x: ML + 440, y: y - 12, size: 8, font: fontR, color: CINZA_CL })
       }
@@ -319,23 +321,23 @@ export async function GET(
       .filter(m => m.tipo === 'saque_especie' || m.tipo === 'saque_pix')
       .reduce((acc, m) => acc + Math.abs(m.valor_financeiro ?? 0), 0)
 
-    page.drawRectangle({ x: ML, y: y - 46, width: CW, height: 52, color: rgb(0.98, 0.98, 0.98), borderColor: CINZA_CL, borderWidth: 0.5 })
-    page.drawText('RESUMO DO PERIODO', { x: ML + 8, y: y - 10, size: 7, font: fontB, color: CINZA })
+    page.drawRectangle({ x: ML, y: y - 46, width: CW, height: 52, color: CINZA_BG })
+    page.drawText('RESUMO DO PERIODO', { x: ML + 8, y: y - 10, size: 7, font: fontB, color: CINZA_ESC })
 
     page.drawText('Total entregue:', { x: ML + 8,   y: y - 24, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarKg(totalEntregue), { x: ML + 100, y: y - 24, size: 8, font: fontB, color: COR })
+    page.drawText(formatarKg(totalEntregue), { x: ML + 100, y: y - 24, size: 8, font: fontB, color: PRETO })
 
     page.drawText('Total vendido:',  { x: ML + 200, y: y - 24, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarKg(totalVendidoKg), { x: ML + 285, y: y - 24, size: 8, font: fontB, color: CINZA })
+    page.drawText(formatarKg(totalVendidoKg), { x: ML + 285, y: y - 24, size: 8, font: fontB, color: PRETO })
 
     page.drawText('Total recebido:', { x: ML + 370, y: y - 24, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarReal(totalPago), { x: ML + 455, y: y - 24, size: 8, font: fontB, color: VERDE })
+    page.drawText(formatarReal(totalPago), { x: ML + 455, y: y - 24, size: 8, font: fontB, color: PRETO })
 
     page.drawText('Saldo a ordem:',   { x: ML + 8,   y: y - 38, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarKg(dados.saldo_atual_produto), { x: ML + 100, y: y - 38, size: 8, font: fontB, color: COR })
+    page.drawText(formatarKg(dados.saldo_atual_produto), { x: ML + 100, y: y - 38, size: 8, font: fontB, color: PRETO })
 
     page.drawText('Saldo financeiro:', { x: ML + 200, y: y - 38, size: 8, font: fontR, color: CINZA })
-    page.drawText(formatarReal(dados.saldo_atual_financeiro), { x: ML + 290, y: y - 38, size: 8, font: fontB, color: VERDE })
+    page.drawText(formatarReal(dados.saldo_atual_financeiro), { x: ML + 290, y: y - 38, size: 8, font: fontB, color: PRETO })
 
     y -= 58
 
