@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUsuarioLogado } from '@/lib/auth'
 import { emitirNfeEntrada, consultarNfeEntrada } from '@/lib/focusnfe/emitir-nfe-entrada'
+import { urlCompleta } from '@/lib/focusnfe/client'
 
 export async function emitirNfeEntradaAction(
   movimentacao_id: string,
@@ -47,15 +48,6 @@ export async function getCotacaoParaModal(movimentacao_id: string) {
   } : null
 }
 
-// Helper: monta URL completa para XML/DANFE retornados como path relativo
-function urlCompleta(path?: string): string | undefined {
-  if (!path) return undefined
-  if (path.startsWith('http')) return path
-  const base = process.env.FOCUSNFE_AMBIENTE === 'producao'
-    ? 'https://api.focusnfe.com.br'
-    : 'https://homologacao.focusnfe.com.br'
-  return `${base}${path}`
-}
 
 export async function getNfeStatus(movimentacao_id: string) {
   const supabase = createAdminClient()

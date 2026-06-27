@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { focusGet } from '@/lib/focusnfe/client'
 
 export async function listarEntradasNFe(orgId: string, filtros: {
   dataInicio?: string
@@ -59,26 +60,8 @@ export async function consultarNFeNaSEFAZ(chaveAcesso: string): Promise<{
   }
   erro?: string
 }> {
-  const token = process.env.FOCUS_NFE_TOKEN_HOMOLOGACAO
-  if (!token) return { ok: false, erro: 'Token Focus NFe não configurado' }
-
   try {
-    const res = await fetch(
-      `https://homologacao.focusnfe.com.br/v2/nfe/${chaveAcesso}`,
-      {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${token}:`).toString('base64')}`,
-        },
-        cache: 'no-store',
-      }
-    )
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      return { ok: false, erro: (body as any)?.mensagem ?? `Erro ${res.status} ao consultar SEFAZ` }
-    }
-
-    const json = await res.json()
+    const json = await focusGet<any>(`/v2/nfe/${chaveAcesso}`)
     const nfe = json?.nfe_proc?.NFe?.infNFe
 
     if (!nfe) return { ok: false, erro: 'Estrutura de resposta inesperada da SEFAZ' }

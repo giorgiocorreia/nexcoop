@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { focusGet, FOCUS_BASE_URL } from '@/lib/focusnfe/client'
-
-function urlCompleta(path?: string): string | undefined {
-  if (!path) return undefined
-  if (path.startsWith('http')) return path
-  return `${FOCUS_BASE_URL}${path}`
-}
+import { focusGet, urlCompleta } from '@/lib/focusnfe/client'
 
 export async function POST(req: NextRequest) {
   const { referencia, nota_id } = await req.json()

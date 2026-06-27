@@ -6,6 +6,16 @@ export const FOCUS_BASE_URL = process.env.FOCUSNFE_AMBIENTE === 'producao'
   ? 'https://api.focusnfe.com.br'
   : 'https://homologacao.focusnfe.com.br'
 
+export function urlCompleta(path?: string): string | undefined {
+  if (!path) return undefined
+  if (path.startsWith('http')) return path
+  return `${FOCUS_BASE_URL}${path}`
+}
+
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 function getToken(): string {
   const token = process.env.FOCUSNFE_AMBIENTE === 'producao'
     ? process.env.FOCUSNFE_TOKEN_PRODUCAO
@@ -19,6 +29,10 @@ function authHeader(): string {
   const token = getToken()
   const encoded = Buffer.from(`${token}:`).toString('base64')
   return `Basic ${encoded}`
+}
+
+export function getFocusAuthHeader(): string {
+  return authHeader()
 }
 
 // Parse seguro — evita crash quando a Focus retorna texto/HTML em vez de JSON

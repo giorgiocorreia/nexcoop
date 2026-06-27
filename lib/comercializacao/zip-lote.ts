@@ -3,18 +3,7 @@
 import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarEmail } from '@/lib/email'
-
-function getFocusBaseUrl() {
-  return process.env.FOCUSNFE_AMBIENTE === 'producao'
-    ? 'https://api.focusnfe.com.br'
-    : 'https://homologacao.focusnfe.com.br'
-}
-
-function getFocusToken() {
-  return process.env.FOCUSNFE_AMBIENTE === 'producao'
-    ? process.env.FOCUSNFE_TOKEN_PRODUCAO!
-    : process.env.FOCUSNFE_TOKEN_HOMOLOGACAO!
-}
+import { FOCUS_BASE_URL, getFocusAuthHeader } from '@/lib/focusnfe/client'
 
 function getEmailDestinatario(emailComprador: string | null): string {
   if (process.env.FOCUSNFE_AMBIENTE === 'producao' && emailComprador) {
@@ -24,20 +13,17 @@ function getEmailDestinatario(emailComprador: string | null): string {
 }
 
 async function baixarArquivo(url: string): Promise<Buffer> {
-  const token = getFocusToken()
-  const auth = Buffer.from(`${token}:`).toString('base64')
   const res = await fetch(url, {
-    headers: { Authorization: `Basic ${auth}` },
+    headers: { Authorization: getFocusAuthHeader() },
   })
   if (!res.ok) throw new Error(`Erro ao baixar ${url}: ${res.status}`)
   return Buffer.from(await res.arrayBuffer())
 }
 
 function construirXmlUrl(chave: string): string {
-  const base = getFocusBaseUrl()
   const anoMes = `${chave.slice(2, 4)}${chave.slice(4, 6)}`
   const cnpj = '54305114000179'
-  return `${base}/arquivos${process.env.FOCUSNFE_AMBIENTE === 'producao' ? '' : '_development'}/${cnpj}_222056/${anoMes === '2606' ? '202606' : anoMes}/XMLs/${chave}-nfe.xml`
+  return `${FOCUS_BASE_URL}/arquivos${process.env.FOCUSNFE_AMBIENTE === 'producao' ? '' : '_development'}/${cnpj}_222056/${anoMes === '2606' ? '202606' : anoMes}/XMLs/${chave}-nfe.xml`
 }
 
 export async function gerarZipEEnviarEmail(loteId: string, emailOverride?: string): Promise<{ sucesso: boolean; erro?: string; zipBase64?: string }> {
