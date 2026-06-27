@@ -5,6 +5,7 @@
 // Também exporta BotaoNfe para uso no diário de operações
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { emitirNfeEntradaAction, getNfeStatus, getCotacaoParaModal } from '@/lib/comercializacao/nfe.actions'
 import { Btn } from '@/components/ui/Btn'
 
@@ -326,7 +327,7 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
         Emitir NF-e
       </button>
 
-      {mostrarModal && (
+      {mostrarModal && createPortal(
         <ModalNfeEntrada
           movimentacao_id={movimentacao_id}
           onClose={() => {
@@ -338,7 +339,8 @@ export function BotaoNfe({ movimentacao_id }: BotaoNfeProps) {
               }
             }).catch(() => {})
           }}
-        />
+        />,
+        document.body
       )}
     </>
   )
