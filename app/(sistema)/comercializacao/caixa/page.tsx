@@ -1028,7 +1028,11 @@ export default function CaixaPage() {
             </div>
             <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
               <Link href="/comercializacao" style={{ color: '#78716C', textDecoration: 'none' }}>Comercialização</Link>
-              {' / '}Caixa · Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}
+              {' / '}Caixa · Inicial: {fmtReal(sessao.saldo_inicial_especie)}
+              {' · '}
+              <span style={{ color: '#92400e', fontWeight: 600 }}>
+                Atual: {fmtReal(saldoEsperado)}
+              </span>
             </div>
           </div>
         </div>

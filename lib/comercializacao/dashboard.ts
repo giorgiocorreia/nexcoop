@@ -25,9 +25,11 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     .select(`
       id,
       created_at,
+      saldo_inicial_especie,
       saldo_especie_calculado,
+      total_saidas_especie,
       usuario_id,
-      usuarios!usuario_id(nome_completo)
+      usuarios!sessoes_caixa_usuario_id_fkey(nome_completo)
     `)
     .eq('organizacao_id', organizacaoId)
     .eq('status', 'aberta')
@@ -62,11 +64,13 @@ export async function getDashboardComercializacao(organizacaoId: string) {
       else sangrias += Number(m.valor)
     }
 
+    const saldoInicial = Number((sessao as any).saldo_inicial_especie ?? 0)
+    const totalSaidas = Number((sessao as any).total_saidas_especie ?? 0)
     sessoesComMovimentos.push({
       id: sessao.id,
       operador: (sessao.usuarios as any)?.nome_completo ?? '—',
       abertura: sessao.created_at as string,
-      saldoCalculado: Number(sessao.saldo_especie_calculado ?? 0),
+      saldoCalculado: saldoInicial + aportes - sangrias - totalSaidas,
       aportes,
       sangrias,
     })
@@ -78,6 +82,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   ) ?? null
 
   let entregasHoje: { count: number; totalKg: number } = { count: 0, totalKg: 0 }
+  let produtoresHoje = 0
   let entregasSemana: { dia: string; totalKg: number }[] = []
   let ultimasEntregas: {
     produtor: string
@@ -88,83 +93,73 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   }[] = []
 
   try {
-    const { data: notasHoje } = await supabase
-      .from('notas_entrega')
-      .select('peso_liquido, valor_total, created_at')
+    const { data: movsHoje } = await supabase
+      .from('movimentacoes_conta')
+      .select('quantidade_produto, created_at, contas_produtor!inner(produtor_id)')
       .eq('organizacao_id', organizacaoId)
+      .eq('tipo', 'entrega')
       .gte('created_at', inicioHoje)
       .lt('created_at', fimHoje)
 
-    if (notasHoje) {
+    if (movsHoje) {
       entregasHoje = {
-        count: notasHoje.length,
-        totalKg: notasHoje.reduce((s, n) => s + Number(n.peso_liquido ?? 0), 0),
+        count: movsHoje.length,
+        totalKg: movsHoje.reduce((s, m) => s + Number(m.quantidade_produto ?? 0), 0),
       }
+      produtoresHoje = new Set(movsHoje.map((m: any) => m.contas_produtor?.produtor_id)).size
     }
 
     const diasAtras7 = new Date(hoje)
     diasAtras7.setDate(diasAtras7.getDate() - 6)
     diasAtras7.setHours(0, 0, 0, 0)
 
-    const { data: notasSemana } = await supabase
-      .from('notas_entrega')
-      .select('peso_liquido, created_at')
+    const { data: movsSemana } = await supabase
+      .from('movimentacoes_conta')
+      .select('quantidade_produto, created_at')
       .eq('organizacao_id', organizacaoId)
+      .eq('tipo', 'entrega')
       .gte('created_at', diasAtras7.toISOString())
 
-    if (notasSemana) {
+    if (movsSemana) {
       const mapa: Record<string, number> = {}
       for (let i = 0; i < 7; i++) {
         const d = new Date(diasAtras7)
         d.setDate(d.getDate() + i)
-        const key = d.toISOString().slice(0, 10)
-        mapa[key] = 0
+        mapa[d.toISOString().slice(0, 10)] = 0
       }
-      for (const n of notasSemana) {
-        const key = (n.created_at ?? '').slice(0, 10)
-        if (key in mapa) mapa[key] += Number(n.peso_liquido ?? 0)
+      for (const m of movsSemana) {
+        const key = (m.created_at ?? '').slice(0, 10)
+        if (key in mapa) mapa[key] += Number(m.quantidade_produto ?? 0)
       }
       entregasSemana = Object.entries(mapa).map(([dia, totalKg]) => ({ dia, totalKg }))
     }
 
     const { data: ultimas } = await supabase
-      .from('notas_entrega')
+      .from('movimentacoes_conta')
       .select(`
-        peso_liquido,
-        valor_total,
+        quantidade_produto,
+        valor_financeiro,
         created_at,
-        produto,
-        cooperado:cooperados(nome)
+        produtos(nome),
+        contas_produtor!inner(produtores(nome))
       `)
       .eq('organizacao_id', organizacaoId)
+      .eq('tipo', 'entrega')
       .order('created_at', { ascending: false })
       .limit(5)
 
     if (ultimas) {
-      ultimasEntregas = ultimas.map((n) => ({
-        produtor: (n.cooperado as any)?.nome ?? '—',
-        produto: (n as any).produto ?? 'Cacau seco',
-        kg: Number(n.peso_liquido ?? 0),
-        valor: Number(n.valor_total ?? 0),
-        horario: new Date(n.created_at ?? Date.now()).toLocaleTimeString('pt-BR', {
+      ultimasEntregas = ultimas.map((m: any) => ({
+        produtor: m.contas_produtor?.produtores?.nome ?? '—',
+        produto: m.produtos?.nome ?? '—',
+        kg: Number(m.quantidade_produto ?? 0),
+        valor: Number(m.valor_financeiro ?? 0),
+        horario: new Date(m.created_at ?? Date.now()).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
         }),
       }))
     }
-  } catch {
-    // notas_entrega ainda não existe — silencioso
-  }
-
-  let produtoresHoje = 0
-  try {
-    const { data: ids } = await supabase
-      .from('notas_entrega')
-      .select('cooperado_id')
-      .eq('organizacao_id', organizacaoId)
-      .gte('created_at', inicioHoje)
-      .lt('created_at', fimHoje)
-    produtoresHoje = new Set((ids ?? []).map((r: any) => r.cooperado_id)).size
   } catch {
     // silencioso
   }
@@ -180,7 +175,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
       .from('lotes')
       .select('id', { count: 'exact', head: true })
       .eq('organizacao_id', organizacaoId)
-      .eq('status', 'aberto')
+      .in('status', ['aberto', 'em_venda', 'entregue'])
     lotesAbertos = count ?? 0
   } catch {
     // silencioso
