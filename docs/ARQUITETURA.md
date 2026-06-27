@@ -232,6 +232,20 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 - Obrigação da cooperativa como substituta tributária — NÃO deduzida do produtor
 - Calculada e gravada em `resultado_safra_snapshot.funrural_rs` no momento da venda
 
+## Storage (Supabase)
+
+Regra: separar buckets por tipo de conteúdo. Nunca acumular tudo em `'documentos'`.
+
+| Bucket        | Conteúdo                              | Público |
+|---------------|---------------------------------------|---------|
+| `documentos`  | Docs gerais, manuais                  | Não     |
+| `avatares`    | Fotos de perfil                       | Não     |
+| `logos-orgs`  | Logos das organizações                | Sim     |
+| `comprovantes`| Comprovantes financeiros (26/06/2026) | Não     |
+
+RLS: path começa com `{org_id}/`, policies validam `foldername(name)[1] = organizacao_id`.
+Ao criar feature com upload: avaliar bucket existente ou criar novo por tipo.
+
 ## NF-e entrada (Focus NFe)
 
 - Série 2 homologação, tokens: FOCUSNFE_TOKEN_HOMOLOGACAO / PRODUCAO

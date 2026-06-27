@@ -1,5 +1,47 @@
 # NexCoop — Changelog
 
+## 2026-06-26
+
+### fix(dashboard): filtros de hoje no fuso de Brasília (UTC-3)
+- `inicioHoje`/`fimHoje` ancorados em 03:00 UTC (= meia-noite Brasília)
+- `diasAtras7` derivado de `inicioDiaBrasilia` via `setUTCDate`
+- Chave de cada movimentação no gráfico semanal converte UTC → Brasília antes de fatiar a data
+
+### fix(comercializacao): saldo atual no header do caixa
+- Tipo `Sessao` ganhou `saldo_especie_calculado`
+- `saldoEsperado` agora usa `saldo_especie_calculado - total_saidas_especie`
+- Elimina dependência de `aportesDia` carregado (que só vinha na aba "Fechar caixa")
+
+### fix(comercializacao): dashboard com dados reais
+- `entregasHoje`, `entregasSemana`, `ultimasEntregas`, `produtoresHoje`: migrados de `notas_entrega` → `movimentacoes_conta` (tipo='entrega')
+- `saldoCalculado` das sessões: corrigido para `saldo_inicial + aportes - sangrias - total_saidas_especie`
+- `lotesAbertos`: agora inclui status `'aberto'`, `'em_venda'` e `'entregue'` (todos não pagos)
+
+### feat(comercializacao): painel admin /comercializacao/caixas
+- `page.tsx` + `CaixasAdminClient.tsx` + `actions.ts`
+- Lista sessões abertas por operador + histórico 30 fechamentos
+- Forçar fechamento com cálculo de totais + confirmação
+- Acesso restrito a admin
+
+### feat(comercializacao): caixa multi-operador
+- `getSessaoAberta()` filtra por `usuario_id` — cada operador vê só o seu caixa
+- Sem migration — campo já existia e era inserido em `abrirCaixa()`
+
+### feat(comercializacao): saída avulsa de caixa
+- Botão "Saída avulsa" no header do caixa
+- Modal: descrição, valor, data, categoria, nº doc, centro de custo, obs, comprovante
+- Cria lancamento `tipo=despesa status=pago` + incrementa `total_saidas_especie`
+- Upload no bucket `'comprovantes'`, path `{org_id}/comercializacao/{ts}`
+
+### feat(storage): bucket comprovantes
+- Bucket privado criado com RLS padrão (`foldername[1] = organizacao_id`)
+- Regra estabelecida: separar buckets por tipo de conteúdo
+
+### feat(comercializacao): listarCategoriasDesp + registrarSaidaAvulsa
+- Novas funções em `lib/comercializacao/caixa.actions.ts`
+
+---
+
 ## 2026-06-25
 
 ### Resultado por Safra

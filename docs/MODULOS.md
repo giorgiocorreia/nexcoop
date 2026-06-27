@@ -69,7 +69,7 @@
 - Emissão real NF-e/NFC-e via Focus NFe
 
 ## Comercialização 🔄
-Última atualização: 23/06/2026
+Última atualização: 26/06/2026
 
 ### ✅ Concluído
 - Cadastro produtores e compradores (com campos fiscais)
@@ -92,6 +92,12 @@
 - Botão NF-e saída alterna para Reimprimir após autorização (24/06/2026)
 - Badge NF-e autorizada no card de lote na listagem (24/06/2026)
 - iniciarLote: descrição sem padrão hardcoded (24/06/2026)
+- Multi-operador: `getSessaoAberta()` filtra por `usuario_id` (26/06/2026)
+- Painel admin `/comercializacao/caixas`: sessões abertas + histórico + forçar fechamento (26/06/2026)
+- Saída avulsa de caixa: modal + lançamento financeiro + upload `'comprovantes'` (26/06/2026)
+- Dashboard com dados reais: `movimentacoes_conta` (tipo='entrega'), saldo correto, lotes filtrados por status válido (26/06/2026)
+- Saldo atual no header: `saldo_especie_calculado - total_saidas_especie` (26/06/2026)
+- Filtros de "hoje" no dashboard: fuso Brasília UTC-3 (26/06/2026)
 
 ### ❌ Pendente
 - iniciarLote: seleção de safra obrigatória
