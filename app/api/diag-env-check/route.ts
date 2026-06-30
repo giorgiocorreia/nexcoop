@@ -17,7 +17,7 @@ function decodeJwtMeta(token: string | undefined) {
 
 export async function GET(req: Request) {
   const secret = req.headers.get('x-diag-secret');
-  if (secret !== process.env.CRON_SECRET) {
+  if (secret !== process.env.DIAG_SECRET) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const secret = req.headers.get('x-diag-secret');
-  if (secret !== process.env.CRON_SECRET) {
+  if (secret !== process.env.DIAG_SECRET) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
