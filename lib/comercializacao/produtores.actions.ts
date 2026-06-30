@@ -69,7 +69,10 @@ export async function getProdutorCompleto(id: string) {
     .from('sessoes_caixa')
     .select('id, status')
     .eq('organizacao_id', usuario.organizacao_id)
+    .eq('usuario_id', usuario.id)
     .eq('status', 'aberta')
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   return {
