@@ -31,13 +31,14 @@ export async function middleware(request: NextRequest) {
   const isApiCron = pathname.startsWith('/api/cron')
   const isApiWhatsApp = pathname.startsWith('/api/whatsapp')
   const isApiNfe = pathname.startsWith('/api/nfe')
+  const isApiDiag = pathname.startsWith('/api/diag-env-check') // TEMPORÁRIO — remover junto com a rota de diagnóstico
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha')
   const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado')
   const isOnboarding = pathname.startsWith('/onboarding')
   const isRSC = request.headers.get('rsc') === '1'
 
   // Não autenticado — redireciona para login
-  if (!user && !isAuthPage && !isPublicPage && !isApiCron && !isApiWhatsApp && !isApiNfe) {
+  if (!user && !isAuthPage && !isPublicPage && !isApiCron && !isApiWhatsApp && !isApiNfe && !isApiDiag) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
