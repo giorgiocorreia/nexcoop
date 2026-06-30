@@ -426,6 +426,27 @@ export async function listarCategoriasDesp() {
   return data ?? []
 }
 
+export async function criarCategoriaDesp(
+  nome: string,
+  grupo?: string
+): Promise<{ id: string; nome: string; grupo: string | null }> {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+  const { data, error } = await (supabase as any)
+    .from('financeiro_categorias')
+    .insert({
+      organizacao_id: usuario.organizacao_id,
+      nome: nome.trim(),
+      grupo: grupo?.trim() || null,
+      tipo: 'despesa',
+      ativo: true,
+    })
+    .select('id, nome, grupo')
+    .single()
+  if (error) throw new Error(error.message)
+  return data as { id: string; nome: string; grupo: string | null }
+}
+
 export async function registrarSaidaAvulsa(params: {
   sessao_id: string
   descricao: string
@@ -455,16 +476,16 @@ export async function registrarSaidaAvulsa(params: {
     usuario_email: usuario.email ?? undefined,
   })
 
-  if (params.categoria_id || params.centro_custo || params.comprovante_url) {
-    await supabase
-      .from('lancamentos')
-      .update({
-        ...(params.categoria_id    ? { categoria_id:    params.categoria_id }    : {}),
-        ...(params.centro_custo    ? { centro_custo:    params.centro_custo }    : {}),
-        ...(params.comprovante_url ? { comprovante_url: params.comprovante_url } : {}),
-      })
-      .eq('id', lancamento.id)
-  }
+  // Sempre atualiza sessao_caixa_id (migration 057) + campos opcionais
+  await supabase
+    .from('lancamentos')
+    .update({
+      sessao_caixa_id: params.sessao_id,
+      ...(params.categoria_id    ? { categoria_id:    params.categoria_id }    : {}),
+      ...(params.centro_custo    ? { centro_custo:    params.centro_custo }    : {}),
+      ...(params.comprovante_url ? { comprovante_url: params.comprovante_url } : {}),
+    })
+    .eq('id', lancamento.id)
 
   const { data: sessao } = await supabase
     .from('sessoes_caixa')

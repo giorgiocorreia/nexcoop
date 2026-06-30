@@ -32,7 +32,13 @@ type AporteSangria = {
 
 type TotalProduto = { nome: string; unidade: string; total_kg: number; num_produtores: number }
 
-type Detalhe = { sessao: Sessao; movimentacoes: Movimentacao[]; aportes: AporteSangria[]; totaisPorProduto: TotalProduto[] }
+type SaidaAvulsa = {
+  id: string; descricao: string; valor: number; data_competencia: string
+  observacoes: string | null; criado_em: string
+  categoria: { nome: string; grupo: string | null } | null
+}
+
+type Detalhe = { sessao: Sessao; movimentacoes: Movimentacao[]; aportes: AporteSangria[]; totaisPorProduto: TotalProduto[]; saidasAvulsas: SaidaAvulsa[] }
 
 const TIPO_LABEL: Record<string, string> = {
   entrega: 'Entrega', conversao: 'Conversão', saque_especie: 'Saque espécie',
@@ -258,6 +264,34 @@ export default function DiarioCaixaPage() {
                                     </div>
                                     <span style={{ fontWeight: 700, color: a.tipo === 'aporte' ? '#166534' : '#DC2626' }}>
                                       {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Saídas avulsas */}
+                          {detalhe.saidasAvulsas.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 10 }}>
+                                Saídas avulsas ({detalhe.saidasAvulsas.length})
+                              </div>
+                              <div style={{ background: '#FAFAF8', border: `1px solid ${C.borda}`, borderRadius: 10, overflow: 'hidden' }}>
+                                {detalhe.saidasAvulsas.map(s => (
+                                  <div key={s.id} style={{ padding: '10px 14px', borderBottom: `1px solid ${C.borda}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 13 }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontWeight: 500, color: C.txt }}>{s.descricao}</div>
+                                      <div style={{ fontSize: 11, color: C.sub, marginTop: 2, display: 'flex', gap: 8 }}>
+                                        <span>{new Date(s.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                        {s.categoria && (
+                                          <span>· {s.categoria.grupo ? `${s.categoria.grupo} — ` : ''}{s.categoria.nome}</span>
+                                        )}
+                                        {s.observacoes && <span>· {s.observacoes}</span>}
+                                      </div>
+                                    </div>
+                                    <span style={{ fontWeight: 700, color: '#DC2626', marginLeft: 16, whiteSpace: 'nowrap' }}>
+                                      − {fmtReal(s.valor)}
                                     </span>
                                   </div>
                                 ))}

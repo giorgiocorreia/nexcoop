@@ -312,6 +312,8 @@ export interface Lancamento {
   numero_documento: string | null
   observacoes: string | null
   usuario_id: string | null
+  // migration 057
+  sessao_caixa_id: string | null
   criado_em: string
   atualizado_em: string
 }

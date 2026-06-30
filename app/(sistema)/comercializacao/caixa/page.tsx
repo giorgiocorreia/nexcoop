@@ -12,6 +12,7 @@ import {
   getOperacoesHoje, listarAdminsDaOrg,
   registrarAporteSangria, getAportesESangriasDaSessao,
   getProdutorPorId, listarCategoriasDesp, registrarSaidaAvulsa,
+  criarCategoriaDesp,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
@@ -190,6 +191,9 @@ export default function CaixaPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [salvandoSaida, setSalvandoSaida] = useState(false)
   const [erroSaida, setErroSaida] = useState('')
+  const [mostrarNovaCategoria, setMostrarNovaCategoria] = useState(false)
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState('')
+  const [salvandoNovaCategoria, setSalvandoNovaCategoria] = useState(false)
   const [formSaida, setFormSaida] = useState({
     descricao: '',
     valor: '',
@@ -363,6 +367,23 @@ export default function CaixaPage() {
     }
   }
 
+  async function handleCriarCategoria() {
+    if (!novaCategoriaNome.trim()) return
+    setSalvandoNovaCategoria(true)
+    setErroSaida('')
+    try {
+      const nova = await criarCategoriaDesp(novaCategoriaNome)
+      setCategorias(cs => [...cs, nova])
+      setFormSaida(f => ({ ...f, categoria_id: nova.id }))
+      setNovaCategoriaNome('')
+      setMostrarNovaCategoria(false)
+    } catch (err: any) {
+      setErroSaida('Erro ao criar categoria: ' + err.message)
+    } finally {
+      setSalvandoNovaCategoria(false)
+    }
+  }
+
   async function abrirModalSaida() {
     if (categorias.length === 0) {
       const cats = await listarCategoriasDesp()
@@ -379,6 +400,8 @@ export default function CaixaPage() {
       comprovante_url: '',
     })
     setErroSaida('')
+    setMostrarNovaCategoria(false)
+    setNovaCategoriaNome('')
     setModalSaida(true)
   }
 
@@ -844,19 +867,53 @@ export default function CaixaPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Categoria</label>
-                <select
-                  value={formSaida.categoria_id}
-                  onChange={e => setFormSaida(f => ({ ...f, categoria_id: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                >
-                  <option value="">Sem categoria</option>
-                  {categorias.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.grupo ? `${c.grupo} — ` : ''}{c.nome}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Categoria</label>
+                  <button
+                    type="button"
+                    onClick={() => { setMostrarNovaCategoria(v => !v); setNovaCategoriaNome('') }}
+                    style={{ fontSize: '11px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontWeight: 600 }}
+                  >
+                    {mostrarNovaCategoria ? '× Cancelar' : '+ Nova categoria'}
+                  </button>
+                </div>
+                {mostrarNovaCategoria ? (
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      autoFocus
+                      placeholder="Nome da nova categoria..."
+                      value={novaCategoriaNome}
+                      onChange={e => setNovaCategoriaNome(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleCriarCategoria()}
+                      style={{ flex: 1, padding: '8px 12px', border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      disabled={salvandoNovaCategoria || !novaCategoriaNome.trim()}
+                      onClick={handleCriarCategoria}
+                      style={{
+                        padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                        border: 'none', background: '#92400e', color: '#fff',
+                        opacity: salvandoNovaCategoria || !novaCategoriaNome.trim() ? 0.5 : 1,
+                      }}
+                    >
+                      {salvandoNovaCategoria ? '...' : 'Salvar'}
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={formSaida.categoria_id}
+                    onChange={e => setFormSaida(f => ({ ...f, categoria_id: e.target.value }))}
+                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    <option value="">Sem categoria</option>
+                    {categorias.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.grupo ? `${c.grupo} — ` : ''}{c.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>

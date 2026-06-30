@@ -98,6 +98,37 @@ export async function getDetalheSessao(sessao_id: string) {
     }
   }
 
+  // Saídas avulsas — lancamentos vinculados a esta sessão (migration 057)
+  const { data: saidasRaw, error: eSaidas } = await supabase
+    .from('lancamentos')
+    .select('id, descricao, valor, data_competencia, observacoes, criado_em, categoria_id')
+    .eq('sessao_caixa_id', sessao_id)
+    .order('criado_em', { ascending: true })
+  if (eSaidas) throw new Error(eSaidas.message)
+
+  // Resolver nomes das categorias (tabela não tipada — usa cast)
+  const categoriaIds = [...new Set((saidasRaw ?? []).map((s: any) => s.categoria_id).filter(Boolean))] as string[]
+  const categoriaMap: Record<string, { nome: string; grupo: string | null }> = {}
+  if (categoriaIds.length > 0) {
+    const { data: cats } = await (supabase as any)
+      .from('financeiro_categorias')
+      .select('id, nome, grupo')
+      .in('id', categoriaIds)
+    if (cats) {
+      for (const c of cats as any[]) categoriaMap[c.id] = { nome: c.nome, grupo: c.grupo ?? null }
+    }
+  }
+
+  const saidasAvulsas = (saidasRaw ?? []).map((s: any) => ({
+    id: s.id as string,
+    descricao: s.descricao as string,
+    valor: s.valor as number,
+    data_competencia: s.data_competencia as string,
+    observacoes: s.observacoes as string | null,
+    criado_em: s.criado_em as string,
+    categoria: s.categoria_id ? (categoriaMap[s.categoria_id] ?? null) : null as { nome: string; grupo: string | null } | null,
+  }))
+
   return {
     sessao,
     movimentacoes: movimentacoes ?? [],
@@ -107,7 +138,8 @@ export async function getDetalheSessao(sessao_id: string) {
       unidade: t.unidade,
       total_kg: t.total_kg,
       num_produtores: t.produtores.size
-    }))
+    })),
+    saidasAvulsas,
   }
 }
 
