@@ -212,21 +212,35 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   }
 
   // Saldo do último fechamento
-  let ultimoFechamento: { saldo: number; fechamento: string } | null = null
+  // Não-admin: restrito ao próprio operador (usuario_id) — cada operador só vê o
+  // histórico do próprio caixa, nunca o saldo residual de outro operador.
+  // Admin: mantido AGREGADO (qualquer operador da org), mas identificando de quem é
+  // o fechamento (campo `operador`) para não passar a impressão de ser o saldo do
+  // próprio admin. `sessoes_caixa` tem uma única FK para `usuarios` (usuario_id) —
+  // sem ambiguidade, mas o nome do relacionamento é especificado explicitamente
+  // por convenção (ver `sessoesAbertas` acima, que já usa o mesmo padrão).
+  let ultimoFechamento: { saldo: number; fechamento: string; operador?: string } | null = null
   try {
-    const { data: uf } = await supabase
+    let ultimoFechamentoQuery = supabase
       .from('sessoes_caixa')
-      .select('saldo_especie_calculado, hora_fechamento')
+      .select('saldo_especie_calculado, hora_fechamento, usuario_id, usuarios!sessoes_caixa_usuario_id_fkey(nome_completo)')
       .eq('organizacao_id', organizacaoId)
       .eq('status', 'fechada')
       .order('hora_fechamento', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+
+    if (!isAdmin) {
+      ultimoFechamentoQuery = ultimoFechamentoQuery.eq('usuario_id', usuarioId) as typeof ultimoFechamentoQuery
+    }
+
+    const { data: uf } = await ultimoFechamentoQuery.limit(1).maybeSingle()
 
     if (uf) {
       ultimoFechamento = {
         saldo: Number(uf.saldo_especie_calculado ?? 0),
         fechamento: uf.hora_fechamento as string,
+        // Não-admin já sabe que é o próprio caixa — nome do operador só é útil (e só
+        // é buscado com propósito) na visão agregada do admin.
+        ...(isAdmin ? { operador: (uf as any).usuarios?.nome_completo ?? undefined } : {}),
       }
     }
   } catch {

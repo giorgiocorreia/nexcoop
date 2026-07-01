@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUsuarioLogado } from '@/lib/auth'
+import { calcularSaldoEspecieNoFechamento } from './caixa-utils'
 
 export async function getSessaoAberta() {
   const usuario = await getUsuarioLogado()
@@ -61,12 +62,40 @@ export async function fecharCaixa(sessao_id: string, saldo_final_especie: number
     .from('movimentacoes_conta')
     .select('tipo, valor_financeiro, forma_pagamento')
     .eq('sessao_caixa_id', sessao_id)
-  const totalEspecie = (movs ?? [])
+  const totalEspecieMovimentacoes = (movs ?? [])
     .filter((m: any) => m.forma_pagamento === 'especie' && m.valor_financeiro)
     .reduce((acc: number, m: any) => acc + Math.abs(m.valor_financeiro), 0)
   const totalPix = (movs ?? [])
     .filter((m: any) => m.forma_pagamento === 'pix' && m.valor_financeiro)
     .reduce((acc: number, m: any) => acc + Math.abs(m.valor_financeiro), 0)
+
+  // Saídas avulsas de caixa (registrarSaidaAvulsa, migration 057) — gravadas em
+  // `lancamentos`, não em `movimentacoes_conta`. A tabela `lancamentos` não tem
+  // coluna de forma de pagamento: este fluxo é sempre "despesa operacional paga em
+  // espécie" (ver modal de saída avulsa em caixa/page.tsx), então todo lançamento
+  // vinculado a esta sessão entra no total de saídas em espécie. Mesmo filtro usado
+  // em getFechamentoDiario (lib/comercializacao/diario.actions.ts:101-107).
+  const { data: saidasAvulsas } = await supabase
+    .from('lancamentos')
+    .select('valor')
+    .eq('sessao_caixa_id', sessao_id)
+  const totalSaidasAvulsasEspecie = (saidasAvulsas ?? [])
+    .reduce((acc: number, l: any) => acc + Number(l.valor ?? 0), 0)
+
+  const totalEspecie = totalEspecieMovimentacoes + totalSaidasAvulsasEspecie
+
+  const { data: sessaoAtual, error: sessaoError } = await supabase
+    .from('sessoes_caixa')
+    .select('saldo_especie_calculado')
+    .eq('id', sessao_id)
+    .single()
+  if (sessaoError || !sessaoAtual) throw new Error(sessaoError?.message ?? 'Sessão de caixa não encontrada.')
+
+  const saldoEspecieCalculado = calcularSaldoEspecieNoFechamento({
+    saldoEspecieCalculadoAtual: Number(sessaoAtual.saldo_especie_calculado ?? 0),
+    totalSaidasEspecie: totalEspecie,
+  })
+
   const { error } = await supabase
     .from('sessoes_caixa')
     .update({
@@ -74,6 +103,7 @@ export async function fecharCaixa(sessao_id: string, saldo_final_especie: number
       saldo_final_especie,
       total_saidas_especie: totalEspecie,
       total_pix: totalPix,
+      saldo_especie_calculado: saldoEspecieCalculado,
       status: 'fechada',
       observacoes_fechamento: observacoes
     })

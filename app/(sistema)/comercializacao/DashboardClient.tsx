@@ -174,7 +174,7 @@ export default function DashboardComercializacao({
                 </div>
                 <div style={{ fontSize: 11, color: C.txtSub, marginBottom: 10 }}>
                   {d.ultimoFechamento
-                    ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}`
+                    ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}${d.ultimoFechamento.operador ? ` · fechado por ${d.ultimoFechamento.operador}` : ''}`
                     : 'Nenhum fechamento registrado'}
                 </div>
                 <Btn variante="verde" tamanho="sm" onClick={() => setModalAbrirCaixa(true)}>Abrir caixa</Btn>
