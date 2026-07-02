@@ -95,7 +95,7 @@ export default function AceitarConviteClient() {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
           <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>
-            Plataforma cooperativista
+            Sistema de Gestão Inteligente
           </p>
         </div>
 

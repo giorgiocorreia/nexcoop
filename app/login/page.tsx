@@ -219,7 +219,7 @@ export default function LoginPage() {
         <div style={{ width: '100%', maxWidth: '400px' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 40, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
-            <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Plataforma cooperativista</p>
+            <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Sistema de Gestão Inteligente</p>
           </div>
 
           <Suspense fallback={
@@ -253,7 +253,7 @@ export default function LoginPage() {
             Gestão que fortalece quem produz juntos
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '15px', margin: 0 }}>
-            Plataforma cooperativista
+            Sistema de Gestão Inteligente
           </p>
         </div>
       </div>
