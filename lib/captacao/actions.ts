@@ -169,6 +169,15 @@ export async function salvarPerfilCaptacao(dados: Partial<PerfilCaptacao>) {
 
 // ── Radar: Fontes ─────────────────────────────────────────────────────────────
 
+function validarUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export async function listarFontes() {
   try {
     const { supabase, orgId } = await getCtx()
@@ -186,6 +195,7 @@ export async function listarFontes() {
 
 export async function salvarFonte(dados: { nome: string; url: string; tipo: string; id?: string }) {
   try {
+    if (!validarUrl(dados.url)) return { error: 'URL inválida — use um endereço http(s) válido.' }
     const { supabase, orgId } = await getCtx()
     let query
     if (dados.id) {
@@ -237,6 +247,7 @@ export async function toggleFonteAtivo(id: string, ativo: boolean) {
 
 export async function atualizarFonte(id: string, dados: { nome: string; url: string; tipo: string }) {
   try {
+    if (!validarUrl(dados.url)) return { error: 'URL inválida — use um endereço http(s) válido.' }
     const { supabase } = await getCtx()
     const { data, error } = await supabase
       .from('radar_fontes')
@@ -331,6 +342,10 @@ interface ParsedEdital {
   motivo?: string
 }
 
+function chaveTitulo(fonteId: string, titulo: string): string {
+  return `${fonteId}::${titulo.trim().toLowerCase()}`
+}
+
 function buildAnaliseFontePrompt(perfil: PerfilCaptacao | null, conteudo: string, hoje: string): string {
   const p = perfil
   const perfilJson = p
@@ -372,9 +387,7 @@ export async function executarRadar(forcarFonteIds?: string[]) {
     const { supabase, orgId } = await getCtx()
 
     const apiKey = process.env.ANTHROPIC_API_KEY
-    console.log('[Radar] ANTHROPIC_API_KEY:', apiKey
-      ? `definida (${apiKey.length} chars, prefixo: ${apiKey.slice(0, 14)}...)`
-      : 'INDEFINIDA ⚠️ — varredura vai falhar')
+    if (!apiKey) console.warn('[Radar] ANTHROPIC_API_KEY indefinida — varredura vai falhar')
 
     const [{ data: perfil }, { data: fontes }] = await Promise.all([
       supabase.from('perfil_captacao').select('*').eq('organizacao_id', orgId).maybeSingle(),
@@ -386,11 +399,15 @@ export async function executarRadar(forcarFonteIds?: string[]) {
 
     const { data: existentes } = await supabase
       .from('radar_resultados')
-      .select('url_edital')
+      .select('url_edital, fonte_id, titulo')
       .eq('organizacao_id', orgId)
-      .not('url_edital', 'is', null)
     const urlsExistentes = new Set<string>(
       (existentes ?? []).map(r => r.url_edital).filter((u): u is string => u != null)
+    )
+    const titulosExistentes = new Set<string>(
+      (existentes ?? [])
+        .filter(r => !r.url_edital)
+        .map(r => chaveTitulo(r.fonte_id ?? '', r.titulo))
     )
 
     const client    = new Anthropic({ apiKey })
@@ -483,10 +500,13 @@ export async function executarRadar(forcarFonteIds?: string[]) {
         continue
       }
 
-      // Filtra vencidos e duplicatas
+      // Filtra vencidos e duplicatas (por URL quando existe; por título+fonte quando não há URL)
       editais = editais.filter(e => !e.prazo_submissao || e.prazo_submissao >= hoje)
       const antes = editais.length
-      editais = editais.filter(e => !e.url_edital || !urlsExistentes.has(e.url_edital))
+      editais = editais.filter(e => {
+        if (e.url_edital) return !urlsExistentes.has(e.url_edital)
+        return !titulosExistentes.has(chaveTitulo(fonte.id, e.titulo ?? 'Sem título'))
+      })
       console.log(`[Radar] "${fonte.nome}" — ${antes} encontrados, ${editais.length} novos`)
 
       const inserts = editais.map(edital => ({
@@ -516,7 +536,10 @@ export async function executarRadar(forcarFonteIds?: string[]) {
           errosPorFonte.push(`[${fonte.nome}] Insert falhou: ${insertErr.message}`)
         } else if (inserted) {
           allNovosIds.push(...inserted.map(r => r.id))
-          editais.forEach(e => { if (e.url_edital) urlsExistentes.add(e.url_edital) })
+          editais.forEach(e => {
+            if (e.url_edital) urlsExistentes.add(e.url_edital)
+            else titulosExistentes.add(chaveTitulo(fonte.id, e.titulo ?? 'Sem título'))
+          })
           console.log(`[Radar] "${fonte.nome}" — ${inserted.length} editais inseridos`)
         }
       }
@@ -585,11 +608,15 @@ export async function executarRadarFonte(
 
     const { data: existentes } = await supabase
       .from('radar_resultados')
-      .select('url_edital')
+      .select('url_edital, fonte_id, titulo')
       .eq('organizacao_id', orgId)
-      .not('url_edital', 'is', null)
     const urlsExistentes = new Set<string>(
       (existentes ?? []).map(r => r.url_edital).filter((u): u is string => u != null)
+    )
+    const titulosExistentes = new Set<string>(
+      (existentes ?? [])
+        .filter(r => !r.url_edital)
+        .map(r => chaveTitulo(r.fonte_id ?? '', r.titulo))
     )
 
     const apiKey   = process.env.ANTHROPIC_API_KEY
@@ -643,10 +670,13 @@ export async function executarRadarFonte(
       return { error: `[${fonte.nome}] Claude falhou: ${claudeErr}` }
     }
 
-    // Filtra vencidos e duplicatas
+    // Filtra vencidos e duplicatas (por URL quando existe; por título+fonte quando não há URL)
     editais = editais
       .filter(e => !e.prazo_submissao || e.prazo_submissao >= hoje)
-      .filter(e => !e.url_edital || !urlsExistentes.has(e.url_edital))
+      .filter(e => {
+        if (e.url_edital) return !urlsExistentes.has(e.url_edital)
+        return !titulosExistentes.has(chaveTitulo(fonte.id, e.titulo ?? 'Sem título'))
+      })
 
     const inserts = editais.map(edital => ({
       organizacao_id: orgId,
