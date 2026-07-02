@@ -197,28 +197,65 @@ function AuthForm() {
 
 export default function LoginPage() {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: '#f8f7f4',
-      fontFamily: 'system-ui, -apple-system, sans-serif', padding: '1rem',
-    }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 40, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
-          <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Plataforma cooperativista</p>
-        </div>
+    <div className="login-page" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <style>{`
+        .login-page { display: flex; min-height: 100vh; }
+        .login-left {
+          flex: 1; display: flex; align-items: center; justify-content: center;
+          background: #f8f7f4; padding: 1rem;
+        }
+        .login-right { display: none; }
+        @media (min-width: 900px) {
+          .login-left { flex: 0 0 460px; }
+          .login-right {
+            display: flex; flex: 1; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+          }
+        }
+      `}</style>
 
-        <Suspense fallback={
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '16px', padding: '2rem', textAlign: 'center', color: '#888', fontSize: '14px' }}>
-            Carregando…
+      {/* Esquerda — formulário (conteúdo original inalterado) */}
+      <div className="login-left">
+        <div style={{ width: '100%', maxWidth: '400px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 40, width: 'auto', display: 'block', margin: '0 auto 1.5rem' }} />
+            <p style={{ fontSize: '14px', color: '#6b6b6b', marginTop: '4px' }}>Plataforma cooperativista</p>
           </div>
-        }>
-          <AuthForm />
-        </Suspense>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: '#999', marginTop: '1.5rem' }}>
-          NexCoop © 2026 — Gestão que fortalece quem produz juntos
-        </p>
+          <Suspense fallback={
+            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '16px', padding: '2rem', textAlign: 'center', color: '#888', fontSize: '14px' }}>
+              Carregando…
+            </div>
+          }>
+            <AuthForm />
+          </Suspense>
+
+          <p style={{ textAlign: 'center', fontSize: '12px', color: '#999', marginTop: '1.5rem' }}>
+            NexCoop © 2026 — Gestão que fortalece quem produz juntos
+          </p>
+        </div>
+      </div>
+
+      {/* Direita — painel de marca (visível a partir de 900px) */}
+      <div className="login-right" style={{ background: `linear-gradient(160deg, ${GREEN} 0%, #4840CC 100%)` }}>
+        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', top: -120, right: -100 }} />
+        <div style={{ position: 'absolute', width: 260, height: 260, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', bottom: -80, left: -60 }} />
+
+        <div style={{ position: 'relative', textAlign: 'center', padding: '3rem', maxWidth: 440 }}>
+          <div style={{
+            width: 88, height: 88, borderRadius: '50%', background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 2rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+          }}>
+            <img src="/images/logo-nexcoop-onlyone.png" alt="NexCoop" style={{ width: 52, height: 52 }} />
+          </div>
+          <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: 700, lineHeight: 1.3, margin: '0 0 12px' }}>
+            Gestão que fortalece quem produz juntos
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '15px', margin: 0 }}>
+            Plataforma cooperativista
+          </p>
+        </div>
       </div>
     </div>
   )
