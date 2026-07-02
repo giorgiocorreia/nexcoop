@@ -71,9 +71,9 @@ function parseBRValor(v: string): number | null {
   return isNaN(n) ? null : n
 }
 
-function formatBRL(n: number | null | undefined): string {
+function formatMoeda(n: number | null | undefined, moeda = 'BRL'): string {
   if (n == null) return '—'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: moeda }).format(n)
 }
 
 const CANAL_CORES: Record<string, { bg: string; cor: string }> = {
@@ -96,6 +96,7 @@ interface Props {
   logs?: OportunidadeLogComUsuario[]
   carregando?: boolean
   responsaveis: Pick<Usuario, 'id' | 'nome_completo'>[]
+  usuarioAtual: Pick<Usuario, 'id' | 'nome_completo'>
   onClose: () => void
   onSalvo: () => void
   onEditar?: () => void
@@ -103,7 +104,7 @@ interface Props {
 
 export default function OportunidadeModal({
   mode, oportunidade, logs = [], carregando = false,
-  responsaveis, onClose, onSalvo, onEditar,
+  responsaveis, usuarioAtual, onClose, onSalvo, onEditar,
 }: Props) {
   // ── Form state (create/edit) ───────────────────────────────────────────────
   const [salvando, setSalvando] = useState(false)
@@ -185,8 +186,9 @@ export default function OportunidadeModal({
     if (res.error) { setErroContato(res.error); return }
     const novoLog: OportunidadeLogComUsuario = {
       id: String(Date.now()), oportunidade_id: oportunidade!.id,
-      usuario_id: null, acao: 'contato', status_anterior: null, status_novo: null,
-      descricao: JSON.stringify(contato), criado_em: new Date().toISOString(), usuario: null,
+      usuario_id: usuarioAtual.id, acao: 'contato', status_anterior: null, status_novo: null,
+      descricao: JSON.stringify(contato), criado_em: new Date().toISOString(),
+      usuario: { nome_completo: usuarioAtual.nome_completo },
     }
     setLogsState(prev => [novoLog, ...prev])
     setContato({ data: new Date().toISOString().split('T')[0], canal: 'email', responsavel_id: '', descricao: '', proximo_passo: '' })
@@ -210,8 +212,9 @@ export default function OportunidadeModal({
     if (res.error) { setErroProposta(res.error); return }
     const novoLog: OportunidadeLogComUsuario = {
       id: String(Date.now()), oportunidade_id: oportunidade!.id,
-      usuario_id: null, acao: 'proposta', status_anterior: null, status_novo: null,
-      descricao: JSON.stringify(proposta), criado_em: new Date().toISOString(), usuario: null,
+      usuario_id: usuarioAtual.id, acao: 'proposta', status_anterior: null, status_novo: null,
+      descricao: JSON.stringify(proposta), criado_em: new Date().toISOString(),
+      usuario: { nome_completo: usuarioAtual.nome_completo },
     }
     setLogsState(prev => [novoLog, ...prev])
     setProposta({ data_envio: new Date().toISOString().split('T')[0], valor_solicitado: '', status_proposta: 'Em elaboração', documento_url: '', observacoes: '' })
@@ -514,7 +517,7 @@ export default function OportunidadeModal({
                           </div>
                           {d.valor_solicitado && (
                             <div style={{ fontSize: '13px', fontWeight: '600', color: TEAL, marginBottom: '6px' }}>
-                              {formatBRL(parseBRValor(d.valor_solicitado))}
+                              {formatMoeda(parseBRValor(d.valor_solicitado), oportunidade.moeda)}
                             </div>
                           )}
                           {d.documento_url && (

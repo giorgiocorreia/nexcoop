@@ -58,13 +58,28 @@ interface Props {
   responsaveis: Pick<Usuario, 'id' | 'nome_completo'>[]
   fontes?: RadarFonte[]
   resultados?: RadarResultado[]
+  usuarioAtual: Pick<Usuario, 'id' | 'nome_completo'>
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Retorna a data local (horário do navegador) no formato YYYY-MM-DD.
+// Evita o bug clássico de usar toISOString() (sempre UTC) para comparar
+// com datas de prazo, que no fuso de Brasília (UTC-3) adianta o "hoje"
+// em até 3h todo final de dia.
+function hojeLocal(): string {
+  const d = new Date()
+  const ano = d.getFullYear()
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${ano}-${mes}-${dia}`
+}
+
 function urgenciaPrazo(prazo: string | null): 'normal' | 'alerta' | 'urgente' {
   if (!prazo) return 'normal'
-  const dias = Math.ceil((new Date(prazo).getTime() - Date.now()) / 86_400_000)
+  // Mesmo truque de formatData: fixa meio-dia para não deslocar o dia
+  // por causa de fuso horário na interpretação do Date.
+  const dias = Math.ceil((new Date(prazo + 'T12:00:00').getTime() - Date.now()) / 86_400_000)
   if (dias <= 7)  return 'urgente'
   if (dias <= 15) return 'alerta'
   return 'normal'
@@ -295,12 +310,13 @@ function ListaView({ ops, onView, onEdit, onDelete }: ListaProps) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], resultados = [] }: Props) {
+export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], resultados = [], usuarioAtual }: Props) {
   const router = useRouter()
   const [aba, setAba]       = useState<Aba>('abertas')
   const [viz, setViz]       = useState<Viz>('lista')
   const [modal, setModal]   = useState<ModalState>({ open: false })
   const [ops, setOps]       = useState<Oportunidade[]>(oportunidades)
+  const [erroGlobal, setErroGlobal] = useState('')
 
   useEffect(() => { setOps(oportunidades) }, [oportunidades])
 
@@ -314,7 +330,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
     localStorage.setItem('captacao_viz', v)
   }
 
-  const hoje = new Date().toISOString().split('T')[0]
+  const hoje = hojeLocal()
 
   const filtradas = ops.filter(op => {
     if (aba === 'abertas')  return (STATUSES_ATIVOS as readonly string[]).includes(op.status)
@@ -324,12 +340,16 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
   })
 
   async function handleCardClick(op: Oportunidade) {
+    setErroGlobal('')
     setModal({ open: true, mode: 'view', oportunidade: op, logs: [], carregando: true })
     const res = await buscarOportunidade(op.id)
     if (res.data) {
       setModal({ open: true, mode: 'view', oportunidade: res.data.oportunidade, logs: res.data.logs, carregando: false })
     } else {
-      setModal(prev => prev.open && prev.mode !== 'create' ? { ...prev, carregando: false } : prev)
+      // Falha ao buscar detalhes atualizados: fecha o modal em vez de mostrar
+      // dados possivelmente desatualizados sem avisar o usuário.
+      setModal({ open: false })
+      setErroGlobal(res.error ?? 'Não foi possível carregar os detalhes da oportunidade. Tente novamente.')
     }
   }
 
@@ -339,8 +359,13 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
 
   async function handleDelete(op: Oportunidade) {
     if (!window.confirm(`Excluir a oportunidade "${op.titulo}"?`)) return
+    setErroGlobal('')
+    const res = await excluirOportunidade(op.id)
+    if (res.error) {
+      setErroGlobal(res.error)
+      return
+    }
     setOps(prev => prev.filter(o => o.id !== op.id))
-    await excluirOportunidade(op.id)
   }
 
   function handleEditar() {
@@ -413,6 +438,23 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
           </button>
         </div>
       </div>
+
+      {/* Erro global (delete / carregamento de detalhes) */}
+      {erroGlobal && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: '#fee2e2', color: '#991b1b', fontSize: '13px', fontWeight: '500',
+          padding: '10px 14px', borderRadius: '8px', marginBottom: '1rem',
+        }}>
+          <span>{erroGlobal}</span>
+          <button
+            onClick={() => setErroGlobal('')}
+            style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Abas */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #e5e3dc' }}>
@@ -544,6 +586,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
           logs={modal.mode !== 'create' ? (modal as { logs: OportunidadeLogComUsuario[] }).logs : []}
           carregando={modal.mode !== 'create' && (modal as { carregando?: boolean }).carregando}
           responsaveis={responsaveis}
+          usuarioAtual={usuarioAtual}
           onClose={fecharModal}
           onSalvo={handleSalvo}
           onEditar={handleEditar}

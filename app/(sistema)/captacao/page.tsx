@@ -60,6 +60,7 @@ export default async function CaptacaoPage() {
       responsaveis={responsaveis}
       fontes={(fontes ?? []) as RadarFonte[]}
       resultados={(resultados ?? []) as RadarResultado[]}
+      usuarioAtual={{ id: usuario.id, nome_completo: usuario.nome_completo }}
     />
   )
 }
