@@ -47,7 +47,8 @@ export default async function CaptacaoPage() {
       .from('radar_resultados')
       .select('*')
       .eq('organizacao_id', orgId)
-      .order('score', { ascending: false }),
+      .order('score', { ascending: false })
+      .limit(200),
   ])
 
   const responsaveis = (todosUsuarios ?? []).filter(

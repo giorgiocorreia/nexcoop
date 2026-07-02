@@ -13,7 +13,6 @@ interface Props {
 }
 
 const TEAL = '#1D9E75'
-const USD_TO_BRL = 5.70
 
 const MSGS_STATUS = [
   'Varrendo fontes cadastradas...',
@@ -83,7 +82,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
   const [mostrarAnteriores, setMostrarAnteriores] = useState(false)
   const [progressFonte, setProgressFonte]         = useState<{ atual: number; total: number; nome: string } | null>(null)
   const [tokensTotal, setTokensTotal]             = useState(0)
-  const [custoTotal, setCustoTotal]               = useState(0)
+  const [custoTotalBRL, setCustoTotalBRL]         = useState(0)
   const [forcandoId, setForcandoId]               = useState<string | null>(null)
   const canceladoRef = useRef(false)
 
@@ -145,13 +144,13 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     setMostrarAnteriores(false)
     setProgressFonte(null)
     setTokensTotal(0)
-    setCustoTotal(0)
+    setCustoTotalBRL(0)
 
     const fontesParaVarrer = fontes.filter(f => f.ativo)
     const warnings: string[] = []
     const novosIdsAccum = new Set<string>()
     let totalTokens = 0
-    let totalCusto  = 0
+    let totalCustoBRL = 0
 
     for (let i = 0; i < fontesParaVarrer.length; i++) {
       if (canceladoRef.current) break
@@ -165,14 +164,15 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
       if ('error' in res) {
         warnings.push(res.error)
       } else {
+        if (res.truncado) warnings.push(`[${fonte.nome}] Página maior que o limite de leitura — parte do conteúdo pode não ter sido analisada.`)
         if (!res.cached && res.novosResultados.length > 0) {
           setResultados(prev => [...res.novosResultados, ...prev])
           res.novosIds.forEach(id => novosIdsAccum.add(id))
           setNovosIds(new Set(novosIdsAccum))
-          totalTokens += res.tokens
-          totalCusto  += res.custoUSD
+          totalTokens   += res.tokens
+          totalCustoBRL += res.custoBRL
           setTokensTotal(totalTokens)
-          setCustoTotal(totalCusto)
+          setCustoTotalBRL(totalCustoBRL)
         }
         setFontes(prev => prev.map(f =>
           f.id === fonte.id ? { ...f, ultima_varredura: new Date().toISOString() } : f
@@ -205,6 +205,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
     if ('error' in res) {
       setErroRadar(res.error)
     } else {
+      if (res.truncado) setWarningsRadar(prev => [...prev, `Página maior que o limite de leitura — parte do conteúdo pode não ter sido analisada.`])
       if (res.novosResultados.length > 0) {
         setResultados(prev => [...res.novosResultados, ...prev])
         setNovosIds(prev => {
@@ -214,7 +215,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
         })
         setNovosCount(prev => (prev ?? 0) + res.novosIds.length)
         setTokensTotal(prev => prev + res.tokens)
-        setCustoTotal(prev => prev + res.custoUSD)
+        setCustoTotalBRL(prev => prev + res.custoBRL)
       }
       setFontes(prev => prev.map(f =>
         f.id === fonteId ? { ...f, ultima_varredura: new Date().toISOString() } : f
@@ -427,7 +428,7 @@ export default function RadarPanel({ fontesIniciais, resultadosIniciais }: Props
               )}
               {!executando && tokensTotal > 0 && (
                 <div style={{ fontSize: '10px', color: '#bbb', marginTop: '2px' }}>
-                  Última varredura: ~{tokensTotal.toLocaleString('pt-BR')} tokens | ~R$ {(custoTotal * USD_TO_BRL).toFixed(2).replace('.', ',')}
+                  Última varredura: ~{tokensTotal.toLocaleString('pt-BR')} tokens | ~R$ {custoTotalBRL.toFixed(2).replace('.', ',')}
                 </div>
               )}
             </div>

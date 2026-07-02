@@ -189,6 +189,10 @@ export default function OportunidadeModal({
       usuario_id: usuarioAtual.id, acao: 'contato', status_anterior: null, status_novo: null,
       descricao: JSON.stringify(contato), criado_em: new Date().toISOString(),
       usuario: { nome_completo: usuarioAtual.nome_completo },
+      canal: contato.canal || null,
+      responsavel_contato_id: contato.responsavel_id || null,
+      valor_solicitado: null, moeda: null, status_proposta: null, documento_url: null,
+      data_evento: contato.data || null,
     }
     setLogsState(prev => [novoLog, ...prev])
     setContato({ data: new Date().toISOString().split('T')[0], canal: 'email', responsavel_id: '', descricao: '', proximo_passo: '' })
@@ -215,6 +219,12 @@ export default function OportunidadeModal({
       usuario_id: usuarioAtual.id, acao: 'proposta', status_anterior: null, status_novo: null,
       descricao: JSON.stringify(proposta), criado_em: new Date().toISOString(),
       usuario: { nome_completo: usuarioAtual.nome_completo },
+      canal: null, responsavel_contato_id: null,
+      valor_solicitado: parseBRValor(proposta.valor_solicitado),
+      moeda: oportunidade!.moeda,
+      status_proposta: proposta.status_proposta || null,
+      documento_url: proposta.documento_url || null,
+      data_evento: proposta.data_envio || null,
     }
     setLogsState(prev => [novoLog, ...prev])
     setProposta({ data_envio: new Date().toISOString().split('T')[0], valor_solicitado: '', status_proposta: 'Em elaboração', documento_url: '', observacoes: '' })

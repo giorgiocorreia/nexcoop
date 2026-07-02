@@ -5,6 +5,7 @@ import { getOrgContext } from '@/lib/supabase/impersonation'
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
 import { traduzirErro } from '@/lib/utils/erros'
+import { buscarCotacaoUSDParaBRL } from '@/lib/utils/cambio'
 import type { Oportunidade, OportunidadeLog, PerfilCaptacao, StatusOportunidade, FonteOportunidade, RadarFonte, RadarResultado } from '@/types/database'
 
 export type OportunidadeLogComUsuario = OportunidadeLog & {
@@ -328,6 +329,11 @@ export async function adicionarAoPipeline(resultadoId: string) {
 
 // ── Radar: Execução ───────────────────────────────────────────────────────────
 
+// Limite de conteúdo enviado ao Claude por fonte. 2500 chars cortava
+// páginas de listagem de editais no meio; 8000 cobre a maioria das
+// páginas de fontes cadastradas hoje mantendo o custo por chamada baixo.
+const JINA_LIMITE_CHARS = 8000
+
 interface ParsedEdital {
   titulo?: string
   financiador?: string
@@ -438,8 +444,9 @@ export async function executarRadar(forcarFonteIds?: string[]) {
         const jinaUrl = `https://r.jina.ai/${encodeURIComponent(fonte.url)}`
         console.log(`[Radar] Jina fetch: ${jinaUrl}`)
         const jinaRes = await fetch(jinaUrl)
-        conteudo = (await jinaRes.text()).slice(0, 2500)
-        console.log(`[Radar] Jina "${fonte.nome}": ${conteudo.length} chars`)
+        const jinaTexto = await jinaRes.text()
+        conteudo = jinaTexto.slice(0, JINA_LIMITE_CHARS)
+        console.log(`[Radar] Jina "${fonte.nome}": ${conteudo.length} chars${jinaTexto.length > JINA_LIMITE_CHARS ? ` (cortado de ${jinaTexto.length})` : ''}`)
       } catch (jinaErr) {
         const errMsg = `[${fonte.nome}] Jina fetch falhou: ${jinaErr}`
         console.error('[Radar]', errMsg)
@@ -582,7 +589,9 @@ export interface RadarFonteResult {
   novosIds: string[]
   tokens: number
   custoUSD: number
+  custoBRL: number
   cached: boolean
+  truncado: boolean
 }
 
 export async function executarRadarFonte(
@@ -603,7 +612,7 @@ export async function executarRadarFonte(
     if (!forcar && fonte.ultima_varredura) {
       const diffHoras = (agora.getTime() - new Date(fonte.ultima_varredura).getTime()) / 3_600_000
       if (diffHoras < 24)
-        return { fonteNome: fonte.nome, novosResultados: [], novosIds: [], tokens: 0, custoUSD: 0, cached: true }
+        return { fonteNome: fonte.nome, novosResultados: [], novosIds: [], tokens: 0, custoUSD: 0, custoBRL: 0, cached: true, truncado: false }
     }
 
     const { data: existentes } = await supabase
@@ -627,10 +636,13 @@ export async function executarRadarFonte(
 
     // Jina.ai fetch
     let conteudo = ''
+    let truncado = false
     try {
       const jinaUrl = `https://r.jina.ai/${encodeURIComponent(fonte.url)}`
       const jinaRes = await fetch(jinaUrl)
-      conteudo = (await jinaRes.text()).slice(0, 2500)
+      const jinaTexto = await jinaRes.text()
+      truncado = jinaTexto.length > JINA_LIMITE_CHARS
+      conteudo = jinaTexto.slice(0, JINA_LIMITE_CHARS)
     } catch (jinaErr) {
       return { error: `[${fonte.nome}] Jina fetch falhou: ${jinaErr}` }
     }
@@ -711,7 +723,10 @@ export async function executarRadarFonte(
     await admin.from('radar_fontes').update({ ultima_varredura: agoraISO }).eq('id', fonte.id)
     revalidatePath('/captacao')
 
-    return { fonteNome: fonte.nome, novosResultados, novosIds, tokens, custoUSD, cached: false }
+    const cotacao = await buscarCotacaoUSDParaBRL()
+    const custoBRL = custoUSD * cotacao
+
+    return { fonteNome: fonte.nome, novosResultados, novosIds, tokens, custoUSD, custoBRL, cached: false, truncado }
   } catch (e) {
     return { error: String(e) }
   }
@@ -754,6 +769,9 @@ export async function registrarContato(
       usuario_id:      usuarioId,
       acao:            'contato',
       descricao:       JSON.stringify(dados),
+      canal:                  dados.canal || null,
+      responsavel_contato_id: dados.responsavel_id || null,
+      data_evento:            dados.data || null,
     })
     if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
@@ -771,17 +789,35 @@ export interface DadosProposta {
   observacoes:      string
 }
 
+function parseBRValorServer(v: string): number | null {
+  if (!v?.trim()) return null
+  const limpo = v.replace(/\./g, '').replace(',', '.')
+  const n = parseFloat(limpo)
+  return isNaN(n) ? null : n
+}
+
 export async function registrarProposta(
   oportunidadeId: string,
   dados: DadosProposta
 ): Promise<{ error?: string }> {
   try {
     const { supabase, usuarioId } = await getCtx()
+    const { data: op } = await supabase
+      .from('oportunidades')
+      .select('moeda')
+      .eq('id', oportunidadeId)
+      .single()
+
     const { error } = await supabase.from('oportunidade_logs').insert({
       oportunidade_id: oportunidadeId,
       usuario_id:      usuarioId,
       acao:            'proposta',
       descricao:       JSON.stringify(dados),
+      valor_solicitado: parseBRValorServer(dados.valor_solicitado),
+      moeda:            op?.moeda ?? 'BRL',
+      status_proposta:  dados.status_proposta || null,
+      documento_url:    dados.documento_url || null,
+      data_evento:      dados.data_envio || null,
     })
     if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')

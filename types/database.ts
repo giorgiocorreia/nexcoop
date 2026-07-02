@@ -124,6 +124,13 @@ export interface OportunidadeLog {
   status_novo: string | null
   descricao: string | null
   criado_em: string
+  canal: string | null
+  responsavel_contato_id: string | null
+  valor_solicitado: number | null
+  moeda: string | null
+  status_proposta: string | null
+  documento_url: string | null
+  data_evento: string | null
 }
 
 export interface PerfilCaptacao {
