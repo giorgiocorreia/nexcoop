@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Oportunidade, Usuario, RadarFonte, RadarResultado } from '@/types/database'
+import type { Oportunidade, Usuario, RadarFonte, RadarResultado, StatusOportunidade } from '@/types/database'
 import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
 import { buscarOportunidade, excluirOportunidade } from '@/lib/captacao/actions'
 import OportunidadeModal from './OportunidadeModal'
@@ -374,6 +374,12 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
     }
   }
 
+  // Chamado pelo modal quando registrar contato/proposta avança o status
+  // automaticamente — atualiza a lista sem precisar fechar o modal.
+  function handleStatusAtualizado(oportunidadeId: string, novoStatus: StatusOportunidade) {
+    setOps(prev => prev.map(o => o.id === oportunidadeId ? { ...o, status: novoStatus } : o))
+  }
+
   function handleSalvo() {
     setModal({ open: false })
     router.refresh()
@@ -590,6 +596,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
           onClose={fecharModal}
           onSalvo={handleSalvo}
           onEditar={handleEditar}
+          onStatusAtualizado={handleStatusAtualizado}
         />
       )}
     </div>

@@ -18,6 +18,23 @@ async function getCtx() {
   return { supabase: ctx.supabase, usuarioId: ctx.usuarioId, orgId: ctx.orgId }
 }
 
+// Progressão natural do pipeline: registrar um contato ou proposta avança
+// o status automaticamente, mas nunca retrocede e nunca mexe em status que
+// já saiu da progressão automática (aguardando/aprovado/reprovado/arquivado
+// dependem de decisão manual, não de um evento de log).
+const ORDEM_STATUS_AUTO: StatusOportunidade[] = ['identificado', 'contatado', 'proposta']
+
+function calcularAvancoStatus(
+  atual: StatusOportunidade,
+  minimo: StatusOportunidade
+): StatusOportunidade | null {
+  const idxAtual  = ORDEM_STATUS_AUTO.indexOf(atual)
+  const idxMinimo = ORDEM_STATUS_AUTO.indexOf(minimo)
+  if (idxAtual === -1 || idxMinimo === -1) return null
+  if (idxAtual >= idxMinimo) return null
+  return minimo
+}
+
 export async function listarOportunidades(filtro?: { status?: string; fonte?: string }) {
   try {
     const { supabase } = await getCtx()
@@ -97,6 +114,13 @@ export async function moverOportunidade(id: string, novoStatus: string) {
 export async function atualizarOportunidade(id: string, dados: Partial<Oportunidade>) {
   try {
     const { supabase, usuarioId } = await getCtx()
+
+    const { data: atual } = await supabase
+      .from('oportunidades')
+      .select('status')
+      .eq('id', id)
+      .single()
+
     const { data, error } = await supabase
       .from('oportunidades')
       .update(dados)
@@ -105,11 +129,16 @@ export async function atualizarOportunidade(id: string, dados: Partial<Oportunid
       .single()
     if (error) return { error: traduzirErro(error.message) }
 
+    const statusMudou = dados.status && atual && dados.status !== atual.status
     await supabase.from('oportunidade_logs').insert({
       oportunidade_id: id,
       usuario_id: usuarioId,
-      acao: 'editado',
-      descricao: 'Dados da oportunidade atualizados',
+      acao: statusMudou ? 'movido' : 'editado',
+      status_anterior: statusMudou ? atual!.status : null,
+      status_novo:     statusMudou ? (dados.status as string) : null,
+      descricao: statusMudou
+        ? `Status alterado manualmente de "${atual!.status}" para "${dados.status}"`
+        : 'Dados da oportunidade atualizados',
     })
 
     revalidatePath('/captacao')
@@ -761,9 +790,30 @@ export interface DadosContato {
 export async function registrarContato(
   oportunidadeId: string,
   dados: DadosContato
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; novoStatus?: StatusOportunidade }> {
   try {
     const { supabase, usuarioId } = await getCtx()
+
+    const { data: op } = await supabase
+      .from('oportunidades')
+      .select('status')
+      .eq('id', oportunidadeId)
+      .single()
+
+    const novoStatus = op ? calcularAvancoStatus(op.status as StatusOportunidade, 'contatado') : null
+
+    if (novoStatus) {
+      await supabase.from('oportunidades').update({ status: novoStatus }).eq('id', oportunidadeId)
+      await supabase.from('oportunidade_logs').insert({
+        oportunidade_id: oportunidadeId,
+        usuario_id:      usuarioId,
+        acao:            'movido',
+        status_anterior: op!.status,
+        status_novo:     novoStatus,
+        descricao:       `Status avançado automaticamente para "${novoStatus}" ao registrar contato`,
+      })
+    }
+
     const { error } = await supabase.from('oportunidade_logs').insert({
       oportunidade_id: oportunidadeId,
       usuario_id:      usuarioId,
@@ -775,7 +825,7 @@ export async function registrarContato(
     })
     if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
-    return {}
+    return { novoStatus: novoStatus ?? undefined }
   } catch (e) {
     return { error: String(e) }
   }
@@ -799,14 +849,28 @@ function parseBRValorServer(v: string): number | null {
 export async function registrarProposta(
   oportunidadeId: string,
   dados: DadosProposta
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; novoStatus?: StatusOportunidade }> {
   try {
     const { supabase, usuarioId } = await getCtx()
     const { data: op } = await supabase
       .from('oportunidades')
-      .select('moeda')
+      .select('moeda, status')
       .eq('id', oportunidadeId)
       .single()
+
+    const novoStatus = op ? calcularAvancoStatus(op.status as StatusOportunidade, 'proposta') : null
+
+    if (novoStatus) {
+      await supabase.from('oportunidades').update({ status: novoStatus }).eq('id', oportunidadeId)
+      await supabase.from('oportunidade_logs').insert({
+        oportunidade_id: oportunidadeId,
+        usuario_id:      usuarioId,
+        acao:            'movido',
+        status_anterior: op!.status,
+        status_novo:     novoStatus,
+        descricao:       `Status avançado automaticamente para "${novoStatus}" ao registrar proposta`,
+      })
+    }
 
     const { error } = await supabase.from('oportunidade_logs').insert({
       oportunidade_id: oportunidadeId,
@@ -821,7 +885,7 @@ export async function registrarProposta(
     })
     if (error) return { error: traduzirErro(error.message) }
     revalidatePath('/captacao')
-    return {}
+    return { novoStatus: novoStatus ?? undefined }
   } catch (e) {
     return { error: String(e) }
   }

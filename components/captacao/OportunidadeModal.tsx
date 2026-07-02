@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm, type SubmitHandler } from 'react-hook-form'
-import type { Oportunidade, Usuario } from '@/types/database'
+import type { Oportunidade, Usuario, StatusOportunidade } from '@/types/database'
 import type { OportunidadeLogComUsuario, DadosContato, DadosProposta } from '@/lib/captacao/actions'
 import { criarOportunidade, atualizarOportunidade, registrarContato, registrarProposta } from '@/lib/captacao/actions'
 import LogTimeline from './LogTimeline'
@@ -44,6 +45,7 @@ interface FormValues {
   area_tematica:   string[]
   valor_estimado:  string
   moeda:           string
+  status:          StatusOportunidade
   prazo_submissao: string
   prazo_resultado: string
   responsavel_id:  string
@@ -100,15 +102,20 @@ interface Props {
   onClose: () => void
   onSalvo: () => void
   onEditar?: () => void
+  onStatusAtualizado?: (oportunidadeId: string, novoStatus: StatusOportunidade) => void
 }
 
 export default function OportunidadeModal({
   mode, oportunidade, logs = [], carregando = false,
-  responsaveis, usuarioAtual, onClose, onSalvo, onEditar,
+  responsaveis, usuarioAtual, onClose, onSalvo, onEditar, onStatusAtualizado,
 }: Props) {
+  const router = useRouter()
   // ── Form state (create/edit) ───────────────────────────────────────────────
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState('')
+  const [statusLocal, setStatusLocal] = useState<StatusOportunidade | undefined>(oportunidade?.status)
+
+  useEffect(() => { setStatusLocal(oportunidade?.status) }, [oportunidade?.status])
 
   const defaultValues: FormValues = {
     titulo:          oportunidade?.titulo          ?? '',
@@ -121,6 +128,7 @@ export default function OportunidadeModal({
       ? oportunidade.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
       : '',
     moeda:           oportunidade?.moeda           ?? 'BRL',
+    status:          oportunidade?.status          ?? 'identificado',
     prazo_submissao: oportunidade?.prazo_submissao ?? '',
     prazo_resultado: oportunidade?.prazo_resultado ?? '',
     responsavel_id:  oportunidade?.responsavel_id  ?? '',
@@ -148,6 +156,7 @@ export default function OportunidadeModal({
       area_tematica: values.area_tematica,
       valor_estimado: valorNum != null && !isNaN(valorNum) ? valorNum : null,
       moeda: values.moeda,
+      status: values.status,
       prazo_submissao: values.prazo_submissao || null, prazo_resultado: values.prazo_resultado || null,
       responsavel_id: values.responsavel_id || null, observacoes: values.observacoes || null,
     }
@@ -184,7 +193,24 @@ export default function OportunidadeModal({
     const res = await registrarContato(oportunidade!.id, contato)
     setSalvandoContato(false)
     if (res.error) { setErroContato(res.error); return }
-    const novoLog: OportunidadeLogComUsuario = {
+
+    const logsNovos: OportunidadeLogComUsuario[] = []
+    if (res.novoStatus) {
+      const statusAnterior = statusLocal ?? oportunidade!.status
+      logsNovos.push({
+        id: String(Date.now() - 1), oportunidade_id: oportunidade!.id,
+        usuario_id: usuarioAtual.id, acao: 'movido',
+        status_anterior: statusAnterior, status_novo: res.novoStatus,
+        descricao: `Status avançado automaticamente para "${res.novoStatus}" ao registrar contato`,
+        criado_em: new Date().toISOString(), usuario: { nome_completo: usuarioAtual.nome_completo },
+        canal: null, responsavel_contato_id: null, valor_solicitado: null, moeda: null,
+        status_proposta: null, documento_url: null, data_evento: null,
+      })
+      setStatusLocal(res.novoStatus)
+      onStatusAtualizado?.(oportunidade!.id, res.novoStatus)
+      router.refresh()
+    }
+    logsNovos.push({
       id: String(Date.now()), oportunidade_id: oportunidade!.id,
       usuario_id: usuarioAtual.id, acao: 'contato', status_anterior: null, status_novo: null,
       descricao: JSON.stringify(contato), criado_em: new Date().toISOString(),
@@ -193,8 +219,8 @@ export default function OportunidadeModal({
       responsavel_contato_id: contato.responsavel_id || null,
       valor_solicitado: null, moeda: null, status_proposta: null, documento_url: null,
       data_evento: contato.data || null,
-    }
-    setLogsState(prev => [novoLog, ...prev])
+    })
+    setLogsState(prev => [...logsNovos, ...prev])
     setContato({ data: new Date().toISOString().split('T')[0], canal: 'email', responsavel_id: '', descricao: '', proximo_passo: '' })
     setShowContato(false)
   }
@@ -214,7 +240,24 @@ export default function OportunidadeModal({
     const res = await registrarProposta(oportunidade!.id, proposta)
     setSalvandoProposta(false)
     if (res.error) { setErroProposta(res.error); return }
-    const novoLog: OportunidadeLogComUsuario = {
+
+    const logsNovos: OportunidadeLogComUsuario[] = []
+    if (res.novoStatus) {
+      const statusAnterior = statusLocal ?? oportunidade!.status
+      logsNovos.push({
+        id: String(Date.now() - 1), oportunidade_id: oportunidade!.id,
+        usuario_id: usuarioAtual.id, acao: 'movido',
+        status_anterior: statusAnterior, status_novo: res.novoStatus,
+        descricao: `Status avançado automaticamente para "${res.novoStatus}" ao registrar proposta`,
+        criado_em: new Date().toISOString(), usuario: { nome_completo: usuarioAtual.nome_completo },
+        canal: null, responsavel_contato_id: null, valor_solicitado: null, moeda: null,
+        status_proposta: null, documento_url: null, data_evento: null,
+      })
+      setStatusLocal(res.novoStatus)
+      onStatusAtualizado?.(oportunidade!.id, res.novoStatus)
+      router.refresh()
+    }
+    logsNovos.push({
       id: String(Date.now()), oportunidade_id: oportunidade!.id,
       usuario_id: usuarioAtual.id, acao: 'proposta', status_anterior: null, status_novo: null,
       descricao: JSON.stringify(proposta), criado_em: new Date().toISOString(),
@@ -225,8 +268,8 @@ export default function OportunidadeModal({
       status_proposta: proposta.status_proposta || null,
       documento_url: proposta.documento_url || null,
       data_evento: proposta.data_envio || null,
-    }
-    setLogsState(prev => [novoLog, ...prev])
+    })
+    setLogsState(prev => [...logsNovos, ...prev])
     setProposta({ data_envio: new Date().toISOString().split('T')[0], valor_solicitado: '', status_proposta: 'Em elaboração', documento_url: '', observacoes: '' })
     setShowProposta(false)
   }
@@ -263,7 +306,7 @@ export default function OportunidadeModal({
                     <span style={{ fontSize: '11px', fontWeight: '600', color: f.cor, background: f.bg, padding: '2px 8px', borderRadius: '12px' }}>{f.label}</span>
                   )})()}
                   <span style={{ fontSize: '11px', fontWeight: '600', color: '#635BFF', background: '#EEEDFE', padding: '2px 8px', borderRadius: '12px' }}>
-                    {STATUS_LABEL[oportunidade.status] || oportunidade.status}
+                    {STATUS_LABEL[statusLocal ?? oportunidade.status] || statusLocal || oportunidade.status}
                   </span>
                 </div>
               )}
@@ -578,7 +621,7 @@ export default function OportunidadeModal({
             )
           )}
 
-          {/* ── FORM MODE (create / edit) — inalterado ───────────────── */}
+          {/* ── FORM MODE (create / edit) ───────────────────────────────── */}
           {isForm && (
             <form onSubmit={handleSubmit(onSubmit)}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -600,6 +643,15 @@ export default function OportunidadeModal({
                     <option value="internacional">Internacional</option>
                     <option value="manual">Manual</option>
                     <option value="agregador">Agregador</option>
+                  </select>
+                </div>
+
+                <div>
+                  <FormLabel text="Status" />
+                  <select {...register('status')} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    {Object.entries(STATUS_LABEL).map(([valor, label]) => (
+                      <option key={valor} value={valor}>{label}</option>
+                    ))}
                   </select>
                 </div>
 
