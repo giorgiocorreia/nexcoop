@@ -8,6 +8,13 @@ import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn, BtnLink } from '@/components/ui/Btn'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
+import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { LinkCard } from '@/components/comercializacao/ui/LinkCard'
+import GraficoEntregas from '@/components/comercializacao/ui/GraficoEntregas'
+
+const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -18,36 +25,12 @@ function fmtKg(n: number) {
   return `${fmt(n)} kg`
 }
 
-const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
-
-const C = {
-  marrom:   '#92400e',
-  marromLt: '#FEF3C7',
-  borda:    '#E5E3DC',
-  bg:       '#F8F7F4',
-  txt:      '#1C1917',
-  txtSub:   '#78716C',
-}
-
-const css = `
-  .page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-  .hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #F8F7F4; }
-  .hub-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-  .kpi-card { background: #fff; border-radius: 14px; border: 1px solid #E5E3DC; border-top-width: 3px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04); padding: 18px 20px;
-    transition: transform 0.15s, box-shadow 0.15s; }
-  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
-  .hub-chart-row { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 14px; margin-bottom: 24px; }
-  @media (max-width: 1024px) {
-    .hub-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-    .hub-chart-row { grid-template-columns: 1fr !important; }
-  }
-  @media (max-width: 640px) {
-    .page-header { padding: 0 16px 0 56px; min-height: 60px; }
-    .hub-content { padding: 16px; }
-    .hub-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-  }
-`
+const GUIA = [
+  { icone: '📦', titulo: 'Entrega', desc: 'Produtor entrega cacau no caixa. O sistema registra kg na conta dele.' },
+  { icone: '💰', titulo: 'Conversão', desc: 'Produtor converte kg em dinheiro (espécie ou Pix) na cotação do dia.' },
+  { icone: '📋', titulo: 'Lote', desc: 'Admin agrupa entregas em lotes para venda e emissão de NF-e de saída.' },
+  { icone: '🧾', titulo: 'Fiscal', desc: 'NF-e de entrada por produtor e saída por lote, integrada ao Focus NFe.' },
+]
 
 export default function DashboardComercializacao({
   data: d,
@@ -57,20 +40,46 @@ export default function DashboardComercializacao({
   organizacaoId: string
 }) {
   const router = useRouter()
-
   const [modalAbrirCaixa, setModalAbrirCaixa] = useState(false)
   const [saldoInicial, setSaldoInicial] = useState('')
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
-
   const [modalAporte, setModalAporte] = useState(false)
   const [valorAporte, setValorAporte] = useState('')
   const [motivoAporte, setMotivoAporte] = useState('')
   const [enviandoAporte, setEnviandoAporte] = useState(false)
   const [aporteEnviado, setAporteEnviado] = useState(false)
 
-  const maxKg = Math.max(...d.entregasSemana.map((e) => e.totalKg), 1)
-  const hoje = new Date().toISOString().slice(0, 10)
+  const hoje = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
+  const hojeKey = new Date().toISOString().slice(0, 10)
   const caixaAberto = d.sessoesAbertas.length > 0
+  const kgSemana = d.entregasSemana.reduce((s, e) => s + e.totalKg, 0)
+
+  const graficoDados = d.entregasSemana.map((e) => ({
+    label: e.dia === hojeKey ? 'hj' : DIAS_SEMANA[new Date(e.dia + 'T12:00:00').getDay()],
+    valor: e.totalKg,
+  }))
+
+  const operacaoCards = [
+    { href: '/comercializacao/caixa', label: 'Caixa Cacau', desc: 'Entregas, conversões, saques e fechamento do dia.', icon: 'ti-wallet', cor: COM_C.marrom, corLt: COM_C.marromLt },
+    { href: '/comercializacao/produtores', label: 'Produtores', desc: 'Cadastro, contas e histórico de cada produtor.', icon: 'ti-users', cor: COM_C.roxo, corLt: COM_C.roxoLt },
+    { href: '/comercializacao/lotes', label: 'Lotes', desc: 'Agrupar entregas, fechar e emitir NF-e de saída.', icon: 'ti-stack-2', cor: COM_C.laranja, corLt: COM_C.laranjaLt },
+  ]
+
+  const gestaoCards = d.isAdmin ? [
+    { href: '/comercializacao/cotacoes', label: 'Cotações', desc: 'Preço do dia por produto e safra.', icon: 'ti-chart-line', cor: COM_C.azul, corLt: COM_C.azulLt },
+    { href: '/comercializacao/compradores', label: 'Compradores', desc: 'Clientes e empresas que compram os lotes.', icon: 'ti-building-store', cor: COM_C.verde, corLt: COM_C.verdeLt },
+    { href: '/comercializacao/distribuicao', label: 'Distribuição', desc: 'Pagamentos e rateio por produtor.', icon: 'ti-arrows-split', cor: COM_C.roxo, corLt: COM_C.roxoLt },
+    { href: '/comercializacao/diario', label: 'Diário de Caixa', desc: 'Registro contábil das movimentações.', icon: 'ti-notebook', cor: COM_C.txtSub, corLt: '#F5F5F4' },
+    { href: '/comercializacao/caixas', label: 'Gestão de Caixas', desc: 'Sessões abertas, histórico e fechamento forçado.', icon: 'ti-cash-register', cor: COM_C.verde, corLt: COM_C.verdeLt },
+    { href: '/comercializacao/resultado', label: 'Resultado Safra', desc: 'Receita, custo e margem por safra.', icon: 'ti-chart-bar', cor: COM_C.azul, corLt: COM_C.azulLt },
+  ] : []
+
+  const fiscalCards = [
+    { href: '/comercializacao/fiscal', label: 'Documentos Fiscais', desc: 'NF-e entrada, saída e devoluções.', icon: 'ti-file-invoice', cor: COM_C.marrom, corLt: COM_C.marromLt },
+    { href: '/comercializacao/painel', label: 'Painel de Mercado', desc: 'Cotações externas e indicadores.', icon: 'ti-chart-dots', cor: COM_C.azul, corLt: COM_C.azulLt },
+  ]
 
   async function handleAbrirCaixa() {
     if (!saldoInicial) return
@@ -100,194 +109,185 @@ export default function DashboardComercializacao({
     }
   }
 
+  const saldoKpi = () => {
+    if (d.sessoesAbertas.length === 0) {
+      return {
+        value: d.ultimoFechamento ? fmtReal(d.ultimoFechamento.saldo) : '—',
+        sub: d.ultimoFechamento
+          ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}`
+          : 'Nenhum fechamento registrado',
+        extra: !caixaAberto ? (
+          <Btn variante="marrom" tamanho="sm" icone="ti-lock-open" onClick={() => setModalAbrirCaixa(true)}>
+            Abrir caixa
+          </Btn>
+        ) : undefined,
+      }
+    }
+    if (d.sessoesAbertas.length === 1) {
+      return {
+        value: fmtReal(d.sessoesAbertas[0].saldoCalculado),
+        sub: d.sessoesAbertas[0].operador,
+        extra: d.minhaSessao ? (
+          <Btn variante="verde" tamanho="sm" icone="ti-plus" onClick={() => setModalAporte(true)}>
+            Solicitar aporte
+          </Btn>
+        ) : undefined,
+      }
+    }
+    return {
+      value: `${d.sessoesAbertas.length} abertos`,
+      sub: 'Múltiplos operadores',
+      extra: undefined,
+    }
+  }
+
+  const saldo = saldoKpi()
+
   return (
     <>
-      <style>{css}</style>
+      <HubStyles />
 
-      {/* Header sticky */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: `1px solid ${C.borda}`, margin: '0 -2rem 0 -2rem' }}>
-        <div className="page-header" style={{ justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: C.marromLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className="ti ti-wheat" style={{ fontSize: 20, color: C.marrom }} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <Link href="/dashboard" style={{ fontSize: 12, color: C.txtSub, textDecoration: 'none' }}>NexCoop</Link>
-                <span style={{ fontSize: 12, color: C.borda }}>/</span>
-                <span style={{ fontSize: 12, color: C.txtSub }}>Comercialização</span>
+      {/* Header */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
+        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 9, background: COM_C.marromLt,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <i className="ti ti-plant-2" style={{ fontSize: 20, color: COM_C.marrom }} />
               </div>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Comercialização</h1>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: COM_C.txt, letterSpacing: '-0.02em' }}>
+                Comercialização
+              </h1>
             </div>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, marginLeft: 4,
-              background: caixaAberto ? '#dcfce7' : '#f3f4f6',
-              color: caixaAberto ? '#14532d' : '#6b7280',
-            }}>
-              {caixaAberto && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />}
-              {caixaAberto ? 'Caixa aberto' : 'Caixa fechado'}
-            </span>
+            <div className="com-hub-date">{hoje}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BtnLink href="/comercializacao/produtores" variante="cinza" icone="ti-users">Produtores</BtnLink>
-            <BtnLink href="/comercializacao/caixa" variante="cinza" icone="ti-wallet">Caixa</BtnLink>
-            {d.isAdmin && (
-              <BtnLink href="/comercializacao/diario" variante="cinza" icone="ti-notebook">Diário</BtnLink>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {caixaAberto ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: COM_C.verdeLt, border: '1px solid #BBF7D0',
+                borderRadius: 8, padding: '7px 14px',
+              }}>
+                <span className="com-dot-pulse" style={{
+                  width: 8, height: 8, borderRadius: '50%', background: COM_C.verde,
+                  display: 'inline-block', flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#15803D' }}>
+                  {d.sessoesAbertas.length > 1
+                    ? `${d.sessoesAbertas.length} caixas abertos`
+                    : `Caixa aberto · ${d.sessoesAbertas[0]?.operador ?? '—'}`}
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: '#F5F5F4', border: `1px solid ${COM_C.borda}`,
+                borderRadius: 8, padding: '7px 14px',
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', border: `2px solid ${COM_C.txtSub}`, display: 'inline-block' }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub }}>Caixa fechado</span>
+              </div>
             )}
+
+            <Link
+              href="/comercializacao/caixa"
+              className="com-btn-cta"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: COM_C.marrom, color: '#fff',
+                borderRadius: 9, padding: '9px 18px',
+                textDecoration: 'none', fontSize: 13, fontWeight: 700,
+                boxShadow: '0 2px 8px rgba(146,64,14,0.35)',
+              }}
+            >
+              <i className="ti ti-wallet" style={{ fontSize: 15 }} />
+              {caixaAberto ? 'Ir para o Caixa' : 'Abrir Caixa'}
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Conteúdo */}
-      <div className="hub-content">
+      <div className="com-hub-content">
 
-        {/* KPI cards */}
-        <div className="hub-kpi-grid">
-
-          {/* Entregas hoje */}
-          <div className="kpi-card" style={{ borderTopColor: C.marrom }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Entregas hoje</span>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: C.marromLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="ti ti-package-import" style={{ fontSize: 16, color: C.marrom }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1, marginBottom: 4 }}>{fmt(d.entregasHoje.count)}</div>
-            <div style={{ fontSize: 11, color: C.txtSub }}>{fmtKg(d.entregasHoje.totalKg)} recebidos</div>
-          </div>
-
-          {/* Saldo em caixa */}
-          <div className="kpi-card" style={{ borderTopColor: '#1D9E75' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {d.isAdmin && d.sessoesAbertas.length > 1 ? 'Caixas abertos' : 'Saldo em caixa'}
-              </span>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="ti ti-cash" style={{ fontSize: 16, color: '#1D9E75' }} />
-              </div>
-            </div>
-            {d.sessoesAbertas.length === 0 ? (
-              <>
-                <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1, marginBottom: 4 }}>
-                  {d.ultimoFechamento ? fmtReal(d.ultimoFechamento.saldo) : '—'}
-                </div>
-                <div style={{ fontSize: 11, color: C.txtSub, marginBottom: 10 }}>
-                  {d.ultimoFechamento
-                    ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}${d.ultimoFechamento.operador ? ` · fechado por ${d.ultimoFechamento.operador}` : ''}`
-                    : 'Nenhum fechamento registrado'}
-                </div>
-                <Btn variante="verde" tamanho="sm" onClick={() => setModalAbrirCaixa(true)}>Abrir caixa</Btn>
-              </>
-            ) : d.sessoesAbertas.length === 1 ? (
-              <>
-                <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1, marginBottom: 4 }}>
-                  {fmtReal(d.sessoesAbertas[0].saldoCalculado)}
-                </div>
-                <div style={{ fontSize: 11, color: C.txtSub, marginBottom: d.minhaSessao ? 10 : 0 }}>{d.sessoesAbertas[0].operador}</div>
-                {d.minhaSessao && (
-                  <Btn variante="verde" tamanho="sm" icone="ti-plus" onClick={() => setModalAporte(true)}>Solicitar aporte</Btn>
-                )}
-              </>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
-                {d.sessoesAbertas.map((s) => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: C.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block', flexShrink: 0 }} />
-                      {s.operador}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.txt, fontVariantNumeric: 'tabular-nums' }}>
-                      {fmtReal(s.saldoCalculado)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Produtores hoje */}
-          <div className="kpi-card" style={{ borderTopColor: '#635BFF' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Produtores hoje</span>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="ti ti-users" style={{ fontSize: 16, color: '#635BFF' }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1, marginBottom: 4 }}>{fmt(d.produtoresHoje)}</div>
-            <div style={{ fontSize: 11, color: C.txtSub }}>de {fmt(d.totalProdutores)} cadastrados</div>
-          </div>
-
-          {/* Lotes abertos */}
-          <div className="kpi-card" style={{ borderTopColor: '#E07B30' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lotes abertos</span>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="ti ti-box" style={{ fontSize: 16, color: '#E07B30' }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1, marginBottom: 4 }}>{fmt(d.lotesAbertos)}</div>
-            <div style={{ fontSize: 11, color: C.txtSub }}>aguardando venda</div>
-          </div>
-
+        {/* KPIs */}
+        <div className="com-kpi-grid">
+          <KpiCard label="Entregas hoje" value={fmt(d.entregasHoje.count)} sub={`${fmtKg(d.entregasHoje.totalKg)} recebidos`}
+            icon="ti-package-import" cor={COM_C.marrom} corLt={COM_C.marromLt} />
+          <KpiCard label={d.isAdmin && d.sessoesAbertas.length > 1 ? 'Caixas abertos' : 'Saldo em caixa'}
+            value={saldo.value} sub={saldo.sub} icon="ti-cash" cor={COM_C.verde} corLt={COM_C.verdeLt}>
+            {saldo.extra}
+          </KpiCard>
+          <KpiCard label="Produtores hoje" value={fmt(d.produtoresHoje)} sub={`de ${fmt(d.totalProdutores)} cadastrados`}
+            icon="ti-users" cor={COM_C.roxo} corLt={COM_C.roxoLt} />
+          <KpiCard label="Lotes abertos" value={fmt(d.lotesAbertos)} sub="aguardando venda"
+            icon="ti-box" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+          <KpiCard label="Kg na semana" value={fmtKg(kgSemana)} sub="últimos 7 dias"
+            icon="ti-weight" cor={COM_C.azul} corLt={COM_C.azulLt} />
+          <KpiCard label="Últimas entregas" value={fmt(d.ultimasEntregas.length)} sub="registradas no sistema"
+            icon="ti-history" cor={COM_C.txtSub} corLt="#F5F5F4" />
         </div>
 
-        {/* Alerta aportes pendentes */}
+        {/* Alerta aportes */}
         {d.isAdmin && d.solicitacoesPendentes.length > 0 && (
           <div style={{
             background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 12,
-            padding: '12px 16px', marginBottom: 24,
-            display: 'flex', alignItems: 'flex-start', gap: 12,
+            padding: '14px 18px', marginBottom: 24, display: 'flex', gap: 12,
           }}>
-            <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+            <i className="ti ti-alert-triangle" style={{ fontSize: 20, color: '#D97706', flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: C.marrom, margin: '0 0 4px' }}>
-                {d.solicitacoesPendentes.length === 1
-                  ? '1 solicitação de aporte pendente'
-                  : `${d.solicitacoesPendentes.length} solicitações de aporte pendentes`}
+              <p style={{ fontSize: 13, fontWeight: 700, color: COM_C.marromDk, margin: '0 0 6px' }}>
+                {d.solicitacoesPendentes.length} solicitação{d.solicitacoesPendentes.length > 1 ? 'ões' : ''} de aporte pendente{d.solicitacoesPendentes.length > 1 ? 's' : ''}
               </p>
               {d.solicitacoesPendentes.map((s) => (
-                <p key={s.id} style={{ fontSize: 12, color: '#78350f', margin: '2px 0 0' }}>
-                  {s.operador} solicitou {fmtReal(s.valor)}{s.motivo ? ` — ${s.motivo}` : ''}{' · '}
-                  {new Date(s.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                <p key={s.id} style={{ fontSize: 12, color: '#78350f', margin: '2px 0' }}>
+                  {s.operador} · {fmtReal(s.valor)}{s.motivo ? ` — ${s.motivo}` : ''}
                 </p>
               ))}
-              <p style={{ fontSize: 12, color: C.marrom, margin: '6px 0 0' }}>Registre o aporte na tela de caixa após entregar o dinheiro.</p>
+              <BtnLink href="/comercializacao/caixa" variante="marrom-outline" tamanho="sm" style={{ marginTop: 8 }}>
+                Registrar na tela de caixa →
+              </BtnLink>
             </div>
           </div>
         )}
 
-        {/* Gráfico + Sessão de caixa */}
-        <div className="hub-chart-row">
+        {/* Navegação — Operação */}
+        <p className="com-section-label">Operação</p>
+        <div className="com-link-grid" style={{ marginBottom: 28 }}>
+          {operacaoCards.map((c) => (
+            <LinkCard key={c.href} {...c} />
+          ))}
+        </div>
 
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 14px', color: C.txt }}>Entregas — últimos 7 dias</p>
-            {d.entregasSemana.length === 0 ? (
-              <p style={{ fontSize: 13, color: C.txtSub, textAlign: 'center', padding: '2rem 0' }}>Nenhuma entrega registrada ainda.</p>
-            ) : (
-              d.entregasSemana.map((e) => {
-                const pct = maxKg > 0 ? (e.totalKg / maxKg) * 100 : 0
-                const isHoje = e.dia === hoje
-                const label = isHoje ? 'hj' : DIAS_SEMANA[new Date(e.dia + 'T12:00:00').getDay()]
-                return (
-                  <div key={e.dia} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                    <span style={{ fontSize: 11, color: isHoje ? C.txt : C.txtSub, width: 22, textAlign: 'right', fontWeight: isHoje ? 600 : 400 }}>{label}</span>
-                    <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: C.marrom, borderRadius: 4, opacity: isHoje ? 1 : 0.6 }} />
-                    </div>
-                    <span style={{ fontSize: 11, color: isHoje ? C.txt : C.txtSub, width: 60, fontWeight: isHoje ? 600 : 400 }}>{fmtKg(e.totalKg)}</span>
-                  </div>
-                )
-              })
-            )}
+        {/* Gráfico + Sessão */}
+        <div className="com-chart-row">
+          <div style={{
+            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+            padding: '22px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt }}>Entregas — últimos 7 dias</div>
+              <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>Volume em kg por dia</div>
+            </div>
+            <GraficoEntregas dados={graficoDados} />
           </div>
 
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 14px', color: C.txt }}>Sessão de caixa</p>
+          <div style={{
+            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+            padding: '22px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt, marginBottom: 16 }}>Sessão de caixa</div>
             {!d.minhaSessao ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <p style={{ fontSize: 13, color: C.txtSub, margin: '0 0 12px' }}>Nenhuma sessão aberta</p>
-                <Btn variante="cinza" onClick={() => setModalAbrirCaixa(true)}>Abrir caixa</Btn>
+              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+                <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 14px' }}>Nenhuma sessão aberta para você</p>
+                <Btn variante="marrom" icone="ti-lock-open" onClick={() => setModalAbrirCaixa(true)}>Abrir caixa</Btn>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -295,19 +295,21 @@ export default function DashboardComercializacao({
                   { label: 'Aportes', valor: d.minhaSessao.aportes, positivo: true },
                   { label: 'Sangrias', valor: d.minhaSessao.sangrias, positivo: false },
                 ].map((r) => (
-                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: C.txtSub }}>{r.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: r.positivo ? '#1D9E75' : '#991b1b' }}>
+                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, color: COM_C.txtSub }}>{r.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: r.positivo ? COM_C.verde : COM_C.vermelho }}>
                       {r.positivo ? '+' : '−'} {fmtReal(r.valor ?? 0)}
                     </span>
                   </div>
                 ))}
-                <hr style={{ border: 'none', borderTop: `1px solid ${C.borda}`, margin: '4px 0' }} />
+                <hr style={{ border: 'none', borderTop: `1px solid ${COM_C.borda}`, margin: '4px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: C.txt }}>Saldo atual</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: C.txt }}>{fmtReal(d.minhaSessao.saldoCalculado)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt }}>Saldo atual</span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: COM_C.txt, fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtReal(d.minhaSessao.saldoCalculado)}
+                  </span>
                 </div>
-                <BtnLink href="/comercializacao/caixa" variante="cinza" style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
+                <BtnLink href="/comercializacao/caixa" variante="marrom" style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}>
                   Ver caixa completo →
                 </BtnLink>
               </div>
@@ -315,55 +317,110 @@ export default function DashboardComercializacao({
           </div>
         </div>
 
-        {/* Últimas entregas */}
-        {d.ultimasEntregas.length > 0 && (
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 14px', color: C.txt }}>Últimas entregas</p>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {['Produtor', 'Produto', 'Kg', 'Valor', 'Horário'].map((h, i) => (
-                    <th key={h} style={{
-                      fontSize: 11, color: C.txtSub, fontWeight: 700, textAlign: i >= 2 ? 'right' : 'left',
-                      padding: '0 0 8px', borderBottom: `1px solid ${C.borda}`,
-                      textTransform: 'uppercase', letterSpacing: '0.05em',
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {d.ultimasEntregas.map((e, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '8px 0 7px', borderBottom: '1px solid #f3f4f6', color: C.txt }}>{e.produtor}</td>
-                    <td style={{ padding: '8px 0 7px', borderBottom: '1px solid #f3f4f6', color: C.txtSub }}>{e.produto}</td>
-                    <td style={{ padding: '8px 0 7px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', color: C.txt, fontVariantNumeric: 'tabular-nums' }}>{fmtKg(e.kg)}</td>
-                    <td style={{ padding: '8px 0 7px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', color: '#1D9E75', fontVariantNumeric: 'tabular-nums' }}>{fmtReal(e.valor)}</td>
-                    <td style={{ padding: '8px 0 7px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', color: C.txtSub }}>{e.horario}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Gestão (admin) */}
+        {gestaoCards.length > 0 && (
+          <>
+            <p className="com-section-label">Gestão</p>
+            <div className="com-link-grid" style={{ marginBottom: 28 }}>
+              {gestaoCards.map((c) => (
+                <LinkCard key={c.href} {...c} />
+              ))}
+            </div>
+          </>
         )}
 
+        {/* Fiscal */}
+        <p className="com-section-label">Fiscal e mercado</p>
+        <div className="com-link-grid" style={{ marginBottom: 28 }}>
+          {fiscalCards.map((c) => (
+            <LinkCard key={c.href} {...c} />
+          ))}
+        </div>
+
+        {/* Últimas entregas + Guia */}
+        <div className="com-two-col">
+          {d.ultimasEntregas.length > 0 && (
+            <div style={{
+              background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+              padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: COM_C.txtSub, marginBottom: 14 }}>
+                Últimas entregas
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    {['Produtor', 'Kg', 'Horário'].map((h, i) => (
+                      <th key={h} style={{
+                        fontSize: 10, color: COM_C.txtSub, fontWeight: 700,
+                        textAlign: i > 0 ? 'right' : 'left',
+                        padding: '0 0 8px', borderBottom: `1px solid ${COM_C.borda}`,
+                        textTransform: 'uppercase',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.ultimasEntregas.map((e, i) => (
+                    <tr key={i} className="com-venda-row">
+                      <td style={{ padding: '9px 0', borderBottom: '1px solid #f5f5f4', color: COM_C.txt }}>
+                        <div style={{ fontWeight: 600, fontSize: 12 }}>{e.produtor}</div>
+                        <div style={{ fontSize: 11, color: COM_C.txtSub }}>{e.produto}</div>
+                      </td>
+                      <td style={{ padding: '9px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtKg(e.kg)}
+                      </td>
+                      <td style={{ padding: '9px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', color: COM_C.txtSub, fontSize: 12 }}>
+                        {e.horario}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div style={{
+            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+            padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: COM_C.txtSub, marginBottom: 14 }}>
+              Como funciona
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {GUIA.map((g, i) => (
+                <div key={g.titulo} className="com-guia-card" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 8, background: COM_C.marromLt,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, color: COM_C.marrom, flexShrink: 0,
+                  }}>{i + 1}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt, marginBottom: 3 }}>
+                      {g.icone} {g.titulo}
+                    </div>
+                    <div style={{ fontSize: 12, color: COM_C.txtSub, lineHeight: 1.45 }}>{g.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Modal abrir caixa */}
       {modalAbrirCaixa && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '0 1rem' }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '1.5rem', width: '100%', maxWidth: 360 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 1rem', color: C.txt }}>Abrir caixa</h2>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: C.txtSub, display: 'block', marginBottom: 4 }}>Saldo inicial em espécie (R$)</label>
-              <input
-                type="number" step="0.01" min="0" placeholder="0,00"
-                value={saldoInicial} onChange={(e) => setSaldoInicial(e.target.value)} autoFocus
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.borda}`, fontSize: 14, boxSizing: 'border-box' }}
-              />
-            </div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 6px', color: COM_C.txt }}>Abrir caixa</h2>
+            <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 20px' }}>Informe o saldo inicial em espécie para iniciar o dia.</p>
+            <label style={{ fontSize: 12, color: COM_C.txtSub, display: 'block', marginBottom: 6 }}>Saldo inicial (R$)</label>
+            <input type="number" step="0.01" min="0" placeholder="0,00" value={saldoInicial}
+              onChange={(e) => setSaldoInicial(e.target.value)} autoFocus
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${COM_C.borda}`, fontSize: 14, boxSizing: 'border-box', marginBottom: 20 }} />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <Btn variante="cinza" onClick={() => { setModalAbrirCaixa(false); setSaldoInicial('') }}>Cancelar</Btn>
-              <Btn variante="verde" icone="ti-check" disabled={!saldoInicial || abrindoCaixa} onClick={handleAbrirCaixa}>
+              <Btn variante="marrom" icone="ti-check" disabled={!saldoInicial || abrindoCaixa} onClick={handleAbrirCaixa}>
                 {abrindoCaixa ? 'Abrindo...' : 'Confirmar'}
               </Btn>
             </div>
@@ -371,30 +428,27 @@ export default function DashboardComercializacao({
         </div>
       )}
 
-      {/* Modal solicitar aporte */}
+      {/* Modal aporte */}
       {modalAporte && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '0 1rem' }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '1.5rem', width: '100%', maxWidth: 400 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 1rem', color: C.txt }}>Solicitar aporte</h2>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 1rem', color: COM_C.txt }}>Solicitar aporte</h2>
             {aporteEnviado ? (
               <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                <p style={{ fontSize: 32, margin: '0 0 8px' }}>✓</p>
-                <p style={{ fontSize: 14, color: '#1D9E75', fontWeight: 500, margin: '0 0 4px' }}>Solicitação enviada!</p>
-                <p style={{ fontSize: 13, color: C.txtSub, margin: '0 0 1rem' }}>O gerente verá ao acessar o sistema.</p>
-                <Btn variante="cinza" onClick={() => { setModalAporte(false); setAporteEnviado(false); setValorAporte(''); setMotivoAporte('') }}>Fechar</Btn>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>✓</div>
+                <p style={{ fontSize: 14, color: COM_C.verde, fontWeight: 600 }}>Solicitação enviada!</p>
+                <Btn variante="cinza" onClick={() => { setModalAporte(false); setAporteEnviado(false); setValorAporte(''); setMotivoAporte('') }} style={{ marginTop: 16 }}>
+                  Fechar
+                </Btn>
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: C.txtSub, display: 'block', marginBottom: 4 }}>Valor solicitado (R$)</label>
-                  <input type="number" min="0" step="0.01" placeholder="0,00" value={valorAporte} onChange={(e) => setValorAporte(e.target.value)} autoFocus
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.borda}`, fontSize: 14, boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 12, color: C.txtSub, display: 'block', marginBottom: 4 }}>Motivo (opcional)</label>
-                  <input type="text" placeholder="Ex: caixa baixo para pagamentos" value={motivoAporte} onChange={(e) => setMotivoAporte(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.borda}`, fontSize: 14, boxSizing: 'border-box' }} />
-                </div>
+                <label style={{ fontSize: 12, color: COM_C.txtSub, display: 'block', marginBottom: 6 }}>Valor (R$)</label>
+                <input type="number" min="0" step="0.01" value={valorAporte} onChange={(e) => setValorAporte(e.target.value)} autoFocus
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${COM_C.borda}`, fontSize: 14, boxSizing: 'border-box', marginBottom: 12 }} />
+                <label style={{ fontSize: 12, color: COM_C.txtSub, display: 'block', marginBottom: 6 }}>Motivo (opcional)</label>
+                <input type="text" value={motivoAporte} onChange={(e) => setMotivoAporte(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${COM_C.borda}`, fontSize: 14, boxSizing: 'border-box', marginBottom: 20 }} />
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <Btn variante="cinza" onClick={() => { setModalAporte(false); setValorAporte(''); setMotivoAporte('') }}>Cancelar</Btn>
                   <Btn variante="verde" icone="ti-send" disabled={!valorAporte || Number(valorAporte) <= 0 || enviandoAporte} onClick={handleSolicitarAporte}>
