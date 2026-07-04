@@ -1,16 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-
-const C = {
-  primary:   '#92400e',
-  primaryLt: '#FDF4E7',
-  borda:     '#E5E3DC',
-  bg:        '#F8F7F4',
-  txt:       '#1C1917',
-  txtSub:    '#78716C',
-  white:     '#fff',
-}
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { Select } from '@/components/comercializacao/ui/Field'
+import { COM_C, STATUS_LOTE } from '@/components/comercializacao/ui/tokens'
+import { BtnLink } from '@/components/ui/Btn'
 
 function fmtReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -63,7 +60,6 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
   const saldosFiltrados = saldos.filter(s => s.safra_id === safraId)
   const lotesAndamentoFiltrados = lotesAndamento.filter(l => l.safra_id === safraId)
 
-  // KPIs totais da safra
   const totalReceita    = resultadosFiltrados.reduce((a, r) => a + Number(r.receita_bruta_rs), 0)
   const totalCusto      = resultadosFiltrados.reduce((a, r) => a + Number(r.custo_aquisicao_rs), 0)
   const totalTaxa       = resultadosFiltrados.reduce((a, r) => a + Number(r.taxa_cooperativa_rs), 0)
@@ -73,223 +69,173 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
   const totalSaldoKg    = saldosFiltrados.reduce((a, s) => a + Number(s.saldo_kg), 0)
 
   const kpis = [
-    { label: 'Receita bruta',      valor: fmtReal(totalReceita),   sub: `${fmtPeso(totalKg)} vendidos`,         cor: '#185FA5', bg: '#E6F1FB' },
-    { label: 'Custo aquisição',    valor: fmtReal(totalCusto),     sub: 'Pago aos produtores',                  cor: '#92400e', bg: '#FDF4E7' },
-    { label: 'Taxa cooperativa',   valor: fmtReal(totalTaxa),      sub: 'Sobre receita bruta',                  cor: '#78716C', bg: '#F5F5F4' },
-    { label: 'FUNRURAL',           valor: fmtReal(totalFunrural),  sub: '1,63% — obrigação cooperativa',        cor: '#854F0B', bg: '#FAEEDA' },
-    { label: 'Resultado líquido',  valor: fmtReal(totalResultado), sub: 'Receita − custo − taxa − FUNRURAL',    cor: '#166534', bg: '#DCFCE7' },
-    { label: 'Saldo em estoque',   valor: fmtPeso(totalSaldoKg),   sub: 'Kg entregues ainda não convertidos',   cor: '#7C3AED', bg: '#F5F3FF' },
+    { label: 'Receita bruta',      value: fmtReal(totalReceita),   sub: `${fmtPeso(totalKg)} vendidos`,         icon: 'ti-cash',        cor: '#185FA5', corLt: '#E6F1FB' },
+    { label: 'Custo aquisição',    value: fmtReal(totalCusto),     sub: 'Pago aos produtores',                  icon: 'ti-users',       cor: COM_C.marrom, corLt: COM_C.marromLt },
+    { label: 'Taxa cooperativa',   value: fmtReal(totalTaxa),      sub: 'Sobre receita bruta',                  icon: 'ti-percentage',  cor: COM_C.txtSub, corLt: '#F5F5F4' },
+    { label: 'FUNRURAL',           value: fmtReal(totalFunrural),  sub: '1,63% — obrigação cooperativa',        icon: 'ti-receipt-tax', cor: '#854F0B', corLt: '#FAEEDA' },
+    { label: 'Resultado líquido',  value: fmtReal(totalResultado), sub: 'Receita − custo − taxa − FUNRURAL',    icon: 'ti-chart-bar',   cor: '#166534', corLt: '#DCFCE7' },
+    { label: 'Saldo em estoque',   value: fmtPeso(totalSaldoKg),   sub: 'Kg entregues ainda não convertidos',   icon: 'ti-package',     cor: '#7C3AED', corLt: '#F5F3FF' },
   ]
 
+  const STEPS = ['rascunho', 'aberto', 'em_venda', 'entregue', 'pago']
+  const STEP_LABELS = ['Rascunho', 'Aberto', 'Em venda', 'Entregue', 'Pago']
+
   return (
-    <>
-      <style>{`
-        .kpi-res:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); transition: all 0.15s; }
-      `}</style>
-
-      {/* Header sticky */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: C.white, borderBottom: `1px solid ${C.borda}`,
-        padding: '18px 32px', margin: '0 -2rem 0 -2rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-        minHeight: 88,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: C.primaryLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="ti ti-chart-bar" style={{ fontSize: 20, color: C.primary }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Resultado por Safra</h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              {safraAtual ? `Safra ${safraAtual.ano}${safraAtual.descricao ? ` — ${safraAtual.descricao}` : ''}` : 'Selecione uma safra'}
-            </div>
-          </div>
-        </div>
-
-        {/* Seletor de safra */}
-        <select
+    <PageLayout
+      titulo="Resultado por Safra"
+      subtitulo={safraAtual ? `Safra ${safraAtual.ano}${safraAtual.descricao ? ` — ${safraAtual.descricao}` : ''}` : 'Selecione uma safra'}
+      icone="ti-chart-bar"
+      breadcrumb={[{ label: 'Resultado por Safra' }]}
+      fullHeight
+      acoes={
+        <Select
           value={safraId}
           onChange={e => setSafraId(e.target.value)}
-          style={{
-            padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.borda}`,
-            fontSize: 13, fontWeight: 600, color: C.txt, background: C.white,
-            cursor: 'pointer',
-          }}
+          style={{ width: 'auto', minWidth: 220, fontWeight: 600 }}
         >
           {safras.map(s => (
             <option key={s.id} value={s.id}>
               Safra {s.ano}{s.descricao ? ` — ${s.descricao}` : ''}{s.status === 'em_andamento' ? ' ★' : ''}
             </option>
           ))}
-        </select>
-      </header>
+        </Select>
+      }
+    >
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* KPIs */}
+        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {kpis.map(k => (
+            <KpiCard
+              key={k.label}
+              label={k.label}
+              value={k.value}
+              sub={k.sub}
+              icon={k.icon}
+              cor={k.cor}
+              corLt={k.corLt}
+            />
+          ))}
+        </div>
 
-      {/* Conteúdo */}
-      <div style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', padding: '28px 32px', minHeight: 'calc(100vh - 88px)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-
-          {/* KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
-            {kpis.map(k => (
-              <div key={k.label} className="kpi-res" style={{
-                background: C.white, borderRadius: 14, border: `1px solid ${C.borda}`,
-                borderTop: `3px solid ${k.cor}`, padding: '18px 20px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)', cursor: 'default',
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.txtSub, marginBottom: 8 }}>
-                  {k.label}
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: C.txt, lineHeight: 1.1 }}>{k.valor}</div>
-                <div style={{ fontSize: 11, color: C.txtSub, marginTop: 6 }}>{k.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Resultado por produto */}
-          {resultadosFiltrados.length > 0 && (
-            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.borda}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 24 }}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.borda}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.txtSub }}>
-                  Resultado por produto
-                </div>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        {/* Resultado por produto */}
+        {resultadosFiltrados.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <ContentCard title="Resultado por produto" noPadding>
+              <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#FAFAF8' }}>
+                  <tr>
                     {['Produto', 'Kg vendido', 'Preço médio', 'Receita', 'Custo', 'Taxa + FUNRURAL', 'Resultado líquido'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Produto' ? 'left' : 'right', fontWeight: 600, color: C.txtSub, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                      <th key={h} style={{ textAlign: h === 'Produto' ? 'left' : 'right' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {resultadosFiltrados.map((r, i) => (
-                    <tr key={r.id} style={{ borderTop: `1px solid ${C.borda}`, background: i % 2 === 0 ? C.white : '#FAFAF8' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: C.txt }}>{r.produto_nome}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.txtSub }}>{fmtPeso(Number(r.total_kg_vendido))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.txtSub }}>{fmtReal(Number(r.preco_medio_kg))}/kg</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: '#185FA5', fontWeight: 600 }}>{fmtReal(Number(r.receita_bruta_rs))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.primary }}>{fmtReal(Number(r.custo_aquisicao_rs))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.txtSub }}>{fmtReal(Number(r.taxa_cooperativa_rs) + Number(r.funrural_rs))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 800, color: Number(r.resultado_liquido_rs) >= 0 ? '#166534' : '#dc2626' }}>
+                  {resultadosFiltrados.map(r => (
+                    <tr key={r.id}>
+                      <td style={{ fontWeight: 600 }}>{r.produto_nome}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(r.total_kg_vendido))}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(Number(r.preco_medio_kg))}/kg</td>
+                      <td style={{ textAlign: 'right', color: '#185FA5', fontWeight: 600 }}>{fmtReal(Number(r.receita_bruta_rs))}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.marrom }}>{fmtReal(Number(r.custo_aquisicao_rs))}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(Number(r.taxa_cooperativa_rs) + Number(r.funrural_rs))}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 800, color: Number(r.resultado_liquido_rs) >= 0 ? '#166534' : COM_C.vermelho }}>
                         {fmtReal(Number(r.resultado_liquido_rs))}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            </ContentCard>
+          </div>
+        )}
 
-          {/* Lotes em andamento */}
-          {lotesAndamentoFiltrados.length > 0 && (
-            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.borda}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 24 }}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.borda}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.txtSub }}>
-                  Lotes em andamento
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* Lotes em andamento */}
+        {lotesAndamentoFiltrados.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <ContentCard title="Lotes em andamento" noPadding>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {lotesAndamentoFiltrados.map((lote: any, i: number) => {
                   const venda = lote.vendas_externas?.[0] ?? null
                   const produtos = lote.lote_itens?.map((li: any) => li.produtos?.nome).filter(Boolean).join(', ') || lote.produto_descricao || '—'
-                  const STATUS_LOTE: Record<string, { label: string; cor: string; bg: string }> = {
-                    rascunho:  { label: 'Rascunho',  cor: '#6b7280', bg: '#f3f4f6' },
-                    aberto:    { label: 'Aberto',     cor: '#1e40af', bg: '#dbeafe' },
-                    em_venda:  { label: 'Em venda',   cor: '#92400e', bg: '#fef3c7' },
-                    entregue:  { label: 'Entregue',   cor: '#166534', bg: '#dcfce7' },
-                  }
                   const st = STATUS_LOTE[lote.status] ?? { label: lote.status, cor: '#6b7280', bg: '#f3f4f6' }
-                  const STEPS = ['rascunho', 'aberto', 'em_venda', 'entregue', 'pago']
                   const stepAtual = STEPS.indexOf(lote.status)
                   return (
                     <div key={lote.id} style={{
                       padding: '16px 20px',
-                      borderTop: i > 0 ? `1px solid ${C.borda}` : 'none',
+                      borderTop: i > 0 ? `1px solid ${COM_C.borda}` : 'none',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: C.txt }}>Lote {lote.codigo}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: st.bg, color: st.cor }}>{st.label}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: C.txtSub }}>{produtos} · {fmtPeso(Number(lote.peso_total_kg))}</div>
-                          {venda && (
-                            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-                              {venda.compradores?.nome} · {fmtReal(Number(venda.valor_bruto))} · {fmtReal(Number(venda.preco_kg))}/kg
-                            </div>
-                          )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: COM_C.txt }}>Lote {lote.codigo}</span>
+                          <Badge label={st.label} bg={st.bg} cor={st.cor} />
                         </div>
+                        <div style={{ fontSize: 12, color: COM_C.txtSub }}>{produtos} · {fmtPeso(Number(lote.peso_total_kg))}</div>
+                        {venda && (
+                          <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>
+                            {venda.compradores?.nome} · {fmtReal(Number(venda.valor_bruto))} · {fmtReal(Number(venda.preco_kg))}/kg
+                          </div>
+                        )}
                       </div>
-                      {/* Progress steps */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                        {['Rascunho', 'Aberto', 'Em venda', 'Entregue', 'Pago'].map((step, idx) => (
+                        {STEP_LABELS.map((step, idx) => (
                           <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
                             <div style={{
                               width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 10, fontWeight: 700,
-                              background: idx <= stepAtual ? C.primary : '#e5e7eb',
+                              background: idx <= stepAtual ? COM_C.marrom : '#e5e7eb',
                               color: idx <= stepAtual ? '#fff' : '#9ca3af',
                             }}>{idx + 1}</div>
                             {idx < 4 && (
-                              <div style={{ width: 24, height: 2, background: idx < stepAtual ? C.primary : '#e5e7eb' }} />
+                              <div style={{ width: 24, height: 2, background: idx < stepAtual ? COM_C.marrom : '#e5e7eb' }} />
                             )}
                           </div>
                         ))}
                       </div>
-                      <a href={`/comercializacao/lotes/${lote.id}`} style={{
-                        padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        border: `1px solid ${C.primary}`, color: C.primary,
-                        textDecoration: 'none', whiteSpace: 'nowrap',
-                      }}>Ver lote →</a>
+                      <BtnLink variante="marrom-outline" href={`/comercializacao/lotes/${lote.id}`}>
+                        Ver lote →
+                      </BtnLink>
                     </div>
                   )
                 })}
               </div>
-            </div>
-          )}
+            </ContentCard>
+          </div>
+        )}
 
-          {/* Saldos por produtor */}
-          {saldosFiltrados.length > 0 && (
-            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.borda}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.borda}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.txtSub }}>
-                  Participação por produtor
-                </div>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: '#FAFAF8' }}>
-                    {['Produtor', 'Produto', 'Kg entregue', 'Kg convertido', 'Saldo kg', 'Valor convertido'].map(h => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: h === 'Produtor' || h === 'Produto' ? 'left' : 'right', fontWeight: 600, color: C.txtSub, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {saldosFiltrados.map((s, i) => (
-                    <tr key={`${s.produtor_id}-${s.produto_id}`} style={{ borderTop: `1px solid ${C.borda}`, background: i % 2 === 0 ? C.white : '#FAFAF8' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: C.txt }}>{s.produtor_nome}</td>
-                      <td style={{ padding: '12px 16px', color: C.txtSub }}>{s.produto_nome}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.txtSub }}>{fmtPeso(Number(s.kg_entregue))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.txtSub }}>{fmtPeso(Number(s.kg_convertido))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: Number(s.saldo_kg) > 0 ? '#7C3AED' : C.txtSub }}>{fmtPeso(Number(s.saldo_kg))}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', color: C.primary, fontWeight: 600 }}>{fmtReal(Number(s.valor_convertido_rs))}</td>
-                    </tr>
+        {/* Saldos por produtor */}
+        {saldosFiltrados.length > 0 && (
+          <ContentCard title="Participação por produtor" noPadding>
+            <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Produtor', 'Produto', 'Kg entregue', 'Kg convertido', 'Saldo kg', 'Valor convertido'].map(h => (
+                    <th key={h} style={{ textAlign: h === 'Produtor' || h === 'Produto' ? 'left' : 'right' }}>{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                </tr>
+              </thead>
+              <tbody>
+                {saldosFiltrados.map(s => (
+                  <tr key={`${s.produtor_id}-${s.produto_id}`}>
+                    <td style={{ fontWeight: 600 }}>{s.produtor_nome}</td>
+                    <td style={{ color: COM_C.txtSub }}>{s.produto_nome}</td>
+                    <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_entregue))}</td>
+                    <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_convertido))}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, color: Number(s.saldo_kg) > 0 ? '#7C3AED' : COM_C.txtSub }}>{fmtPeso(Number(s.saldo_kg))}</td>
+                    <td style={{ textAlign: 'right', color: COM_C.marrom, fontWeight: 600 }}>{fmtReal(Number(s.valor_convertido_rs))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ContentCard>
+        )}
 
-          {resultadosFiltrados.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '4rem', color: C.txtSub, fontSize: 14 }}>
-              Nenhum resultado registrado para esta safra.
-            </div>
-          )}
-
-        </div>
+        {resultadosFiltrados.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '4rem', color: COM_C.txtSub, fontSize: 14 }}>
+            Nenhum resultado registrado para esta safra.
+          </div>
+        )}
       </div>
-    </>
+    </PageLayout>
   )
 }

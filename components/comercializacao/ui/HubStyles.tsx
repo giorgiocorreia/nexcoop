@@ -28,6 +28,12 @@ export function HubStyles() {
       .com-btn-cta:hover { opacity: 0.92; transform: translateY(-1px); }
       .com-guia-card { background: #fff; border: 1px solid #E5E3DC; border-radius: 12px; padding: 16px 18px; }
       .com-venda-row:hover { background: #FAFAF9 !important; }
+      .com-list-row:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); border-color: #D6D3CD !important; }
+      .com-kpi-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
+      .com-table th { font-size: 10px; font-weight: 700; color: #78716C; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid #E5E3DC; background: #FAFAF9; }
+      .com-table td { padding: 12px 16px; border-bottom: 1px solid #F5F5F4; font-size: 13px; color: #1C1917; }
+      .com-table tr:hover td { background: #FAFAF9; }
+      .com-saldo-bar { background: linear-gradient(135deg, #92400e 0%, #78350f 100%); color: #fff; border-radius: 12px; padding: 16px 22px; margin-bottom: 20px; }
       @media (max-width: 1200px) {
         .com-kpi-grid { grid-template-columns: repeat(3, 1fr); }
         .com-link-grid { grid-template-columns: repeat(2, 1fr); }

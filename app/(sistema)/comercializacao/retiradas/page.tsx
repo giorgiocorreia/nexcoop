@@ -10,6 +10,13 @@ import {
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { listarVendas } from '@/lib/comercializacao/vendas.actions'
 import { listarSafras } from '@/lib/comercializacao/safras.actions'
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select } from '@/components/comercializacao/ui/Field'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
+import { Btn } from '@/components/ui/Btn'
 
 type Retirada = {
   id: string
@@ -121,233 +128,184 @@ export default function RetiradasPage() {
     : null
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Retiradas</h1>
-        <button
-          onClick={() => setAbrirModal(true)}
-          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-        >
-          + Registrar retirada
-        </button>
-      </div>
-
+    <PageLayout
+      titulo="Retiradas"
+      icone="ti-truck-delivery"
+      breadcrumb={[{ label: 'Retiradas' }]}
+      fullHeight
+      acoes={
+        <Btn variante="marrom" icone="ti-plus" onClick={() => setAbrirModal(true)}>Registrar retirada</Btn>
+      }
+    >
       {status === 'sucesso' && (
-        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>Retirada registrada com sucesso.</div>
+        <div style={{ marginBottom: 16, color: COM_C.verde, fontSize: 13 }}>Retirada registrada com sucesso.</div>
       )}
 
-      {/* Cards estoque físico atual */}
       {estoque.length > 0 && (
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+        <div className="com-kpi-grid" style={{ gridTemplateColumns: `repeat(${Math.min(estoque.length, 4)}, 1fr)`, marginBottom: 24 }}>
           {estoque.map(e => (
-            <div key={e.produto_id} style={{
-              background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px',
-              padding: '16px 20px', minWidth: '160px'
-            }}>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginBottom: '4px' }}>Estoque físico</div>
-              <div style={{ fontSize: '20px', fontWeight: 600, color: '#92400e' }}>
-                {e.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} {e.produtos?.unidade ?? 'kg'}
-              </div>
-              <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>{e.produtos?.nome}</div>
-            </div>
+            <KpiCard
+              key={e.produto_id}
+              label="Estoque físico"
+              value={`${e.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} ${e.produtos?.unidade ?? 'kg'}`}
+              sub={e.produtos?.nome}
+              icon="ti-package"
+              cor={COM_C.marrom}
+              corLt={COM_C.marromLt}
+            />
           ))}
         </div>
       )}
 
-      {/* Tabela retiradas */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+      <ContentCard noPadding>
+        <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Data</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Produto</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Destino</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Qtd retirada</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Qtd confirmada</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>NF</th>
-              <th style={{ padding: '12px 16px' }}></th>
+            <tr>
+              {['Data', 'Produto', 'Destino', 'Qtd retirada', 'Qtd confirmada', 'NF', ''].map((h, i) => (
+                <th key={h} style={{ textAlign: i >= 3 && i <= 4 ? 'right' : 'left' }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {retiradas.map(r => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>
+              <tr key={r.id}>
+                <td style={{ color: COM_C.txtSub }}>
                   {new Date(r.data_retirada).toLocaleDateString('pt-BR')}
                 </td>
-                <td style={{ padding: '12px 16px' }}>{r.produtos?.nome ?? '—'}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{r.destino}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>
+                <td>{r.produtos?.nome ?? '—'}</td>
+                <td style={{ color: COM_C.txtSub }}>{r.destino}</td>
+                <td style={{ textAlign: 'right', fontWeight: 500 }}>
                   {r.quantidade_retirada.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} {r.produtos?.unidade ?? 'kg'}
                 </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                <td style={{ textAlign: 'right' }}>
                   {r.quantidade_confirmada != null ? (
-                    <span style={{ color: '#166534', fontWeight: 500 }}>
+                    <span style={{ color: COM_C.verde, fontWeight: 500 }}>
                       {r.quantidade_confirmada.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} {r.produtos?.unidade ?? 'kg'}
                       {r.quantidade_confirmada !== r.quantidade_retirada && (
-                        <span style={{ color: '#991b1b', fontSize: '12px', marginLeft: '6px' }}>
+                        <span style={{ color: COM_C.vermelho, fontSize: 12, marginLeft: 6 }}>
                           (Δ {(r.quantidade_confirmada - r.quantidade_retirada).toFixed(1)})
                         </span>
                       )}
                     </span>
                   ) : (
                     confirmandoId === r.id ? (
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <input
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <Input
                           type="number" step="0.001" placeholder="0,000"
                           value={pesoConfirmado}
                           onChange={e => setPesoConfirmado(e.target.value)}
-                          style={{ width: '90px', padding: '4px 8px', border: '1px solid #e5e3dc', borderRadius: '6px', fontSize: '13px' }}
+                          style={{ width: 90, padding: '4px 8px', fontSize: 13 }}
                         />
-                        <button onClick={handleConfirmarPeso}
-                          style={{ padding: '4px 10px', background: '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                          OK
-                        </button>
-                        <button onClick={() => setConfirmandoId(null)}
-                          style={{ padding: '4px 8px', background: 'none', border: '1px solid #e5e3dc', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                          ✕
-                        </button>
+                        <Btn variante="verde" tamanho="sm" onClick={handleConfirmarPeso}>OK</Btn>
+                        <Btn variante="cinza" tamanho="sm" onClick={() => setConfirmandoId(null)}>✕</Btn>
                       </div>
                     ) : (
-                      <span style={{ color: '#9a9a9a', fontSize: '13px' }}>Pendente</span>
+                      <span style={{ color: '#9a9a9a', fontSize: 13 }}>Pendente</span>
                     )
                   )}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b', fontSize: '13px' }}>{r.numero_nf ?? '—'}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                <td style={{ color: COM_C.txtSub, fontSize: 13 }}>{r.numero_nf ?? '—'}</td>
+                <td style={{ textAlign: 'right' }}>
                   {r.quantidade_confirmada == null && confirmandoId !== r.id && (
-                    <button
+                    <Btn
+                      variante="cinza"
+                      tamanho="sm"
                       onClick={() => { setConfirmandoId(r.id); setPesoConfirmado(r.quantidade_retirada.toString()) }}
-                      style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer' }}
+                      style={{ color: COM_C.marrom, border: 'none', background: 'none', boxShadow: 'none' }}
                     >
                       Confirmar peso
-                    </button>
+                    </Btn>
                   )}
                 </td>
               </tr>
             ))}
             {retiradas.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>
+                <td colSpan={7} style={{ padding: 24, textAlign: 'center', color: COM_C.txtSub }}>
                   Nenhuma retirada registrada ainda.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </ContentCard>
 
       {abrirModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '24px'
-        }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '520px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>Registrar retirada</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Produto *</label>
-                  <select value={form.produto_id}
-                    onChange={e => setForm(f => ({ ...f, produto_id: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
-                    {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Data *</label>
-                  <input type="date" value={form.data_retirada}
-                    onChange={e => setForm(f => ({ ...f, data_retirada: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-                </div>
-              </div>
-
-              {estoqueAtual && (
-                <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#92400e' }}>
-                  Estoque físico disponível: <strong>{estoqueAtual.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} {estoqueAtual.produtos?.unidade ?? 'kg'}</strong>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 2 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Destino *</label>
-                  <input value={form.destino} placeholder="Ex: Moageira Ouricana"
-                    onChange={e => setForm(f => ({ ...f, destino: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Quantidade (kg) *</label>
-                  <input type="number" step="0.001" value={form.quantidade_retirada}
-                    onChange={e => setForm(f => ({ ...f, quantidade_retirada: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Número NF</label>
-                  <input value={form.numero_nf} placeholder="Opcional"
-                    onChange={e => setForm(f => ({ ...f, numero_nf: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Safra</label>
-                  <select value={form.safra_id}
-                    onChange={e => setForm(f => ({ ...f, safra_id: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
-                    <option value="">Nenhuma</option>
-                    {safras.map(s => (
-                      <option key={s.id} value={s.id}>{s.descricao ?? `Safra ${s.ano}`}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Vincular à venda</label>
-                <select value={form.venda_externa_id}
-                  onChange={e => setForm(f => ({ ...f, venda_externa_id: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
-                  <option value="">Nenhuma</option>
-                  {vendas.map(v => (
-                    <option key={v.id} value={v.id}>
-                      {v.lotes?.codigo ?? '—'} — {v.compradores?.nome ?? '—'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-                <input value={form.observacoes} placeholder="Opcional"
-                  onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-
+        <Modal
+          titulo="Registrar retirada"
+          onClose={() => setAbrirModal(false)}
+          largura={520}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setAbrirModal(false)}>Cancelar</Btn>
+              <Btn variante="marrom" onClick={handleRegistrar} disabled={status === 'salvando'}>
+                {status === 'salvando' ? 'Salvando...' : 'Registrar'}
+              </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Produto *">
+                <Select value={form.produto_id} onChange={e => setForm(f => ({ ...f, produto_id: e.target.value }))}>
+                  {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                </Select>
+              </Field>
+              <Field label="Data *">
+                <Input type="date" value={form.data_retirada} onChange={e => setForm(f => ({ ...f, data_retirada: e.target.value }))} />
+              </Field>
             </div>
 
-            {status === 'erro' && (
-              <div style={{ marginTop: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>
+            {estoqueAtual && (
+              <div style={{ background: COM_C.marromLt, border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: COM_C.marrom }}>
+                Estoque físico disponível: <strong>{estoqueAtual.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} {estoqueAtual.produtos?.unidade ?? 'kg'}</strong>
+              </div>
             )}
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setAbrirModal(false) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleRegistrar}
-                disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-              >
-                {status === 'salvando' ? 'Salvando...' : 'Registrar'}
-              </button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Destino *">
+                <Input value={form.destino} placeholder="Ex: Moageira Ouricana" onChange={e => setForm(f => ({ ...f, destino: e.target.value }))} />
+              </Field>
+              <Field label="Quantidade (kg) *">
+                <Input type="number" step="0.001" value={form.quantidade_retirada} onChange={e => setForm(f => ({ ...f, quantidade_retirada: e.target.value }))} />
+              </Field>
             </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Número NF">
+                <Input value={form.numero_nf} placeholder="Opcional" onChange={e => setForm(f => ({ ...f, numero_nf: e.target.value }))} />
+              </Field>
+              <Field label="Safra">
+                <Select value={form.safra_id} onChange={e => setForm(f => ({ ...f, safra_id: e.target.value }))}>
+                  <option value="">Nenhuma</option>
+                  {safras.map(s => (
+                    <option key={s.id} value={s.id}>{s.descricao ?? `Safra ${s.ano}`}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+
+            <Field label="Vincular à venda">
+              <Select value={form.venda_externa_id} onChange={e => setForm(f => ({ ...f, venda_externa_id: e.target.value }))}>
+                <option value="">Nenhuma</option>
+                {vendas.map(v => (
+                  <option key={v.id} value={v.id}>
+                    {v.lotes?.codigo ?? '—'} — {v.compradores?.nome ?? '—'}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Observações">
+              <Input value={form.observacoes} placeholder="Opcional" onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} />
+            </Field>
           </div>
-        </div>
+
+          {status === 'erro' && (
+            <div style={{ marginTop: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>
+          )}
+        </Modal>
       )}
-    </div>
+    </PageLayout>
   )
 }

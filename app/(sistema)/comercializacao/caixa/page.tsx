@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+
 import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
   buscarProdutor, getContaProdutor, getExtrato,
@@ -24,6 +24,16 @@ import { createClient } from '@/lib/supabase/client'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
 import { ModalNfeEntrada, BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
+import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select, Textarea } from '@/components/comercializacao/ui/Field'
+import { Tabs } from '@/components/comercializacao/ui/Tabs'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { EmptyState } from '@/components/comercializacao/ui/EmptyState'
+import { ListRow } from '@/components/comercializacao/ui/ListRow'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
 
 type Sessao = { id: string; data: string; saldo_inicial_especie: number; saldo_especie_calculado: number; total_saidas_especie: number; total_pix: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
@@ -136,13 +146,9 @@ function PixInput({ value, onChange, style }: { value: string; onChange: (v: str
     onChange(aplicarMascaraPix(raw, t))
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>
-        {label}
-        {tipo && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '1px 6px', borderRadius: '4px' }}>{label}</span>}
-      </label>
-      <input value={value} onChange={handleChange} placeholder="CPF, CNPJ, telefone, e-mail ou chave aleatória" style={style} />
-    </div>
+    <Field label={label} hint={tipo ? `Tipo detectado: ${labelTipoPix(tipo)}` : undefined}>
+      <Input value={value} onChange={handleChange} placeholder="CPF, CNPJ, telefone, e-mail ou chave aleatória" style={style} />
+    </Field>
   )
 }
 
@@ -650,340 +656,193 @@ export default function CaixaPage() {
     ? (sessao.saldo_especie_calculado ?? 0) - (sessao.total_saidas_especie ?? 0)
     : 0
 
-  const inputStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', background: '#fff' }
-
-  if (carregando) return <div style={{ padding: '32px' }}>Carregando...</div>
+  if (carregando) return (
+    <>
+      <HubStyles />
+      <div style={{ minHeight: '100vh', background: COM_C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <div style={{ textAlign: 'center', color: COM_C.txtSub }}>
+          <i className="ti ti-loader-2" style={{ fontSize: 32, display: 'block', marginBottom: 12, animation: 'spin 1s linear infinite' }} />
+          <div style={{ fontSize: 14, fontWeight: 500 }}>Carregando caixa...</div>
+        </div>
+      </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </>
+  )
 
   if (resumoFechamento) return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '32px', maxWidth: '480px' }}>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>✓ Caixa fechado</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Data</span><span>{new Date(resumoFechamento.data).toLocaleDateString('pt-BR')}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saldo inicial</span><span>{fmtReal(resumoFechamento.saldo_inicial_especie)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Saídas espécie</span><span>{fmtReal(resumoFechamento.total_saidas_especie ?? 0)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b6b6b' }}>Total Pix</span><span>{fmtReal(resumoFechamento.total_pix ?? 0)}</span></div>
-          <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: 500 }}>
-            <span>Saldo final espécie</span>
-            <span>{fmtReal(saldoFinal ? parseFloat(saldoFinal) : saldoEsperado)}</span>
+    <PageLayout
+      titulo="Caixa fechado"
+      subtitulo={new Date(resumoFechamento.data).toLocaleDateString('pt-BR')}
+      icone="ti-check"
+      breadcrumb={[{ label: 'Caixa' }]}
+      fullHeight
+    >
+      <div style={{ maxWidth: 480 }}>
+        <ContentCard title="Resumo do fechamento">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Data</span><span>{new Date(resumoFechamento.data).toLocaleDateString('pt-BR')}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Saldo inicial</span><span>{fmtReal(resumoFechamento.saldo_inicial_especie)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Saídas espécie</span><span>{fmtReal(resumoFechamento.total_saidas_especie ?? 0)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Total Pix</span><span>{fmtReal(resumoFechamento.total_pix ?? 0)}</span></div>
+            <div style={{ borderTop: `1px solid ${COM_C.borda}`, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+              <span>Saldo final espécie</span>
+              <span style={{ color: COM_C.marrom }}>{fmtReal(saldoFinal ? parseFloat(saldoFinal) : saldoEsperado)}</span>
+            </div>
           </div>
-        </div>
-        <button
-          onClick={async () => {
-            const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
-            const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
-            const saldoEsp = resumoFechamento.saldo_inicial_especie + totalAp - totalSang - (resumoFechamento.total_saidas_especie ?? 0)
-            const saldoCont = saldoFinal ? parseFloat(saldoFinal) : saldoEsp
-            await baixarPdf({
-              orgNome: orgNome,
-              orgCnpj: orgCnpj,
-              operadorNome: operadorNome,
-              dataAbertura: resumoFechamento.data,
-              dataFechamento: new Date().toISOString(),
-              saldoInicial: resumoFechamento.saldo_inicial_especie,
-              totalAportes: totalAp,
-              totalSangrias: totalSang,
-              totalSaquesEspecie: resumoFechamento.total_saidas_especie ?? 0,
-              totalPix: resumoFechamento.total_pix ?? 0,
-              saldoEsperado: saldoEsp,
-              saldoContado: saldoCont,
-              diferenca: saldoCont - saldoEsp,
-              aportesSangrias: aportesDia.map(a => ({
-                tipo: a.tipo as 'aporte' | 'sangria',
-                valor: a.valor,
-                motivo: a.observacoes ?? '',
-                autorizadorNome: a.autorizador?.nome_completo ?? 'Sistema',
-                horario: new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-              })),
-              operacoes: operacoesDia.map(op => ({
-                horario: new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                produtor: op.contas_produtor?.produtores?.nome ?? '',
-                produto: op.produtos?.nome ?? '',
-                kg: op.quantidade_produto ?? 0,
-                valorEspecie: op.forma_pagamento === 'especie' ? Math.abs(op.valor_financeiro ?? 0) : 0,
-                valorPix: op.forma_pagamento === 'pix' ? Math.abs(op.valor_financeiro ?? 0) : 0,
-                total: Math.abs(op.valor_financeiro ?? 0),
-              })),
-              movimentacaoProdutos: movimentacaoPorProduto,
-              observacoes: obsFechamento || undefined,
-            })
-          }}
-          style={{ display: 'contents' }}
-        >
-          <Btn variante="roxo" icone="ti-download" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
-            Baixar PDF do fechamento
-          </Btn>
-        </button>
-        <Btn variante="marrom" onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
-          style={{ marginTop: 8, width: '100%', justifyContent: 'center' }}>
-          Novo dia
-        </Btn>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
+            <button
+              onClick={async () => {
+                const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
+                const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
+                const saldoEsp = resumoFechamento.saldo_inicial_especie + totalAp - totalSang - (resumoFechamento.total_saidas_especie ?? 0)
+                const saldoCont = saldoFinal ? parseFloat(saldoFinal) : saldoEsp
+                await baixarPdf({
+                  orgNome: orgNome,
+                  orgCnpj: orgCnpj,
+                  operadorNome: operadorNome,
+                  dataAbertura: resumoFechamento.data,
+                  dataFechamento: new Date().toISOString(),
+                  saldoInicial: resumoFechamento.saldo_inicial_especie,
+                  totalAportes: totalAp,
+                  totalSangrias: totalSang,
+                  totalSaquesEspecie: resumoFechamento.total_saidas_especie ?? 0,
+                  totalPix: resumoFechamento.total_pix ?? 0,
+                  saldoEsperado: saldoEsp,
+                  saldoContado: saldoCont,
+                  diferenca: saldoCont - saldoEsp,
+                  aportesSangrias: aportesDia.map(a => ({
+                    tipo: a.tipo as 'aporte' | 'sangria',
+                    valor: a.valor,
+                    motivo: a.observacoes ?? '',
+                    autorizadorNome: a.autorizador?.nome_completo ?? 'Sistema',
+                    horario: new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                  })),
+                  operacoes: operacoesDia.map(op => ({
+                    horario: new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    produtor: op.contas_produtor?.produtores?.nome ?? '',
+                    produto: op.produtos?.nome ?? '',
+                    kg: op.quantidade_produto ?? 0,
+                    valorEspecie: op.forma_pagamento === 'especie' ? Math.abs(op.valor_financeiro ?? 0) : 0,
+                    valorPix: op.forma_pagamento === 'pix' ? Math.abs(op.valor_financeiro ?? 0) : 0,
+                    total: Math.abs(op.valor_financeiro ?? 0),
+                  })),
+                  movimentacaoProdutos: movimentacaoPorProduto,
+                  observacoes: obsFechamento || undefined,
+                })
+              }}
+              style={{ display: 'contents' }}
+            >
+              <Btn variante="roxo" icone="ti-download" style={{ width: '100%', justifyContent: 'center' }}>
+                Baixar PDF do fechamento
+              </Btn>
+            </button>
+            <Btn variante="marrom" onClick={() => { setResumoFechamento(null); setSaldoFinal(''); setObsFechamento(''); init() }}
+              style={{ width: '100%', justifyContent: 'center' }}>
+              Novo dia
+            </Btn>
+          </div>
+        </ContentCard>
       </div>
-    </div>
+    </PageLayout>
   )
 
   if (!sessao) return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')} style={{ marginBottom: 20 }}>
-        Voltar
-      </Btn>
-      <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '24px' }}>Caixa</h1>
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '32px', maxWidth: '360px' }}>
-        <div style={{ fontWeight: 500, marginBottom: '16px' }}>Abrir caixa</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo inicial em espécie (R$)</label>
-            <input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
-              onChange={e => setSaldoInicial(e.target.value)} style={inputStyle} />
+    <PageLayout
+      titulo="Caixa"
+      subtitulo="Nenhuma sessão aberta"
+      icone="ti-cash"
+      breadcrumb={[{ label: 'Caixa' }]}
+      fullHeight
+      acoes={
+        <Btn variante="cinza" icone="ti-arrow-left" onClick={() => router.push('/comercializacao')}>
+          Voltar
+        </Btn>
+      }
+    >
+      <div style={{ maxWidth: 420 }}>
+        <ContentCard title="Abrir caixa" subtitle="Informe o saldo inicial em espécie para iniciar o dia">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Field label="Saldo inicial em espécie (R$)">
+              <Input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
+                onChange={e => setSaldoInicial(e.target.value)} />
+            </Field>
+            <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo || !saldoInicial} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
+              {abrindo ? 'Abrindo...' : 'Abrir caixa'}
+            </Btn>
           </div>
-          <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo || !saldoInicial} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
-            {abrindo ? 'Abrindo...' : 'Abrir caixa'}
-          </Btn>
-        </div>
+        </ContentCard>
       </div>
-    </div>
+    </PageLayout>
   )
 
   return (
     <>
-      <style>{`
-        .caixa-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .caixa-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .caixa-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .caixa-content { padding: 16px; }
-        }
-      `}</style>
-
       {modalNfe && (
         <ModalNfeEntrada movimentacao_id={modalNfe} onClose={() => setModalNfe(null)} />
       )}
 
-      {/* MODAL APORTE/SANGRIA */}
       {modalAporte && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ fontWeight: 600, fontSize: '16px' }}>Aporte / Sangria</div>
-              <button onClick={() => setModalAporte(false)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {(['aporte', 'sangria'] as const).map(t => (
-                <button key={t} onClick={() => setFormAporte(f => ({ ...f, tipo: t }))} style={{
-                  flex: 1, padding: '10px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-                  border: `2px solid ${formAporte.tipo === t ? (t === 'aporte' ? '#166534' : '#991b1b') : '#e5e3dc'}`,
-                  background: formAporte.tipo === t ? (t === 'aporte' ? '#dcfce7' : '#fee2e2') : '#fff',
-                  color: formAporte.tipo === t ? (t === 'aporte' ? '#166534' : '#991b1b') : '#6b6b6b',
-                }}>
-                  {t === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Valor (R$) *</label>
-                <input type="number" step="0.01" placeholder="0,00" value={formAporte.valor}
-                  onChange={e => setFormAporte(f => ({ ...f, valor: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Admin autorizador *</label>
-                <select value={formAporte.admin_id} onChange={e => setFormAporte(f => ({ ...f, admin_id: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}>
-                  <option value="">Selecionar admin...</option>
-                  {admins.map(a => <option key={a.id} value={a.id}>{a.nome_completo}</option>)}
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Senha do admin *</label>
-                <input type="password" placeholder="••••••••" value={formAporte.admin_senha}
-                  onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-                <input placeholder="Opcional" value={formAporte.observacoes}
-                  onChange={e => setFormAporte(f => ({ ...f, observacoes: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-            </div>
-            {erroAporte && (
-              <div style={{ marginTop: '12px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#991b1b' }}>
-                {erroAporte}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+        <Modal
+          titulo="Aporte / Sangria"
+          onClose={() => setModalAporte(false)}
+          largura={420}
+          footer={
+            <>
               <Btn variante="cinza" onClick={() => setModalAporte(false)}>Cancelar</Btn>
               <Btn variante="marrom" icone="ti-check" disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha} onClick={handleAporteSangria}>
                 {salvandoAporte ? 'Processando...' : 'Confirmar'}
               </Btn>
-            </div>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {(['aporte', 'sangria'] as const).map(t => (
+              <button key={t} onClick={() => setFormAporte(f => ({ ...f, tipo: t }))} style={{
+                flex: 1, padding: 10, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                border: `2px solid ${formAporte.tipo === t ? (t === 'aporte' ? COM_C.verde : COM_C.vermelho) : COM_C.borda}`,
+                background: formAporte.tipo === t ? (t === 'aporte' ? COM_C.verdeLt : COM_C.vermelhoLt) : '#fff',
+                color: formAporte.tipo === t ? (t === 'aporte' ? COM_C.verde : COM_C.vermelho) : COM_C.txtSub,
+              }}>
+                {t === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
+              </button>
+            ))}
           </div>
-        </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="Valor (R$) *">
+              <Input type="number" step="0.01" placeholder="0,00" value={formAporte.valor}
+                onChange={e => setFormAporte(f => ({ ...f, valor: e.target.value }))} />
+            </Field>
+            <Field label="Admin autorizador *">
+              <Select value={formAporte.admin_id} onChange={e => setFormAporte(f => ({ ...f, admin_id: e.target.value }))}>
+                <option value="">Selecionar admin...</option>
+                {admins.map(a => <option key={a.id} value={a.id}>{a.nome_completo}</option>)}
+              </Select>
+            </Field>
+            <Field label="Senha do admin *">
+              <Input type="password" placeholder="••••••••" value={formAporte.admin_senha}
+                onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))} />
+            </Field>
+            <Field label="Observações">
+              <Input placeholder="Opcional" value={formAporte.observacoes}
+                onChange={e => setFormAporte(f => ({ ...f, observacoes: e.target.value }))} />
+            </Field>
+          </div>
+          {erroAporte && (
+            <div style={{ marginTop: 12, background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: COM_C.vermelho }}>
+              {erroAporte}
+            </div>
+          )}
+        </Modal>
       )}
 
-      {/* MODAL SAÍDA AVULSA */}
       {modalSaida && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '16px' }}>Saída avulsa de caixa</div>
-                <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>Despesa operacional paga em espécie</div>
-              </div>
-              <button onClick={() => setModalSaida(false)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>×</button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Descrição *</label>
-                <input
-                  placeholder="Ex: Compra de material de escritório"
-                  value={formSaida.descricao}
-                  onChange={e => setFormSaida(f => ({ ...f, descricao: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Valor (R$) *</label>
-                  <input
-                    type="number" step="0.01" placeholder="0,00"
-                    value={formSaida.valor}
-                    onChange={e => setFormSaida(f => ({ ...f, valor: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Data competência *</label>
-                  <input
-                    type="date"
-                    value={formSaida.data_competencia}
-                    onChange={e => setFormSaida(f => ({ ...f, data_competencia: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Categoria</label>
-                  <button
-                    type="button"
-                    onClick={() => { setMostrarNovaCategoria(v => !v); setNovaCategoriaNome('') }}
-                    style={{ fontSize: '11px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontWeight: 600 }}
-                  >
-                    {mostrarNovaCategoria ? '× Cancelar' : '+ Nova categoria'}
-                  </button>
-                </div>
-                {mostrarNovaCategoria ? (
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <input
-                      autoFocus
-                      placeholder="Nome da nova categoria..."
-                      value={novaCategoriaNome}
-                      onChange={e => setNovaCategoriaNome(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleCriarCategoria()}
-                      style={{ flex: 1, padding: '8px 12px', border: '1px solid #92400e', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
-                    />
-                    <button
-                      type="button"
-                      disabled={salvandoNovaCategoria || !novaCategoriaNome.trim()}
-                      onClick={handleCriarCategoria}
-                      style={{
-                        padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                        border: 'none', background: '#92400e', color: '#fff',
-                        opacity: salvandoNovaCategoria || !novaCategoriaNome.trim() ? 0.5 : 1,
-                      }}
-                    >
-                      {salvandoNovaCategoria ? '...' : 'Salvar'}
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    value={formSaida.categoria_id}
-                    onChange={e => setFormSaida(f => ({ ...f, categoria_id: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  >
-                    <option value="">Sem categoria</option>
-                    {categorias.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.grupo ? `${c.grupo} — ` : ''}{c.nome}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nº documento</label>
-                  <input
-                    placeholder="NF, recibo..."
-                    value={formSaida.numero_documento}
-                    onChange={e => setFormSaida(f => ({ ...f, numero_documento: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Centro de custo</label>
-                  <input
-                    placeholder="Ex: Escritório"
-                    value={formSaida.centro_custo}
-                    onChange={e => setFormSaida(f => ({ ...f, centro_custo: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-                <textarea
-                  placeholder="Opcional"
-                  value={formSaida.observacoes}
-                  onChange={e => setFormSaida(f => ({ ...f, observacoes: e.target.value }))}
-                  rows={2}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Comprovante (opcional)</label>
-                {formSaida.comprovante_url ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
-                    <i className="ti ti-file-check" style={{ color: '#166534', fontSize: 16 }} />
-                    <span style={{ fontSize: '13px', color: '#166534', flex: 1 }}>Arquivo enviado</span>
-                    <button
-                      onClick={() => setFormSaida(f => ({ ...f, comprovante_url: '' }))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b6b', fontSize: 16 }}
-                    >×</button>
-                  </div>
-                ) : (
-                  <label style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '8px 12px', border: '1px dashed #d1d5db', borderRadius: '8px',
-                    cursor: uploadingComprovante ? 'wait' : 'pointer', fontSize: '13px', color: '#6b6b6b'
-                  }}>
-                    <i className="ti ti-upload" style={{ fontSize: 16 }} />
-                    {uploadingComprovante ? 'Enviando...' : 'Clique para anexar PDF, imagem ou foto'}
-                    <input
-                      type="file" accept="image/*,.pdf" style={{ display: 'none' }}
-                      onChange={handleUploadComprovante}
-                      disabled={uploadingComprovante}
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {erroSaida && (
-              <div style={{ marginTop: '12px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#991b1b' }}>
-                {erroSaida}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+        <Modal
+          titulo="Saída avulsa de caixa"
+          subtitulo="Despesa operacional paga em espécie"
+          onClose={() => setModalSaida(false)}
+          largura={480}
+          footer={
+            <>
               <Btn variante="cinza" onClick={() => setModalSaida(false)}>Cancelar</Btn>
               <Btn
                 variante="marrom"
@@ -993,137 +852,255 @@ export default function CaixaPage() {
               >
                 {salvandoSaida ? 'Registrando...' : 'Registrar saída'}
               </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="Descrição *">
+              <Input
+                placeholder="Ex: Compra de material de escritório"
+                value={formSaida.descricao}
+                onChange={e => setFormSaida(f => ({ ...f, descricao: e.target.value }))}
+              />
+            </Field>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Valor (R$) *">
+                <Input
+                  type="number" step="0.01" placeholder="0,00"
+                  value={formSaida.valor}
+                  onChange={e => setFormSaida(f => ({ ...f, valor: e.target.value }))}
+                />
+              </Field>
+              <Field label="Data competência *">
+                <Input
+                  type="date"
+                  value={formSaida.data_competencia}
+                  onChange={e => setFormSaida(f => ({ ...f, data_competencia: e.target.value }))}
+                />
+              </Field>
             </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub }}>Categoria</label>
+                <button
+                  type="button"
+                  onClick={() => { setMostrarNovaCategoria(v => !v); setNovaCategoriaNome('') }}
+                  style={{ fontSize: 11, color: COM_C.marrom, background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontWeight: 600 }}
+                >
+                  {mostrarNovaCategoria ? '× Cancelar' : '+ Nova categoria'}
+                </button>
+              </div>
+              {mostrarNovaCategoria ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Input
+                    autoFocus
+                    placeholder="Nome da nova categoria..."
+                    value={novaCategoriaNome}
+                    onChange={e => setNovaCategoriaNome(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleCriarCategoria()}
+                    style={{ borderColor: COM_C.marrom }}
+                  />
+                  <Btn
+                    variante="marrom"
+                    tamanho="sm"
+                    disabled={salvandoNovaCategoria || !novaCategoriaNome.trim()}
+                    onClick={handleCriarCategoria}
+                  >
+                    {salvandoNovaCategoria ? '...' : 'Salvar'}
+                  </Btn>
+                </div>
+              ) : (
+                <Select
+                  value={formSaida.categoria_id}
+                  onChange={e => setFormSaida(f => ({ ...f, categoria_id: e.target.value }))}
+                >
+                  <option value="">Sem categoria</option>
+                  {categorias.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.grupo ? `${c.grupo} — ` : ''}{c.nome}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Nº documento">
+                <Input
+                  placeholder="NF, recibo..."
+                  value={formSaida.numero_documento}
+                  onChange={e => setFormSaida(f => ({ ...f, numero_documento: e.target.value }))}
+                />
+              </Field>
+              <Field label="Centro de custo">
+                <Input
+                  placeholder="Ex: Escritório"
+                  value={formSaida.centro_custo}
+                  onChange={e => setFormSaida(f => ({ ...f, centro_custo: e.target.value }))}
+                />
+              </Field>
+            </div>
+
+            <Field label="Observações">
+              <Textarea
+                placeholder="Opcional"
+                value={formSaida.observacoes}
+                onChange={e => setFormSaida(f => ({ ...f, observacoes: e.target.value }))}
+                rows={2}
+              />
+            </Field>
+
+            <Field label="Comprovante (opcional)">
+              {formSaida.comprovante_url ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: COM_C.verdeLt, border: '1px solid #bbf7d0', borderRadius: 8 }}>
+                  <i className="ti ti-file-check" style={{ color: COM_C.verde, fontSize: 16 }} />
+                  <span style={{ fontSize: 13, color: COM_C.verde, flex: 1 }}>Arquivo enviado</span>
+                  <button
+                    onClick={() => setFormSaida(f => ({ ...f, comprovante_url: '' }))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: COM_C.txtSub, fontSize: 16 }}
+                  >×</button>
+                </div>
+              ) : (
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 12px', border: `1px dashed ${COM_C.borda}`, borderRadius: 8,
+                  cursor: uploadingComprovante ? 'wait' : 'pointer', fontSize: 13, color: COM_C.txtSub,
+                }}>
+                  <i className="ti ti-upload" style={{ fontSize: 16 }} />
+                  {uploadingComprovante ? 'Enviando...' : 'Clique para anexar PDF, imagem ou foto'}
+                  <input
+                    type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+                    onChange={handleUploadComprovante}
+                    disabled={uploadingComprovante}
+                  />
+                </label>
+              )}
+            </Field>
           </div>
-        </div>
+
+          {erroSaida && (
+            <div style={{ marginTop: 12, background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: COM_C.vermelho }}>
+              {erroSaida}
+            </div>
+          )}
+        </Modal>
       )}
 
-      {/* MODAL RATEIO */}
       {modalRateio && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '16px' }}>Rateio de entrega</div>
-                <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>{formEntrega.quantidade} kg · {produtos.find(p => p.id === formEntrega.produto_id)?.nome}</div>
-              </div>
-              <button onClick={() => setModalRateio(false)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b6b6b', lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              {participantes.map((p, i) => (
-                <div key={p.produtor_id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#fafaf8', border: '1px solid #e5e3dc', borderRadius: '10px' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.nome}
-                      {i === 0 && <span style={{ fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '1px 6px', borderRadius: '4px', marginLeft: '6px' }}>principal</span>}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>{p.quantidade_rateada.toFixed(3)} kg</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <input type="number" step="0.01" min="0.01" max="100" value={p.percentual}
-                      onChange={e => atualizarPercentual(i, parseFloat(e.target.value) || 0)}
-                      style={{ width: '64px', padding: '6px 8px', border: '1px solid #e5e3dc', borderRadius: '6px', fontSize: '14px', textAlign: 'right' }} />
-                    <span style={{ fontSize: '14px', color: '#6b6b6b' }}>%</span>
-                  </div>
-                  {participantes.length > 1 && (
-                    <button onClick={() => removerParticipante(i)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#991b1b', fontSize: '16px', lineHeight: 1, padding: '4px' }}>×</button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', background: percentualOk ? '#dcfce7' : '#fee2e2', border: `1px solid ${percentualOk ? '#bbf7d0' : '#fecaca'}` }}>
-              <span style={{ fontSize: '13px', color: percentualOk ? '#166534' : '#991b1b' }}>
-                {percentualOk ? '✓ Percentuais corretos' : `Total: ${totalPercentual.toFixed(2)}% (faltam ${(100 - totalPercentual).toFixed(2)}%)`}
-              </span>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: percentualOk ? '#166534' : '#991b1b' }}>{totalPercentual.toFixed(1)}% / 100%</span>
-            </div>
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginBottom: '6px' }}>Adicionar participante</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input placeholder="Nome ou CPF..." value={buscaRateio} onChange={e => setBuscaRateio(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && buscarParaRateio()}
-                  style={{ flex: 1, ...inputStyle }} />
-                <Btn variante="cinza" onClick={buscarParaRateio}>Buscar</Btn>
-              </div>
-            </div>
-            {resultadosBuscaRateio.length > 0 && (
-              <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
-                {resultadosBuscaRateio.map(p => (
-                  <button key={p.id} onClick={() => adicionarParticipante(p)} style={{ width: '100%', padding: '10px 14px', border: 'none', borderBottom: '1px solid #f0ede8', background: '#fff', cursor: 'pointer', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px' }}>{p.nome}</span>
-                    <span style={{ fontSize: '12px', color: '#6b6b6b' }}>{p.tipo_posse ? `${p.tipo_posse} · ${p.percentual_posse ?? 0}%` : p.cpf ?? ''}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {erroRateio && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroRateio}</div>}
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <Modal
+          titulo="Rateio de entrega"
+          subtitulo={`${formEntrega.quantidade} kg · ${produtos.find(p => p.id === formEntrega.produto_id)?.nome}`}
+          onClose={() => setModalRateio(false)}
+          largura={560}
+          footer={
+            <>
               <Btn variante="cinza" onClick={() => setModalRateio(false)}>Cancelar</Btn>
               <Btn variante="marrom" icone="ti-check" disabled={!percentualOk || salvandoRateio} onClick={confirmarRateio}>
                 {salvandoRateio ? 'Salvando...' : 'Confirmar entrega'}
               </Btn>
-            </div>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {participantes.map((p, i) => (
+              <div key={p.produtor_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: COM_C.bg, border: `1px solid ${COM_C.borda}`, borderRadius: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: COM_C.txt }}>
+                    {p.nome}
+                    {i === 0 && <span style={{ marginLeft: 6 }}><Badge label="principal" bg={COM_C.marromLt} cor={COM_C.marrom} /></span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{p.quantidade_rateada.toFixed(3)} kg</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Input type="number" step="0.01" min="0.01" max="100" value={p.percentual}
+                    onChange={e => atualizarPercentual(i, parseFloat(e.target.value) || 0)}
+                    style={{ width: 64, padding: '6px 8px', textAlign: 'right' }} />
+                  <span style={{ fontSize: 14, color: COM_C.txtSub }}>%</span>
+                </div>
+                {participantes.length > 1 && (
+                  <button onClick={() => removerParticipante(i)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: COM_C.vermelho, fontSize: 16, lineHeight: 1, padding: 4 }}>×</button>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, marginBottom: 16, background: percentualOk ? COM_C.verdeLt : COM_C.vermelhoLt, border: `1px solid ${percentualOk ? '#bbf7d0' : '#fecaca'}` }}>
+            <span style={{ fontSize: 13, color: percentualOk ? COM_C.verde : COM_C.vermelho }}>
+              {percentualOk ? '✓ Percentuais corretos' : `Total: ${totalPercentual.toFixed(2)}% (faltam ${(100 - totalPercentual).toFixed(2)}%)`}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: percentualOk ? COM_C.verde : COM_C.vermelho }}>{totalPercentual.toFixed(1)}% / 100%</span>
+          </div>
+          <Field label="Adicionar participante">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input placeholder="Nome ou CPF..." value={buscaRateio} onChange={e => setBuscaRateio(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && buscarParaRateio()} />
+              <Btn variante="azul" onClick={buscarParaRateio}>Buscar</Btn>
+            </div>
+          </Field>
+          {resultadosBuscaRateio.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, marginBottom: 12 }}>
+              {resultadosBuscaRateio.map(p => (
+                <ListRow
+                  key={p.id}
+                  onClick={() => adicionarParticipante(p)}
+                  titulo={p.nome}
+                  subtitulo={p.tipo_posse ? `${p.tipo_posse} · ${p.percentual_posse ?? 0}%` : p.cpf ?? ''}
+                />
+              ))}
+            </div>
+          )}
+          {erroRateio && <div style={{ marginBottom: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroRateio}</div>}
+        </Modal>
       )}
 
-      <header className="caixa-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FDF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="ti ti-cash" style={{ fontSize: 20, color: '#92400e' }} />
-          </div>
+      <PageLayout
+        titulo="Caixa"
+        subtitulo={`Inicial: ${fmtReal(sessao.saldo_inicial_especie)}`}
+        icone="ti-cash"
+        breadcrumb={[{ label: 'Caixa' }]}
+        fullHeight
+        acoes={
+          <>
+            <Badge label="Aberto" bg={COM_C.verdeLt} cor={COM_C.verde} dot />
+            <Btn variante="marrom-outline" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
+              Aporte / Sangria
+            </Btn>
+            <Btn variante="cinza" icone="ti-receipt" onClick={abrirModalSaida}>
+              Saída avulsa
+            </Btn>
+          </>
+        }
+      >
+        <div className="com-saldo-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Caixa</h1>
-              <span style={{ fontSize: 13, color: '#166534', background: '#dcfce7', padding: '2px 10px', borderRadius: 20 }}>● Aberto</span>
-            </div>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <Link href="/comercializacao" style={{ color: '#78716C', textDecoration: 'none' }}>Comercialização</Link>
-              {' / '}Caixa · Inicial: {fmtReal(sessao.saldo_inicial_especie)}
-              {' · '}
-              <span style={{ color: '#92400e', fontWeight: 600 }}>
-                Atual: {fmtReal(saldoEsperado)}
-              </span>
-            </div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 4 }}>Saldo em espécie</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em' }}>{fmtReal(saldoEsperado)}</div>
+          </div>
+          <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
+            <div>Saldo inicial: {fmtReal(sessao.saldo_inicial_especie)}</div>
+            <div style={{ marginTop: 2 }}>Saídas hoje: {fmtReal(sessao.total_saidas_especie ?? 0)}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
-            Aporte / Sangria
-          </Btn>
-          <Btn variante="cinza" icone="ti-receipt" onClick={abrirModalSaida}>
-            Saída avulsa
-          </Btn>
-        </div>
-      </header>
 
-      <div className="caixa-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+        <Tabs
+          tabs={[
+            { id: 'buscar', label: 'Produtor', icon: 'ti-search' },
+            { id: 'solicitacoes', label: 'Solicitações', icon: 'ti-bell', badge: solicitacoes.length },
+            { id: 'operacoes', label: 'Operações do dia', icon: 'ti-list' },
+            { id: 'fechar', label: 'Fechar caixa', icon: 'ti-lock' },
+          ]}
+          ativa={aba}
+          onChange={(id) => setAba(id as typeof aba)}
+        />
 
-      {/* ABAS */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid #e5e3dc' }}>
-        {(['buscar', 'solicitacoes', 'operacoes', 'fechar'] as const).map(a => (
-          <button key={a} onClick={() => setAba(a)} style={{
-            padding: '8px 20px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px',
-            borderBottom: aba === a ? '2px solid #92400e' : '2px solid transparent',
-            color: aba === a ? '#92400e' : '#6b6b6b', fontWeight: aba === a ? 500 : 400, marginBottom: '-1px'
-          }}>
-            {a === 'buscar' ? 'Produtor' : a === 'solicitacoes' ? `Solicitações${solicitacoes.length > 0 ? ` (${solicitacoes.length})` : ''}` : a === 'operacoes' ? 'Operações do dia' : 'Fechar caixa'}
-          </button>
-        ))}
-      </div>
-
-      {/* ABA BUSCAR */}
       {aba === 'buscar' && (
         <div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <input placeholder="Nome ou CPF do produtor..." value={termoBusca}
-              onChange={handleTermoBuscaChange} onKeyDown={e => e.key === 'Enter' && handleBuscar()}
-              style={{ flex: 1, maxWidth: '360px', ...inputStyle }} />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, maxWidth: 360 }}>
+              <Input placeholder="Nome ou CPF do produtor..." value={termoBusca}
+                onChange={handleTermoBuscaChange} onKeyDown={e => e.key === 'Enter' && handleBuscar()} />
+            </div>
             <Btn variante="azul" icone="ti-search" onClick={handleBuscar}>Buscar</Btn>
             {produtorSelecionado && (
               <Btn variante="azul" icone="ti-x" onClick={() => { setProdutorSelecionado(null); setConta(null); setOperacao(null) }}>
@@ -1133,114 +1110,90 @@ export default function CaixaPage() {
           </div>
 
           {resultadosBusca.length > 0 && !produtorSelecionado && (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {resultadosBusca.map(p => (
-                <button key={p.id} onClick={() => selecionarProdutor(p)} style={{ width: '100%', padding: '12px 16px', border: 'none', borderBottom: '1px solid #f0ede8', background: '#fff', cursor: 'pointer', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500 }}>{p.nome}</span>
-                  <span style={{ fontSize: '12px', color: '#6b6b6b' }}>
-                    {p.cpf ? mascararCPF(p.cpf) : ''} · {p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
-                    {p.tipo_posse ? ` · ${p.tipo_posse}` : ''}
-                  </span>
-                </button>
+                <ListRow
+                  key={p.id}
+                  onClick={() => selecionarProdutor(p)}
+                  icone="ti-user"
+                  titulo={p.nome}
+                  subtitulo={`${p.cpf ? mascararCPF(p.cpf) : ''} · ${p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}${p.tipo_posse ? ` · ${p.tipo_posse}` : ''}`}
+                />
               ))}
             </div>
           )}
 
           {!produtorSelecionado && sessao && operacoesDia.length > 0 && (
-            <div style={{
-              background: '#fff', border: '1px solid #e5e3dc',
-              borderRadius: 12, overflow: 'hidden', marginTop: 8,
-            }}>
-              <div style={{
-                padding: '12px 16px', borderBottom: '1px solid #e5e3dc',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>
-                  Operações de hoje
-                </span>
-                <span style={{ fontSize: 12, color: '#6b7280' }}>
-                  {operacoesDia.length} operação(ões)
-                </span>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: '#fafaf8' }}>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Horário</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Produtor</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Operação</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Qtd</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 400, color: '#6b7280', fontSize: 12 }}>Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {operacoesDia.slice(0, 8).map(op => (
-                    <tr key={op.id} style={{ borderTop: '1px solid #f0ede8' }}>
-                      <td style={{ padding: '9px 16px', color: '#6b7280', whiteSpace: 'nowrap' }}>
-                        {new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td style={{ padding: '9px 16px', color: '#111827' }}>
-                        {op.contas_produtor?.produtores?.nome ?? '—'}
-                      </td>
-                      <td style={{ padding: '9px 16px', color: '#6b7280' }}>
-                        {TIPO_LABEL[op.tipo] ?? op.tipo}
-                      </td>
-                      <td style={{ padding: '9px 16px', textAlign: 'right', color: '#6b7280' }}>
-                        {op.quantidade_produto
-                          ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} kg` })()
-                          : '—'}
-                      </td>
-                      <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 500,
-                        color: op.valor_financeiro
-                          ? (op.tipo === 'conversao' ? '#166534' : '#111827')
-                          : '#111827' }}>
-                        {op.valor_financeiro
-                          ? fmtReal(Math.abs(op.valor_financeiro))
-                          : '—'}
-                      </td>
+            <ContentCard
+              title="Operações de hoje"
+              subtitle={`${operacoesDia.length} operação(ões)`}
+              noPadding
+            >
+              <div style={{ overflowX: 'auto' }}>
+                <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['Horário', 'Produtor', 'Operação', 'Qtd', 'Valor'].map((h, i) => (
+                        <th key={h} style={{ textAlign: i >= 3 ? 'right' : 'left' }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {operacoesDia.slice(0, 8).map(op => (
+                      <tr key={op.id}>
+                        <td style={{ color: COM_C.txtSub, whiteSpace: 'nowrap' }}>
+                          {new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td>{op.contas_produtor?.produtores?.nome ?? '—'}</td>
+                        <td style={{ color: COM_C.txtSub }}>{TIPO_LABEL[op.tipo] ?? op.tipo}</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
+                          {op.quantidade_produto
+                            ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} kg` })()
+                            : '—'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (op.tipo === 'conversao' ? COM_C.verde : COM_C.txt) : COM_C.txt }}>
+                          {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {operacoesDia.length > 8 && (
-                <div style={{ padding: '10px 16px', borderTop: '1px solid #e5e3dc', textAlign: 'center' }}>
+                <div style={{ padding: '10px 16px', borderTop: `1px solid ${COM_C.borda}`, textAlign: 'center' }}>
                   <button onClick={() => setAba('operacoes')} style={{
-                    background: 'none', border: 'none', color: '#92400e',
-                    fontSize: 13, cursor: 'pointer',
+                    background: 'none', border: 'none', color: COM_C.marrom,
+                    fontSize: 13, cursor: 'pointer', fontWeight: 600,
                   }}>
                     Ver todas as {operacoesDia.length} operações →
                   </button>
                 </div>
               )}
-            </div>
+            </ContentCard>
           )}
 
           {produtorSelecionado && conta && (
             <div>
-              <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: '16px' }}>{produtorSelecionado.nome}</div>
-                    <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '2px' }}>
-                      {produtorSelecionado.cpf ? mascararCPF(produtorSelecionado.cpf) : ''} · {produtorSelecionado.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
-                      {produtorSelecionado.telefone ? ` · ${mascararTelefone(produtorSelecionado.telefone)}` : ''}
+              <ContentCard title={produtorSelecionado.nome}
+                subtitle={`${produtorSelecionado.cpf ? mascararCPF(produtorSelecionado.cpf) : ''} · ${produtorSelecionado.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}${produtorSelecionado.telefone ? ` · ${mascararTelefone(produtorSelecionado.telefone)}` : ''}`}
+                action={<Badge label={produtorSelecionado.tipo === 'cooperado' ? 'Cooperado' : 'Externo'} bg={COM_C.marromLt} cor={COM_C.marrom} />}
+              >
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {conta.saldos_produto?.filter(s => s.quantidade > 0).map(s => (
+                    <div key={s.produto_id} style={{ background: COM_C.marromLt, border: '1px solid #fde68a', borderRadius: 8, padding: '8px 14px', textAlign: 'center' }}>
+                      <KgDisplay valor={s.quantidade} fontSize={16} cor={COM_C.marrom} />
+                      <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>{s.produtos.nome}</div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    {conta.saldos_produto?.filter(s => s.quantidade > 0).map(s => (
-                      <div key={s.produto_id} style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '8px 14px', textAlign: 'center' }}>
-                        <KgDisplay valor={s.quantidade} fontSize={16} cor="#92400e" />
-                        <div style={{ fontSize: '11px', color: '#6b6b6b', marginTop: '2px' }}>{s.produtos.nome}</div>
-                      </div>
-                    ))}
-                    {conta.saldo_financeiro > 0 && (
-                      <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 14px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '16px', fontWeight: 600, color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</div>
-                        <div style={{ fontSize: '11px', color: '#6b6b6b' }}>Saldo financeiro</div>
-                      </div>
-                    )}
-                  </div>
+                  ))}
+                  {conta.saldo_financeiro > 0 && (
+                    <div style={{ background: COM_C.verdeLt, border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 14px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: COM_C.verde }}>{fmtReal(conta.saldo_financeiro)}</div>
+                      <div style={{ fontSize: 11, color: COM_C.txtSub }}>Saldo financeiro</div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </ContentCard>
+              <div style={{ height: 16 }} />
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
                 <Btn variante="marrom" icone="ti-arrow-down" onClick={() => setOperacao(operacao === 'entrega' ? null : 'entrega')}
@@ -1262,324 +1215,309 @@ export default function CaixaPage() {
               {ultimaMovimentacaoId && (
                 <div
                   onClick={() => { setUltimaMovimentacaoId(null); setStatusOp('idle') }}
-                  style={{ cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px' }}
+                  style={{ cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: COM_C.verdeLt, border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 12px' }}
                 >
-                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Entrega registrada com sucesso.</span>
+                  <span style={{ color: COM_C.verde, fontSize: 13 }}>✓ Entrega registrada com sucesso.</span>
                   <span onClick={e => e.stopPropagation()}>
                     <BotaoComprovante movimentacao_id={ultimaMovimentacaoId} />
                   </span>
                   <button onClick={e => { e.stopPropagation(); setUltimaMovimentacaoId(null); setStatusOp('idle') }}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 18, lineHeight: 1 }}>×</button>
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: COM_C.txtSub, fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
               )}
               {ultimaSaqueId && (
                 <div
                   onClick={() => setUltimaSaqueId(null)}
-                  style={{ cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 12px' }}
+                  style={{ cursor: 'pointer', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: COM_C.verdeLt, border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 12px' }}
                 >
-                  <span style={{ color: '#166534', fontSize: '13px' }}>✓ Pagamento registrado com sucesso.</span>
+                  <span style={{ color: COM_C.verde, fontSize: 13 }}>✓ Pagamento registrado com sucesso.</span>
                   <span onClick={e => e.stopPropagation()}>
                     <BotaoComprovantePagamento movimentacao_id={ultimaSaqueId} />
                   </span>
                   <button onClick={e => { e.stopPropagation(); setUltimaSaqueId(null) }}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 18, lineHeight: 1 }}>×</button>
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: COM_C.txtSub, fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
               )}
-              {statusOp === 'erro' && <div style={{ marginBottom: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>}
+              {statusOp === 'erro' && <div style={{ marginBottom: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>}
 
               {operacao === 'entrega' && (
-                <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                  <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Registrar entrega</div>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Produto</label>
-                      <select value={formEntrega.produto_id} onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))} style={inputStyle}>
+                <ContentCard title="Registrar entrega">
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <Field label="Produto">
+                      <Select value={formEntrega.produto_id} onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}>
                         {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Quantidade (kg)</label>
-                      <input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}
+                      </Select>
+                    </Field>
+                    <Field label="Quantidade (kg)">
+                      <Input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}
                         onChange={e => setFormEntrega(f => ({ ...f, quantidade: e.target.value }))}
-                        style={{ ...inputStyle, width: '120px' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '160px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-                      <input placeholder="Opcional" value={formEntrega.observacoes} onChange={e => setFormEntrega(f => ({ ...f, observacoes: e.target.value }))} style={inputStyle} />
-                    </div>
+                        style={{ width: 120 }} />
+                    </Field>
+                    <Field label="Observações">
+                      <Input placeholder="Opcional" value={formEntrega.observacoes} onChange={e => setFormEntrega(f => ({ ...f, observacoes: e.target.value }))} style={{ minWidth: 160 }} />
+                    </Field>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                     <Btn variante="marrom" disabled={statusOp === 'salvando' || !formEntrega.quantidade} onClick={handleEntregaSimples}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar (individual)'}
                     </Btn>
-                    <Btn variante="cinza" disabled={!formEntrega.quantidade || !formEntrega.produto_id} onClick={abrirModalRateio}>
+                    <Btn variante="marrom-outline" disabled={!formEntrega.quantidade || !formEntrega.produto_id} onClick={abrirModalRateio}>
                       Rateio →
                     </Btn>
                   </div>
-                </div>
+                </ContentCard>
               )}
+              {operacao === 'entrega' && <div style={{ height: 16 }} />}
 
               {operacao === 'receber' && (
-                <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                  <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Pagar produtor</div>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Produto</label>
-                      <select value={formReceber.produto_id}
-                        onChange={e => { setFormReceber(f => ({ ...f, produto_id: e.target.value })); carregarCotacao(e.target.value) }}
-                        style={inputStyle}>
+                <ContentCard title="Pagar produtor">
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <Field label="Produto">
+                      <Select value={formReceber.produto_id}
+                        onChange={e => { setFormReceber(f => ({ ...f, produto_id: e.target.value })); carregarCotacao(e.target.value) }}>
                         <option value="">Selecionar...</option>
                         {conta.saldos_produto?.filter(s => s.quantidade > 0).map(s => (
                           <option key={s.produto_id} value={s.produto_id}>
                             {s.produtos.nome} ({(() => { const {inteiro, decimal} = formatarKg(s.quantidade); return inteiro + decimal })()}{s.produtos.unidade})
                           </option>
                         ))}
-                      </select>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Quantidade (kg)</label>
-                      <input type="number" step="0.001" placeholder="0,000" value={formReceber.quantidade}
+                      </Select>
+                    </Field>
+                    <Field label="Quantidade (kg)">
+                      <Input type="number" step="0.001" placeholder="0,000" value={formReceber.quantidade}
                         onChange={e => setFormReceber(f => ({ ...f, quantidade: e.target.value }))}
-                        style={{ ...inputStyle, width: '110px' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Preço/kg (R$)</label>
-                      <input type="number" step="0.01" placeholder="0,00" value={formReceber.preco_kg}
+                        style={{ width: 110 }} />
+                    </Field>
+                    <Field label="Preço/kg (R$)">
+                      <Input type="number" step="0.01" placeholder="0,00" value={formReceber.preco_kg}
                         onChange={e => setFormReceber(f => ({ ...f, preco_kg: e.target.value }))}
-                        style={{ ...inputStyle, width: '100px' }} />
-                    </div>
+                        style={{ width: 100 }} />
+                    </Field>
                     {formReceber.quantidade && formReceber.preco_kg && (
-                      <div style={{ padding: '8px 14px', background: '#fef3c7', borderRadius: '8px', fontSize: '14px', fontWeight: 500, color: '#92400e' }}>
+                      <div style={{ padding: '8px 14px', background: COM_C.marromLt, borderRadius: 8, fontSize: 14, fontWeight: 600, color: COM_C.marrom }}>
                         = {fmtReal(parseFloat(formReceber.quantidade) * parseFloat(formReceber.preco_kg))}
                       </div>
                     )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Pagamento</label>
-                      <select value={formReceber.forma_pagamento} onChange={e => setFormReceber(f => ({ ...f, forma_pagamento: e.target.value as 'especie' | 'pix' }))} style={inputStyle}>
+                    <Field label="Pagamento">
+                      <Select value={formReceber.forma_pagamento} onChange={e => setFormReceber(f => ({ ...f, forma_pagamento: e.target.value as 'especie' | 'pix' }))}>
                         <option value="especie">Espécie</option>
                         <option value="pix">Pix</option>
-                      </select>
-                    </div>
+                      </Select>
+                    </Field>
                     {formReceber.forma_pagamento === 'pix' && (
-                      <div style={{ minWidth: '200px' }}>
-                        <PixInput value={formReceber.chave_pix} onChange={v => setFormReceber(f => ({ ...f, chave_pix: v }))} style={inputStyle} />
+                      <div style={{ minWidth: 200 }}>
+                        <PixInput value={formReceber.chave_pix} onChange={v => setFormReceber(f => ({ ...f, chave_pix: v }))} />
                       </div>
                     )}
                     <Btn variante="verde" disabled={statusOp === 'salvando'} onClick={handleReceber}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar pagamento'}
                     </Btn>
                   </div>
-                </div>
+                </ContentCard>
               )}
+              {operacao === 'receber' && <div style={{ height: 16 }} />}
 
               {operacao === 'saque' && (
-                <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-                  <div style={{ fontWeight: 500, fontSize: '14px', marginBottom: '12px' }}>Saque de saldo financeiro</div>
-                  <div style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '12px' }}>
-                    Saldo disponível: <strong style={{ color: '#166534' }}>{fmtReal(conta.saldo_financeiro)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Valor (R$)</label>
-                      <input type="number" step="0.01" placeholder="0,00" value={formSaque.valor}
+                <ContentCard title="Saque de saldo financeiro" subtitle={`Saldo disponível: ${fmtReal(conta.saldo_financeiro)}`}>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <Field label="Valor (R$)">
+                      <Input type="number" step="0.01" placeholder="0,00" value={formSaque.valor}
                         onChange={e => setFormSaque(f => ({ ...f, valor: e.target.value }))}
-                        style={{ ...inputStyle, width: '130px' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Pagamento</label>
-                      <select value={formSaque.forma_pagamento} onChange={e => setFormSaque(f => ({ ...f, forma_pagamento: e.target.value as 'especie' | 'pix' }))} style={inputStyle}>
+                        style={{ width: 130 }} />
+                    </Field>
+                    <Field label="Pagamento">
+                      <Select value={formSaque.forma_pagamento} onChange={e => setFormSaque(f => ({ ...f, forma_pagamento: e.target.value as 'especie' | 'pix' }))}>
                         <option value="especie">Espécie</option>
                         <option value="pix">Pix</option>
-                      </select>
-                    </div>
+                      </Select>
+                    </Field>
                     {formSaque.forma_pagamento === 'pix' && (
-                      <div style={{ minWidth: '220px' }}>
-                        <PixInput value={formSaque.chave_pix} onChange={v => setFormSaque(f => ({ ...f, chave_pix: v }))} style={{ ...inputStyle, width: '100%' }} />
+                      <div style={{ minWidth: 220 }}>
+                        <PixInput value={formSaque.chave_pix} onChange={v => setFormSaque(f => ({ ...f, chave_pix: v }))} />
                       </div>
                     )}
                     <Btn variante="marrom" disabled={statusOp === 'salvando'} onClick={handleSaque}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar saque'}
                     </Btn>
                   </div>
-                </div>
+                </ContentCard>
               )}
+              {operacao === 'saque' && <div style={{ height: 16 }} />}
 
               {extrato.length > 0 && (
-                <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e3dc', fontSize: '13px', fontWeight: 500 }}>Extrato recente</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <tbody>
-                      {extrato.slice(0, 10).map(m => (
-                        <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                          <td style={{ padding: '10px 16px', color: '#6b6b6b' }}>
-                            {new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td style={{ padding: '10px 16px' }}>{TIPO_LABEL[m.tipo] ?? m.tipo}</td>
-                          <td style={{ padding: '10px 16px', color: '#6b6b6b' }}>
-                            {m.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(m.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span> })() : ''}
-                          </td>
-                          <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                            {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : ''}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ContentCard title="Extrato recente" noPadding>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        {extrato.slice(0, 10).map(m => (
+                          <tr key={m.id}>
+                            <td style={{ color: COM_C.txtSub }}>
+                              {new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td>{TIPO_LABEL[m.tipo] ?? m.tipo}</td>
+                            <td style={{ color: COM_C.txtSub }}>
+                              {m.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(m.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span> })() : ''}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: m.valor_financeiro ? (m.tipo === 'conversao' ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
+                              {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : ''}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </ContentCard>
               )}
             </div>
           )}
         </div>
       )}
 
-      {/* ABA SOLICITAÇÕES */}
       {aba === 'solicitacoes' && (
         <div>
           {solicitacoes.length === 0 ? (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '32px', textAlign: 'center', color: '#6b6b6b', fontSize: '14px' }}>Nenhuma solicitação pendente.</div>
+            <EmptyState emoji="🔔" titulo="Nenhuma solicitação pendente" descricao="Quando produtores solicitarem pagamento, aparecerão aqui." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {solicitacoes.map(s => (
-                <div key={s.id} style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                    <div>
-                      <div style={{ fontWeight: 500, fontSize: '15px' }}>{s.produtores?.nome}</div>
-                      <div style={{ fontSize: '13px', color: '#6b6b6b', marginTop: '4px' }}>
-                        {s.quantidade_kg} kg de {s.produtos?.nome} · {fmtReal(s.valor_estimado)} · {s.forma_pagamento === 'pix' ? `Pix: ${s.chave_pix}` : 'Espécie'}
-                      </div>
-                    </div>
+                <ListRow
+                  key={s.id}
+                  icone="ti-bell"
+                  iconeBg={COM_C.laranjaLt}
+                  iconeCor={COM_C.laranja}
+                  titulo={s.produtores?.nome ?? 'Produtor'}
+                  subtitulo={`${s.quantidade_kg} kg de ${s.produtos?.nome} · ${fmtReal(s.valor_estimado)} · ${s.forma_pagamento === 'pix' ? `Pix: ${s.chave_pix}` : 'Espécie'}`}
+                  direita={
                     <Btn variante="marrom" tamanho="sm" onClick={async () => { const p = await buscarProdutor(s.produtores?.nome ?? ''); if (p && p[0]) { await selecionarProdutor(p[0] as ProdutorBusca); setAba('buscar') } }}>
                       Atender
                     </Btn>
-                  </div>
-                </div>
+                  }
+                />
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* ABA OPERAÇÕES DO DIA */}
       {aba === 'operacoes' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#6b6b6b' }}>{operacoesDia.length} operação(ões) hoje</span>
-            <Btn variante="cinza" tamanho="sm" disabled={carregandoOps} onClick={carregarOperacoesDia}>
-              {carregandoOps ? 'Atualizando...' : '↻ Atualizar'}
-            </Btn>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Horário</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Produtor</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Operação</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Quantidade</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 500 }}>Comprovante</th>
-                </tr>
-              </thead>
-              <tbody>
-                {carregandoOps ? (
-                  <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Carregando...</td></tr>
-                ) : operacoesDia.length === 0 ? (
-                  <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>Nenhuma operação registrada ainda.</td></tr>
-                ) : (
-                  operacoesDia.map(op => (
-                    <tr key={op.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                      <td style={{ padding: '10px 16px', color: '#6b6b6b', whiteSpace: 'nowrap' }}>
-                        {new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td style={{ padding: '10px 16px' }}>{op.contas_produtor?.produtores?.nome ?? '—'}</td>
-                      <td style={{ padding: '10px 16px' }}>
-                        <div>{TIPO_LABEL[op.tipo] ?? op.tipo}</div>
-                        {op.produtos && <div style={{ fontSize: '12px', color: '#6b6b6b' }}>{op.produtos.nome}</div>}
-                      </td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                        {op.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(op.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {op.produtos?.unidade ?? 'kg'}</span> })() : '—'}
-                      </td>
-                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: op.valor_financeiro ? (op.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
-                        {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
-                      </td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        {op.tipo === 'entrega' && (
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                            <BotaoComprovante movimentacao_id={op.id} />
-                            <BotaoNfe movimentacao_id={op.id} />
-                          </div>
-                        )}
-                        {(op.tipo === 'saque_especie' || op.tipo === 'saque_pix') && (
-                          <BotaoComprovantePagamento movimentacao_id={op.id} />
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ContentCard
+            title="Operações do dia"
+            subtitle={`${operacoesDia.length} operação(ões) hoje`}
+            action={
+              <Btn variante="azul" tamanho="sm" disabled={carregandoOps} onClick={carregarOperacoesDia}>
+                {carregandoOps ? 'Atualizando...' : '↻ Atualizar'}
+              </Btn>
+            }
+            noPadding
+          >
+            <div style={{ overflowX: 'auto' }}>
+              <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <thead>
+                  <tr>
+                    {['Horário', 'Produtor', 'Operação', 'Quantidade', 'Valor', 'Comprovante'].map((h, i) => (
+                      <th key={h} style={{ textAlign: i >= 3 && i <= 4 ? 'right' : i === 5 ? 'center' : 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {carregandoOps ? (
+                    <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: COM_C.txtSub }}>Carregando...</td></tr>
+                  ) : operacoesDia.length === 0 ? (
+                    <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: COM_C.txtSub }}>Nenhuma operação registrada ainda.</td></tr>
+                  ) : (
+                    operacoesDia.map(op => (
+                      <tr key={op.id}>
+                        <td style={{ color: COM_C.txtSub, whiteSpace: 'nowrap' }}>
+                          {new Date(op.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td>{op.contas_produtor?.produtores?.nome ?? '—'}</td>
+                        <td>
+                          <div>{TIPO_LABEL[op.tipo] ?? op.tipo}</div>
+                          {op.produtos && <div style={{ fontSize: 12, color: COM_C.txtSub }}>{op.produtos.nome}</div>}
+                        </td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
+                          {op.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(op.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {op.produtos?.unidade ?? 'kg'}</span> })() : '—'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (op.tipo === 'conversao' ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
+                          {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          {op.tipo === 'entrega' && (
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                              <BotaoComprovante movimentacao_id={op.id} />
+                              <BotaoNfe movimentacao_id={op.id} />
+                            </div>
+                          )}
+                          {(op.tipo === 'saque_especie' || op.tipo === 'saque_pix') && (
+                            <BotaoComprovantePagamento movimentacao_id={op.id} />
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </ContentCard>
         </div>
       )}
 
-      {/* ABA FECHAR CAIXA */}
       {aba === 'fechar' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '480px' }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '24px' }}>
-            <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '16px' }}>Resumo do dia</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 480 }}>
+          <ContentCard title="Resumo do dia">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b6b6b' }}>Saldo inicial espécie</span>
+                <span style={{ color: COM_C.txtSub }}>Saldo inicial espécie</span>
                 <span>{fmtReal(sessao.saldo_inicial_especie)}</span>
               </div>
               {aportesDia.filter(a => a.tipo === 'aporte').length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.verde }}>
                   <span>Aportes ({aportesDia.filter(a => a.tipo === 'aporte').length})</span>
                   <span>+ {fmtReal(aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
                 </div>
               )}
               {aportesDia.filter(a => a.tipo === 'sangria').length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#991b1b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.vermelho }}>
                   <span>Sangrias ({aportesDia.filter(a => a.tipo === 'sangria').length})</span>
                   <span>− {fmtReal(aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b6b6b' }}>Saídas espécie (pagamentos)</span>
+                <span style={{ color: COM_C.txtSub }}>Saídas espécie (pagamentos)</span>
                 <span>− {fmtReal(sessao.total_saidas_especie ?? 0)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b6b6b' }}>Total Pix</span>
+                <span style={{ color: COM_C.txtSub }}>Total Pix</span>
                 <span>{fmtReal(sessao.total_pix ?? 0)}</span>
               </div>
-              <div style={{ borderTop: '1px solid #e5e3dc', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+              <div style={{ borderTop: `1px solid ${COM_C.borda}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
                 <span>Saldo esperado em caixa</span>
-                <span style={{ color: '#92400e' }}>{fmtReal(saldoEsperado)}</span>
+                <span style={{ color: COM_C.marrom }}>{fmtReal(saldoEsperado)}</span>
               </div>
             </div>
-          </div>
+          </ContentCard>
 
           {aportesDia.length > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e3dc', fontSize: '13px', fontWeight: 500 }}>Aportes e sangrias do dia</div>
+            <ContentCard title="Aportes e sangrias do dia" noPadding>
               {aportesDia.map(a => (
-                <div key={a.id} style={{ padding: '12px 16px', borderBottom: '1px solid #f0ede8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                <div key={a.id} style={{ padding: '12px 22px', borderBottom: `1px solid ${COM_C.borda}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
                   <div>
-                    <div style={{ fontWeight: 500, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
+                    <div style={{ fontWeight: 600, color: a.tipo === 'aporte' ? COM_C.verde : COM_C.vermelho }}>
                       {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '2px' }}>
+                    <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>
                       {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       {a.autorizador && ` · Auth: ${(a.autorizador as any).nome_completo}`}
                     </div>
-                    {a.observacoes && <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '2px' }}>{a.observacoes}</div>}
+                    {a.observacoes && <div style={{ fontSize: 12, color: '#A8A29E', marginTop: 2 }}>{a.observacoes}</div>}
                   </div>
-                  <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? '#166534' : '#991b1b' }}>
+                  <span style={{ fontWeight: 700, color: a.tipo === 'aporte' ? COM_C.verde : COM_C.vermelho }}>
                     {a.tipo === 'aporte' ? '+' : '−'} {fmtReal(a.valor)}
                   </span>
                 </div>
               ))}
-            </div>
+            </ContentCard>
           )}
 
           <Btn variante="marrom" icone="ti-lock" onClick={() => setModalFechar(true)} style={{ width: '100%', justifyContent: 'center', padding: '12px 18px' }}>
@@ -1588,51 +1526,45 @@ export default function CaixaPage() {
         </div>
       )}
 
-      {/* MODAL FECHAR CAIXA */}
       {modalFechar && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '20px' }}>Confirmar fechamento</div>
-
-            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '4px' }}>Saldo esperado em caixa</div>
-              <div style={{ fontSize: '22px', fontWeight: 700, color: '#92400e' }}>{fmtReal(saldoEsperado)}</div>
-              <div style={{ fontSize: '12px', color: '#6b6b6b', marginTop: '4px' }}>calculado automaticamente</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Saldo físico contado (opcional — para conferência)</label>
-                <input type="number" step="0.01" placeholder="0,00" value={saldoFinal}
-                  onChange={e => setSaldoFinal(e.target.value)} autoFocus
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-                {saldoFinal && (() => {
-                  const diferenca = parseFloat(saldoFinal) - saldoEsperado
-                  const cor = Math.abs(diferenca) < 0.01 ? '#166534' : diferenca > 0 ? '#166534' : '#991b1b'
-                  const label = Math.abs(diferenca) < 0.01 ? '✓ Confere' : diferenca > 0 ? `Sobra ${fmtReal(diferenca)}` : `Falta ${fmtReal(Math.abs(diferenca))}`
-                  return <div style={{ fontSize: '13px', color: cor, fontWeight: 500, marginTop: '4px' }}>{label}</div>
-                })()}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Observações</label>
-                <input placeholder="Opcional" value={obsFechamento}
-                  onChange={e => setObsFechamento(e.target.value)}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <Btn variante="cinza" onClick={() => setModalFechar(false)}>
-                Cancelar
-              </Btn>
+        <Modal
+          titulo="Confirmar fechamento"
+          onClose={() => setModalFechar(false)}
+          largura={400}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setModalFechar(false)}>Cancelar</Btn>
               <Btn variante="marrom" icone="ti-check" disabled={fechando} onClick={handleFecharCaixa}>
                 {fechando ? 'Fechando...' : 'Confirmar fechamento'}
               </Btn>
-            </div>
+            </>
+          }
+        >
+          <div className="com-saldo-bar" style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 4 }}>Saldo esperado em caixa</div>
+            <div style={{ fontSize: 24, fontWeight: 800 }}>{fmtReal(saldoEsperado)}</div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>calculado automaticamente</div>
           </div>
-        </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="Saldo físico contado (opcional — para conferência)">
+              <Input type="number" step="0.01" placeholder="0,00" value={saldoFinal}
+                onChange={e => setSaldoFinal(e.target.value)} autoFocus />
+              {saldoFinal && (() => {
+                const diferenca = parseFloat(saldoFinal) - saldoEsperado
+                const cor = Math.abs(diferenca) < 0.01 ? COM_C.verde : diferenca > 0 ? COM_C.verde : COM_C.vermelho
+                const label = Math.abs(diferenca) < 0.01 ? '✓ Confere' : diferenca > 0 ? `Sobra ${fmtReal(diferenca)}` : `Falta ${fmtReal(Math.abs(diferenca))}`
+                return <span style={{ fontSize: 13, color: cor, fontWeight: 600, marginTop: 4 }}>{label}</span>
+              })()}
+            </Field>
+            <Field label="Observações">
+              <Input placeholder="Opcional" value={obsFechamento}
+                onChange={e => setObsFechamento(e.target.value)} />
+            </Field>
+          </div>
+        </Modal>
       )}
-      </div>
+      </PageLayout>
     </>
   )
 }

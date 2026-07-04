@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { listarSafras, criarSafra, editarSafra } from '@/lib/comercializacao/safras.actions'
+import { Btn } from '@/components/ui/Btn'
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select } from '@/components/comercializacao/ui/Field'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
 
 type Safra = {
   id: string
@@ -15,13 +23,13 @@ type Safra = {
 const STATUS_LABEL: Record<string, string> = {
   planejamento: 'Planejamento',
   em_andamento: 'Em andamento',
-  encerrada: 'Encerrada'
+  encerrada: 'Encerrada',
 }
 
-const STATUS_CORES: Record<string, { bg: string; color: string }> = {
-  planejamento: { bg: '#f1f0eb', color: '#6b6b6b' },
-  em_andamento: { bg: '#dcfce7', color: '#166534' },
-  encerrada: { bg: '#f1f0eb', color: '#9a9a9a' }
+const STATUS_CORES: Record<string, { bg: string; cor: string }> = {
+  planejamento: { bg: '#F5F5F4', cor: COM_C.txtSub },
+  em_andamento: { bg: COM_C.verdeLt, cor: COM_C.verde },
+  encerrada: { bg: '#F5F5F4', cor: '#9A9A9A' },
 }
 
 const formVazio = {
@@ -29,7 +37,7 @@ const formVazio = {
   descricao: '',
   estimativa_kg: '',
   taxa_comercializacao: '3',
-  status: 'planejamento' as 'planejamento' | 'em_andamento' | 'encerrada'
+  status: 'planejamento' as 'planejamento' | 'em_andamento' | 'encerrada',
 }
 
 export default function SafrasPage() {
@@ -54,7 +62,7 @@ export default function SafrasPage() {
       descricao: s.descricao ?? '',
       estimativa_kg: s.estimativa_kg?.toString() ?? '',
       taxa_comercializacao: s.taxa_comercializacao.toString(),
-      status: s.status
+      status: s.status,
     })
     setAbrirModal(true)
   }
@@ -73,7 +81,7 @@ export default function SafrasPage() {
         descricao: form.descricao || undefined,
         estimativa_kg: form.estimativa_kg ? parseFloat(form.estimativa_kg) : undefined,
         taxa_comercializacao: parseFloat(form.taxa_comercializacao),
-        status: form.status
+        status: form.status,
       }
       if (editando) {
         await editarSafra(editando.id, payload)
@@ -92,168 +100,163 @@ export default function SafrasPage() {
   }
 
   const safraAtiva = safras.find(s => s.status === 'em_andamento')
+  const totais = {
+    total: safras.length,
+    emAndamento: safras.filter(s => s.status === 'em_andamento').length,
+    planejamento: safras.filter(s => s.status === 'planejamento').length,
+  }
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>Safras</h1>
-          {safraAtiva && (
-            <div style={{ fontSize: '13px', color: '#166534', marginTop: '4px' }}>
-              Safra ativa: <strong>{safraAtiva.descricao ?? `Safra ${safraAtiva.ano}`}</strong> · Taxa: {safraAtiva.taxa_comercializacao}%
-            </div>
-          )}
+    <PageLayout
+      titulo="Safras"
+      subtitulo={
+        safraAtiva
+          ? `Safra ativa: ${safraAtiva.descricao ?? `Safra ${safraAtiva.ano}`} · Taxa: ${safraAtiva.taxa_comercializacao}%`
+          : 'Gerencie as safras de comercialização'
+      }
+      breadcrumb={[{ label: 'Safras' }]}
+      icone="ti-calendar-stats"
+      acoes={
+        <Btn variante="marrom" icone="ti-plus" onClick={abrirNovo}>
+          Nova safra
+        </Btn>
+      }
+    >
+      {status === 'sucesso' && !abrirModal && (
+        <div style={{ marginBottom: 16, color: COM_C.verde, fontSize: 13, fontWeight: 600 }}>
+          Safra salva com sucesso.
         </div>
-        <button
-          onClick={abrirNovo}
-          style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-        >
-          + Nova safra
-        </button>
-      </div>
-
-      {status === 'sucesso' && (
-        <div style={{ marginBottom: '16px', color: '#166534', fontSize: '13px' }}>Safra salva com sucesso.</div>
       )}
 
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+      <div className="com-kpi-grid-4" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+        <KpiCard label="Total de safras" value={String(totais.total)} icon="ti-calendar-stats" cor={COM_C.marrom} corLt={COM_C.marromLt} />
+        <KpiCard label="Em andamento" value={String(totais.emAndamento)} icon="ti-plant" cor={COM_C.verde} corLt={COM_C.verdeLt} />
+        <KpiCard label="Em planejamento" value={String(totais.planejamento)} icon="ti-clock" cor={COM_C.azul} corLt={COM_C.azulLt} />
+      </div>
+
+      <ContentCard title="Safras cadastradas" subtitle="Histórico e configuração por safra" noPadding>
+        <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Safra</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Ano</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Estimativa</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>Taxa</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 16px' }}></th>
+            <tr>
+              <th>Safra</th>
+              <th>Ano</th>
+              <th style={{ textAlign: 'right' }}>Estimativa</th>
+              <th style={{ textAlign: 'right' }}>Taxa</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right' }}></th>
             </tr>
           </thead>
           <tbody>
-            {safras.map(s => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 500 }}>
-                  {s.descricao ?? `Safra ${s.ano}`}
-                </td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{s.ano}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                  {s.estimativa_kg ? `${s.estimativa_kg.toLocaleString('pt-BR')} kg` : '—'}
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: '#6b6b6b' }}>
-                  {s.taxa_comercializacao}%
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{
-                    fontSize: '12px', padding: '2px 10px', borderRadius: '20px',
-                    background: STATUS_CORES[s.status].bg,
-                    color: STATUS_CORES[s.status].color
-                  }}>
-                    {STATUS_LABEL[s.status]}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <button
-                    onClick={() => abrirEdicao(s)}
-                    style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Editar
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {safras.map(s => {
+              const st = STATUS_CORES[s.status]
+              return (
+                <tr key={s.id}>
+                  <td style={{ fontWeight: 600 }}>{s.descricao ?? `Safra ${s.ano}`}</td>
+                  <td style={{ color: COM_C.txtSub }}>{s.ano}</td>
+                  <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
+                    {s.estimativa_kg ? `${s.estimativa_kg.toLocaleString('pt-BR')} kg` : '—'}
+                  </td>
+                  <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{s.taxa_comercializacao}%</td>
+                  <td>
+                    <Badge label={STATUS_LABEL[s.status]} bg={st.bg} cor={st.cor} dot />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <Btn variante="marrom-outline" tamanho="sm" onClick={() => abrirEdicao(s)}>
+                      Editar
+                    </Btn>
+                  </td>
+                </tr>
+              )
+            })}
             {safras.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>
+                <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: COM_C.txtSub }}>
                   Nenhuma safra cadastrada ainda.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </ContentCard>
 
       {abrirModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
-        }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '440px', maxWidth: '95vw' }}>
-            <div style={{ fontWeight: 500, fontSize: '16px', marginBottom: '20px' }}>
-              {editando ? 'Editar safra' : 'Nova safra'}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Ano *</label>
-                  <input
-                    type="number" value={form.ano}
-                    onChange={e => setForm(f => ({ ...f, ano: parseInt(e.target.value) }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Taxa comercialização (%)</label>
-                  <input
-                    type="number" step="0.01" value={form.taxa_comercializacao}
-                    onChange={e => setForm(f => ({ ...f, taxa_comercializacao: e.target.value }))}
-                    style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Descrição</label>
-                <input
-                  value={form.descricao} placeholder="Ex: Safra Principal 2026"
-                  onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Estimativa de produção (kg)</label>
-                <input
-                  type="number" step="0.001" value={form.estimativa_kg} placeholder="Opcional"
-                  onChange={e => setForm(f => ({ ...f, estimativa_kg: e.target.value }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Status</label>
-                <select
-                  value={form.status}
-                  onChange={e => setForm(f => ({ ...f, status: e.target.value as 'planejamento' | 'em_andamento' | 'encerrada' }))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-                >
-                  <option value="planejamento">Planejamento</option>
-                  <option value="em_andamento">Em andamento</option>
-                  <option value="encerrada">Encerrada</option>
-                </select>
-                {form.status === 'em_andamento' && (
-                  <span style={{ fontSize: '12px', color: '#b45309' }}>
-                    A safra atual em andamento será encerrada automaticamente.
-                  </span>
-                )}
-              </div>
-            </div>
-            {status === 'erro' && (
-              <div style={{ marginTop: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>
-            )}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setAbrirModal(false); setEditando(null) }}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
-              >
+        <Modal
+          titulo={editando ? 'Editar safra' : 'Nova safra'}
+          subtitulo="Configure ano, taxa e status da safra"
+          onClose={() => { setAbrirModal(false); setEditando(null) }}
+          largura={440}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => { setAbrirModal(false); setEditando(null) }}>
                 Cancelar
-              </button>
-              <button
-                onClick={handleSalvar}
-                disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-              >
+              </Btn>
+              <Btn variante="marrom" onClick={handleSalvar} disabled={status === 'salvando'}>
                 {status === 'salvando' ? 'Salvando...' : 'Salvar'}
-              </button>
+              </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <Field label="Ano *">
+                  <Input
+                    type="number"
+                    value={form.ano}
+                    onChange={e => setForm(f => ({ ...f, ano: parseInt(e.target.value) }))}
+                  />
+                </Field>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Field label="Taxa comercialização (%)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.taxa_comercializacao}
+                    onChange={e => setForm(f => ({ ...f, taxa_comercializacao: e.target.value }))}
+                  />
+                </Field>
+              </div>
             </div>
+
+            <Field label="Descrição">
+              <Input
+                value={form.descricao}
+                placeholder="Ex: Safra Principal 2026"
+                onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
+              />
+            </Field>
+
+            <Field label="Estimativa de produção (kg)">
+              <Input
+                type="number"
+                step="0.001"
+                value={form.estimativa_kg}
+                placeholder="Opcional"
+                onChange={e => setForm(f => ({ ...f, estimativa_kg: e.target.value }))}
+              />
+            </Field>
+
+            <Field
+              label="Status"
+              hint={form.status === 'em_andamento' ? 'A safra atual em andamento será encerrada automaticamente.' : undefined}
+            >
+              <Select
+                value={form.status}
+                onChange={e => setForm(f => ({ ...f, status: e.target.value as 'planejamento' | 'em_andamento' | 'encerrada' }))}
+              >
+                <option value="planejamento">Planejamento</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="encerrada">Encerrada</option>
+              </Select>
+            </Field>
+
+            {status === 'erro' && (
+              <div style={{ color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </PageLayout>
   )
 }

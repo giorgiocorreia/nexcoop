@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import {
   listarVendasPagas,
   listarDistribuicaoPorVenda,
@@ -9,12 +8,13 @@ import {
   pagarDistribuicao
 } from '@/lib/comercializacao/distribuicao.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
-
-const C = {
-  cor: '#92400e', corLt: '#FDF8F4',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', sub: '#78716C',
-}
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { EmptyState } from '@/components/comercializacao/ui/EmptyState'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
+import { Btn } from '@/components/ui/Btn'
 
 type VendaSimples = {
   id: string
@@ -83,154 +83,111 @@ export default function DistribuicaoPage() {
   const totalPendente = linhas.filter(l => l.status === 'calculado').reduce((acc, l) => acc + l.valor_liquido, 0)
 
   return (
-    <>
-      <style>{`
-        .dist-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .dist-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .dist-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .dist-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo="Distribuição de Resultado"
+      icone="ti-git-branch"
+      breadcrumb={[{ label: 'Distribuição' }]}
+      fullHeight
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24, alignItems: 'start' }}>
 
-      <header className="dist-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: C.corLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="ti ti-git-branch" style={{ fontSize: 20, color: C.cor }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Distribuição de Resultado</h1>
-            <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
-              <Link href="/comercializacao" style={{ color: C.sub, textDecoration: 'none' }}>Comercialização</Link>
-              {' / '}Distribuição
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="dist-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24, alignItems: 'start' }}>
-
-          {/* Lista de vendas */}
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.borda}`, fontSize: 13, fontWeight: 600, color: C.sub }}>
-              Vendas disponíveis
-            </div>
-            {vendas.length === 0 ? (
-              <div style={{ padding: '20px 16px', fontSize: 13, color: C.sub }}>Nenhuma venda confirmada.</div>
-            ) : vendas.map(v => (
-              <button key={v.id} onClick={() => selecionarVenda(v)} style={{
-                width: '100%', padding: '12px 16px', border: 'none',
-                borderBottom: `1px solid ${C.borda}`, textAlign: 'left', cursor: 'pointer',
-                background: vendaSelecionada?.id === v.id ? C.corLt : '#fff',
-                borderLeft: vendaSelecionada?.id === v.id ? `3px solid ${C.cor}` : '3px solid transparent',
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.txt }}>{v.lotes?.codigo ?? '—'}</div>
-                <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{v.compradores?.nome ?? '—'}</div>
-                <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
-                  {v.valor_liquido != null ? fmtReal(v.valor_liquido) : '—'}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Painel de distribuição */}
-          <div>
-            {!vendaSelecionada ? (
-              <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '48px', textAlign: 'center', color: C.sub, fontSize: 14 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🌿</div>
-                Selecione uma venda para calcular a distribuição.
+        <ContentCard title="Vendas disponíveis" noPadding>
+          {vendas.length === 0 ? (
+            <div style={{ padding: '20px 16px', fontSize: 13, color: COM_C.txtSub }}>Nenhuma venda confirmada.</div>
+          ) : vendas.map(v => (
+            <button key={v.id} onClick={() => selecionarVenda(v)} style={{
+              width: '100%', padding: '12px 16px', border: 'none',
+              borderBottom: `1px solid ${COM_C.borda}`, textAlign: 'left', cursor: 'pointer',
+              background: vendaSelecionada?.id === v.id ? COM_C.marromLt : '#fff',
+              borderLeft: vendaSelecionada?.id === v.id ? `3px solid ${COM_C.marrom}` : '3px solid transparent',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt }}>{v.lotes?.codigo ?? '—'}</div>
+              <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{v.compradores?.nome ?? '—'}</div>
+              <div style={{ fontSize: 12, color: COM_C.verde, marginTop: 2 }}>
+                {v.valor_liquido != null ? fmtReal(v.valor_liquido) : '—'}
               </div>
-            ) : (
-              <>
-                {/* Header da venda */}
-                <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '20px', marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: C.txt }}>
-                        {vendaSelecionada.lotes?.codigo} — {vendaSelecionada.compradores?.nome}
-                      </div>
-                      <div style={{ fontSize: 13, color: C.sub, marginTop: 2 }}>
-                        {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: {fmtReal(vendaSelecionada.valor_liquido ?? 0)}
-                      </div>
-                    </div>
-                    <button onClick={handleCalcular} disabled={calculando}
-                      style={{ padding: '9px 18px', background: C.cor, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                      {calculando ? 'Calculando...' : linhas.length > 0 ? 'Recalcular' : 'Calcular distribuição'}
-                    </button>
-                  </div>
-                  {status === 'sucesso' && <div style={{ marginTop: 12, color: '#166534', fontSize: 13 }}>Distribuição calculada com sucesso.</div>}
-                  {status === 'erro'   && <div style={{ marginTop: 12, color: '#DC2626', fontSize: 13 }}>{erroMsg}</div>}
+            </button>
+          ))}
+        </ContentCard>
+
+        <div>
+          {!vendaSelecionada ? (
+            <EmptyState
+              emoji="🌿"
+              titulo="Selecione uma venda"
+              descricao="Escolha uma venda na lista ao lado para calcular a distribuição."
+            />
+          ) : (
+            <>
+              <ContentCard
+                action={
+                  <Btn variante="marrom" onClick={handleCalcular} disabled={calculando}>
+                    {calculando ? 'Calculando...' : linhas.length > 0 ? 'Recalcular' : 'Calcular distribuição'}
+                  </Btn>
+                }
+              >
+                <div style={{ fontWeight: 700, fontSize: 15, color: COM_C.txt }}>
+                  {vendaSelecionada.lotes?.codigo} — {vendaSelecionada.compradores?.nome}
                 </div>
+                <div style={{ fontSize: 13, color: COM_C.txtSub, marginTop: 2 }}>
+                  {new Date(vendaSelecionada.data_venda).toLocaleDateString('pt-BR')} · Valor líquido: {fmtReal(vendaSelecionada.valor_liquido ?? 0)}
+                </div>
+                {status === 'sucesso' && <div style={{ marginTop: 12, color: COM_C.verde, fontSize: 13 }}>Distribuição calculada com sucesso.</div>}
+                {status === 'erro'   && <div style={{ marginTop: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>}
+              </ContentCard>
 
-                {/* KPIs resumo */}
-                {linhas.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-                    {[
-                      { label: 'Produtores',   valor: String(linhas.length),   cor: C.cor,     bg: C.corLt   },
-                      { label: 'Pago',         valor: fmtReal(totalPago),      cor: '#166534', bg: '#F0FDF4' },
-                      { label: 'Pendente',     valor: fmtReal(totalPendente),  cor: '#C2410C', bg: '#FFF7ED' },
-                    ].map(k => (
-                      <div key={k.label} style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '16px 20px' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.sub, marginBottom: 6 }}>{k.label}</div>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: k.cor }}>{k.valor}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {linhas.length > 0 && (
+                <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', margin: '16px 0' }}>
+                  <KpiCard label="Produtores" value={String(linhas.length)} icon="ti-users" cor={COM_C.marrom} corLt={COM_C.marromLt} />
+                  <KpiCard label="Pago" value={fmtReal(totalPago)} icon="ti-circle-check" cor={COM_C.verde} corLt={COM_C.verdeLt} />
+                  <KpiCard label="Pendente" value={fmtReal(totalPendente)} icon="ti-clock" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+                </div>
+              )}
 
-                {/* Tabela */}
-                {linhas.length > 0 && (
-                  <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                      <thead>
-                        <tr style={{ borderBottom: `1px solid ${C.borda}`, background: '#FAFAF8' }}>
-                          {['Produtor', 'Qtd (kg)', '%', 'Valor', 'Status', ''].map(h => (
-                            <th key={h} style={{ padding: '10px 16px', textAlign: h === '' || h === 'Status' ? 'left' : h === 'Produtor' ? 'left' : 'right', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.sub }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {linhas.map(l => (
-                          <tr key={l.id} style={{ borderBottom: `1px solid ${C.borda}` }}>
-                            <td style={{ padding: '12px 16px' }}>
-                              <div style={{ fontWeight: 600, color: C.txt }}>{l.produtores?.nome ?? '—'}</div>
-                              {l.produtores?.chave_pix && <div style={{ fontSize: 11, color: C.sub }}>Pix: {l.produtores.chave_pix}</div>}
-                            </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right', color: C.sub }}>{l.quantidade_kg.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right', color: C.sub }}>{l.percentual.toFixed(2)}%</td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: C.txt }}>{fmtReal(l.valor_liquido)}</td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99,
-                                background: l.status === 'pago' ? '#DCFCE7' : '#FEF3C7',
-                                color:      l.status === 'pago' ? '#166534' : C.cor }}>
-                                {l.status === 'pago' ? `Pago em ${new Date(l.data_pagamento!).toLocaleDateString('pt-BR')}` : 'Pendente'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                              {l.status === 'calculado' && (
-                                <button onClick={() => handlePagar(l.id)}
-                                  style={{ fontSize: 12, fontWeight: 600, color: '#166534', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                  Marcar pago
-                                </button>
-                              )}
-                            </td>
-                          </tr>
+              {linhas.length > 0 && (
+                <ContentCard noPadding>
+                  <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {['Produtor', 'Qtd (kg)', '%', 'Valor', 'Status', ''].map(h => (
+                          <th key={h} style={{ textAlign: h === '' || h === 'Status' || h === 'Produtor' ? 'left' : 'right' }}>{h}</th>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linhas.map(l => (
+                        <tr key={l.id}>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{l.produtores?.nome ?? '—'}</div>
+                            {l.produtores?.chave_pix && <div style={{ fontSize: 11, color: COM_C.txtSub }}>Pix: {l.produtores.chave_pix}</div>}
+                          </td>
+                          <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{l.quantidade_kg.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</td>
+                          <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{l.percentual.toFixed(2)}%</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtReal(l.valor_liquido)}</td>
+                          <td>
+                            <Badge
+                              label={l.status === 'pago' ? `Pago em ${new Date(l.data_pagamento!).toLocaleDateString('pt-BR')}` : 'Pendente'}
+                              bg={l.status === 'pago' ? COM_C.verdeLt : COM_C.marromLt}
+                              cor={l.status === 'pago' ? COM_C.verde : COM_C.marrom}
+                            />
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {l.status === 'calculado' && (
+                              <Btn variante="cinza" tamanho="sm" onClick={() => handlePagar(l.id)} style={{ color: COM_C.verde, borderColor: COM_C.verdeLt, background: COM_C.verdeLt }}>
+                                Marcar pago
+                              </Btn>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </ContentCard>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </>
+    </PageLayout>
   )
 }

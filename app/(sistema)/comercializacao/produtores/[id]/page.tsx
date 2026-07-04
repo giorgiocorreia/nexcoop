@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { getContextoUsuario, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
@@ -10,8 +9,12 @@ import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
 import ModalPromoverCooperado from '@/components/cooperados/ModalPromoverCooperado'
 import ModalCaixaFechado from '@/components/comercializacao/ModalCaixaFechado'
-
-const COR = '#92400e'
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select } from '@/components/comercializacao/ui/Field'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
 
 const TIPO_POSSE_LABEL: Record<string, string> = {
   proprietario: 'Proprietário',
@@ -141,7 +144,7 @@ function formatarKg(v: number): { inteiro: string; decimal: string } {
 function KgDisplay({ valor, fontSize = 22, cor }: { valor: number; fontSize?: number; cor?: string }) {
   const { inteiro, decimal } = formatarKg(valor)
   return (
-    <span style={{ color: cor ?? COR }}>
+    <span style={{ color: cor ?? COM_C.marrom }}>
       <span style={{ fontSize, fontWeight: 700 }}>{inteiro}</span>
       <span style={{ fontSize: fontSize * 0.6, fontWeight: 600 }}>{decimal}</span>
       <span style={{ fontSize: fontSize * 0.55, fontWeight: 400, marginLeft: 2 }}> kg</span>
@@ -173,41 +176,22 @@ function initFormEdit(p: Produtor): FormEdit {
   }
 }
 
-const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  border: '1px solid #e5e3dc',
-  borderRadius: '12px',
-  padding: '1.25rem',
-  marginBottom: '20px',
-}
-
 const cardLabel: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 600,
-  color: '#9a9a9a',
+  color: COM_C.txtSub,
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
-}
-
-const inp: React.CSSProperties = {
-  padding: '8px 12px',
-  border: '1px solid #e5e3dc',
-  borderRadius: '8px',
-  fontSize: '13px',
-  width: '100%',
-  boxSizing: 'border-box',
-  fontFamily: 'inherit',
-  background: '#fff',
 }
 
 function Campo({ label, valor }: { label: string; valor: string | null | undefined }) {
   return (
     <div>
-      <div style={{ fontSize: '11px', color: '#9a9a9a', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px', fontWeight: 500 }}>
+      <div style={{ fontSize: '11px', color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px', fontWeight: 500 }}>
         {label}
       </div>
       {valor ? (
-        <div style={{ fontSize: '14px', color: '#1a1a1a' }}>{valor}</div>
+        <div style={{ fontSize: '14px', color: COM_C.txt }}>{valor}</div>
       ) : (
         <div style={{ fontSize: '14px', color: '#b0aea8', fontStyle: 'italic' }}>Não informado</div>
       )}
@@ -416,8 +400,8 @@ export default function PerfilProdutorPage() {
     router.push(`/comercializacao/caixa?produtor_id=${id}&acao=${acao}`)
   }
 
-  if (carregando) return <div style={{ padding: '32px', color: '#6b6b6b', fontFamily: 'system-ui' }}>Carregando...</div>
-  if (!produtor) return <div style={{ padding: '32px', color: '#6b6b6b', fontFamily: 'system-ui' }}>Produtor não encontrado.</div>
+  if (carregando) return <div style={{ padding: '32px', color: COM_C.txtSub, fontFamily: 'system-ui' }}>Carregando...</div>
+  if (!produtor) return <div style={{ padding: '32px', color: COM_C.txtSub, fontFamily: 'system-ui' }}>Produtor não encontrado.</div>
 
   const allSaldosProduto = conta?.saldos_produto ?? []
   const mainSaldo = allSaldosProduto.length > 0
@@ -437,88 +421,55 @@ export default function PerfilProdutorPage() {
 
   return (
     <>
-      <style>{`
-        .perf-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .perf-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .perf-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .perf-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="perf-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FDF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="ti ti-user-check" style={{ fontSize: 20, color: '#92400e' }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{produtor.nome}</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <Link href="/comercializacao" style={{ color: '#78716C', textDecoration: 'none' }}>Comercialização</Link>
-              {' / '}
-              <Link href="/comercializacao/produtores" style={{ color: '#78716C', textDecoration: 'none' }}>Produtores</Link>
-              {' / '}{produtor.nome}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <Btn variante="cinza" icone="ti-file-text" onClick={() => setModalExtrato(true)}>
-            Extrato
-          </Btn>
-          <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
-            Registrar entrega
-          </Btn>
-          <Btn
-            variante="cinza"
-            icone="ti-arrow-up"
-            onClick={() => irParaCaixa('receber')}
-          >
-            Pagar produtor
-          </Btn>
-          <Btn
-            variante="cinza"
-            icone="ti-cash"
-            onClick={() => saldoFinanceiro > 0 ? irParaCaixa('saque') : undefined}
-            disabled={saldoFinanceiro <= 0}
-          >
-            Saque financeiro
-          </Btn>
-          {!produtor.cooperado_id ? (
-            ehAdmin ? (
-              <Btn variante="cinza" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
-                {/* TODO: terminologia dinâmica via tipos_org */}
-                Promover a cooperado
-              </Btn>
-            ) : null
-          ) : (
-            <span style={{
-              fontSize: '12px', padding: '4px 12px', borderRadius: '20px',
-              background: '#dbeafe', color: '#1e40af', fontWeight: 600,
-              display: 'inline-flex', alignItems: 'center', gap: '5px',
-            }}>
-              <i className="ti ti-user-check" style={{ fontSize: 13 }} aria-hidden="true" />
-              Cooperado
-            </span>
-          )}
-          {!sessao && (
+      <PageLayout
+        titulo={produtor.nome}
+        icone="ti-user-check"
+        breadcrumb={[
+          { label: 'Produtores', href: '/comercializacao/produtores' },
+          { label: produtor.nome },
+        ]}
+        fullHeight
+        acoes={
+          <>
+            <Btn variante="cinza" icone="ti-file-text" onClick={() => setModalExtrato(true)}>
+              Extrato
+            </Btn>
+            <Btn variante="cinza" icone="ti-arrow-down" onClick={() => irParaCaixa('entrega')}>
+              Registrar entrega
+            </Btn>
+            <Btn variante="cinza" icone="ti-arrow-up" onClick={() => irParaCaixa('receber')}>
+              Pagar produtor
+            </Btn>
             <Btn
               variante="cinza"
-              icone="ti-alert-triangle"
-              disabled
-              style={{ background: '#fef3c7', border: '1px solid #fbbf24', color: '#92400e', opacity: 1 }}
+              icone="ti-cash"
+              onClick={() => saldoFinanceiro > 0 ? irParaCaixa('saque') : undefined}
+              disabled={saldoFinanceiro <= 0}
             >
-              Caixa fechado
+              Saque financeiro
             </Btn>
-          )}
-        </div>
-      </header>
-
-      <div className="perf-content" style={{ background: '#f8f7f4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            {!produtor.cooperado_id ? (
+              ehAdmin ? (
+                <Btn variante="cinza" icone="ti-user-check" onClick={() => setModalPromoverAberto(true)}>
+                  Promover a cooperado
+                </Btn>
+              ) : null
+            ) : (
+              <Badge label="Cooperado" bg="#dbeafe" cor="#1e40af" />
+            )}
+            {!sessao && (
+              <Btn
+                variante="cinza"
+                icone="ti-alert-triangle"
+                disabled
+                style={{ background: '#fef3c7', border: '1px solid #fbbf24', color: COM_C.marrom, opacity: 1 }}
+              >
+                Caixa fechado
+              </Btn>
+            )}
+          </>
+        }
+      >
 
       {/* Mensagens globais */}
       {okEdit && (
@@ -554,9 +505,10 @@ export default function PerfilProdutorPage() {
       )}
 
       {/* PARTE 2: Card "Dados cadastrais" */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <span style={cardLabel}>Dados cadastrais</span>
+      <div style={{ marginBottom: 20 }}>
+      <ContentCard
+        title="Dados cadastrais"
+        action={
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {editando ? (
               <>
@@ -576,7 +528,8 @@ export default function PerfilProdutorPage() {
               </Btn>
             )}
           </div>
-        </div>
+        }
+      >
 
         {/* LEITURA — campos e blocos ocultos quando vazios */}
         {!editando && (
@@ -655,67 +608,62 @@ export default function PerfilProdutorPage() {
           <div>
             {/* Bloco principal — 4 colunas */}
             <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
-              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome completo</label>
-                <input value={f.nome} onChange={e => setF({ nome: e.target.value })} style={inp} />
+              <div style={span2}>
+                <Field label="Nome completo">
+                  <Input value={f.nome} onChange={e => setF({ nome: e.target.value })} />
+                </Field>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>CPF</label>
-                <input value={mascararCPF(f.cpf)} onChange={e => setF({ cpf: e.target.value.replace(/\D/g, '').slice(0, 11) })} placeholder="000.000.000-00" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo</label>
-                <select value={f.tipo} onChange={e => setF({ tipo: e.target.value })} style={inp}>
+              <Field label="CPF">
+                <Input value={mascararCPF(f.cpf)} onChange={e => setF({ cpf: e.target.value.replace(/\D/g, '').slice(0, 11) })} placeholder="000.000.000-00" />
+              </Field>
+              <Field label="Tipo">
+                <Select value={f.tipo} onChange={e => setF({ tipo: e.target.value })}>
                   <option value="externo">Não membro</option>
-                </select>
+                </Select>
+              </Field>
+              <div style={span2}>
+                <Field label="E-mail">
+                  <Input type="email" value={f.email} onChange={e => setF({ email: e.target.value })} />
+                </Field>
               </div>
-              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>E-mail</label>
-                <input type="email" value={f.email} onChange={e => setF({ email: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Telefone</label>
-                <input value={f.telefone} onChange={e => setF({ telefone: mascararTelefone(e.target.value) })} placeholder="(00) 00000-0000" style={inp} />
-              </div>
+              <Field label="Telefone">
+                <Input value={f.telefone} onChange={e => setF({ telefone: mascararTelefone(e.target.value) })} placeholder="(00) 00000-0000" />
+              </Field>
             </div>
 
             {/* Bloco Propriedade — 4 colunas */}
             <BlocoHeader>Propriedade</BlocoHeader>
             <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
-              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Nome da propriedade</label>
-                <input value={f.nome_propriedade} onChange={e => setF({ nome_propriedade: e.target.value })} style={inp} />
+              <div style={span2}>
+                <Field label="Nome da propriedade">
+                  <Input value={f.nome_propriedade} onChange={e => setF({ nome_propriedade: e.target.value })} />
+                </Field>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Município</label>
-                <input value={f.municipio} onChange={e => setF({ municipio: e.target.value })} style={inp} />
-              </div>
-              {/* col 4 vazia */}
+              <Field label="Município">
+                <Input value={f.municipio} onChange={e => setF({ municipio: e.target.value })} />
+              </Field>
               <div />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área total (ha)</label>
-                <input type="number" step="0.01" min="0" value={f.area_total_ha} onChange={e => setF({ area_total_ha: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Área cacau (ha)</label>
-                <input type="number" step="0.01" min="0" value={f.area_cacau_ha} onChange={e => setF({ area_cacau_ha: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de posse</label>
-                <select value={f.tipo_posse} onChange={e => setF({ tipo_posse: e.target.value })} style={inp}>
+              <Field label="Área total (ha)">
+                <Input type="number" step="0.01" min="0" value={f.area_total_ha} onChange={e => setF({ area_total_ha: e.target.value })} />
+              </Field>
+              <Field label="Área cacau (ha)">
+                <Input type="number" step="0.01" min="0" value={f.area_cacau_ha} onChange={e => setF({ area_cacau_ha: e.target.value })} />
+              </Field>
+              <Field label="Tipo de posse">
+                <Select value={f.tipo_posse} onChange={e => setF({ tipo_posse: e.target.value })}>
                   <option value="">Selecionar...</option>
                   <option value="proprietario">Proprietário</option>
                   <option value="meeiro">Meeiro</option>
                   <option value="arrendatario">Arrendatário</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>IE Produtor Rural</label>
-                <input value={f.ie_produtor_rural} onChange={e => setF({ ie_produtor_rural: e.target.value })} style={inp} />
-              </div>
-              <div style={{ ...spanAll, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Endereço</label>
-                <input value={f.endereco} onChange={e => setF({ endereco: e.target.value })} style={inp} />
+                </Select>
+              </Field>
+              <Field label="IE Produtor Rural">
+                <Input value={f.ie_produtor_rural} onChange={e => setF({ ie_produtor_rural: e.target.value })} />
+              </Field>
+              <div style={spanAll}>
+                <Field label="Endereço">
+                  <Input value={f.endereco} onChange={e => setF({ endereco: e.target.value })} />
+                </Field>
               </div>
             </div>
 
@@ -729,82 +677,77 @@ export default function PerfilProdutorPage() {
                 </label>
               </div>
               {f.tem_certificacao && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de certificação</label>
-                  <input value={f.tipo_certificacao} onChange={e => setF({ tipo_certificacao: e.target.value })} placeholder="Ex: Orgânico, UTZ, Rainforest" style={inp} />
-                </div>
+                <Field label="Tipo de certificação">
+                  <Input value={f.tipo_certificacao} onChange={e => setF({ tipo_certificacao: e.target.value })} placeholder="Ex: Orgânico, UTZ, Rainforest" />
+                </Field>
               )}
             </div>
 
             {/* Bloco Dados bancários — 4 colunas */}
             <BlocoHeader>Dados bancários</BlocoHeader>
             <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Banco</label>
-                <input value={f.banco} onChange={e => setF({ banco: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Agência</label>
-                <input value={f.agencia} onChange={e => setF({ agencia: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Conta</label>
-                <input value={f.conta_bancaria} onChange={e => setF({ conta_bancaria: e.target.value })} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Tipo de conta</label>
-                <select value={f.tipo_conta} onChange={e => setF({ tipo_conta: e.target.value })} style={inp}>
+              <Field label="Banco">
+                <Input value={f.banco} onChange={e => setF({ banco: e.target.value })} />
+              </Field>
+              <Field label="Agência">
+                <Input value={f.agencia} onChange={e => setF({ agencia: e.target.value })} />
+              </Field>
+              <Field label="Conta">
+                <Input value={f.conta_bancaria} onChange={e => setF({ conta_bancaria: e.target.value })} />
+              </Field>
+              <Field label="Tipo de conta">
+                <Select value={f.tipo_conta} onChange={e => setF({ tipo_conta: e.target.value })}>
                   <option value="">Selecionar...</option>
                   <option value="corrente">Corrente</option>
                   <option value="poupanca">Poupança</option>
                   <option value="pix">Pix</option>
-                </select>
-              </div>
-              <div style={{ ...span2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', color: '#6b6b6b' }}>Chave Pix</label>
-                <input value={f.chave_pix} onChange={e => setF({ chave_pix: e.target.value })} placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
+                </Select>
+              </Field>
+              <div style={span2}>
+                <Field label="Chave Pix">
+                  <Input value={f.chave_pix} onChange={e => setF({ chave_pix: e.target.value })} placeholder="CPF, telefone, e-mail ou chave aleatória" />
+                </Field>
               </div>
             </div>
           </div>
         )}
+      </ContentCard>
       </div>
 
       {/* PARTE 3: Card "Extrato" */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '1.25rem 1.25rem 0.75rem' }}>
-          <span style={cardLabel}>Extrato</span>
-        </div>
+      <div style={{ marginBottom: 20 }}>
+      <ContentCard title="Extrato" noPadding>
         {extrato.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b', fontSize: '13px' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: COM_C.txtSub, fontSize: '13px' }}>
             Nenhuma movimentação registrada.
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e5e3dc', borderTop: '1px solid #f0ede8', background: '#fafaf8' }}>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Data/Hora</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 500 }}>Operação</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Quantidade</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500 }}>Valor</th>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Operação</th>
+                <th style={{ textAlign: 'right' }}>Quantidade</th>
+                <th style={{ textAlign: 'right' }}>Valor</th>
               </tr>
             </thead>
             <tbody>
               {extrato.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                  <td style={{ padding: '10px 16px', color: '#6b6b6b' }}>
+                <tr key={m.id}>
+                  <td style={{ color: COM_C.txtSub }}>
                     {new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </td>
-                  <td style={{ padding: '10px 16px' }}>
+                  <td>
                     <div>{TIPO_MOV_LABEL[m.tipo] ?? m.tipo}</div>
-                    {m.observacoes && <div style={{ fontSize: '11px', color: '#9a9a9a', marginTop: '2px' }}>{m.observacoes}</div>}
+                    {m.observacoes && <div style={{ fontSize: '11px', color: COM_C.txtSub, marginTop: '2px' }}>{m.observacoes}</div>}
                   </td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right', color: '#6b6b6b' }}>
+                  <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
                     {m.quantidade_produto ? (() => {
                       const { inteiro, decimal } = formatarKg(m.quantidade_produto)
                       return <span>{inteiro}<span style={{ fontSize: '0.8em' }}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span>
                     })() : '—'}
                   </td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : '#1a1a1a' }}>
+                  <td style={{ textAlign: 'right', fontWeight: 500, color: m.valor_financeiro ? (m.tipo === 'conversao' ? '#166534' : '#991b1b') : COM_C.txt }}>
                     {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : '—'}
                   </td>
                 </tr>
@@ -812,11 +755,11 @@ export default function PerfilProdutorPage() {
             </tbody>
           </table>
         )}
+      </ContentCard>
       </div>
 
       {/* PARTE 4: Card "Saldos" */}
-      <div style={cardStyle}>
-        <div style={{ ...cardLabel, marginBottom: '16px' }}>Saldos</div>
+      <ContentCard title="Saldos">
         {!conta ? (
           <div style={{ fontSize: '13px', color: '#9a9a9a' }}>Sem conta aberta para este produtor.</div>
         ) : (
@@ -828,7 +771,7 @@ export default function PerfilProdutorPage() {
                   <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                     {mainSaldo.produtos.nome}
                   </div>
-                  <KgDisplay valor={mainSaldo.quantidade} fontSize={22} cor={COR} />
+                  <KgDisplay valor={mainSaldo.quantidade} fontSize={22} />
                   <div style={{ marginTop: '8px' }}>
                     {carregandoPrevisao ? (
                       <div style={{ fontSize: '12px', color: '#9a9a9a' }}>calculando...</div>
@@ -851,7 +794,7 @@ export default function PerfilProdutorPage() {
                   <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                     Produto
                   </div>
-                  <div style={{ fontSize: '22px', fontWeight: 700, color: COR }}>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: COM_C.marrom }}>
                     0 <span style={{ fontSize: '13px', fontWeight: 400 }}>kg</span>
                   </div>
                   <div style={{ fontSize: '12px', color: '#9a9a9a', marginTop: '8px' }}>R$ 0,00</div>
@@ -882,58 +825,50 @@ export default function PerfilProdutorPage() {
             </div>
           </div>
         )}
-      </div>
+      </ContentCard>
 
-      </div>{/* end perf-content */}
+      </PageLayout>
 
       {/* Modal Extrato PDF */}
       {modalExtrato && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24 }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 420, maxWidth: '95vw' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#1C1917' }}>Gerar extrato</div>
-              <button onClick={() => setModalExtrato(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#78716C', lineHeight: 1 }}>×</button>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 8 }}>Período</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => setExtratoTipo('total')}
-                  style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'total' ? '#92400e' : '#E5E3DC'}`, background: extratoTipo === 'total' ? '#FDF4E7' : '#fff', color: extratoTipo === 'total' ? '#92400e' : '#78716C', fontWeight: extratoTipo === 'total' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
-                  Extrato total
-                </button>
-                <button
-                  onClick={() => setExtratoTipo('periodo')}
-                  style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'periodo' ? '#92400e' : '#E5E3DC'}`, background: extratoTipo === 'periodo' ? '#FDF4E7' : '#fff', color: extratoTipo === 'periodo' ? '#92400e' : '#78716C', fontWeight: extratoTipo === 'periodo' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
-                  Por período
-                </button>
-              </div>
-            </div>
-
-            {extratoTipo === 'periodo' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                <div>
-                  <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 4 }}>Data início</label>
-                  <input type="date" value={extratoInicio} onChange={e => setExtratoInicio(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: '#78716C', display: 'block', marginBottom: 4 }}>Data fim</label>
-                  <input type="date" value={extratoFim} onChange={e => setExtratoFim(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+        <Modal
+          titulo="Gerar extrato"
+          onClose={() => setModalExtrato(false)}
+          footer={
+            <>
               <Btn variante="cinza" onClick={() => setModalExtrato(false)}>Cancelar</Btn>
               <Btn variante="azul" icone="ti-file-download" onClick={handleGerarExtrato} disabled={gerandoExtrato}>
                 {gerandoExtrato ? 'Gerando...' : 'Gerar PDF'}
               </Btn>
+            </>
+          }
+        >
+          <Field label="Período">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setExtratoTipo('total')}
+                style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'total' ? COM_C.marrom : COM_C.borda}`, background: extratoTipo === 'total' ? COM_C.marromLt : '#fff', color: extratoTipo === 'total' ? COM_C.marrom : COM_C.txtSub, fontWeight: extratoTipo === 'total' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
+                Extrato total
+              </button>
+              <button
+                onClick={() => setExtratoTipo('periodo')}
+                style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${extratoTipo === 'periodo' ? COM_C.marrom : COM_C.borda}`, background: extratoTipo === 'periodo' ? COM_C.marromLt : '#fff', color: extratoTipo === 'periodo' ? COM_C.marrom : COM_C.txtSub, fontWeight: extratoTipo === 'periodo' ? 600 : 400, cursor: 'pointer', fontSize: 13 }}>
+                Por período
+              </button>
             </div>
-          </div>
-        </div>
+          </Field>
+
+          {extratoTipo === 'periodo' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+              <Field label="Data início">
+                <Input type="date" value={extratoInicio} onChange={e => setExtratoInicio(e.target.value)} />
+              </Field>
+              <Field label="Data fim">
+                <Input type="date" value={extratoFim} onChange={e => setExtratoFim(e.target.value)} />
+              </Field>
+            </div>
+          )}
+        </Modal>
       )}
 
       {/* Modal Caixa Fechado */}

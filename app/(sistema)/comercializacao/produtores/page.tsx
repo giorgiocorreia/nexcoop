@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import {
   listarProdutores,
   criarProdutor,
@@ -10,12 +9,13 @@ import {
 } from '@/lib/comercializacao/produtores.actions'
 import { Btn } from '@/components/ui/Btn'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
-
-const C = {
-  cor: '#92400e', corLt: '#FDF8F4',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', sub: '#78716C',
-}
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select } from '@/components/comercializacao/ui/Field'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { EmptyState } from '@/components/comercializacao/ui/EmptyState'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
 
 type Produtor = {
   id: string; nome: string; cpf: string | null; telefone: string | null
@@ -137,219 +137,181 @@ export default function ProdutoresPage() {
     )
   })
 
-  const inp: React.CSSProperties = {
-    padding: '8px 12px', border: `1px solid ${C.borda}`,
-    borderRadius: 8, fontSize: 14, width: '100%', boxSizing: 'border-box',
-  }
-
   return (
-    <>
-      <style>{`
-        .prod-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .prod-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .prod-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .prod-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="prod-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: C.corLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <i className="ti ti-user-check" style={{ fontSize: 20, color: C.cor }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>
-              Produtores
-              {produtores.length > 0 && <span style={{ fontSize: 14, fontWeight: 400, color: C.sub, marginLeft: 8 }}>{produtores.length}</span>}
-            </h1>
-            <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>
-              <Link href="/comercializacao" style={{ color: C.sub, textDecoration: 'none' }}>Comercialização</Link>
-              {' / '}Produtores
-            </div>
-          </div>
-        </div>
-        <Btn variante="azul" icone="ti-plus" onClick={() => { setForm(formVazio); setNovoForm(true) }}>
+    <PageLayout
+      titulo="Produtores"
+      subtitulo={produtores.length > 0 ? `${produtores.length} cadastrados` : undefined}
+      breadcrumb={[{ label: 'Produtores' }]}
+      icone="ti-user-check"
+      fullHeight
+      acoes={
+        <Btn variante="marrom" icone="ti-plus" onClick={() => { setForm(formVazio); setNovoForm(true) }}>
           Novo produtor
         </Btn>
-      </header>
+      }
+    >
+      {status === 'sucesso' && (
+        <div style={{ marginBottom: 16, color: COM_C.verde, fontSize: 13 }}>✓ Produtor salvo com sucesso.</div>
+      )}
 
-      <div className="prod-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-
-        {status === 'sucesso' && (
-          <div style={{ marginBottom: 16, color: '#166534', fontSize: 13 }}>✓ Produtor salvo com sucesso.</div>
-        )}
-
-        <div style={{ marginBottom: 16 }}>
-          <input
-            placeholder="Buscar por nome, CPF ou município..."
-            value={busca}
-            onChange={handleBuscaChange}
-            style={{ width: '100%', maxWidth: 360, padding: '8px 12px', border: `1px solid ${C.borda}`, borderRadius: 8, fontSize: 14 }}
-          />
-        </div>
-
-        <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.borda}`, background: '#FAFAF8' }}>
-                {['Nome', 'Tipo', 'Município', 'CPF', 'Telefone', 'Área cacau', 'Status', ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: h === '' ? 'right' : 'left', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.sub }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {produtoresFiltrados.map(p => (
-                <tr key={p.id} style={{ borderBottom: `1px solid #F0EDE8` }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <button
-                      onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.txt, fontWeight: 600, fontSize: 14, padding: 0, textAlign: 'left' }}
-                    >
-                      {p.nome}
-                    </button>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ fontSize: 12, padding: '2px 10px', borderRadius: 99,
-                      background: p.tipo === 'cooperado' ? '#DBEAFE' : C.corLt,
-                      color:      p.tipo === 'cooperado' ? '#1E40AF' : C.cor }}>
-                      {p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', color: C.sub, fontSize: 13 }}>{p.municipio ?? '—'}</td>
-                  <td style={{ padding: '12px 16px', color: C.sub, fontSize: 13 }}>{exibirCPF(p.cpf)}</td>
-                  <td style={{ padding: '12px 16px', color: C.sub, fontSize: 13 }}>{exibirTelefone(p.telefone)}</td>
-                  <td style={{ padding: '12px 16px', color: C.sub, fontSize: 13 }}>{p.area_cacau_ha ? `${p.area_cacau_ha} ha` : '—'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ fontSize: 12, padding: '2px 10px', borderRadius: 99,
-                      background: p.ativo ? '#DCFCE7' : '#F1F0EB',
-                      color:      p.ativo ? '#166534' : C.sub }}>
-                      {p.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <Btn variante="cinza" tamanho="sm" icone="ti-eye" onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}>
-                      Ver ficha
-                    </Btn>
-                  </td>
-                </tr>
-              ))}
-              {produtoresFiltrados.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: C.sub }}>
-                  {busca ? 'Nenhum produtor encontrado.' : 'Nenhum produtor cadastrado ainda.'}
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div style={{ marginBottom: 16, maxWidth: 360 }}>
+        <Input
+          placeholder="Buscar por nome, CPF ou município..."
+          value={busca}
+          onChange={handleBuscaChange}
+        />
       </div>
 
+      {produtoresFiltrados.length === 0 ? (
+        <EmptyState
+          emoji="👨‍🌾"
+          titulo={busca ? 'Nenhum produtor encontrado' : 'Nenhum produtor cadastrado ainda'}
+          descricao={busca ? 'Tente outro termo de busca.' : 'Cadastre o primeiro produtor para começar.'}
+          acao={!busca ? { label: 'Novo produtor', onClick: () => { setForm(formVazio); setNovoForm(true) } } : undefined}
+        />
+      ) : (
+        <ContentCard noPadding>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Nome', 'Tipo', 'Município', 'CPF', 'Telefone', 'Área cacau', 'Status', ''].map(h => (
+                    <th key={h} style={{ textAlign: h === '' ? 'right' : 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {produtoresFiltrados.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <button
+                        onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: COM_C.txt, fontWeight: 600, fontSize: 14, padding: 0, textAlign: 'left' }}
+                      >
+                        {p.nome}
+                      </button>
+                    </td>
+                    <td>
+                      <Badge
+                        label={p.tipo === 'cooperado' ? 'Cooperado' : 'Externo'}
+                        bg={p.tipo === 'cooperado' ? COM_C.azulLt : COM_C.marromLt}
+                        cor={p.tipo === 'cooperado' ? '#1E40AF' : COM_C.marrom}
+                      />
+                    </td>
+                    <td style={{ color: COM_C.txtSub }}>{p.municipio ?? '—'}</td>
+                    <td style={{ color: COM_C.txtSub }}>{exibirCPF(p.cpf)}</td>
+                    <td style={{ color: COM_C.txtSub }}>{exibirTelefone(p.telefone)}</td>
+                    <td style={{ color: COM_C.txtSub }}>{p.area_cacau_ha ? `${p.area_cacau_ha} ha` : '—'}</td>
+                    <td>
+                      <Badge
+                        label={p.ativo ? 'Ativo' : 'Inativo'}
+                        bg={p.ativo ? COM_C.verdeLt : '#F1F0EB'}
+                        cor={p.ativo ? COM_C.verde : COM_C.txtSub}
+                        dot
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Btn variante="cinza" tamanho="sm" icone="ti-eye" onClick={() => router.push(`/comercializacao/produtores/${p.id}`)}>
+                        Ver ficha
+                      </Btn>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ContentCard>
+      )}
+
       {novoForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, overflowY: 'auto', padding: 24 }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 620, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: C.txt }}>Novo produtor</div>
-              <button onClick={() => setNovoForm(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: C.sub, lineHeight: 1 }}>×</button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Nome *</label>
-                <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Tipo</label>
-                <select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))} style={inp}>
-                  <option value="externo">Externo</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>CPF</label>
-                <input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))} placeholder="000.000.000-00" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Telefone</label>
-                <input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))} placeholder="(73) 99999-0000" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>E-mail</label>
-                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Município</label>
-                <input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Endereço</label>
-                <input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Área total (ha)</label>
-                <input type="number" step="0.01" value={form.area_total_ha} onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Área cacau (ha)</label>
-                <input type="number" step="0.01" value={form.area_cacau_ha} onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Certificação</label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, padding: '8px 0' }}>
-                  <input type="checkbox" checked={form.tem_certificacao} onChange={e => setForm(f => ({ ...f, tem_certificacao: e.target.checked }))} />
-                  Possui certificação
-                </label>
-              </div>
-              {form.tem_certificacao && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={{ fontSize: 12, color: C.sub }}>Tipo de certificação</label>
-                  <input value={form.tipo_certificacao} onChange={e => setForm(f => ({ ...f, tipo_certificacao: e.target.value }))} placeholder="Ex: Orgânico, UTZ, Rainforest" style={inp} />
-                </div>
-              )}
-              <div style={{ gridColumn: '1 / -1', borderTop: `1px solid ${C.borda}`, paddingTop: 12, marginTop: 4 }}>
-                <span style={{ fontSize: 12, color: C.sub, fontWeight: 600 }}>Dados para pagamento</span>
-              </div>
-              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Chave Pix</label>
-                <input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))} placeholder="CPF, telefone, e-mail ou chave aleatória" style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Banco</label>
-                <input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Agência</label>
-                <input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Conta</label>
-                <input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: 12, color: C.sub }}>Tipo de conta</label>
-                <select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))} style={inp}>
-                  <option value="">Selecionar...</option>
-                  <option value="corrente">Corrente</option>
-                  <option value="poupanca">Poupança</option>
-                  <option value="pix">Pix</option>
-                </select>
-              </div>
-            </div>
-
-            {status === 'erro' && <div style={{ marginTop: 12, color: '#991B1B', fontSize: 13 }}>{erroMsg}</div>}
-
-            <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
+        <Modal
+          titulo="Novo produtor"
+          onClose={() => setNovoForm(false)}
+          largura={620}
+          footer={
+            <>
               <Btn variante="cinza" onClick={() => setNovoForm(false)}>Cancelar</Btn>
               <Btn variante="verde" icone="ti-check" disabled={status === 'salvando'} onClick={handleSalvar}>
                 {status === 'salvando' ? 'Salvando...' : 'Salvar'}
               </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Field label="Nome *">
+                <Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+              </Field>
             </div>
+            <Field label="Tipo">
+              <Select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value as any }))}>
+                <option value="externo">Externo</option>
+              </Select>
+            </Field>
+            <Field label="CPF">
+              <Input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: mascararCPF(e.target.value) }))} placeholder="000.000.000-00" />
+            </Field>
+            <Field label="Telefone">
+              <Input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: mascararTelefone(e.target.value) }))} placeholder="(73) 99999-0000" />
+            </Field>
+            <Field label="E-mail">
+              <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </Field>
+            <Field label="Município">
+              <Input value={form.municipio} onChange={e => setForm(f => ({ ...f, municipio: e.target.value }))} />
+            </Field>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Field label="Endereço">
+                <Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} />
+              </Field>
+            </div>
+            <Field label="Área total (ha)">
+              <Input type="number" step="0.01" value={form.area_total_ha} onChange={e => setForm(f => ({ ...f, area_total_ha: e.target.value }))} />
+            </Field>
+            <Field label="Área cacau (ha)">
+              <Input type="number" step="0.01" value={form.area_cacau_ha} onChange={e => setForm(f => ({ ...f, area_cacau_ha: e.target.value }))} />
+            </Field>
+            <Field label="Certificação">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, padding: '8px 0' }}>
+                <input type="checkbox" checked={form.tem_certificacao} onChange={e => setForm(f => ({ ...f, tem_certificacao: e.target.checked }))} />
+                Possui certificação
+              </label>
+            </Field>
+            {form.tem_certificacao && (
+              <Field label="Tipo de certificação">
+                <Input value={form.tipo_certificacao} onChange={e => setForm(f => ({ ...f, tipo_certificacao: e.target.value }))} placeholder="Ex: Orgânico, UTZ, Rainforest" />
+              </Field>
+            )}
+            <div style={{ gridColumn: '1 / -1', borderTop: `1px solid ${COM_C.borda}`, paddingTop: 12, marginTop: 4 }}>
+              <span style={{ fontSize: 12, color: COM_C.txtSub, fontWeight: 600 }}>Dados para pagamento</span>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Field label="Chave Pix">
+                <Input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))} placeholder="CPF, telefone, e-mail ou chave aleatória" />
+              </Field>
+            </div>
+            <Field label="Banco">
+              <Input value={form.banco} onChange={e => setForm(f => ({ ...f, banco: e.target.value }))} />
+            </Field>
+            <Field label="Agência">
+              <Input value={form.agencia} onChange={e => setForm(f => ({ ...f, agencia: e.target.value }))} />
+            </Field>
+            <Field label="Conta">
+              <Input value={form.conta_bancaria} onChange={e => setForm(f => ({ ...f, conta_bancaria: e.target.value }))} />
+            </Field>
+            <Field label="Tipo de conta">
+              <Select value={form.tipo_conta} onChange={e => setForm(f => ({ ...f, tipo_conta: e.target.value }))}>
+                <option value="">Selecionar...</option>
+                <option value="corrente">Corrente</option>
+                <option value="poupanca">Poupança</option>
+                <option value="pix">Pix</option>
+              </Select>
+            </Field>
           </div>
-        </div>
+
+          {status === 'erro' && <div style={{ marginTop: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>}
+        </Modal>
       )}
-    </>
+    </PageLayout>
   )
 }

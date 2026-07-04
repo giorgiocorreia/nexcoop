@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { listarProdutos, criarProduto, editarProduto } from '@/lib/comercializacao/produtos.actions'
+import { Btn } from '@/components/ui/Btn'
+import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
+import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
+import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
+import { Badge } from '@/components/comercializacao/ui/Badge'
+import { Modal } from '@/components/comercializacao/ui/Modal'
+import { Field, Input, Select } from '@/components/comercializacao/ui/Field'
+import { COM_C } from '@/components/comercializacao/ui/tokens'
 
 type Produto = {
   id: string
@@ -60,157 +68,168 @@ export default function ProdutosPage() {
     }
   }
 
-  return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '24px' }}>Produtos</h1>
+  const totais = {
+    total: produtos.length,
+    ativos: produtos.filter(p => p.ativo).length,
+    inativos: produtos.filter(p => !p.ativo).length,
+  }
 
-      {/* Formulário novo produto */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontWeight: 500, marginBottom: '16px', fontSize: '14px' }}>Novo produto</div>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <input
-            placeholder="Nome do produto"
-            value={form.nome}
-            onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-            style={{ flex: 2, minWidth: '160px', padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-          />
-          <input
-            placeholder="Categoria"
-            value={form.categoria}
-            onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}
-            style={{ flex: 1, minWidth: '120px', padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-          />
-          <select
-            value={form.unidade}
-            onChange={e => setForm(f => ({ ...f, unidade: e.target.value }))}
-            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
-          >
-            <option value="kg">kg</option>
-            <option value="unidade">unidade</option>
-            <option value="litro">litro</option>
-            <option value="caixa">caixa</option>
-          </select>
-          <button
-            onClick={handleCriar}
-            disabled={status === 'salvando'}
-            style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-          >
-            {status === 'salvando' ? 'Salvando...' : 'Adicionar'}
-          </button>
-        </div>
-        {status === 'sucesso' && (
-          <div style={{ marginTop: '12px', color: '#166534', fontSize: '13px' }}>Produto salvo com sucesso.</div>
-        )}
-        {status === 'erro' && (
-          <div style={{ marginTop: '12px', color: '#991b1b', fontSize: '13px' }}>{erroMsg}</div>
-        )}
+  return (
+    <PageLayout
+      titulo="Produtos"
+      subtitulo="Cadastro de produtos para comercialização"
+      breadcrumb={[{ label: 'Produtos' }]}
+      icone="ti-leaf"
+    >
+      <div className="com-kpi-grid-4" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+        <KpiCard label="Total cadastrados" value={String(totais.total)} icon="ti-leaf" cor={COM_C.marrom} corLt={COM_C.marromLt} />
+        <KpiCard label="Ativos" value={String(totais.ativos)} icon="ti-circle-check" cor={COM_C.verde} corLt={COM_C.verdeLt} />
+        <KpiCard label="Inativos" value={String(totais.inativos)} icon="ti-circle-x" cor={COM_C.txtSub} corLt="#F5F5F4" />
       </div>
 
-      {/* Tabela */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+      <div style={{ marginBottom: 24 }}>
+      <ContentCard title="Novo produto" subtitle="Adicione um produto ao catálogo">
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: 2, minWidth: 160 }}>
+            <Field label="Nome">
+              <Input
+                placeholder="Nome do produto"
+                value={form.nome}
+                onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+              />
+            </Field>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <Field label="Categoria">
+              <Input
+                placeholder="Categoria"
+                value={form.categoria}
+                onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}
+              />
+            </Field>
+          </div>
+          <div style={{ minWidth: 120 }}>
+            <Field label="Unidade">
+              <Select
+                value={form.unidade}
+                onChange={e => setForm(f => ({ ...f, unidade: e.target.value }))}
+              >
+                <option value="kg">kg</option>
+                <option value="unidade">unidade</option>
+                <option value="litro">litro</option>
+                <option value="caixa">caixa</option>
+              </Select>
+            </Field>
+          </div>
+          <Btn variante="marrom" icone="ti-plus" onClick={handleCriar} disabled={status === 'salvando' || !form.nome}>
+            {status === 'salvando' ? 'Salvando...' : 'Adicionar'}
+          </Btn>
+        </div>
+        {status === 'sucesso' && (
+          <div style={{ marginTop: 12, color: COM_C.verde, fontSize: 13, fontWeight: 600 }}>
+            Produto salvo com sucesso.
+          </div>
+        )}
+        {status === 'erro' && (
+          <div style={{ marginTop: 12, color: COM_C.vermelho, fontSize: 13 }}>{erroMsg}</div>
+        )}
+      </ContentCard>
+      </div>
+
+      <ContentCard title="Catálogo" subtitle={`${produtos.length} produto${produtos.length !== 1 ? 's' : ''} cadastrado${produtos.length !== 1 ? 's' : ''}`} noPadding>
+        <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Nome</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Categoria</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Unidade</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 16px' }}></th>
+            <tr>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Unidade</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right' }}></th>
             </tr>
           </thead>
           <tbody>
             {produtos.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid #f0ede8' }}>
-                <td style={{ padding: '12px 16px' }}>{p.nome}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{p.categoria || '—'}</td>
-                <td style={{ padding: '12px 16px', color: '#6b6b6b' }}>{p.unidade}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{
-                    fontSize: '12px', padding: '2px 10px', borderRadius: '20px',
-                    background: p.ativo ? '#dcfce7' : '#f1f0eb',
-                    color: p.ativo ? '#166534' : '#6b6b6b'
-                  }}>
-                    {p.ativo ? 'Ativo' : 'Inativo'}
-                  </span>
+              <tr key={p.id}>
+                <td style={{ fontWeight: 600 }}>{p.nome}</td>
+                <td style={{ color: COM_C.txtSub }}>{p.categoria || '—'}</td>
+                <td style={{ color: COM_C.txtSub }}>{p.unidade}</td>
+                <td>
+                  <Badge
+                    label={p.ativo ? 'Ativo' : 'Inativo'}
+                    bg={p.ativo ? COM_C.verdeLt : '#F5F5F4'}
+                    cor={p.ativo ? COM_C.verde : COM_C.txtSub}
+                    dot
+                  />
                 </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <button
-                    onClick={() => setEditando(p)}
-                    style={{ fontSize: '13px', color: '#92400e', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
+                <td style={{ textAlign: 'right' }}>
+                  <Btn variante="marrom-outline" tamanho="sm" onClick={() => setEditando(p)}>
                     Editar
-                  </button>
+                  </Btn>
                 </td>
               </tr>
             ))}
             {produtos.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#6b6b6b' }}>
+                <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: COM_C.txtSub }}>
                   Nenhum produto cadastrado ainda.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </ContentCard>
 
-      {/* Modal edição */}
       {editando && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
-        }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '28px', width: '400px', maxWidth: '90vw' }}>
-            <div style={{ fontWeight: 500, marginBottom: '20px', fontSize: '16px' }}>Editar produto</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <input
+        <Modal
+          titulo="Editar produto"
+          subtitulo="Atualize os dados do produto"
+          onClose={() => setEditando(null)}
+          largura={400}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setEditando(null)}>Cancelar</Btn>
+              <Btn variante="marrom" onClick={handleEditar} disabled={status === 'salvando'}>
+                {status === 'salvando' ? 'Salvando...' : 'Salvar'}
+              </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Field label="Nome">
+              <Input
                 value={editando.nome}
                 onChange={e => setEditando(p => p && ({ ...p, nome: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
               />
-              <input
+            </Field>
+            <Field label="Categoria">
+              <Input
                 value={editando.categoria ?? ''}
                 onChange={e => setEditando(p => p && ({ ...p, categoria: e.target.value }))}
                 placeholder="Categoria"
-                style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
               />
-              <select
+            </Field>
+            <Field label="Unidade">
+              <Select
                 value={editando.unidade}
                 onChange={e => setEditando(p => p && ({ ...p, unidade: e.target.value }))}
-                style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '14px' }}
               >
                 <option value="kg">kg</option>
                 <option value="unidade">unidade</option>
                 <option value="litro">litro</option>
                 <option value="caixa">caixa</option>
-              </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                <input
-                  type="checkbox"
-                  checked={editando.ativo}
-                  onChange={e => setEditando(p => p && ({ ...p, ativo: e.target.checked }))}
-                />
-                Ativo
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setEditando(null)}
-                style={{ padding: '8px 16px', border: '1px solid #e5e3dc', borderRadius: '8px', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleEditar}
-                disabled={status === 'salvando'}
-                style={{ padding: '8px 20px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-              >
-                {status === 'salvando' ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
+              </Select>
+            </Field>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: COM_C.txt, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={editando.ativo}
+                onChange={e => setEditando(p => p && ({ ...p, ativo: e.target.checked }))}
+              />
+              Ativo
+            </label>
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </PageLayout>
   )
 }

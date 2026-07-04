@@ -1,0 +1,82 @@
+'use client'
+
+import Link from 'next/link'
+import { HubStyles } from './HubStyles'
+import { COM_C } from './tokens'
+
+interface PageLayoutProps {
+  titulo: string
+  subtitulo?: string
+  breadcrumb?: { label: string; href?: string }[]
+  icone?: string
+  acoes?: React.ReactNode
+  children: React.ReactNode
+  fullHeight?: boolean
+}
+
+export function PageLayout({
+  titulo,
+  subtitulo,
+  breadcrumb,
+  icone = 'ti-plant-2',
+  acoes,
+  children,
+  fullHeight,
+}: PageLayoutProps) {
+  const crumbs = breadcrumb ?? [
+    { label: 'Comercialização', href: '/comercializacao' },
+  ]
+
+  return (
+    <>
+      <HubStyles />
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
+        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+      }}>
+        <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10, background: COM_C.marromLt, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <i className={`ti ${icone}`} style={{ fontSize: 20, color: COM_C.marrom }} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                <Link href="/comercializacao" style={{ fontSize: 12, color: COM_C.txtSub, textDecoration: 'none' }}>
+                  Comercialização
+                </Link>
+                {crumbs.filter(c => c.href !== '/comercializacao').map((c, i) => (
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12, color: COM_C.borda }}>/</span>
+                    {c.href ? (
+                      <Link href={c.href} style={{ fontSize: 12, color: COM_C.txtSub, textDecoration: 'none' }}>{c.label}</Link>
+                    ) : (
+                      <span style={{ fontSize: 12, color: COM_C.txtSub }}>{c.label}</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+              <h1 style={{ fontSize: 19, fontWeight: 800, color: COM_C.txt, margin: 0, lineHeight: 1.2 }}>{titulo}</h1>
+              {subtitulo && (
+                <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{subtitulo}</div>
+              )}
+            </div>
+          </div>
+          {acoes && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {acoes}
+            </div>
+          )}
+        </div>
+      </div>
+      <div
+        className="com-hub-content"
+        style={fullHeight ? { minHeight: 'calc(100vh - 88px)' } : undefined}
+      >
+        {children}
+      </div>
+    </>
+  )
+}
