@@ -34,6 +34,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# ambiente local de preview (worktree separado)
+.local-preview
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

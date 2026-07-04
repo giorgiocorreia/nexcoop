@@ -4,8 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:preview": "next dev -p 3001",
+    "prebuild": "node scripts/guard-deploy.mjs",
+    "prevercel-build": "node scripts/guard-deploy.mjs",
     "build": "next build",
     "start": "next start",
+    "start:preview": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {
