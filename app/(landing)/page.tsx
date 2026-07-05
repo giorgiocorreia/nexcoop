@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import InviteDetector from './InviteDetector'
 import NavbarMobile from './NavbarMobile'
 import DemoInterativa from './DemoInterativa'
+import { WPP_URL } from './constants'
 
 interface OrgCliente {
   nome_curto: string | null
@@ -29,7 +30,7 @@ const PLANOS = [
   { nome: 'Gratuito', preco: 'R$ 0', periodo: '/mês', limite: 'Até 10 filiados', recursos: ['Gestão de filiados', 'Financeiro básico', 'Documentos', '1 usuário gestor'], destaque: false, cta: 'Começar grátis', href: '/cadastro' },
   { nome: 'Essencial', preco: 'R$ 149', periodo: '/mês', limite: 'Até 50 filiados', recursos: ['Tudo do Gratuito', 'Assembleias digitais', 'Módulo Contábil', 'Suporte prioritário', '3 usuários'], destaque: true, cta: 'Assinar agora', href: 'mailto:suporte@nexcoop.com.br' },
   { nome: 'Profissional', preco: 'R$ 499', periodo: '/mês', limite: 'Até 200 filiados', recursos: ['Tudo do Essencial', 'Loja Agropecuária', 'Comercialização', 'Usuários ilimitados', 'Onboarding dedicado'], destaque: false, cta: 'Assinar agora', href: 'mailto:suporte@nexcoop.com.br' },
-  { nome: 'Agro', preco: 'R$ 1.500', periodo: '/mês', limite: 'Filiados ilimitados', recursos: ['Tudo do Profissional', 'Captação + Radar IA', 'Portal do Filiado', 'Suporte personalizado'], destaque: false, cta: 'Falar com equipe', href: 'https://wa.me/55SEUNUMERO' },
+  { nome: 'Agro', preco: 'R$ 1.500', periodo: '/mês', limite: 'Filiados ilimitados', recursos: ['Tudo do Profissional', 'Captação + Radar IA', 'Portal do Filiado', 'Suporte personalizado'], destaque: false, cta: 'Falar com equipe', href: WPP_URL },
 ]
 
 const DIFERENCIAIS = [
@@ -49,8 +50,6 @@ const DORES = [
   { icon: '⏰', cor: '#FAEEDA', corIcon: '#BA7517', titulo: 'Documentos vencendo sem aviso', desc: 'Alvarás, certidões e contratos com prazos perdidos em pastas e papéis.', resolve: 'Repositório com alertas de vencimento 30 dias antes' },
   { icon: '💵', cor: '#E1F5EE', corIcon: '#0F6E56', titulo: 'Captação de recursos travada', desc: 'Editais passam despercebidos por falta de tempo ou ferramenta de monitoramento.', resolve: 'Radar IA + pipeline Kanban de oportunidades de financiamento' },
 ]
-
-const WPP_URL = 'https://wa.me/5573999818190'
 
 // ─── CSS Responsivo Global ─────────────────────────────────────────────────
 function EstilosGlobais() {
@@ -105,6 +104,9 @@ function EstilosGlobais() {
       .tela-content { flex: 1; background: #f8f7f4; padding: 12px; overflow: hidden; }
       .tela-caption { padding: 10px 0 0; text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); }
 
+      .numeros-bar { display: grid; grid-template-columns: repeat(4,1fr); }
+      .mockup-modulos { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+
       @media (max-width: 768px) {
         .nav-links { display: none !important; }
         .nav-ctas  { display: none !important; }
@@ -120,9 +122,11 @@ function EstilosGlobais() {
         .enterprise-row { flex-direction: column; align-items: flex-start; }
         .contabil-pills { grid-template-columns: 1fr 1fr !important; }
         .mockup-stats { grid-template-columns: 1fr 1fr !important; }
+        .mockup-modulos { grid-template-columns: 1fr 1fr !important; }
         .mockup-bottom { grid-template-columns: 1fr !important; }
+        .numeros-bar { grid-template-columns: 1fr 1fr !important; }
         .hero-ctas { flex-direction: column; }
-        .hero-ctas a, .hero-ctas button { text-align: center; }
+        .hero-ctas a, .hero-ctas button { text-align: center; justify-content: center; }
       }
     `}</style>
   )
@@ -180,9 +184,9 @@ function Navbar() {
           <Link href="/login" style={{ padding: '8px 20px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.8)', textDecoration: 'none' }}>
             Entrar
           </Link>
-          <a href={WPP_URL} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: '#1D9E75', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-            💬 Falar com a equipe
-          </a>
+          <Link href="/cadastro" style={{ padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Começar grátis
+          </Link>
         </div>
         <NavbarMobile />
       </div>
@@ -212,7 +216,7 @@ function Hero() {
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(55,138,221,0.18)', border: '1px solid rgba(55,138,221,0.35)', borderRadius: 100, padding: '5px 14px', fontSize: 13, fontWeight: 500, color: '#85B7EB', marginBottom: '1.5rem' }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#378ADD', display: 'inline-block', flexShrink: 0 }} />
-              Novo: Módulo Contábil completo com SPED
+              Interface renovada + Módulo Contábil com SPED
             </div>
             <h1 style={{ fontSize: 'clamp(2rem,5vw,3.2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: -1, marginBottom: '1.5rem', fontFamily: "'Sora',system-ui,sans-serif" }}>
               Sua{' '}
@@ -223,11 +227,14 @@ function Hero() {
               Gerencie filiados, finanças, assembleias, documentos e contabilidade — em uma plataforma feita para o cooperativismo brasileiro.
             </p>
             <div className="hero-ctas">
-              <a href={WPP_URL} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#fff', background: '#1D9E75', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                💬 Falar com a equipe
-              </a>
+              <Link href="/cadastro" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                Começar grátis
+              </Link>
               <a href="#demo" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.08)', border: '1.5px solid rgba(255,255,255,0.25)', textDecoration: 'none' }}>
                 ▼ Veja como funciona
+              </a>
+              <a href={WPP_URL} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.75)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                💬 Falar com a equipe
               </a>
             </div>
             <div className="hero-badges">
@@ -249,53 +256,61 @@ function Hero() {
 
 function MockupDashboard() {
   const cardStyle: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '1.5rem', backdropFilter: 'blur(20px)' }
-  const statStyle: React.CSSProperties = { background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '0.75rem' }
-  const bars = [32, 46, 40, 58, 52, 74, 100]
+  const statStyle: React.CSSProperties = { background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '0.65rem' }
+  const modulos = [
+    ['👥', 'Cooperados', '#C4B5FD'],
+    ['📅', 'Mensalidades', '#93C5FD'],
+    ['💰', 'Financeiro', '#6EE7B7'],
+    ['🏛️', 'Assembleias', '#93C5FD'],
+    ['📁', 'Documentos', '#FCD34D'],
+    ['🤝', 'Comercialização', '#D4A574'],
+  ]
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ position: 'absolute', top: -18, right: 30, background: '#fff', borderRadius: 12, padding: '0.6rem 0.9rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 12, fontWeight: 600, color: '#0D2B5E', zIndex: 2 }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80' }} /> 284 filiados ativos
       </div>
       <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>Nex<span style={{ color: '#85B7EB' }}>Coop</span></span>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(55,138,221,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#B5D4F4' }}>MA</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.875rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>Dashboard</span>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>sábado, 4 de julho de 2026</div>
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
-          <strong style={{ color: '#fff', fontSize: 15, display: 'block', marginBottom: 2 }}>Dashboard</strong>
-          Visão geral da organização
-        </div>
-        <div className="mockup-stats">
-          {[['Filiados', '284', '+12 este mês'], ['A receber', 'R$42k', '+8% vs anterior'], ['Docs vencendo', '7', 'Próximos 30 dias']].map(([label, val, trend]) => (
+        <div className="mockup-stats" style={{ marginBottom: '0.875rem' }}>
+          {[['Filiados', '284', '272 ativos'], ['A receber', 'R$42k', 'Pendentes'], ['A pagar', 'R$8k', 'Pendentes'], ['Docs venc.', '7', '30 dias']].map(([label, val, sub]) => (
             <div key={label} style={statStyle}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{val}</div>
-              <div style={{ fontSize: 10, color: '#4ADE80', marginTop: 2 }}>{trend}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{label}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{val}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{sub}</div>
             </div>
           ))}
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '0.875rem', marginBottom: '0.75rem' }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>Evolução de filiados — 2025</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 52 }}>
-            {bars.map((h, i) => (
-              <div key={i} style={{ flex: 1, borderRadius: '4px 4px 0 0', height: `${h}%`, background: i >= 5 ? 'linear-gradient(180deg,#85B7EB,#185FA5)' : 'rgba(55,138,221,0.35)' }} />
-            ))}
-          </div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Módulos</div>
+        <div className="mockup-modulos" style={{ marginBottom: '0.75rem' }}>
+          {modulos.map(([icon, label, cor]) => (
+            <div key={label} style={{ ...statStyle, display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.6rem' }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: `${cor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0 }}>{icon}</div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{label}</span>
+            </div>
+          ))}
         </div>
         <div className="mockup-bottom">
-          {[['🏛️', 'Próxima assembleia', '28 Jul'], ['💰', 'Capital a receber', 'R$124.500']].map(([icon, label, val]) => (
-            <div key={label} style={{ ...statStyle, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(55,138,221,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</div>
-              <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{val}</div>
+          <div style={{ ...statStyle, padding: '0.6rem' }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Últimos lançamentos</div>
+            {[['Mensalidades Jun', '+R$18.4k'], ['Aluguel sede', '-R$2.8k']].map(([d, v]) => (
+              <div key={d} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, padding: '2px 0', color: 'rgba(255,255,255,0.7)' }}>
+                <span>{d}</span><span style={{ fontWeight: 600, color: v.startsWith('+') ? '#4ADE80' : '#F87171' }}>{v}</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div style={{ ...statStyle, padding: '0.6rem' }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: '#85B7EB', marginBottom: 3 }}>Próxima assembleia</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>AGO 2026</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>28 de julho</div>
+          </div>
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: -18, left: 20, background: '#fff', borderRadius: 12, padding: '0.6rem 0.9rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 12, fontWeight: 600, color: '#0D2B5E', zIndex: 2 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#85B7EB' }} /> Ata gerada automaticamente
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0F766E' }} /> Escrituração contábil integrada
       </div>
     </div>
   )
@@ -304,7 +319,7 @@ function MockupDashboard() {
 // ─── Números ───────────────────────────────────────────────────────────────
 function Numeros() {
   return (
-    <section style={{ background: '#fff', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: '1px solid #E2EAF4' }}>
+    <section className="numeros-bar" style={{ background: '#fff', borderBottom: '1px solid #E2EAF4' }}>
       {[['284+', 'Filiados gerenciados'], ['13', 'Telas contábeis integradas'], ['7 dias', 'Para implantar'], ['100%', 'Em nuvem, sem instalação']].map(([val, label]) => (
         <div key={label} style={{ textAlign: 'center', padding: '1.5rem 1rem', borderRight: '1px solid #E2EAF4' }}>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#0C447C', letterSpacing: -0.5, fontFamily: "'Sora',sans-serif" }}>{val}</div>
@@ -483,47 +498,38 @@ function TelasReais() {
                   ['Agro', '🤝|Comercialização'],
                 ])}
                 <div className="tela-content">
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#042C53', marginBottom: 2 }}>Dashboard</div>
-                  <div style={{ fontSize: 8, color: '#aaa', marginBottom: 8 }}>Visão geral da organização</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 4, marginBottom: 5 }}>
-                    {[['284', 'Filiados', '#185FA5'], ['R$42k', 'A receber', '#085041'], ['R$8k', 'A pagar', '#A32D2D'], ['7', 'Docs venc.', '#854F0B']].map(([v, l, c]) => (
-                      <div key={l} style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 5 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: c }}>{v}</div>
-                        <div style={{ fontSize: 7, color: '#aaa', marginTop: 1 }}>{l}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#042C53', marginBottom: 1 }}>Dashboard</div>
+                  <div style={{ fontSize: 7, color: '#aaa', marginBottom: 6 }}>sábado, 4 de julho de 2026</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 3, marginBottom: 5 }}>
+                    {[['284', 'Filiados', '#534AB7'], ['R$42k', 'A receber', '#185FA5'], ['R$8k', 'A pagar', '#A32D2D'], ['7', 'Docs venc.', '#854F0B']].map(([v, l, c]) => (
+                      <div key={l} style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 4 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: c }}>{v}</div>
+                        <div style={{ fontSize: 6, color: '#aaa', marginTop: 1 }}>{l}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 5 }}>
-                    <div style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 5 }}>
-                      <div style={{ fontSize: 7, fontWeight: 600, color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Capital a receber</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#042C53' }}>R$124.500</div>
-                      <div style={{ fontSize: 7, color: '#aaa' }}>Parcelas de cotas</div>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 5 }}>
-                      <div style={{ fontSize: 7, fontWeight: 600, color: '#A32D2D', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Inadimplentes</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#A32D2D' }}>12</div>
-                      <div style={{ fontSize: 7, color: '#aaa' }}>4,2% dos filiados</div>
-                    </div>
+                  <div style={{ fontSize: 6, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Módulos</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 3, marginBottom: 5 }}>
+                    {[['👥', 'Cooperados'], ['📅', 'Mensalid.'], ['💰', 'Financeiro'], ['🏛️', 'Assembleias'], ['📁', 'Documentos'], ['🤝', 'Comerc.']].map(([icon, label]) => (
+                      <div key={label} style={{ background: '#fff', borderRadius: 3, border: '0.5px solid #e5e3dc', padding: '3px 4px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: 8 }}>{icon}</span>
+                        <span style={{ fontSize: 6, fontWeight: 600, color: '#042C53' }}>{label}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                    <div style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 5 }}>
-                      <div style={{ fontSize: 8, fontWeight: 600, color: '#042C53', marginBottom: 4 }}>Últimos lançamentos</div>
-                      {[['Mensalidades Maio', '+R$18.400', '#085041'], ['Aluguel sede', '-R$2.800', '#A32D2D'], ['Venda coletiva', '+R$67.200', '#085041']].map(([d, v, c]) => (
-                        <div key={d} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 7, padding: '2px 0', borderBottom: '0.5px solid #f0f0f0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                    <div style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 4 }}>
+                      <div style={{ fontSize: 7, fontWeight: 600, color: '#042C53', marginBottom: 3 }}>Últimos lançamentos</div>
+                      {[['Mensalidades Jun', '+R$18.4k', '#085041'], ['Aluguel sede', '-R$2.8k', '#A32D2D']].map(([d, v, c]) => (
+                        <div key={d} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 6, padding: '1px 0' }}>
                           <span style={{ color: '#555' }}>{d}</span><span style={{ color: c, fontWeight: 600 }}>{v}</span>
                         </div>
                       ))}
                     </div>
-                    <div style={{ background: '#fff', borderRadius: 4, border: '0.5px solid #e5e3dc', padding: 5 }}>
-                      <div style={{ fontSize: 7, fontWeight: 600, color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Próx. assembleia</div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: '#042C53' }}>AGO 2026</div>
-                      <div style={{ fontSize: 7, color: '#888', marginBottom: 5 }}>28 de julho de 2026</div>
-                      <div style={{ fontSize: 7, fontWeight: 600, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Docs vencendo</div>
-                      {[['Alvará funcionamento', '02/07'], ['Certidão FGTS', '15/07']].map(([d, v]) => (
-                        <div key={d} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 6, padding: '2px 0', borderBottom: '0.5px solid #f0f0f0' }}>
-                          <span style={{ color: '#555' }}>{d}</span><span style={{ color: '#A32D2D' }}>{v}</span>
-                        </div>
-                      ))}
+                    <div style={{ background: '#E6F1FB', borderRadius: 4, border: '0.5px solid #B5D4F4', padding: 4 }}>
+                      <div style={{ fontSize: 6, fontWeight: 600, color: '#185FA5', textTransform: 'uppercase', marginBottom: 2 }}>Próx. assembleia</div>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: '#042C53' }}>AGO 2026</div>
+                      <div style={{ fontSize: 6, color: '#185FA5' }}>28 de julho</div>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { WPP_URL } from './constants'
 
 const DEMO_FILIADOS = [
   { nome: 'Ana Carla Ferreira Mendes', cpf: '•••.456.789-00', status: 'Ativo', cor: '#4ADE80' },
@@ -16,7 +18,14 @@ const DEMO_FINANCEIRO = [
   { desc: 'Material de escritório', valor: '-R$ 380', status: 'Pago', positivo: false },
 ]
 
-const WPP_URL = 'https://wa.me/5571999783992'
+const DEMO_MODULOS = [
+  ['👥', 'Cooperados'],
+  ['📅', 'Mensalidades'],
+  ['💰', 'Financeiro'],
+  ['🏛️', 'Assembleias'],
+  ['📁', 'Documentos'],
+  ['🤝', 'Comercialização'],
+]
 
 export default function DemoInterativa() {
   const [aba, setAba] = useState<'dashboard' | 'filiados' | 'financeiro' | 'assembleia'>('dashboard')
@@ -46,20 +55,38 @@ export default function DemoInterativa() {
 
           {aba === 'dashboard' && (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                {[['284', 'Filiados ativos', '#fff'], ['R$42k', 'Receitas do mês', '#4ADE80'], ['7', 'Docs vencendo', '#FBBF24'], ['28 Jul', 'Próx. assembleia', '#85B7EB']].map(([val, label, cor]) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
+                {[['284', 'Filiados', '#fff', '272 ativos'], ['R$42k', 'A receber', '#85B7EB', 'Pendentes'], ['R$8k', 'A pagar', '#F87171', 'Pendentes'], ['7', 'Docs vencendo', '#FBBF24', '30 dias']].map(([val, label, cor, sub]) => (
                   <div key={label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '0.875rem', textAlign: 'center' }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: cor }}>{val}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>{label}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: cor }}>{val}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>{label}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{sub}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '1rem' }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: '0.75rem' }}>Evolução de filiados — 2025</div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 60 }}>
-                  {[32, 48, 40, 60, 52, 78, 100].map((h, i) => (
-                    <div key={i} style={{ flex: 1, borderRadius: '4px 4px 0 0', height: `${h}%`, background: i >= 5 ? 'linear-gradient(180deg,#85B7EB,#185FA5)' : `rgba(55,138,221,${0.25 + i * 0.06})` }} />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>Módulos</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
+                {DEMO_MODULOS.map(([icon, label]) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.6rem 0.75rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14 }}>{icon}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '1rem' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: '0.6rem' }}>Últimos lançamentos</div>
+                  {([['Mensalidades Jun', '+R$18.4k', true], ['Aluguel sede', '-R$2.8k', false]] as const).map(([d, v, pos]) => (
+                    <div key={String(d)} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'rgba(255,255,255,0.7)' }}>
+                      <span>{d}</span>
+                      <span style={{ fontWeight: 600, color: pos ? '#4ADE80' : '#F87171' }}>{v}</span>
+                    </div>
                   ))}
+                </div>
+                <div style={{ background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)', borderRadius: 10, padding: '1rem' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#85B7EB', textTransform: 'uppercase', marginBottom: 6 }}>Próxima assembleia</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>AGO 2026</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>28 de julho de 2026</div>
                 </div>
               </div>
             </div>
@@ -101,6 +128,9 @@ export default function DemoInterativa() {
                   <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, background: f.positivo ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)', color: f.positivo ? '#4ADE80' : '#FBBF24', whiteSpace: 'nowrap' }}>{f.status}</span>
                 </div>
               ))}
+              <div style={{ marginTop: '0.75rem', fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+                Lançamentos alimentam a escrituração contábil do módulo Contábil
+              </div>
             </div>
           )}
 
@@ -128,8 +158,11 @@ export default function DemoInterativa() {
           )}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <a href={WPP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#fff', background: '#1D9E75', textDecoration: 'none' }}>
+        <div style={{ textAlign: 'center', marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+          <Link href="/cadastro" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#1565C0,#06B6D4)', textDecoration: 'none' }}>
+            Começar grátis — até 10 filiados
+          </Link>
+          <a href={WPP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
             💬 Quero conhecer o sistema completo
           </a>
         </div>
