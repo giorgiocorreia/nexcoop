@@ -8,6 +8,7 @@ import {
   vincularNFe,
   kpisEntradasNFe,
 } from './actions'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 
 type Compra = Awaited<ReturnType<typeof listarEntradasNFe>>[0]
 
@@ -27,12 +28,6 @@ const primeiroDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(),
 const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const fmtData  = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '—'
 const compraNum = (id: string) => `#${id.slice(-4).toUpperCase()}`
-
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
 
 function badgeStatus(s: string | null) {
   if (s === 'com_chave') return { bg: '#EAF3DE', color: '#3B6D11', label: 'Com chave' }
@@ -127,50 +122,12 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
   }
 
   return (
-    <>
-      <style>{`
-        .ent-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .ent-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .ent-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .ent-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="ent-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <i className="ti ti-file-invoice" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>
-                Entradas NF-e
-              </h1>
-              {!carregando && kpis.semChave > 0 && (
-                <span style={{ background: '#FAEEDA', color: '#854F0B', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                  {kpis.semChave} sem chave
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}Entradas NF-e
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="ent-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-
+    <PageLayout
+      titulo="Entradas NF-e"
+      subtitulo={!carregando && kpis.semChave > 0 ? `${kpis.semChave} sem chave` : undefined}
+      icone="ti-file-invoice"
+      modulo={MODULO_LOJA}
+    >
         {mensagem && (
           <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#3B6D11' }}>
             {mensagem}
@@ -179,13 +136,13 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
 
         {/* Filtros */}
         <div style={{
-          background: '#fff', border: `1px solid ${C.borda}`,
+          background: '#fff', border: `1px solid ${COM_C.borda}`,
           borderRadius: 12, padding: '14px 20px', marginBottom: 16,
           display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
         }}>
-          <span style={{ fontSize: 12, color: C.txtSub }}>De</span>
+          <span style={{ fontSize: 12, color: COM_C.txtSub }}>De</span>
           <input type="date" value={filtros.dataInicio} onChange={e => setFiltros(p => ({ ...p, dataInicio: e.target.value }))} style={inp} />
-          <span style={{ fontSize: 12, color: C.txtSub }}>Até</span>
+          <span style={{ fontSize: 12, color: COM_C.txtSub }}>Até</span>
           <input type="date" value={filtros.dataFim}    onChange={e => setFiltros(p => ({ ...p, dataFim: e.target.value }))}    style={inp} />
           <input type="text" placeholder="Buscar fornecedor..." value={filtros.fornecedor}
             onChange={e => setFiltros(p => ({ ...p, fornecedor: e.target.value }))}
@@ -197,25 +154,25 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
             <option value="sem_nota">Sem nota</option>
           </select>
           {!carregando && (
-            <span style={{ fontSize: 12, color: C.txtSub, marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 12, color: COM_C.txtSub, marginLeft: 'auto', whiteSpace: 'nowrap' }}>
               {kpis.total} entradas · {fmtMoeda(kpis.valorTotal)}
             </span>
           )}
         </div>
 
         {/* Tabela */}
-        <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
           {carregando ? (
-            <p style={{ padding: 24, textAlign: 'center', color: C.txtSub, fontSize: 13 }}>Carregando...</p>
+            <p style={{ padding: 24, textAlign: 'center', color: COM_C.txtSub, fontSize: 13 }}>Carregando...</p>
           ) : compras.length === 0 ? (
-            <p style={{ padding: 24, textAlign: 'center', color: C.txtSub, fontSize: 13 }}>Nenhuma compra encontrada no período.</p>
+            <p style={{ padding: 24, textAlign: 'center', color: COM_C.txtSub, fontSize: 13 }}>Nenhuma compra encontrada no período.</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
                 <thead>
-                  <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${C.borda}` }}>
+                  <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${COM_C.borda}` }}>
                     {['Compra', 'Data', 'Fornecedor', 'Nº NF', 'Chave de acesso', 'Valor', 'Status', 'Ações'].map(h => (
-                      <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -225,11 +182,11 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
                     const forn  = (c.loja_fornecedores as any)
                     return (
                       <tr key={c.id} style={{ borderBottom: i < compras.length - 1 ? `1px solid #f5f5f4` : 'none' }}>
-                        <td style={{ padding: '10px 12px', fontSize: 12, color: C.txtSub }}>{compraNum(c.id)}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: COM_C.txtSub }}>{compraNum(c.id)}</td>
                         <td style={{ padding: '10px 12px', fontSize: 12 }}>{fmtData(c.data_compra)}</td>
                         <td style={{ padding: '10px 12px', fontSize: 12 }}>{forn?.nome ?? '—'}</td>
                         <td style={{ padding: '10px 12px', fontSize: 12 }}>{c.numero_nf ?? '—'}</td>
-                        <td style={{ padding: '10px 12px', fontSize: 11, fontFamily: 'monospace', color: C.txtSub }}>
+                        <td style={{ padding: '10px 12px', fontSize: 11, fontFamily: 'monospace', color: COM_C.txtSub }}>
                           {c.chave_acesso_nfe ? `${c.chave_acesso_nfe.slice(0, 10)}…${c.chave_acesso_nfe.slice(-4)}` : '—'}
                         </td>
                         <td style={{ padding: '10px 12px', fontSize: 12 }}>{fmtMoeda(Number(c.total) ?? 0)}</td>
@@ -241,13 +198,13 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
                         <td style={{ padding: '10px 12px' }}>
                           {c.status_nfe === 'sem_chave' && (
                             <button onClick={() => abrirModal(c)}
-                              style={{ fontSize: 11, padding: '4px 10px', border: `1px solid ${C.laranja}`, borderRadius: 6, background: 'transparent', cursor: 'pointer', color: C.laranja, fontWeight: 600 }}>
+                              style={{ fontSize: 11, padding: '4px 10px', border: `1px solid ${COM_C.laranja}`, borderRadius: 6, background: 'transparent', cursor: 'pointer', color: COM_C.laranja, fontWeight: 600 }}>
                               Vincular
                             </button>
                           )}
                           {c.status_nfe === 'com_chave' && (
                             <a href={`/loja/compras/${c.id}`}
-                              style={{ fontSize: 11, padding: '4px 10px', border: `1px solid ${C.borda}`, borderRadius: 6, textDecoration: 'none', color: C.txt, display: 'inline-block' }}>
+                              style={{ fontSize: 11, padding: '4px 10px', border: `1px solid ${COM_C.borda}`, borderRadius: 6, textDecoration: 'none', color: COM_C.txt, display: 'inline-block' }}>
                               Ver compra
                             </a>
                           )}
@@ -260,22 +217,21 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
             </div>
           )}
         </div>
-      </div>
 
       {/* Modal vincular */}
       {modalAberto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.borda}`, padding: '1.5rem', width: 560, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${COM_C.borda}`, padding: '1.5rem', width: 560, maxHeight: '90vh', overflowY: 'auto' }}>
 
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: C.txt }}>Vincular NF-e à compra</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: COM_C.txt }}>Vincular NF-e à compra</h2>
 
             {compraAlvo && (
-              <div style={{ background: '#f9fafb', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: C.txtSub, marginBottom: 16 }}>
+              <div style={{ background: '#f9fafb', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: COM_C.txtSub, marginBottom: 16 }}>
                 Compra {compraNum(compraAlvo.id)} · {fmtData(compraAlvo.data_compra)} · {fmtMoeda(Number(compraAlvo.total) ?? 0)}
               </div>
             )}
 
-            <label style={{ fontSize: 11, fontWeight: 700, color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
               Chave de acesso (44 dígitos)
             </label>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -285,10 +241,10 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
                 onChange={e => setChaveInput(e.target.value)}
                 placeholder="35250654305114000179550010000034210000012345"
                 maxLength={44}
-                style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', padding: '8px 10px', border: `1px solid ${C.borda}`, borderRadius: 8, outline: 'none' }}
+                style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', padding: '8px 10px', border: `1px solid ${COM_C.borda}`, borderRadius: 8, outline: 'none' }}
               />
               <button onClick={handleConsultar} disabled={consultando}
-                style={{ background: C.laranja, color: '#fff', border: 'none', borderRadius: 8, padding: '0 16px', fontSize: 13, fontWeight: 600, cursor: consultando ? 'not-allowed' : 'pointer', opacity: consultando ? 0.7 : 1 }}>
+                style={{ background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 8, padding: '0 16px', fontSize: 13, fontWeight: 600, cursor: consultando ? 'not-allowed' : 'pointer', opacity: consultando ? 0.7 : 1 }}>
                 {consultando ? 'Consultando...' : 'Consultar'}
               </button>
             </div>
@@ -312,21 +268,21 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
                   ['Status SEFAZ',  dadosNFe.status],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                    <span style={{ color: C.txtSub }}>{k}</span>
+                    <span style={{ color: COM_C.txtSub }}>{k}</span>
                     <span style={{ fontWeight: 600, color: '#27500A' }}>{v}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: `1px solid ${C.borda}` }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 12, borderTop: `1px solid ${COM_C.borda}` }}>
               <button onClick={() => setModalAberto(false)}
-                style={{ background: 'transparent', border: `1px solid ${C.borda}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: C.txtSub }}>
+                style={{ background: 'transparent', border: `1px solid ${COM_C.borda}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: COM_C.txtSub }}>
                 Cancelar
               </button>
               {dadosNFe && (
                 <button onClick={handleVincular} disabled={vinculando}
-                  style={{ background: C.laranja, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: vinculando ? 'not-allowed' : 'pointer', opacity: vinculando ? 0.7 : 1 }}>
+                  style={{ background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: vinculando ? 'not-allowed' : 'pointer', opacity: vinculando ? 0.7 : 1 }}>
                   {vinculando ? 'Salvando...' : 'Vincular NF-e'}
                 </button>
               )}
@@ -334,6 +290,6 @@ export default function EntradasNFeClient({ orgId }: { orgId: string }) {
           </div>
         </div>
       )}
-    </>
+    </PageLayout>
   )
 }

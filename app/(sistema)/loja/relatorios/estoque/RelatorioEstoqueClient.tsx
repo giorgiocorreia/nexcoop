@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PageLayout, MODULO_LOJA, COM_C } from "@/components/nexcoop/ui";
 
 interface ItemEstoque {
   id: string; nome: string; unidade: string;
@@ -14,14 +15,6 @@ interface Movimentacao {
   id: string; tipo: string; quantidade: number;
   motivo: string | null; data: string; hora: string;
   produto: string; unidade: string;
-}
-
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  verde: '#1D9E75', verdeLt: '#F0FDF4',
-  vermelho: '#DC2626', vermelhoLt: '#FEF2F2',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
 }
 
 function fmt(v: number) {
@@ -64,49 +57,17 @@ export default function RelatorioEstoqueClient({
   const totalAlertas      = estoque.filter(p => p.em_alerta).length;
 
   const inp: React.CSSProperties = {
-    fontSize: 12, padding: '6px 10px', border: `1px solid ${C.borda}`, borderRadius: 8, outline: 'none', background: '#fff',
+    fontSize: 12, padding: '6px 10px', border: `1px solid ${COM_C.borda}`, borderRadius: 8, outline: 'none', background: '#fff',
   }
 
   return (
-    <>
-      <style>{`
-        .re-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .re-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .re-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .re-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="re-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-chart-dots" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Relatório de Estoque</h1>
-              {totalAlertas > 0 && (
-                <span style={{ background: C.vermelhoLt, color: C.vermelho, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                  {totalAlertas} alerta{totalAlertas !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}Relatórios
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="re-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-
+    <PageLayout
+      titulo="Relatório de Estoque"
+      subtitulo={totalAlertas > 0 ? `${totalAlertas} alerta${totalAlertas !== 1 ? 's' : ''}` : undefined}
+      icone="ti-chart-dots"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Relatórios' }]}
+    >
         {/* Abas */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
           {([
@@ -118,9 +79,9 @@ export default function RelatorioEstoqueClient({
               onClick={() => setAba(a.key)}
               style={{
                 padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', border: `1px solid ${aba === a.key ? C.laranja : C.borda}`,
-                background: aba === a.key ? C.laranjaLt : '#fff',
-                color: aba === a.key ? C.laranja : C.txtSub,
+                cursor: 'pointer', border: `1px solid ${aba === a.key ? COM_C.laranja : COM_C.borda}`,
+                background: aba === a.key ? COM_C.laranjaLt : '#fff',
+                color: aba === a.key ? COM_C.laranja : COM_C.txtSub,
               }}
             >{a.label}</button>
           ))}
@@ -138,28 +99,28 @@ export default function RelatorioEstoqueClient({
               />
               <button
                 onClick={() => setApenasAlerta(!apenasAlerta)}
-                style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${apenasAlerta ? C.vermelho : C.borda}`, background: apenasAlerta ? C.vermelhoLt : '#fff', color: apenasAlerta ? C.vermelho : C.txtSub }}
+                style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${apenasAlerta ? COM_C.vermelho : COM_C.borda}`, background: apenasAlerta ? COM_C.vermelhoLt : '#fff', color: apenasAlerta ? COM_C.vermelho : COM_C.txtSub }}
               >
                 <i className="ti ti-alert-triangle" style={{ fontSize: 13, marginRight: 4 }} />
                 Só alertas
               </button>
-              <button onClick={() => exportCSV(filtrados)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${C.borda}`, background: '#fff', color: C.txtSub, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={() => exportCSV(filtrados)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${COM_C.borda}`, background: '#fff', color: COM_C.txtSub, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <i className="ti ti-download" style={{ fontSize: 13 }} />
                 Exportar CSV
               </button>
-              <span style={{ marginLeft: 'auto', fontSize: 12, color: C.txtSub, whiteSpace: 'nowrap' }}>
+              <span style={{ marginLeft: 'auto', fontSize: 12, color: COM_C.txtSub, whiteSpace: 'nowrap' }}>
                 {filtrados.length} produto{filtrados.length !== 1 ? 's' : ''} · {fmt(valorTotalEstoque)} em estoque
               </span>
             </div>
 
             {/* Tabela posição */}
-            <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
                   <thead>
-                    <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${C.borda}` }}>
+                    <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${COM_C.borda}` }}>
                       {["Produto", "Un.", "Estoque atual", "Mínimo", "Custo médio", "Valor estoque", "Preço venda", ""].map(h => (
-                        <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: COM_C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -168,19 +129,19 @@ export default function RelatorioEstoqueClient({
                       <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f4", background: i % 2 === 0 ? "#fff" : "#fafaf9" }}>
                         <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 600 }}>{p.nome}</td>
                         <td style={{ padding: "11px 14px" }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: C.txtSub, background: "#f5f5f4", padding: "2px 8px", borderRadius: 5 }}>{p.unidade}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: COM_C.txtSub, background: "#f5f5f4", padding: "2px 8px", borderRadius: 5 }}>{p.unidade}</span>
                         </td>
                         <td style={{ padding: "11px 14px" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: p.em_alerta ? (p.estoque_atual === 0 ? C.vermelhoLt : "#fffbeb") : C.verdeLt, color: p.em_alerta ? (p.estoque_atual === 0 ? C.vermelho : "#D97706") : C.verde, border: `1px solid ${p.em_alerta ? (p.estoque_atual === 0 ? "#fecaca" : "#fde68a") : "#bbf7d0"}` }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: p.em_alerta ? (p.estoque_atual === 0 ? COM_C.vermelhoLt : "#fffbeb") : COM_C.verdeLt, color: p.em_alerta ? (p.estoque_atual === 0 ? COM_C.vermelho : "#D97706") : COM_C.verde, border: `1px solid ${p.em_alerta ? (p.estoque_atual === 0 ? "#fecaca" : "#fde68a") : "#bbf7d0"}` }}>
                             {fmtNum(p.estoque_atual)} {p.em_alerta && p.estoque_atual === 0 ? "— zerado" : p.em_alerta ? "⚠" : ""}
                           </span>
                         </td>
-                        <td style={{ padding: "11px 14px", fontSize: 12, color: C.txtSub }}>{fmtNum(p.estoque_minimo)}</td>
+                        <td style={{ padding: "11px 14px", fontSize: 12, color: COM_C.txtSub }}>{fmtNum(p.estoque_minimo)}</td>
                         <td style={{ padding: "11px 14px", fontSize: 12 }}>{fmt(p.custo_medio)}</td>
                         <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700 }}>{fmt(p.valor_estoque)}</td>
                         <td style={{ padding: "11px 14px", fontSize: 12 }}>{fmt(p.preco_venda)}</td>
                         <td style={{ padding: "11px 14px" }}>
-                          {p.em_alerta && <span style={{ fontSize: 11, color: C.vermelho, fontWeight: 700 }}>Repor</span>}
+                          {p.em_alerta && <span style={{ fontSize: 11, color: COM_C.vermelho, fontWeight: 700 }}>Repor</span>}
                         </td>
                       </tr>
                     ))}
@@ -188,7 +149,7 @@ export default function RelatorioEstoqueClient({
                 </table>
               </div>
               {filtrados.length === 0 && (
-                <div style={{ padding: "40px", textAlign: "center", color: C.txtSub, fontSize: 13 }}>Nenhum produto encontrado.</div>
+                <div style={{ padding: "40px", textAlign: "center", color: COM_C.txtSub, fontSize: 13 }}>Nenhum produto encontrado.</div>
               )}
               <div style={{ padding: "10px 16px", borderTop: "1px solid #f5f5f4", fontSize: 11, color: "#a8a29e", background: "#fafaf9", display: "flex", justifyContent: "space-between" }}>
                 <span>{filtrados.length} produto{filtrados.length !== 1 ? "s" : ""}</span>
@@ -199,13 +160,13 @@ export default function RelatorioEstoqueClient({
         )}
 
         {aba === 'movimentacoes' && (
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead>
-                  <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${C.borda}` }}>
+                  <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${COM_C.borda}` }}>
                     {["Data", "Hora", "Produto", "Tipo", "Quantidade", "Motivo"].map(h => (
-                      <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: COM_C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -213,29 +174,28 @@ export default function RelatorioEstoqueClient({
                   {movimentacoes.map((m, i) => (
                     <tr key={m.id} style={{ borderBottom: "1px solid #f5f5f4", background: i % 2 === 0 ? "#fff" : "#fafaf9" }}>
                       <td style={{ padding: "11px 14px", fontSize: 12 }}>{m.data}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: C.txtSub, fontFamily: "monospace" }}>{m.hora}</td>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: COM_C.txtSub, fontFamily: "monospace" }}>{m.hora}</td>
                       <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 600 }}>{m.produto}</td>
                       <td style={{ padding: "11px 14px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 5, background: m.tipo === "entrada" ? C.verdeLt : C.vermelhoLt, color: m.tipo === "entrada" ? C.verde : C.vermelho }}>{m.tipo}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 5, background: m.tipo === "entrada" ? COM_C.verdeLt : COM_C.vermelhoLt, color: m.tipo === "entrada" ? COM_C.verde : COM_C.vermelho }}>{m.tipo}</span>
                       </td>
                       <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 600 }}>
                         {m.tipo === "entrada" ? "+" : "-"}{fmtNum(m.quantidade)} {m.unidade}
                       </td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: C.txtSub }}>{m.motivo ?? "—"}</td>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: COM_C.txtSub }}>{m.motivo ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             {movimentacoes.length === 0 && (
-              <div style={{ padding: "40px", textAlign: "center", color: C.txtSub, fontSize: 13 }}>Nenhuma movimentação registrada.</div>
+              <div style={{ padding: "40px", textAlign: "center", color: COM_C.txtSub, fontSize: 13 }}>Nenhuma movimentação registrada.</div>
             )}
             <div style={{ padding: "10px 16px", borderTop: "1px solid #f5f5f4", fontSize: 11, color: "#a8a29e", background: "#fafaf9" }}>
               {movimentacoes.length} movimentação{movimentacoes.length !== 1 ? "ões" : ""}
             </div>
           </div>
         )}
-      </div>
-    </>
+    </PageLayout>
   );
 }

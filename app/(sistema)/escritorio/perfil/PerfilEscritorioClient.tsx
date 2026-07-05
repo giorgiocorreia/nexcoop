@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getEmpresasDoUsuario } from '@/lib/parceiros/actions'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_ESCRITORIO, COM_C } from '@/components/nexcoop/ui'
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
@@ -91,8 +90,14 @@ export default function PerfilEscritorioClient({ userId, email }: { userId: stri
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 640, margin: '0 auto', background: '#f8f7f4', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>Perfil</h1>
+    <PageLayout
+      titulo="Perfil"
+      subtitulo="Dados da empresa e do profissional"
+      icone="ti-user"
+      modulo={MODULO_ESCRITORIO}
+      breadcrumb={[{ label: 'Perfil' }]}
+    >
+      <div style={{ maxWidth: 640 }}>
 
       {/* Bloco 1 — Dados da Empresa */}
       <div style={cardStyle}>
@@ -116,7 +121,7 @@ export default function PerfilEscritorioClient({ userId, email }: { userId: stri
         <button
           onClick={handleSalvarEmpresa}
           disabled={salvandoEmpresa}
-          style={{ marginTop: 16, padding: '9px 20px', background: salvandoEmpresa ? '#9CA3AF' : COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoEmpresa ? 'not-allowed' : 'pointer' }}>
+          style={{ marginTop: 16, padding: '9px 20px', background: salvandoEmpresa ? '#9CA3AF' : COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoEmpresa ? 'not-allowed' : 'pointer' }}>
           {salvandoEmpresa ? 'Salvando…' : 'Salvar dados da empresa'}
         </button>
       </div>
@@ -138,10 +143,11 @@ export default function PerfilEscritorioClient({ userId, email }: { userId: stri
         <button
           onClick={handleSalvarPerfil}
           disabled={salvandoProf}
-          style={{ marginTop: 16, padding: '9px 20px', background: salvandoProf ? '#9CA3AF' : COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoProf ? 'not-allowed' : 'pointer' }}>
+          style={{ marginTop: 16, padding: '9px 20px', background: salvandoProf ? '#9CA3AF' : COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoProf ? 'not-allowed' : 'pointer' }}>
           {salvandoProf ? 'Salvando…' : 'Salvar meu perfil'}
         </button>
       </div>
-    </div>
+      </div>
+    </PageLayout>
   )
 }

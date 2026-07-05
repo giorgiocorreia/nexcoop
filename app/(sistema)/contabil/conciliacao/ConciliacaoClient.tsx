@@ -6,8 +6,7 @@ import {
   getLancamentosParaConciliar, conciliarItem, ignorarItemExtrato,
 } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -78,19 +77,14 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
   const conciliados = itens.filter(i => i.status === 'conciliado').length
 
   return (
-    <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Conciliação Bancária</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Compare o extrato bancário com os lançamentos registrados
-          </p>
-        </div>
-      </div>
-
+    <PageLayout
+      titulo="Conciliação Bancária"
+      subtitulo="Compare o extrato bancário com os lançamentos registrados"
+      icone="ti-arrows-exchange"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Conciliação Bancária' }]}
+      acoes={<BotaoAjuda chave="manual_contabil_url" />}
+    >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
       {erro    && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
 
@@ -109,7 +103,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
           </div>
           <div>
             <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleUpload} style={{ display: 'none' }} id="upload-csv" />
-            <label htmlFor="upload-csv" style={{ display: 'inline-block', padding: '9px 18px', background: COR, color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <label htmlFor="upload-csv" style={{ display: 'inline-block', padding: '9px 18px', background: COM_C.verde, color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               {importando ? 'Importando...' : '+ Importar CSV'}
             </label>
           </div>
@@ -130,7 +124,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
                 onClick={() => setExtratoSel(ex)}
                 style={{
                   background: extratoSel?.id === ex.id ? '#f0fdf9' : '#fff',
-                  border: `1px solid ${extratoSel?.id === ex.id ? COR : '#e5e3dc'}`,
+                  border: `1px solid ${extratoSel?.id === ex.id ? COM_C.verde : '#e5e3dc'}`,
                   borderRadius: 10, padding: '12px 16px', cursor: 'pointer',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}
@@ -158,7 +152,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 20 }}>
             {[
               { label: 'Pendentes',    valor: pendentes,   cor: '#f59e0b' },
-              { label: 'Conciliados',  valor: conciliados, cor: COR },
+              { label: 'Conciliados',  valor: conciliados, cor: COM_C.verde },
               { label: 'Total itens',  valor: itens.length, cor: '#635BFF' },
             ].map(c => (
               <div key={c.label} style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e3dc', padding: '12px 16px' }}>
@@ -172,8 +166,8 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
             {(['pendente', 'conciliado', 'ignorado'] as const).map(a => (
               <button key={a} onClick={() => setAba(a)}
                 style={{ padding: '10px 20px', border: 'none', background: 'none',
-                  fontWeight: aba === a ? 700 : 400, color: aba === a ? COR : '#6b7280',
-                  borderBottom: aba === a ? `2px solid ${COR}` : 'none', marginBottom: -2,
+                  fontWeight: aba === a ? 700 : 400, color: aba === a ? COM_C.verde : '#6b7280',
+                  borderBottom: aba === a ? `2px solid ${COM_C.verde}` : 'none', marginBottom: -2,
                   cursor: 'pointer', fontSize: 13, textTransform: 'capitalize' }}>
                 {a.charAt(0).toUpperCase() + a.slice(1)} ({itens.filter(i => i.status === a).length})
               </button>
@@ -221,7 +215,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
                           {item.status === 'pendente' && (
                             <div style={{ display: 'flex', gap: 6 }}>
                               <button onClick={() => setItemModal(item)}
-                                style={{ background: COR, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                                 Conciliar
                               </button>
                               <button onClick={() => handleIgnorar(item.id)}
@@ -263,7 +257,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
                     onClick={() => handleConciliar(l.id)}
                     style={{ padding: '10px 14px', border: '1px solid #e5e3dc', borderRadius: 8, cursor: 'pointer',
                       display: 'flex', justifyContent: 'space-between', background: '#f8f7f4' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = COR)}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = COM_C.verde)}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e3dc')}
                   >
                     <div>
@@ -288,6 +282,6 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

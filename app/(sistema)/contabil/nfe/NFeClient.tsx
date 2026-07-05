@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { getNFesImportadas, importarXMLNFe, ignorarNFe } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 function fmt(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
 const STATUS_LABEL: Record<string, { label: string; bg: string; color: string }> = {
   importada: { label: 'Importada', bg: '#fef9c3', color: '#854d0e' },
@@ -49,30 +48,29 @@ export default function NFeClient({ orgId, userId }: Props) {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>NF-e — Notas Fiscais</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Importe XMLs para registrar entradas e saídas automaticamente</p>
-        </div>
-        <div>
+    <PageLayout
+      titulo="NF-e — Notas Fiscais"
+      subtitulo="Importe XMLs para registrar entradas e saídas automaticamente"
+      icone="ti-file-invoice"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'NF-e' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input ref={fileRef} type='file' accept='.xml' multiple onChange={handleUpload} style={{ display: 'none' }} id='upload-xml' />
-          <label htmlFor='upload-xml' style={{ background: COR, color: '#fff', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-block' }}>
+          <label htmlFor='upload-xml' style={{ background: COM_C.verde, color: '#fff', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-block' }}>
             {importando ? 'Importando...' : '+ Importar XML(s)'}
           </label>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-      </div>
-
+      }
+    >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total importadas', valor: nfes.length, cor: '#635BFF' },
           { label: 'Pendentes', valor: nfes.filter(n => n.status === 'importada').length, cor: '#f59e0b' },
-          { label: 'Vinculadas', valor: nfes.filter(n => n.status === 'vinculada').length, cor: COR },
+          { label: 'Vinculadas', valor: nfes.filter(n => n.status === 'vinculada').length, cor: COM_C.verde },
         ].map(card => (
           <div key={card.label} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: '16px 20px' }}>
             <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{card.label}</p>
@@ -167,6 +165,6 @@ export default function NFeClient({ orgId, userId }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

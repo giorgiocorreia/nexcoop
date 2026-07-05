@@ -14,3 +14,8 @@ export { InfoRow } from './InfoRow'
 export { AlertBanner } from './AlertBanner'
 
 export const MODULO_NEXCOOP = { label: 'NexCoop', href: '/dashboard' } as const
+export const MODULO_LOJA = { label: 'Loja', href: '/loja' } as const
+export const MODULO_CONTABIL = { label: 'Contábil', href: '/contabil/plano-de-contas' } as const
+export const MODULO_CAPTACAO = { label: 'Captação', href: '/captacao' } as const
+export const MODULO_CONFIG = { label: 'Configurações', href: '/configuracoes' } as const
+export const MODULO_ESCRITORIO = { label: 'Escritório', href: '/escritorio' } as const

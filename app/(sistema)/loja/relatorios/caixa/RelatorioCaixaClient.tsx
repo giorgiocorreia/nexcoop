@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 import Link from "next/link";
 
 interface Sessao {
@@ -20,14 +21,6 @@ interface Sessao {
 }
 
 interface Operador { id: string; nome: string }
-
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  verde: '#15803d',
-  vermelho: '#DC2626',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -75,50 +68,24 @@ export default function RelatorioCaixaClient({
   });
 
   const inp: React.CSSProperties = {
-    fontSize: 12, padding: '6px 10px', border: `1px solid ${C.borda}`, borderRadius: 8, outline: 'none', background: '#fff',
+    fontSize: 12, padding: '6px 10px', border: `1px solid ${COM_C.borda}`, borderRadius: 8, outline: 'none', background: '#fff',
   }
 
   return (
-    <>
-      <style>{`
-        .rc-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .rc-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .rc-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .rc-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="rc-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-report-money" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Relatório de Caixa</h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}Relatórios
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="rc-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-
-        {/* Filtros */}
-        <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, padding: '14px 20px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+    <PageLayout
+      titulo="Relatório de Caixa"
+      icone="ti-report-money"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Relatórios' }]}
+    >
+{/* Filtros */}
+        <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12, padding: '14px 20px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: C.txtSub }}>De</span>
+            <span style={{ fontSize: 12, color: COM_C.txtSub }}>De</span>
             <input type="date" value={filtroInicio} onChange={e => setFiltroInicio(e.target.value)} style={inp} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: C.txtSub }}>Até</span>
+            <span style={{ fontSize: 12, color: COM_C.txtSub }}>Até</span>
             <input type="date" value={filtroFim} onChange={e => setFiltroFim(e.target.value)} style={inp} />
           </div>
           {operadores.length > 0 && (
@@ -129,29 +96,29 @@ export default function RelatorioCaixaClient({
           )}
           <button
             onClick={() => setApenasDivergentes(!apenasDivergentes)}
-            style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${apenasDivergentes ? C.vermelho : C.borda}`, background: apenasDivergentes ? '#fef2f2' : '#fff', color: apenasDivergentes ? C.vermelho : C.txtSub }}
+            style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${apenasDivergentes ? COM_C.vermelho : COM_C.borda}`, background: apenasDivergentes ? '#fef2f2' : '#fff', color: apenasDivergentes ? COM_C.vermelho : COM_C.txtSub }}
           >
             ⚠ Só divergentes
           </button>
           <button
             onClick={() => { setFiltroInicio(""); setFiltroFim(""); setFiltroOperador(""); setApenasDivergentes(false); }}
-            style={{ fontSize: 12, padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.borda}`, background: 'transparent', color: C.txtSub, cursor: 'pointer' }}
+            style={{ fontSize: 12, padding: '6px 12px', borderRadius: 8, border: `1px solid ${COM_C.borda}`, background: 'transparent', color: COM_C.txtSub, cursor: 'pointer' }}
           >
             Limpar
           </button>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: C.txtSub, whiteSpace: 'nowrap' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: COM_C.txtSub, whiteSpace: 'nowrap' }}>
             {filtradas.length} sessão{filtradas.length !== 1 ? 'ões' : ''} · {fmt(filtradas.reduce((a, s) => a + s.totalVendas, 0))}
           </span>
         </div>
 
         {/* Tabela */}
-        <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
               <thead>
-                <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${C.borda}` }}>
+                <tr style={{ background: '#fafaf9', borderBottom: `1px solid ${COM_C.borda}` }}>
                   {["Abertura", "Fechamento", "Operador", "Total vendas", "Sangrias", "Saldo esperado", "Saldo informado", "Diferença", ""].map(h => (
-                    <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding: "11px 14px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: COM_C.txtSub, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -164,14 +131,14 @@ export default function RelatorioCaixaClient({
                       <td style={{ padding: "11px 14px", fontSize: 12, whiteSpace: "nowrap" }}>{fmtDT(s.fechado_em)}</td>
                       <td style={{ padding: "11px 14px", fontSize: 12 }}>{s.operador}</td>
                       <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 600 }}>{fmt(s.totalVendas)}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 12, color: s.totalSangrias > 0 ? "#D97706" : C.txtSub }}>{fmt(s.totalSangrias)}</td>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: s.totalSangrias > 0 ? "#D97706" : COM_C.txtSub }}>{fmt(s.totalSangrias)}</td>
                       <td style={{ padding: "11px 14px", fontSize: 12 }}>{fmt(s.saldoEsperado)}</td>
                       <td style={{ padding: "11px 14px", fontSize: 12 }}>{fmt(s.saldoInformado)}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700, color: temDif ? C.vermelho : C.verde }}>
+                      <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700, color: temDif ? COM_C.vermelho : COM_C.verde }}>
                         {temDif ? (s.diferenca > 0 ? "+" : "") + fmt(s.diferenca) : "—"}
                       </td>
                       <td style={{ padding: "11px 14px" }}>
-                        <button onClick={() => handleImprimir(s.id)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "transparent", color: C.txt, border: `1px solid ${C.borda}` }}>
+                        <button onClick={() => handleImprimir(s.id)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "transparent", color: COM_C.txt, border: `1px solid ${COM_C.borda}` }}>
                           <i className="ti ti-printer" style={{ fontSize: 12, marginRight: 4 }} />
                           Imprimir
                         </button>
@@ -184,7 +151,7 @@ export default function RelatorioCaixaClient({
           </div>
 
           {filtradas.length === 0 && (
-            <div style={{ padding: "40px", textAlign: "center", color: C.txtSub, fontSize: 13 }}>Nenhuma sessão encontrada.</div>
+            <div style={{ padding: "40px", textAlign: "center", color: COM_C.txtSub, fontSize: 13 }}>Nenhuma sessão encontrada.</div>
           )}
 
           <div style={{ padding: "10px 16px", borderTop: "1px solid #f5f5f4", fontSize: 11, color: "#a8a29e", background: "#fafaf9", display: "flex", justifyContent: "space-between" }}>
@@ -192,7 +159,6 @@ export default function RelatorioCaixaClient({
             <span>Total período: {fmt(filtradas.reduce((a, s) => a + s.totalVendas, 0))}</span>
           </div>
         </div>
-      </div>
-    </>
+    </PageLayout>
   );
 }

@@ -7,10 +7,9 @@ import type { OportunidadeLogComUsuario } from '@/lib/captacao/actions'
 import { buscarOportunidade, excluirOportunidade } from '@/lib/captacao/actions'
 import OportunidadeModal from './OportunidadeModal'
 import RadarPanel from './RadarPanel'
+import { PageLayout, MODULO_CAPTACAO, COM_C } from '@/components/nexcoop/ui'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
-
-const TEAL = '#1D9E75'
 
 const STATUSES_ATIVOS = ['identificado', 'contatado', 'proposta', 'aguardando'] as const
 const STATUSES_FINAIS = ['aprovado', 'reprovado', 'arquivado']
@@ -131,7 +130,7 @@ function KanbanCard({ op, onCardClick, onEdit, onDelete }: CardProps) {
       </div>
       <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>{op.financiador}</div>
       {formatValor(op.valor_estimado) && (
-        <div style={{ fontSize: '12px', fontWeight: '600', color: TEAL, marginBottom: '4px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '600', color: COM_C.verde, marginBottom: '4px' }}>
           {formatValor(op.valor_estimado)}
         </div>
       )}
@@ -211,7 +210,7 @@ function ListaView({ ops, onView, onEdit, onDelete }: ListaProps) {
           onChange={e => setBusca(e.target.value)}
           placeholder="Buscar por título ou financiador..."
           style={{ ...inp, flex: 1, minWidth: '200px' }}
-          onFocus={e => { e.target.style.borderColor = TEAL }}
+          onFocus={e => { e.target.style.borderColor = COM_C.verde }}
           onBlur={e =>  { e.target.style.borderColor = '#d5d3cc' }}
         />
         <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ ...inp, width: '160px' }}>
@@ -264,7 +263,7 @@ function ListaView({ ops, onView, onEdit, onDelete }: ListaProps) {
                   >
                     <span
                       style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a' }}
-                      onMouseEnter={e => { e.currentTarget.style.color = TEAL; e.currentTarget.style.textDecoration = 'underline' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = COM_C.verde; e.currentTarget.style.textDecoration = 'underline' }}
                       onMouseLeave={e => { e.currentTarget.style.color = '#1a1a1a'; e.currentTarget.style.textDecoration = 'none' }}
                     >
                       {op.titulo}
@@ -279,7 +278,7 @@ function ListaView({ ops, onView, onEdit, onDelete }: ListaProps) {
                     {op.financiador}
                   </td>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: TEAL }}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: COM_C.verde }}>
                       {formatValor(op.valor_estimado) ?? '—'}
                     </span>
                   </td>
@@ -394,56 +393,58 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
     return 0
   }
 
-  return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', gap: '12px', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Captação de Recursos</h1>
-          <p style={{ fontSize: '13px', color: '#888', margin: '4px 0 0' }}>Gerencie oportunidades de financiamento</p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-          {/* Toggle Lista / Kanban */}
-          {aba !== 'radar' && (
-            <div style={{ display: 'flex', border: '1px solid #e5e3dc', borderRadius: '8px', overflow: 'hidden' }}>
-              <button
-                onClick={() => setVizSalvo('lista')}
-                style={{
-                  padding: '7px 14px', fontSize: '12px', fontWeight: viz === 'lista' ? '600' : '400',
-                  background: viz === 'lista' ? '#f0fdf9' : '#fff',
-                  color: viz === 'lista' ? TEAL : '#666',
-                  border: 'none', cursor: 'pointer',
-                  borderRight: '1px solid #e5e3dc',
-                }}
-              >
-                ☰ Lista
-              </button>
-              <button
-                onClick={() => setVizSalvo('kanban')}
-                style={{
-                  padding: '7px 14px', fontSize: '12px', fontWeight: viz === 'kanban' ? '600' : '400',
-                  background: viz === 'kanban' ? '#f0fdf9' : '#fff',
-                  color: viz === 'kanban' ? TEAL : '#666',
-                  border: 'none', cursor: 'pointer',
-                }}
-              >
-                ⊞ Kanban
-              </button>
-            </div>
-          )}
+  const headerAcoes = (
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+      {aba !== 'radar' && (
+        <div style={{ display: 'flex', border: `1px solid ${COM_C.borda}`, borderRadius: '8px', overflow: 'hidden' }}>
           <button
-            onClick={() => setModal({ open: true, mode: 'create' })}
+            onClick={() => setVizSalvo('lista')}
             style={{
-              padding: '9px 18px', background: TEAL, color: '#fff',
-              border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+              padding: '7px 14px', fontSize: '12px', fontWeight: viz === 'lista' ? '600' : '400',
+              background: viz === 'lista' ? COM_C.verdeLt : '#fff',
+              color: viz === 'lista' ? COM_C.verde : COM_C.txtSub,
+              border: 'none', cursor: 'pointer',
+              borderRight: `1px solid ${COM_C.borda}`,
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#178a64' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = TEAL }}
           >
-            + Nova oportunidade
+            ☰ Lista
+          </button>
+          <button
+            onClick={() => setVizSalvo('kanban')}
+            style={{
+              padding: '7px 14px', fontSize: '12px', fontWeight: viz === 'kanban' ? '600' : '400',
+              background: viz === 'kanban' ? COM_C.verdeLt : '#fff',
+              color: viz === 'kanban' ? COM_C.verde : COM_C.txtSub,
+              border: 'none', cursor: 'pointer',
+            }}
+          >
+            ⊞ Kanban
           </button>
         </div>
-      </div>
+      )}
+      <button
+        onClick={() => setModal({ open: true, mode: 'create' })}
+        style={{
+          padding: '9px 18px', background: COM_C.verde, color: '#fff',
+          border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#15803d' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = COM_C.verde }}
+      >
+        + Nova oportunidade
+      </button>
+    </div>
+  )
+
+  return (
+    <PageLayout
+      titulo="Captação de Recursos"
+      subtitulo="Gerencie oportunidades de financiamento"
+      icone="ti-target"
+      modulo={MODULO_CAPTACAO}
+      semBreadcrumb
+      acoes={headerAcoes}
+    >
 
       {/* Erro global (delete / carregamento de detalhes) */}
       {erroGlobal && (
@@ -478,9 +479,9 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
               onClick={() => setAba(id)}
               style={{
                 padding: '8px 14px', fontSize: '13px', fontWeight: ativo ? '600' : '400',
-                color: ativo ? TEAL : '#888',
+                color: ativo ? COM_C.verde : COM_C.txtSub,
                 background: 'none', border: 'none', cursor: 'pointer',
-                borderBottom: ativo ? `2px solid ${TEAL}` : '2px solid transparent',
+                borderBottom: ativo ? `2px solid ${COM_C.verde}` : '2px solid transparent',
                 marginBottom: '-1px',
               }}
             >
@@ -489,7 +490,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
                 <span style={{
                   marginLeft: '6px', fontSize: '10px', fontWeight: '600',
                   background: ativo ? '#E6F7F1' : '#f0eeea',
-                  color: ativo ? TEAL : '#888',
+                  color: ativo ? COM_C.verde : COM_C.txtSub,
                   padding: '1px 5px', borderRadius: '8px',
                 }}>
                   {count}
@@ -566,7 +567,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
                           background: 'transparent', border: '1px dashed #d5d3cc', borderRadius: '10px',
                           cursor: 'pointer', marginTop: '4px',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = TEAL; (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = COM_C.verde; (e.currentTarget as HTMLButtonElement).style.borderColor = COM_C.verde }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#aaa'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#d5d3cc' }}
                       >
                         + Adicionar
@@ -599,7 +600,7 @@ export default function KanbanBoard({ oportunidades, responsaveis, fontes = [], 
           onStatusAtualizado={handleStatusAtualizado}
         />
       )}
-    </div>
+    </PageLayout>
   )
 }
 

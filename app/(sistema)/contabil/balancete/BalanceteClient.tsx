@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getBalancete } from '@/lib/contabil/actions'
 import { ItemBalancete } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function fmt(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
@@ -29,25 +28,24 @@ export default function BalanceteClient({ orgId }: Props) {
   const totalCreditos = dados.reduce((s, i) => s + i.creditos, 0)
 
   return (
-    <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balancete</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Saldos por conta contábil no período</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+    <PageLayout
+      titulo="Balancete"
+      subtitulo="Saldos por conta contábil no período"
+      icone="ti-scale"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Balancete' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <select value={mes} onChange={e => setMes(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
             {MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
           <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
             {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
           </select>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-      </div>
-
+      }
+    >
       {loading ? <p style={{ color: '#6b7280', fontSize: 13 }}>Carregando...</p> : dados.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc' }}>
           <p style={{ color: '#6b7280' }}>Nenhum dado contábil para o período selecionado.</p>
@@ -83,6 +81,6 @@ export default function BalanceteClient({ orgId }: Props) {
           </table>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

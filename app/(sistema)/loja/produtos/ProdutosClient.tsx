@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Btn } from "@/components/ui/Btn";
+import { PageLayout, MODULO_LOJA, COM_C } from "@/components/nexcoop/ui";
 import { atualizarPrecoProduto, atualizarMinimoProduto, toggleAtivoProduto, atualizarNcmProduto } from "@/lib/loja/produtos-actions";
 
 interface Produto {
@@ -167,8 +168,6 @@ function InlineEdit({ value, tipo, onSave }: {
   );
 }
 
-const C = { laranja: "#E07B30", laranjaLt: "#FFF7ED", borda: "#E5E3DC", bg: "#F8F7F4", txt: "#1C1917", txtSub: "#78716C" };
-
 export default function ProdutosClient({ produtos: inicial, podeGerenciar = false }: { produtos: Produto[]; podeGerenciar?: boolean }) {
   const [produtos, setProdutos] = useState(inicial);
   const [busca, setBusca] = useState("");
@@ -212,63 +211,24 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
   ] as const;
 
   return (
-    <>
-      <style>{`
-        .prod-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .prod-content { padding: 28px 32px; }
-        .prod-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-        .prod-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
-        @media (max-width: 640px) {
-          .prod-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .prod-content { padding: 16px; }
-          .prod-toolbar { flex-direction: column; align-items: stretch; }
-          .prod-filtros { overflow-x: auto; flex-wrap: nowrap; }
-        }
-      `}</style>
-
-      {/* Header sticky */}
-      <header className="prod-header" style={{
-        position: "sticky", top: 0, zIndex: 10,
-        background: "#fff", borderBottom: `1px solid ${C.borda}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 12, margin: "0 -2rem 0 -2rem",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            background: C.laranjaLt, display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <i className="ti ti-package" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>
-              Produtos
-            </h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: "none" }}>Loja Agropecuária</Link>
-              {" / "}Produtos
-            </div>
-          </div>
-        </div>
-        {podeGerenciar && (
-          <Link href="/loja/produtos/novo" style={{
-            padding: "9px 18px", background: C.laranja, color: "#fff",
-            borderRadius: 8, fontSize: 13, fontWeight: 600,
-            textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
-            whiteSpace: "nowrap", flexShrink: 0,
-          }}>
-            <i className="ti ti-plus" style={{ fontSize: 15 }} />
-            Novo produto
-          </Link>
-        )}
-      </header>
-
-      {/* Conteúdo */}
-      <div className="prod-content" style={{ background: C.bg, margin: "0 -2rem -2rem -2rem", minHeight: "calc(100vh - 88px)" }}>
-
-        {/* Toolbar: filtros + busca */}
-        <div className="prod-toolbar">
-          <div className="prod-filtros">
+    <PageLayout
+      titulo="Produtos"
+      icone="ti-package"
+      modulo={MODULO_LOJA}
+      acoes={podeGerenciar ? (
+        <Link href="/loja/produtos/novo" style={{
+          padding: "9px 18px", background: COM_C.laranja, color: "#fff",
+          borderRadius: 8, fontSize: 13, fontWeight: 600,
+          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+          whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+          <i className="ti ti-plus" style={{ fontSize: 15 }} />
+          Novo produto
+        </Link>
+      ) : undefined}
+    >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {filtrosBtns.map(f => (
               <button
                 key={f.key}
@@ -276,9 +236,9 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
                 style={{
                   padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600,
                   cursor: "pointer", whiteSpace: "nowrap",
-                  background: filtro === f.key ? C.laranja : "#fff",
-                  color: filtro === f.key ? "#fff" : C.txtSub,
-                  border: `1px solid ${filtro === f.key ? C.laranja : C.borda}`,
+                  background: filtro === f.key ? COM_C.laranja : "#fff",
+                  color: filtro === f.key ? "#fff" : COM_C.txtSub,
+                  border: `1px solid ${filtro === f.key ? COM_C.laranja : COM_C.borda}`,
                   transition: "all 0.12s",
                 }}
               >{f.label}</button>
@@ -290,23 +250,23 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
             onChange={e => setBusca(e.target.value)}
             style={{
               padding: "8px 12px", borderRadius: 8,
-              border: `1px solid ${C.borda}`, fontSize: 13,
+              border: `1px solid ${COM_C.borda}`, fontSize: 13,
               outline: "none", width: 220, background: "#fff",
             }}
           />
         </div>
 
         {/* Tabela */}
-        <div style={{ background: "#fff", border: `1px solid ${C.borda}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+        <div style={{ background: "#fff", border: `1px solid ${COM_C.borda}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
               <thead>
-                <tr style={{ background: "#fafaf9", borderBottom: `1px solid ${C.borda}` }}>
+                <tr style={{ background: "#fafaf9", borderBottom: `1px solid ${COM_C.borda}` }}>
                   {["Produto", "NCM", "Unidade", "Preço de venda", "Estoque atual", "Mínimo", "Status", ""].map(h => (
                     <th key={h} style={{
                       padding: "11px 16px", fontSize: 11, fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "0.05em",
-                      color: C.txtSub, textAlign: "left", whiteSpace: "nowrap",
+                      color: COM_C.txtSub, textAlign: "left", whiteSpace: "nowrap",
                     }}>{h}</th>
                   ))}
                 </tr>
@@ -329,7 +289,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
                     </td>
                     <td style={{ padding: "12px 16px" }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 600, color: C.txtSub,
+                        fontSize: 11, fontWeight: 600, color: COM_C.txtSub,
                         background: "#f5f5f4", padding: "2px 8px", borderRadius: 5,
                       }}>{p.unidade}</span>
                     </td>
@@ -372,7 +332,7 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
           </div>
 
           {filtrados.length === 0 && (
-            <div style={{ padding: "40px", textAlign: "center", color: C.txtSub, fontSize: 13 }}>
+            <div style={{ padding: "40px", textAlign: "center", color: COM_C.txtSub, fontSize: 13 }}>
               Nenhum produto encontrado.
             </div>
           )}
@@ -385,7 +345,6 @@ export default function ProdutosClient({ produtos: inicial, podeGerenciar = fals
             {busca && ` · busca: "${busca}"`}
           </div>
         </div>
-      </div>
-    </>
+    </PageLayout>
   );
 }

@@ -5,8 +5,7 @@ import {
   getPlanoEscritorio, criarContaEscritorio,
   atualizarContaEscritorio, removerContaEscritorio,
 } from '@/lib/parceiros/planoEscritorioActions'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_ESCRITORIO, COM_C } from '@/components/nexcoop/ui'
 
 const TIPOS = ['ATIVO', 'PASSIVO', 'PATRIMONIO_LIQUIDO', 'RECEITA', 'DESPESA']
 const TIPO_LABEL: Record<string, string> = {
@@ -121,30 +120,27 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
   )
 
   return (
-    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
-      <a href="/escritorio" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', marginBottom: 20, display: 'inline-block' }}>
-        ← Voltar ao Escritório
-      </a>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Plano de Contas do Escritório</h1>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Cadastre os códigos do seu sistema contábil para usar no De/Para com as organizações clientes.
-          </p>
-        </div>
+    <PageLayout
+      titulo="Plano de Contas do Escritório"
+      subtitulo="Cadastre os códigos do seu sistema contábil para usar no De/Para com as organizações clientes"
+      icone="ti-list-numbers"
+      modulo={MODULO_ESCRITORIO}
+      breadcrumb={[{ label: 'Plano de Contas' }]}
+      acoes={
         <div style={{ display: 'flex', gap: 8 }}>
           <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportarCSV} />
           <button onClick={() => csvInputRef.current?.click()} disabled={importando}
-            style={{ padding: '9px 18px', border: '1px solid #e5e3dc', background: '#fff', color: '#374151', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: importando ? 'not-allowed' : 'pointer' }}>
+            style={{ padding: '9px 18px', border: `1px solid ${COM_C.borda}`, background: '#fff', color: COM_C.txt, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: importando ? 'not-allowed' : 'pointer' }}>
             {importando ? 'Importando...' : '↑ Importar CSV'}
           </button>
           <button onClick={() => abrirModal()}
-            style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             + Nova Conta
           </button>
         </div>
-      </div>
+      }
+    >
+      <div style={{ maxWidth: 900 }}>
 
       {sucesso && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', margin: '16px 0', color: '#166534', fontSize: 13 }}>
@@ -183,7 +179,7 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
             <tbody>
               {contasFiltradas.map((conta, i) => (
                 <tr key={conta.id} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#f8f7f4' }}>
-                  <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: COR }}>{conta.codigo}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: COM_C.verde }}>{conta.codigo}</td>
                   <td style={{ padding: '10px 14px', fontSize: 13 }}>{conta.nome}</td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#6b7280' }}>{TIPO_LABEL[conta.tipo] ?? conta.tipo}</td>
                   <td style={{ padding: '10px 14px' }}>
@@ -262,13 +258,14 @@ export default function PlanoEscritorioClient({ empresaId }: { empresaId: string
                 Cancelar
               </button>
               <button onClick={handleSalvar} disabled={salvando}
-                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 {salvando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageLayout>
   )
 }

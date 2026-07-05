@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { salvarPerfil } from '@/lib/perfil/actions'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
+import { PageLayout, MODULO_NEXCOOP } from '@/components/nexcoop/ui'
 
 type Atividade = {
   id: string
@@ -172,8 +173,14 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
   ].filter(Boolean).join(' · ')
 
   return (
-    <div style={{ padding: '2rem 1.5rem', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', maxWidth: 960, margin: '0 auto' }}>
+    <PageLayout
+      titulo="Meu Perfil"
+      subtitulo={subtitulo}
+      icone="ti-user"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[{ label: 'Meu Perfil' }]}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', maxWidth: 960, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
         {/* COLUNA ESQUERDA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -475,6 +482,6 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
 
         </div>
       </div>
-    </div>
+    </PageLayout>
   )
 }

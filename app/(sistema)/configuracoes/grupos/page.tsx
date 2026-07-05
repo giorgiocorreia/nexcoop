@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { listarGruposOrg, criarGrupoOrg, alterarStatusGrupo } from './actions'
+import { PageLayout, MODULO_CONFIG, COM_C } from '@/components/nexcoop/ui'
 
 type GrupoEnriquecido = {
   id: string
@@ -78,8 +79,18 @@ export default function GruposPage() {
   })
 
   return (
-    <div style={{ padding: '32px', background: '#f8f7f4', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-
+    <PageLayout
+      titulo="Grupos de Colaboradores"
+      subtitulo="Grupos de cooperados com cota colaboradora — voto via representante, 10% nas sobras"
+      icone="ti-users-group"
+      modulo={MODULO_CONFIG}
+      breadcrumb={[{ label: 'Grupos de Colaboradores' }]}
+      acoes={
+        <button onClick={() => { setModalNovo(true); setErro(null) }} style={btnPrimary}>
+          + Novo grupo
+        </button>
+      }
+    >
       {/* Modal novo grupo */}
       {modalNovo && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -129,19 +140,6 @@ export default function GruposPage() {
         </div>
       )}
 
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>Grupos de Colaboradores</h1>
-          <p style={{ fontSize: 13, color: '#6b6b6b', margin: '4px 0 0' }}>
-            Grupos de cooperados com cota colaboradora — voto via representante, 10% nas sobras
-          </p>
-        </div>
-        <button onClick={() => { setModalNovo(true); setErro(null) }} style={btnPrimary}>
-          + Novo grupo
-        </button>
-      </div>
-
       {/* Filtro */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
         {(['ativos', 'inativos', 'todos'] as const).map(f => (
@@ -150,7 +148,7 @@ export default function GruposPage() {
             onClick={() => setFiltroAtivo(f)}
             style={{
               padding: '6px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer', border: 'none',
-              background: filtroAtivo === f ? '#1D9E75' : '#fff',
+              background: filtroAtivo === f ? COM_C.verde : '#fff',
               color: filtroAtivo === f ? '#fff' : '#555',
               fontWeight: filtroAtivo === f ? 600 : 400,
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
@@ -253,7 +251,7 @@ export default function GruposPage() {
           })}
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }
 
@@ -277,7 +275,7 @@ const metricValue: React.CSSProperties = {
 }
 const btnPrimary: React.CSSProperties = {
   padding: '8px 18px', fontSize: 13, fontWeight: 600,
-  background: '#1D9E75', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
+  background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
 }
 const btnSecondary: React.CSSProperties = {
   padding: '8px 18px', fontSize: 13, fontWeight: 400,

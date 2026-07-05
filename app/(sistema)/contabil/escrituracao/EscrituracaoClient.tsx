@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getLancamentosPendentes, getPlanoContas, classificarLancamento } from '@/lib/contabil/actions'
 import { ContaContabil } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function formatValor(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -66,15 +65,14 @@ export default function EscrituracaoClient({ orgId, userId }: Props) {
   const lista = aba === 'pendentes' ? pendentes : classificados
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Escrituração</h1>
-        <BotaoAjuda chave="manual_contabil_url" />
-      </div>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
-        Classifique os lançamentos financeiros nas contas contábeis correspondentes.
-        Lançamentos com regra reconhecida (mensalidade, venda loja, cota, etc.) são classificados automaticamente.
-      </p>
+    <PageLayout
+      titulo="Escrituração"
+      subtitulo="Classifique os lançamentos financeiros nas contas contábeis correspondentes. Lançamentos com regra reconhecida (mensalidade, venda loja, cota, etc.) são classificados automaticamente."
+      icone="ti-book-2"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Escrituração' }]}
+      acoes={<BotaoAjuda chave="manual_contabil_url" />}
+    >
       <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginBottom: 24, fontSize: 12, color: '#166534' }}>
         Histórico com prefixo <strong>[Auto]</strong> indica classificação automática. Revise na aba Classificados — o De/Para mapeia contas internas para o plano do escritório na exportação SPED.
       </div>
@@ -84,7 +82,7 @@ export default function EscrituracaoClient({ orgId, userId }: Props) {
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e5e3dc' }}>
         {([['pendentes', `Pendentes (${pendentes.length})`], ['classificados', `Classificados (${classificados.length})`]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setAba(k)}
-            style={{ padding: '10px 20px', border: 'none', background: 'none', fontWeight: aba === k ? 700 : 400, color: aba === k ? COR : '#6b7280', borderBottom: aba === k ? `2px solid ${COR}` : 'none', marginBottom: -2, cursor: 'pointer', fontSize: 13 }}>
+            style={{ padding: '10px 20px', border: 'none', background: 'none', fontWeight: aba === k ? 700 : 400, color: aba === k ? COM_C.verde : '#6b7280', borderBottom: aba === k ? `2px solid ${COM_C.verde}` : 'none', marginBottom: -2, cursor: 'pointer', fontSize: 13 }}>
             {l}
           </button>
         ))}
@@ -116,7 +114,7 @@ export default function EscrituracaoClient({ orgId, userId }: Props) {
                   <td style={{ padding: '10px 14px' }}>
                     {aba === 'pendentes' ? (
                       <button onClick={() => { setModal(l); setErro('') }}
-                        style={{ background: COR, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                         Classificar
                       </button>
                     ) : (
@@ -154,13 +152,13 @@ export default function EscrituracaoClient({ orgId, userId }: Props) {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { setModal(null); setErro('') }} style={{ padding: '9px 18px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={handleClassificar} disabled={salvando}
-                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 {salvando ? 'Salvando...' : 'Confirmar Classificação'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

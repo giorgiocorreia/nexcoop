@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getPlanoContas, seedPlanoContasOrg } from '@/lib/contabil/actions'
 import { ContaContabil, TipoOrg } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 const TIPOS_LABEL: Record<string, string> = {
   ATIVO: 'Ativo', PASSIVO: 'Passivo', PATRIMONIO_LIQUIDO: 'Patrimônio Líquido',
   RECEITA: 'Receita', DESPESA: 'Despesa',
@@ -20,7 +19,7 @@ function ContaRow({ conta, depth = 0 }: { conta: ContaContabil; depth?: number }
         <td style={{ padding: '8px 12px', paddingLeft: `${12 + depth * 20}px`, fontWeight: depth < 2 ? 700 : 400, fontSize: 13 }}>
           {temFilhos && (
             <button onClick={() => setAberto(!aberto)}
-              style={{ marginRight: 6, background: 'none', border: 'none', cursor: 'pointer', color: COR, fontWeight: 700 }}>
+              style={{ marginRight: 6, background: 'none', border: 'none', cursor: 'pointer', color: COM_C.verde, fontWeight: 700 }}>
               {aberto ? '▼' : '▶'}
             </button>
           )}
@@ -66,28 +65,27 @@ export default function PlanoContasClient({ orgId, tipoOrg }: Props) {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Plano de Contas</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Estrutura contábil hierárquica da organização</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+    <PageLayout
+      titulo="Plano de Contas"
+      subtitulo="Estrutura contábil hierárquica da organização"
+      icone="ti-list-details"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Plano de Contas' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {contas.length === 0 && (
             <button onClick={handleSeed} disabled={seeding}
-              style={{ background: COR, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               {seeding ? 'Carregando...' : tipoOrg === 'cooperativa' ? '+ Carregar Plano Padrão Cooperativa' : '+ Carregar Plano Padrão Associação'}
             </button>
           )}
-          <button style={{ background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ background: '#fff', color: COM_C.verde, border: `1px solid ${COM_C.verde}`, borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             + Nova Conta
           </button>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-      </div>
-
+      }
+    >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
       {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
 
@@ -114,6 +112,6 @@ export default function PlanoContasClient({ orgId, tipoOrg }: Props) {
           </table>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

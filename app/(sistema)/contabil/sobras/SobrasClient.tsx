@@ -13,8 +13,7 @@ import {
 } from '@/lib/contabil/actions'
 import type { TipoOrg } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -159,21 +158,22 @@ export default function SobrasClient({
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{tituloSobras}</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>{descSobras}</p>
+    <PageLayout
+      titulo={tituloSobras}
+      subtitulo={descSobras}
+      icone="ti-coin"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Sobras' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select value={ano} onChange={e => setAno(Number(e.target.value))}
+            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
+            {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-        <select value={ano} onChange={e => setAno(Number(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-          {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
-
+      }
+    >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
       {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
 
@@ -212,7 +212,7 @@ export default function SobrasClient({
               <span style={{ fontSize: 14, fontWeight: 700 }}>
                 {dados.sobrasBrutas >= 0 ? term.resultadoPositivo : term.resultadoNegativo}
               </span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: dados.sobrasBrutas >= 0 ? COR : '#dc2626' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: dados.sobrasBrutas >= 0 ? COM_C.verde : '#dc2626' }}>
                 {fmt(Math.abs(dados.sobrasBrutas))}
               </span>
             </div>
@@ -234,13 +234,13 @@ export default function SobrasClient({
                 ))}
                 {term.distribuiResultado ? (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf9' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: COR }}>Sobras Distribuíveis aos Cooperados</span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: COR }}>{fmt(dados.sobrasDistribuiveis)}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COM_C.verde }}>Sobras Distribuíveis aos Cooperados</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: COM_C.verde }}>{fmt(dados.sobrasDistribuiveis)}</span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf9' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: COR }}>Resultado do Exercício</span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: COR }}>{fmt(dados.sobrasBrutas - dados.fundoReserva - dados.refac - dados.fates)}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COM_C.verde }}>Resultado do Exercício</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: COM_C.verde }}>{fmt(dados.sobrasBrutas - dados.fundoReserva - dados.refac - dados.fates)}</span>
                   </div>
                 )}
               </>
@@ -253,7 +253,7 @@ export default function SobrasClient({
               <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Configurações de Destinação</h2>
               {!editandoConfig && isAdmin && (
                 <button onClick={() => setEditandoConfig(true)}
-                  style={{ padding: '6px 14px', background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ padding: '6px 14px', background: '#fff', color: COM_C.verde, border: `1px solid ${COM_C.verde}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                   Editar
                 </button>
               )}
@@ -304,7 +304,7 @@ export default function SobrasClient({
                     Cancelar
                   </button>
                   <button onClick={handleSalvarConfig} disabled={salvandoConfig}
-                    style={{ padding: '7px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ padding: '7px 16px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                     {salvandoConfig ? 'Salvando...' : 'Salvar'}
                   </button>
                 </div>
@@ -318,14 +318,14 @@ export default function SobrasClient({
                 ].map(([k, v]) => (
                   <div key={k} style={{ background: '#f8f7f4', borderRadius: 8, padding: '10px 14px' }}>
                     <p style={{ margin: 0, fontSize: 11, color: '#6b7280' }}>{k}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 700, color: COR }}>{v}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 16, fontWeight: 700, color: COM_C.verde }}>{v}</p>
                   </div>
                 ))}
               </div>
             )}
             <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
               Escrituração automática:{' '}
-              <strong style={{ color: dados.config?.classificacao_automatica !== false ? COR : '#dc2626' }}>
+              <strong style={{ color: dados.config?.classificacao_automatica !== false ? COM_C.verde : '#dc2626' }}>
                 {dados.config?.classificacao_automatica !== false ? 'Ativa' : 'Desativada'}
               </strong>
               {' '}— lançamentos do Financeiro são classificados no plano de contas por palavras-chave.
@@ -375,7 +375,7 @@ export default function SobrasClient({
                 <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Distribuição de Sobras por Cooperado</h2>
                 {distribuicao.length === 0 && (
                   <button onClick={handleCalcularDistribuicao} disabled={calculando}
-                    style={{ padding: '7px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ padding: '7px 16px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                     {calculando ? 'Calculando...' : 'Calcular Distribuição'}
                   </button>
                 )}
@@ -401,7 +401,7 @@ export default function SobrasClient({
                           <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 600 }}>{d.cooperado?.nome || '—'}</td>
                           <td style={{ padding: '9px 14px', fontSize: 12, color: '#6b7280' }}>{d.cooperado?.cpf || '—'}</td>
                           <td style={{ padding: '9px 14px', fontSize: 13 }}>{Number(d.percentual).toFixed(4)}%</td>
-                          <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: COR }}>
+                          <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 700, color: COM_C.verde }}>
                             {Number(d.valor_sobras).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </td>
                           <td style={{ padding: '9px 14px' }}>
@@ -433,7 +433,7 @@ export default function SobrasClient({
                     <tfoot>
                       <tr style={{ background: '#f0fdf9', fontWeight: 700 }}>
                         <td colSpan={3} style={{ padding: '10px 14px', fontSize: 13 }}>Total distribuído</td>
-                        <td style={{ padding: '10px 14px', fontSize: 14, color: COR }}>
+                        <td style={{ padding: '10px 14px', fontSize: 14, color: COM_C.verde }}>
                           {distribuicao.reduce((s: number, d: any) => s + Number(d.valor_sobras), 0)
                             .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </td>
@@ -491,6 +491,6 @@ export default function SobrasClient({
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

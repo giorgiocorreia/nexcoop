@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getPlanoContas, getLivroRazao } from '@/lib/contabil/actions'
 import { ItemLivroRazao, ContaContabil } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -48,13 +47,14 @@ export default function RazaoClient({ orgId }: { orgId: string }) {
   const contaNome = contas.find(c => c.id === contaSel)
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Livro Razão</h1>
-        <BotaoAjuda chave="manual_contabil_url" />
-      </div>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Movimentações detalhadas por conta contábil</p>
-
+    <PageLayout
+      titulo="Livro Razão"
+      subtitulo="Movimentações detalhadas por conta contábil"
+      icone="ti-book"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Livro Razão' }]}
+      acoes={<BotaoAjuda chave="manual_contabil_url" />}
+    >
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 20, marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 220 }}>
@@ -76,7 +76,7 @@ export default function RazaoClient({ orgId }: { orgId: string }) {
               style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
           </div>
           <button onClick={handleBuscar} disabled={!contaSel || loading}
-            style={{ padding: '9px 20px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            style={{ padding: '9px 20px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {loading ? 'Buscando...' : 'Buscar'}
           </button>
         </div>
@@ -116,7 +116,7 @@ export default function RazaoClient({ orgId }: { orgId: string }) {
                     <td style={{ padding: '9px 14px', fontSize: 13, textAlign: 'right', color: item.credito > 0 ? '#166534' : '#9ca3af' }}>
                       {item.credito > 0 ? fmt(item.credito) : '—'}
                     </td>
-                    <td style={{ padding: '9px 14px', fontSize: 13, textAlign: 'right', fontWeight: 600, color: item.saldo_progressivo >= 0 ? COR : '#dc2626' }}>
+                    <td style={{ padding: '9px 14px', fontSize: 13, textAlign: 'right', fontWeight: 600, color: item.saldo_progressivo >= 0 ? COM_C.verde : '#dc2626' }}>
                       {fmt(item.saldo_progressivo)}
                     </td>
                   </tr>
@@ -127,13 +127,13 @@ export default function RazaoClient({ orgId }: { orgId: string }) {
                   <td colSpan={3} style={{ padding: '10px 14px', fontSize: 13 }}>Totais do Período</td>
                   <td style={{ padding: '10px 14px', fontSize: 13, textAlign: 'right', color: '#1d4ed8' }}>{fmt(totalDebitos)}</td>
                   <td style={{ padding: '10px 14px', fontSize: 13, textAlign: 'right', color: '#166534' }}>{fmt(totalCreditos)}</td>
-                  <td style={{ padding: '10px 14px', fontSize: 13, textAlign: 'right', color: COR }}>{fmt(itens[itens.length - 1]?.saldo_progressivo || 0)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 13, textAlign: 'right', color: COM_C.verde }}>{fmt(itens[itens.length - 1]?.saldo_progressivo || 0)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         )
       )}
-    </div>
+    </PageLayout>
   )
 }

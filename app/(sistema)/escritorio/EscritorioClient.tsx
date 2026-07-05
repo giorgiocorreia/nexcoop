@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { getEmpresasDoUsuario, aceitarVinculo } from '@/lib/parceiros/actions'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_ESCRITORIO, COM_C } from '@/components/nexcoop/ui'
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
+  width: '100%', padding: '9px 12px', border: `1px solid ${COM_C.borda}`,
   borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box',
 }
 
@@ -75,19 +74,29 @@ export default function EscritorioClient({ userId }: { userId: string }) {
     finally { setSalvandoPerfil(false) }
   }
 
-  if (loading) return <div style={{ padding: 32, color: '#6b7280' }}>Carregando...</div>
+  const titulo = nomeUsuario ? `Olá, ${nomeUsuario}` : 'Meu Painel'
+
+  if (loading) {
+    return (
+      <PageLayout titulo="Meu Painel" icone="ti-briefcase" modulo={MODULO_ESCRITORIO} semBreadcrumb>
+        <div style={{ color: COM_C.txtSub }}>Carregando...</div>
+      </PageLayout>
+    )
+  }
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>
-        {nomeUsuario ? `Olá, ${nomeUsuario}` : 'Meu Painel'}
-      </h1>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Organizações clientes vinculadas à sua empresa</p>
-
-      {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
+    <PageLayout
+      titulo={titulo}
+      subtitulo="Organizações clientes vinculadas à sua empresa"
+      icone="ti-briefcase"
+      modulo={MODULO_ESCRITORIO}
+      semBreadcrumb
+    >
+      <div style={{ maxWidth: 800 }}>
+      {sucesso && <div style={{ background: COM_C.verdeLt, border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
 
       {empresas.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 12, border: `1px solid ${COM_C.borda}`, color: COM_C.txtSub }}>
           <p style={{ fontSize: 14 }}>Nenhuma organização vinculada ainda.</p>
           <p style={{ fontSize: 12, marginTop: 8 }}>Quando uma cooperativa ou associação vincular sua empresa, ela aparecerá aqui.</p>
         </div>
@@ -98,7 +107,7 @@ export default function EscritorioClient({ userId }: { userId: string }) {
             const org = empresa?.org
             const pendente = empresa?.status === 'pendente'
             return (
-              <div key={item.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${pendente ? '#f59e0b' : '#e5e3dc'}`, padding: '20px 24px' }}>
+              <div key={item.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${pendente ? '#f59e0b' : COM_C.borda}`, padding: '20px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -109,19 +118,19 @@ export default function EscritorioClient({ userId }: { userId: string }) {
                         </span>
                       )}
                     </div>
-                    <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+                    <p style={{ margin: 0, fontSize: 12, color: COM_C.txtSub }}>
                       {org?.tipo === 'cooperativa' ? 'Cooperativa' : 'Associação'} · {item.nivel === 'responsavel' ? 'Responsável' : item.nivel === 'operador' ? 'Operador' : 'Consultor'}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {pendente ? (
                       <button onClick={() => handleAceitar(empresa.id)}
-                        style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                         Aceitar Vínculo
                       </button>
                     ) : (
                       <button onClick={() => handleAcessarContabil(empresa.org_id)}
-                        style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                        style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                         Acessar Módulo Contábil
                       </button>
                     )}
@@ -135,11 +144,11 @@ export default function EscritorioClient({ userId }: { userId: string }) {
 
       <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
         <a href='/escritorio/equipe'
-          style={{ padding: '10px 18px', background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          style={{ padding: '10px 18px', background: '#fff', color: COM_C.verde, border: `1px solid ${COM_C.verde}`, borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
           Gerenciar Equipe
         </a>
         <a href='/escritorio/perfil'
-          style={{ padding: '10px 18px', background: '#fff', color: '#374151', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          style={{ padding: '10px 18px', background: '#fff', color: COM_C.txt, border: `1px solid ${COM_C.borda}`, borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
           Dados do Escritório
         </a>
       </div>
@@ -148,7 +157,7 @@ export default function EscritorioClient({ userId }: { userId: string }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 32, width: 440, maxWidth: '95vw' }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Bem-vindo ao NexCoop!</h2>
-            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Complete seu perfil para continuar.</p>
+            <p style={{ fontSize: 13, color: COM_C.txtSub, marginBottom: 24 }}>Complete seu perfil para continuar.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {([
                 ['Nome completo *', nomeCompleto, setNomeCompleto, 'Seu nome'],
@@ -156,7 +165,7 @@ export default function EscritorioClient({ userId }: { userId: string }) {
                 ['CRC', crc, setCrc, 'Ex: CRC-BA 012345/O-1'],
               ] as [string, string, (v: string) => void, string][]).map(([label, val, setter, ph]) => (
                 <div key={label}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>{label}</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: COM_C.txt, display: 'block', marginBottom: 4 }}>{label}</label>
                   <input value={val} onChange={e => setter(e.target.value)} placeholder={ph} style={inputStyle} />
                 </div>
               ))}
@@ -165,18 +174,19 @@ export default function EscritorioClient({ userId }: { userId: string }) {
               <button
                 onClick={handleSalvarPerfil}
                 disabled={!nomeCompleto || salvandoPerfil}
-                style={{ flex: 1, padding: '10px', background: !nomeCompleto || salvandoPerfil ? '#9CA3AF' : COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: !nomeCompleto || salvandoPerfil ? 'not-allowed' : 'pointer' }}>
+                style={{ flex: 1, padding: '10px', background: !nomeCompleto || salvandoPerfil ? '#9CA3AF' : COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: !nomeCompleto || salvandoPerfil ? 'not-allowed' : 'pointer' }}>
                 {salvandoPerfil ? 'Salvando…' : 'Salvar e continuar'}
               </button>
               <button
                 onClick={() => setModalPerfil(false)}
-                style={{ padding: '10px 16px', background: '#fff', color: '#6b7280', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                style={{ padding: '10px 16px', background: '#fff', color: COM_C.txtSub, border: `1px solid ${COM_C.borda}`, borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
                 Agora não
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageLayout>
   )
 }

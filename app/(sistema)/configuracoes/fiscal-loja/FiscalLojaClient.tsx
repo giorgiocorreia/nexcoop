@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { salvarFiscalLoja } from "@/lib/loja/fiscal-actions";
 import type { Organizacao } from "@/types/database";
+import { PageLayout, MODULO_LOJA } from "@/components/nexcoop/ui";
 
 interface Props {
   org: Organizacao;
@@ -85,17 +86,16 @@ export default function FiscalLojaClient({ org, produtosSemNcm }: Props) {
   const nfceConfigurado = !!cscId && !!cscToken;
 
   return (
-    <div style={{ maxWidth: 720, fontFamily: "system-ui, -apple-system, sans-serif" }}>
-
-      {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
-        <Link href="/dashboard" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>NexCoop</Link>
-        <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
-        <Link href="/configuracoes" style={{ fontSize: 13, color: "#78716c", textDecoration: "none" }}>Configurações</Link>
-        <span style={{ fontSize: 13, color: "#e5e3dc" }}>/</span>
-        <span style={{ fontSize: 13, color: "#78716c", fontWeight: 600 }}>Fiscal da Loja</span>
-      </div>
-
+    <PageLayout
+      titulo="Fiscal da Loja"
+      icone="ti-receipt"
+      modulo={MODULO_LOJA}
+      breadcrumb={[
+        { label: "Configurações", href: "/configuracoes" },
+        { label: "Fiscal da Loja" },
+      ]}
+    >
+      <div style={{ maxWidth: 720, fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <form onSubmit={handleSalvar}>
 
         {/* Seção 1 — NFC-e */}
@@ -274,6 +274,7 @@ export default function FiscalLojaClient({ org, produtosSemNcm }: Props) {
         </div>
 
       </form>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getProfissionais, convidarProfissional, toggleProfissional, reenviarConviteParceira, atualizarEmailParceira, atualizarModulosAcesso } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, NIVEL_LABEL, NivelProfissional } from '@/lib/parceiros/types'
 import type { EmpresaParceira } from '@/lib/parceiros/types'
-
-const COR = '#635BFF'
+import { PageLayout, MODULO_CONFIG, COM_C } from '@/components/nexcoop/ui'
 
 const STATUS_EMPRESA: Record<string, { bg: string; color: string; label: string }> = {
   ativo:    { bg: '#dcfce7', color: '#166534', label: 'Ativo' },
@@ -100,55 +99,50 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 860, margin: '0 auto' }}>
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <a href='/configuracoes?aba=parceiros'
-          style={{ fontSize: 12, color: '#6b7280', textDecoration: 'none' }}>
-          ← Empresas Vinculadas
-        </a>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{parceira.razao_social}</h1>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: st.bg, color: st.color }}>
-              {st.label}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-            <span style={{ fontSize: 13, color: '#6b7280' }}>{TIPO_PARCERIA_LABEL[parceira.tipo]}</span>
-            <span style={{ color: '#d1d5db' }}>·</span>
-            {editandoEmail ? (
-              <>
-                <input
-                  type="email" value={novoEmail}
-                  onChange={e => setNovoEmail(e.target.value)}
-                  style={{ fontSize: 13, padding: '3px 8px', border: '1px solid #e5e3dc', borderRadius: 6, width: 220 }}
-                  autoFocus
-                />
-                <button onClick={handleSalvarEmail} disabled={salvandoEmail}
-                  style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', background: COR, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-                  {salvandoEmail ? '...' : 'Salvar'}
-                </button>
-                <button onClick={() => { setEditandoEmail(false); setNovoEmail(parceira.email_contato) }}
-                  style={{ fontSize: 12, padding: '3px 8px', background: 'transparent', border: '1px solid #e5e3dc', borderRadius: 6, cursor: 'pointer', color: '#6b7280' }}>
-                  Cancelar
-                </button>
-              </>
-            ) : (
-              <>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>{novoEmail}</span>
-                <button onClick={() => setEditandoEmail(true)}
-                  style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', background: '#f8f7f4', border: '1px solid #e5e3dc', borderRadius: 5, cursor: 'pointer', color: '#6b7280' }}>
-                  Editar
-                </button>
-              </>
-            )}
-            {parceira.cnpj && <span style={{ fontSize: 13, color: '#6b7280' }}>· CNPJ: {parceira.cnpj}</span>}
-          </div>
-        </div>
+    <PageLayout
+      titulo={parceira.razao_social}
+      subtitulo={TIPO_PARCERIA_LABEL[parceira.tipo]}
+      icone="ti-building-store"
+      modulo={MODULO_CONFIG}
+      breadcrumb={[
+        { label: 'Empresas Vinculadas', href: '/configuracoes?aba=parceiros' },
+        { label: parceira.razao_social },
+      ]}
+      acoes={
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: st.bg, color: st.color }}>
+          {st.label}
+        </span>
+      }
+    >
+      <div style={{ maxWidth: 860 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {editandoEmail ? (
+          <>
+            <input
+              type="email" value={novoEmail}
+              onChange={e => setNovoEmail(e.target.value)}
+              style={{ fontSize: 13, padding: '3px 8px', border: `1px solid ${COM_C.borda}`, borderRadius: 6, width: 220 }}
+              autoFocus
+            />
+            <button onClick={handleSalvarEmail} disabled={salvandoEmail}
+              style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', background: COM_C.roxo, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+              {salvandoEmail ? '...' : 'Salvar'}
+            </button>
+            <button onClick={() => { setEditandoEmail(false); setNovoEmail(parceira.email_contato) }}
+              style={{ fontSize: 12, padding: '3px 8px', background: 'transparent', border: `1px solid ${COM_C.borda}`, borderRadius: 6, cursor: 'pointer', color: COM_C.txtSub }}>
+              Cancelar
+            </button>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 13, color: COM_C.txtSub }}>{novoEmail}</span>
+            <button onClick={() => setEditandoEmail(true)}
+              style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', background: COM_C.bg, border: `1px solid ${COM_C.borda}`, borderRadius: 5, cursor: 'pointer', color: COM_C.txtSub }}>
+              Editar
+            </button>
+          </>
+        )}
+        {parceira.cnpj && <span style={{ fontSize: 13, color: COM_C.txtSub }}>· CNPJ: {parceira.cnpj}</span>}
       </div>
 
       {sucesso && (
@@ -198,7 +192,7 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
                 type="checkbox"
                 checked={modulos.includes(key)}
                 onChange={() => toggleModulo(key)}
-                style={{ width: 16, height: 16, accentColor: COR, cursor: 'pointer' }}
+                style={{ width: 16, height: 16, accentColor: COM_C.roxo, cursor: 'pointer' }}
               />
               {label}
             </label>
@@ -207,7 +201,7 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
         <button
           onClick={handleSalvarModulos}
           disabled={salvandoModulos}
-          style={{ padding: '8px 18px', background: salvandoModulos ? '#9CA3AF' : COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoModulos ? 'not-allowed' : 'pointer' }}>
+          style={{ padding: '8px 18px', background: salvandoModulos ? '#9CA3AF' : COM_C.roxo, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: salvandoModulos ? 'not-allowed' : 'pointer' }}>
           {salvandoModulos ? 'Salvando…' : 'Salvar módulos'}
         </button>
       </div>
@@ -217,7 +211,7 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Profissionais</h2>
           <button onClick={() => setModal(true)}
-            style={{ padding: '7px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ padding: '7px 16px', background: COM_C.roxo, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
             + Convidar
           </button>
         </div>
@@ -311,13 +305,14 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
                 Cancelar
               </button>
               <button onClick={handleConvidar} disabled={salvando}
-                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: COM_C.roxo, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 {salvando ? 'Enviando...' : 'Enviar Convite'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageLayout>
   )
 }

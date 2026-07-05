@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getBalancoPatrimonial } from '@/lib/contabil/actions'
 import { ItemBalancoPatrimonial } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -63,21 +62,22 @@ export default function BalancoClient({ orgId }: { orgId: string }) {
   }, [ano, orgId])
 
   return (
-    <div style={{ padding: 32, maxWidth: 880, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Balanço Patrimonial</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Posição patrimonial da cooperativa no exercício</p>
+    <PageLayout
+      titulo="Balanço Patrimonial"
+      subtitulo="Posição patrimonial da cooperativa no exercício"
+      icone="ti-building-bank"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Balanço Patrimonial' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select value={ano} onChange={e => setAno(Number(e.target.value))}
+            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
+            {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-        <select value={ano} onChange={e => setAno(Number(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-          {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
-
+      }
+    >
       {loading ? (
         <p style={{ color: '#6b7280' }}>Carregando...</p>
       ) : !dados ? null : (
@@ -95,7 +95,7 @@ export default function BalancoClient({ orgId }: { orgId: string }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             <div>
-              <GrupoBalanco titulo="ATIVO" itens={dados.ativos} total={dados.totalAtivo} corTotal={COR} />
+              <GrupoBalanco titulo="ATIVO" itens={dados.ativos} total={dados.totalAtivo} corTotal={COM_C.verde} />
             </div>
             <div>
               <GrupoBalanco titulo="PASSIVO" itens={dados.passivos} total={dados.passivos.reduce((s: number, i: ItemBalancoPatrimonial) => s + i.saldo, 0)} corTotal="#dc2626" />
@@ -108,6 +108,6 @@ export default function BalancoClient({ orgId }: { orgId: string }) {
           </div>
         </>
       )}
-    </div>
+    </PageLayout>
   )
 }

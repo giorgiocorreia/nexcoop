@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getEmpresasDoUsuario, getProfissionais, convidarProfissional, toggleProfissional } from '@/lib/parceiros/actions'
 import { NIVEL_LABEL, NivelProfissional } from '@/lib/parceiros/types'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_ESCRITORIO, COM_C } from '@/components/nexcoop/ui'
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '7px 10px', border: '1px solid #d5d3cc',
@@ -91,17 +90,20 @@ export default function EquipeClient({ userId }: { userId: string }) {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Equipe</h1>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>Profissionais do seu escritório com acesso ao NexCoop</p>
-        </div>
+    <PageLayout
+      titulo="Equipe"
+      subtitulo="Profissionais do seu escritório com acesso ao NexCoop"
+      icone="ti-users"
+      modulo={MODULO_ESCRITORIO}
+      breadcrumb={[{ label: 'Equipe' }]}
+      acoes={
         <button onClick={() => setModal(true)}
-          style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           + Convidar Profissional
         </button>
-      </div>
+      }
+    >
+      <div style={{ maxWidth: 800 }}>
 
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
 
@@ -142,7 +144,7 @@ export default function EquipeClient({ userId }: { userId: string }) {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => handleSalvarEdicao(p.id)} disabled={salvandoEdicao}
-                      style={{ padding: '6px 14px', background: COR, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      style={{ padding: '6px 14px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                       {salvandoEdicao ? 'Salvando…' : 'Salvar'}
                     </button>
                     <button onClick={handleCancelarEdicao}
@@ -216,13 +218,14 @@ export default function EquipeClient({ userId }: { userId: string }) {
                 Cancelar
               </button>
               <button onClick={handleConvidar} disabled={salvando}
-                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 {salvando ? 'Enviando...' : 'Enviar Convite'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageLayout>
   )
 }

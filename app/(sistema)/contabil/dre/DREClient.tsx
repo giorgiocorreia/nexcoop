@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { getDRE } from '@/lib/contabil/actions'
 import { ItemDRE, TipoOrg, getTerminologia } from '@/lib/contabil/types'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 function fmt(v: number) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }
 
 interface Props { orgId: string; tipoOrg: TipoOrg }
@@ -27,26 +26,25 @@ export default function DREClient({ orgId, tipoOrg }: Props) {
   const resultado = dados.find(d => d.tipo === 'resultado')
 
   return (
-    <div style={{ padding: 32, maxWidth: 720, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>DRE — Demonstrativo de Resultado</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Receitas, despesas e {tipoOrg === 'cooperativa' ? 'sobras' : 'resultado'} do exercício · {term.legislacao}
-          </p>
+    <PageLayout
+      titulo="DRE — Demonstrativo de Resultado"
+      subtitulo={`Receitas, despesas e ${tipoOrg === 'cooperativa' ? 'sobras' : 'resultado'} do exercício · ${term.legislacao}`}
+      icone="ti-chart-line"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'DRE' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
+            {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-        <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-          {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
-
+      }
+    >
       {loading ? <p style={{ color: '#6b7280' }}>Carregando...</p> : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', overflow: 'hidden' }}>
           <div style={{ background: '#f0fdf9', padding: '12px 20px', borderBottom: '1px solid #e5e3dc' }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: COR }}>RECEITAS</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: COM_C.verde }}>RECEITAS</span>
           </div>
           {receitas.map(item => (
             <div key={item.descricao} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #f3f4f6', fontSize: 13 }}>
@@ -72,7 +70,7 @@ export default function DREClient({ orgId, tipoOrg }: Props) {
             <span style={{ color: '#dc2626' }}>{fmt(despesas.reduce((s, i) => s + i.valor, 0))}</span>
           </div>
           {resultado && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', fontSize: 15, fontWeight: 700, background: resultado.valor >= 0 ? '#f0fdf9' : '#fef2f2', color: resultado.valor >= 0 ? COR : '#dc2626' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', fontSize: 15, fontWeight: 700, background: resultado.valor >= 0 ? '#f0fdf9' : '#fef2f2', color: resultado.valor >= 0 ? COM_C.verde : '#dc2626' }}>
               <span>{resultado.valor >= 0 ? term.resultadoPositivo : term.resultadoNegativo}</span>
               <span>{fmt(Math.abs(resultado.valor))}</span>
             </div>
@@ -82,6 +80,6 @@ export default function DREClient({ orgId, tipoOrg }: Props) {
           )}
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

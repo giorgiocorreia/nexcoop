@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { registrarCompra, criarFornecedor } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 
 interface Produto { id: string; nome: string; unidade: string }
 interface Fornecedor { id: string; nome: string }
@@ -26,24 +27,18 @@ interface Props {
   usuarioId: string
 }
 
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
-
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', fontSize: '13px',
-  border: `1px solid ${C.borda}`, borderRadius: '8px', background: '#fff',
-  color: C.txt, outline: 'none', boxSizing: 'border-box',
+  border: `1px solid ${COM_C.borda}`, borderRadius: '8px', background: '#fff',
+  color: COM_C.txt, outline: 'none', boxSizing: 'border-box',
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '12px', fontWeight: '600', color: C.txtSub, marginBottom: '5px',
+  display: 'block', fontSize: '12px', fontWeight: '600', color: COM_C.txtSub, marginBottom: '5px',
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '20px 24px', marginBottom: '1.5rem',
+  background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '20px 24px', marginBottom: '1.5rem',
 }
 
 function parseReais(val: string): number {
@@ -221,40 +216,13 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   }
 
   return (
-    <>
-      <style>{`
-        .nc-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .nc-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .nc-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .nc-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="nc-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-shopping-cart" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Nova Compra</h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}
-              <Link href="/loja/compras" style={{ color: C.txtSub, textDecoration: 'none' }}>Compras</Link>
-              {' / '}Nova
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="nc-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-        <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <PageLayout
+      titulo="Nova Compra"
+      icone="ti-shopping-cart"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Compras', href: '/loja/compras' }, { label: 'Nova' }]}
+    >
+<div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
           {erro && (
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', fontSize: '13px', color: '#991b1b' }}>
@@ -290,7 +258,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                 )}
 
                 {mostrarDropdown && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto' }}>
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto' }}>
                     {(() => {
                       const filtrados = fornecedoresLocal.filter(f => f.nome.toLowerCase().includes(fornecedorBusca.toLowerCase()))
                       if (filtrados.length > 0) {
@@ -305,9 +273,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                       }
                       return (
                         <div style={{ padding: '12px 14px' }}>
-                          <div style={{ fontSize: 13, color: C.txtSub, marginBottom: 10 }}>Fornecedor "<strong>{fornecedorBusca}</strong>" não encontrado.</div>
+                          <div style={{ fontSize: 13, color: COM_C.txtSub, marginBottom: 10 }}>Fornecedor "<strong>{fornecedorBusca}</strong>" não encontrado.</div>
                           <button type="button" onMouseDown={() => { setNovoFornNome(fornecedorBusca); setMostrarCadastrar(true); setMostrarDropdown(false) }}
-                            style={{ padding: '7px 14px', background: C.laranja, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                            style={{ padding: '7px 14px', background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                             + Cadastrar "{fornecedorBusca}"
                           </button>
                         </div>
@@ -317,8 +285,8 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                 )}
 
                 {mostrarCadastrar && (
-                  <div style={{ marginTop: 8, background: C.bg, border: `1px solid ${C.borda}`, borderRadius: 10, padding: '14px 16px' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.txt, marginBottom: 12 }}>Cadastrar novo fornecedor</div>
+                  <div style={{ marginTop: 8, background: COM_C.bg, border: `1px solid ${COM_C.borda}`, borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt, marginBottom: 12 }}>Cadastrar novo fornecedor</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                       <div>
                         <label style={labelStyle}>Nome *</label>
@@ -339,9 +307,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" onClick={() => { setMostrarCadastrar(false); setNovoFornNome('') }}
-                        style={{ padding: '7px 14px', border: `1px solid ${C.borda}`, borderRadius: 7, fontSize: 12, background: '#fff', cursor: 'pointer' }}>Cancelar</button>
+                        style={{ padding: '7px 14px', border: `1px solid ${COM_C.borda}`, borderRadius: 7, fontSize: 12, background: '#fff', cursor: 'pointer' }}>Cancelar</button>
                       <button type="button" onClick={handleCadastrarFornecedor} disabled={salvandoForn}
-                        style={{ padding: '7px 14px', background: C.laranja, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: salvandoForn ? 'not-allowed' : 'pointer', opacity: salvandoForn ? 0.7 : 1 }}>
+                        style={{ padding: '7px 14px', background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: salvandoForn ? 'not-allowed' : 'pointer', opacity: salvandoForn ? 0.7 : 1 }}>
                         {salvandoForn ? 'Salvando...' : 'Salvar fornecedor'}
                       </button>
                     </div>
@@ -375,7 +343,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                     { value: 'sem_chave', label: 'Tem NF-e (vincular depois)' },
                     { value: 'sem_nota',  label: 'Sem nota fiscal' },
                   ] as const).map(op => (
-                    <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, padding: '6px 12px', border: `0.5px solid ${statusNfe === op.value ? C.laranja : C.borda}`, borderRadius: 8, background: statusNfe === op.value ? '#FEF3EA' : 'transparent', color: statusNfe === op.value ? C.laranja : C.txt }}>
+                    <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, padding: '6px 12px', border: `0.5px solid ${statusNfe === op.value ? COM_C.laranja : COM_C.borda}`, borderRadius: 8, background: statusNfe === op.value ? '#FEF3EA' : 'transparent', color: statusNfe === op.value ? COM_C.laranja : COM_C.txt }}>
                       <input type="radio" name="status_nfe" value={op.value} checked={statusNfe === op.value} onChange={e => setStatusNfe(e.target.value as 'sem_chave' | 'sem_nota')} style={{ display: 'none' }} />
                       {op.label}
                     </label>
@@ -416,7 +384,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                 )}
 
                 {mostrarDropdownProd && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto' }}>
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto' }}>
                     {(() => {
                       const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(produtoBusca.toLowerCase()))
                       if (filtrados.length > 0) {
@@ -432,9 +400,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                       }
                       return (
                         <div style={{ padding: '12px 14px' }}>
-                          <div style={{ fontSize: 13, color: C.txtSub, marginBottom: 8 }}>Produto "<strong>{produtoBusca}</strong>" não encontrado.</div>
+                          <div style={{ fontSize: 13, color: COM_C.txtSub, marginBottom: 8 }}>Produto "<strong>{produtoBusca}</strong>" não encontrado.</div>
                           <button type="button" onMouseDown={() => router.push('/loja/produtos/novo')}
-                            style={{ fontSize: 12, color: C.laranja, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                            style={{ fontSize: 12, color: COM_C.laranja, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
                             + Cadastrar novo produto →
                           </button>
                         </div>
@@ -459,7 +427,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                 <label style={labelStyle}>Validade</label>
                 <input type="date" value={dataValidade} onChange={e => setDataValidade(e.target.value)} style={inputStyle} />
               </div>
-              <Btn onClick={adicionarItem} style={{ background: C.laranja, color: '#fff', border: `1.5px solid ${C.laranja}`, height: '38px' }}>
+              <Btn onClick={adicionarItem} style={{ background: COM_C.laranja, color: '#fff', border: `1.5px solid ${COM_C.laranja}`, height: '38px' }}>
                 + Adicionar
               </Btn>
             </div>
@@ -468,9 +436,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: 500 }}>
                   <thead>
-                    <tr style={{ borderBottom: `2px solid ${C.borda}` }}>
+                    <tr style={{ borderBottom: `2px solid ${COM_C.borda}` }}>
                       {['Produto', 'Qtd', 'Preço unit.', 'Subtotal', 'Lote', 'Validade', ''].map(h => (
-                        <th key={h} style={{ padding: '7px 8px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: C.txtSub }}>{h}</th>
+                        <th key={h} style={{ padding: '7px 8px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -481,8 +449,8 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                         <td style={{ padding: '8px' }}>{item.quantidade} {item.produto_unidade}</td>
                         <td style={{ padding: '8px' }}>{fmtReal(item.preco_unitario)}</td>
                         <td style={{ padding: '8px', fontWeight: '600' }}>{fmtReal(item.quantidade * item.preco_unitario)}</td>
-                        <td style={{ padding: '8px', color: C.txtSub }}>{item.numero_lote || '—'}</td>
-                        <td style={{ padding: '8px', color: C.txtSub }}>{item.data_validade ? (() => { const [y,m,d] = item.data_validade.split('-'); return `${d}/${m}/${y}` })() : '—'}</td>
+                        <td style={{ padding: '8px', color: COM_C.txtSub }}>{item.numero_lote || '—'}</td>
+                        <td style={{ padding: '8px', color: COM_C.txtSub }}>{item.data_validade ? (() => { const [y,m,d] = item.data_validade.split('-'); return `${d}/${m}/${y}` })() : '—'}</td>
                         <td style={{ padding: '8px' }}>
                           <Btn variante="cinza" tamanho="sm" onClick={() => removerItem(idx)} style={{ color: '#dc2626' }}>✕</Btn>
                         </td>
@@ -503,22 +471,22 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                   { label: 'Valor mercadorias', value: fmtReal(totalMercadorias) },
                   { label: 'Frete',             value: fmtReal(freteNum) },
                   { label: 'Outros custos',     value: fmtReal(outrosNum) },
-                  { label: 'Total geral',       value: fmtReal(totalGeral), bold: true, color: C.laranja },
+                  { label: 'Total geral',       value: fmtReal(totalGeral), bold: true, color: COM_C.laranja },
                 ].map(({ label, value, bold, color }) => (
-                  <div key={label} style={{ background: C.bg, borderRadius: '8px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', color: C.txtSub, marginBottom: '4px' }}>{label}</div>
-                    <div style={{ fontSize: '16px', fontWeight: bold ? '700' : '600', color: color ?? C.txt }}>{value}</div>
+                  <div key={label} style={{ background: COM_C.bg, borderRadius: '8px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', color: COM_C.txtSub, marginBottom: '4px' }}>{label}</div>
+                    <div style={{ fontSize: '16px', fontWeight: bold ? '700' : '600', color: color ?? COM_C.txt }}>{value}</div>
                   </div>
                 ))}
               </div>
 
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: '700', color: C.txtSub }}>Rateio por item</h3>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: '700', color: COM_C.txtSub }}>Rateio por item</h3>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: 500 }}>
                   <thead>
-                    <tr style={{ borderBottom: `2px solid ${C.borda}` }}>
+                    <tr style={{ borderBottom: `2px solid ${COM_C.borda}` }}>
                       {['Produto', 'Valor item', 'Frete rateado', 'Outros rateados', 'Custo final/unid'].map(h => (
-                        <th key={h} style={{ padding: '7px 8px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: C.txtSub }}>{h}</th>
+                        <th key={h} style={{ padding: '7px 8px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -527,9 +495,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
                       <tr key={idx} style={{ borderBottom: '1px solid #f0ede8' }}>
                         <td style={{ padding: '8px', fontWeight: '600' }}>{i.produto_nome}</td>
                         <td style={{ padding: '8px' }}>{fmtReal(i.valorItem)}</td>
-                        <td style={{ padding: '8px', color: C.txtSub }}>{fmtReal(i.freteRat)}</td>
-                        <td style={{ padding: '8px', color: C.txtSub }}>{fmtReal(i.outrosRat)}</td>
-                        <td style={{ padding: '8px', fontWeight: '700', color: C.laranja }}>{fmtReal(i.custoFinal)}</td>
+                        <td style={{ padding: '8px', color: COM_C.txtSub }}>{fmtReal(i.freteRat)}</td>
+                        <td style={{ padding: '8px', color: COM_C.txtSub }}>{fmtReal(i.outrosRat)}</td>
+                        <td style={{ padding: '8px', fontWeight: '700', color: COM_C.laranja }}>{fmtReal(i.custoFinal)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -540,15 +508,14 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
 
           {/* Botão confirmar */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <Link href="/loja/compras" style={{ padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', border: `1px solid ${C.borda}`, color: C.txtSub, textDecoration: 'none', background: '#fff' }}>
+            <Link href="/loja/compras" style={{ padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', border: `1px solid ${COM_C.borda}`, color: COM_C.txtSub, textDecoration: 'none', background: '#fff' }}>
               Cancelar
             </Link>
-            <Btn onClick={handleSubmit} disabled={salvando || itens.length === 0 || !fornecedorId} style={{ background: C.laranja, color: '#fff', border: `1.5px solid ${C.laranja}` }}>
+            <Btn onClick={handleSubmit} disabled={salvando || itens.length === 0 || !fornecedorId} style={{ background: COM_C.laranja, color: '#fff', border: `1.5px solid ${COM_C.laranja}` }}>
               {salvando ? 'Registrando...' : 'Confirmar compra'}
             </Btn>
           </div>
         </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

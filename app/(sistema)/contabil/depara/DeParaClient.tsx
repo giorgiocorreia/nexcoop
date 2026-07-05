@@ -6,8 +6,7 @@ import {
   getDePara, salvarDePara, removerDePara, getEscritorioDoContador,
 } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 interface Props {
   orgId: string
@@ -84,13 +83,14 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>De/Para — Plano de Contas</h1>
-        <BotaoAjuda chave="manual_contabil_url" />
-      </div>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>Mapeie as contas do NexCoop para as contas do escritório de contabilidade.</p>
-
+    <PageLayout
+      titulo="De/Para — Plano de Contas"
+      subtitulo="Mapeie as contas do NexCoop para as contas do escritório de contabilidade."
+      icone="ti-arrows-left-right"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'De/Para' }]}
+      acoes={<BotaoAjuda chave="manual_contabil_url" />}
+    >
       {!isParceiro && contadores.length > 1 && (
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Contador</label>
@@ -106,7 +106,7 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
           {isParceiro
             ? '⚠️ Cadastre seu Plano de Contas em Escritório → Plano de Contas antes de criar mapeamentos.'
             : <>⚠️ O contador vinculado ainda não cadastrou o plano de contas do escritório.{' '}
-                <a href="/escritorio/plano-de-contas" style={{ color: '#0F766E', fontWeight: 600, textDecoration: 'underline' }}>Cadastrar agora →</a>
+                <a href="/escritorio/plano-de-contas" style={{ color: COM_C.verde, fontWeight: 600, textDecoration: 'underline' }}>Cadastrar agora →</a>
               </>}
         </div>
       )}
@@ -125,7 +125,7 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
                 {contasInternas.map((c: any) => <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>)}
               </select>
             </div>
-            <div style={{ fontSize: 20, color: COR, fontWeight: 700, paddingBottom: 2 }}>→</div>
+            <div style={{ fontSize: 20, color: COM_C.verde, fontWeight: 700, paddingBottom: 2 }}>→</div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>CONTA DO ESCRITÓRIO (PARA)</label>
               <select value={externaId} onChange={e => setExternaId(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
@@ -134,7 +134,7 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
               </select>
             </div>
             <button onClick={handleSalvarDePara} disabled={salvandoDP}
-              style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {salvandoDP ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
@@ -157,8 +157,8 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
               {depara.map((dp: any, i: number) => (
                 <tr key={dp.id} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? '#fff' : '#f8f7f4' }}>
                   <td style={{ padding: '10px 14px', fontSize: 13 }}><span style={{ fontWeight: 700, color: '#635BFF' }}>{dp.conta_interna?.codigo}</span>{' — '}{dp.conta_interna?.nome}</td>
-                  <td style={{ padding: '10px 14px', fontSize: 18, color: COR, fontWeight: 700, textAlign: 'center' }}>→</td>
-                  <td style={{ padding: '10px 14px', fontSize: 13 }}><span style={{ fontWeight: 700, color: COR }}>{dp.conta_externa?.codigo}</span>{' — '}{dp.conta_externa?.nome}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 18, color: COM_C.verde, fontWeight: 700, textAlign: 'center' }}>→</td>
+                  <td style={{ padding: '10px 14px', fontSize: 13 }}><span style={{ fontWeight: 700, color: COM_C.verde }}>{dp.conta_externa?.codigo}</span>{' — '}{dp.conta_externa?.nome}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <button onClick={() => handleRemover(dp.id)} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer' }}>Remover</button>
                   </td>
@@ -168,6 +168,6 @@ export default function DeParaClient({ orgId, userId, isParceiro, planoEscritori
           </table>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

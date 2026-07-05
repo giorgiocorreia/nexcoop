@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { gerarSpedECD } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 export default function ExportacoesClient({ orgId, userId }: { orgId: string; userId: string }) {
   const anoAtual = new Date().getFullYear()
@@ -42,14 +41,14 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
       <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:system-ui,sans-serif;color:#1a1a2e;background:white}
-        .header{background:#0F766E;color:white;padding:20px 32px}
+        body{font-family:system-ui,sans-serif;color:${COM_C.txt};background:white}
+        .header{background:${COM_C.verde};color:white;padding:20px 32px}
         .header h1{font-size:20px;font-weight:700;margin-top:4px}
         .header .logo{font-size:18px;font-weight:700}
         .header .meta{font-size:11px;opacity:.8;margin-top:4px}
         .content{padding:32px}
         .footer{border-top:1px solid #e5e3dc;padding:12px 32px;font-size:11px;color:#9ca3af;display:flex;justify-content:space-between;margin-top:40px}
-        .btn-print{position:fixed;bottom:20px;right:20px;background:#0F766E;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+        .btn-print{position:fixed;bottom:20px;right:20px;background:${COM_C.verde};color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
         @media print{.btn-print{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
       </style></head><body>
       <div class="header"><div class="logo">NexCoop</div><h1>${titulo}</h1><div class="meta">${orgNome} · ${dataAtual}</div></div>
@@ -79,7 +78,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Exporta o balancete do período selecionado em formato para impressão.',
       icon: '📋',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('balancete'),
       btnLabel: 'Exportar Balancete',
@@ -90,7 +89,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Demonstrativo de Resultado do Exercício com Sobras ou Perdas.',
       icon: '📈',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('dre'),
       btnLabel: 'Exportar DRE',
@@ -101,7 +100,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Posição patrimonial completa — Ativo, Passivo e Patrimônio Líquido.',
       icon: '⚖️',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('balanco'),
       btnLabel: 'Exportar Balanço',
@@ -112,7 +111,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Registro cronológico completo de todos os lançamentos do exercício.',
       icon: '📒',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('diario'),
       btnLabel: 'Exportar Livro Diário',
@@ -123,7 +122,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Movimentações detalhadas por conta contábil no período.',
       icon: '📗',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handlePrintRelatorio('razao'),
       btnLabel: 'Exportar Livro Razão',
@@ -134,7 +133,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Status dos itens do extrato bancário conciliados com lançamentos.',
       icon: '🏦',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handleExportarPDF('conciliacao', 'Relatorio de Conciliacao'),
       btnLabel: 'Exportar Conciliação',
@@ -145,7 +144,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       desc: 'Relatório de vencimentos e status das obrigações acessórias.',
       icon: '📅',
       badge: 'PDF / Impressão',
-      badgeCor: COR,
+      badgeCor: COM_C.verde,
       badgeBg: '#dcfce7',
       acao: () => handleExportarPDF('calendario', 'Calendario de Obrigacoes'),
       btnLabel: 'Exportar Calendário',
@@ -153,23 +152,22 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
   ]
 
   return (
-    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Exportações Contábeis</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Gere arquivos e relatórios para entrega ao escritório de contabilidade ou à Receita Federal
-          </p>
+    <PageLayout
+      titulo="Exportações Contábeis"
+      subtitulo="Gere arquivos e relatórios para entrega ao escritório de contabilidade ou à Receita Federal"
+      icone="ti-upload"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Exportações' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select value={ano} onChange={e => setAno(Number(e.target.value))}
+            style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
+            {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-        <select value={ano} onChange={e => setAno(Number(e.target.value))}
-          style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
-          {[anoAtual - 1, anoAtual, anoAtual + 1].map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
-
+      }
+    >
       {sucesso && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>
           {sucesso}
@@ -192,7 +190,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
               <span style={{ fontSize: 28 }}>{exp.icon}</span>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{exp.titulo}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: COM_C.txt }}>{exp.titulo}</span>
                   <span style={{
                     fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
                     background: exp.badgeBg, color: exp.badgeCor,
@@ -207,7 +205,7 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
               onClick={exp.acao}
               disabled={gerando === exp.id}
               style={{
-                padding: '9px 18px', background: COR, color: '#fff',
+                padding: '9px 18px', background: COM_C.verde, color: '#fff',
                 border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
                 cursor: gerando === exp.id ? 'default' : 'pointer',
                 whiteSpace: 'nowrap', minWidth: 180,
@@ -227,6 +225,6 @@ export default function ExportacoesClient({ orgId, userId }: { orgId: string; us
       }}>
         ⚠️ O arquivo SPED ECD gerado pelo NexCoop é um arquivo <strong>auxiliar</strong>. Deve ser revisado e validado pelo contador responsável antes da entrega oficial à Receita Federal através do programa SPED do governo.
       </div>
-    </div>
+    </PageLayout>
   )
 }

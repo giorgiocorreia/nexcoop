@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getContadoresDaOrg, convidarContador, toggleContador } from '@/lib/contabil/actions'
-
-const COR = '#0F766E'
+import { PageLayout, MODULO_CONFIG, COM_C } from '@/components/nexcoop/ui'
 
 interface Props { orgId: string }
 
@@ -39,11 +38,15 @@ export default function ContadorClient({ orgId }: Props) {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 720, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>Contadores Vinculados</h1>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 28 }}>Gerencie o acesso do escritório de contabilidade à sua organização</p>
-
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 24, marginBottom: 28 }}>
+    <PageLayout
+      titulo="Contadores Vinculados"
+      subtitulo="Gerencie o acesso do escritório de contabilidade à sua organização"
+      icone="ti-calculator"
+      modulo={MODULO_CONFIG}
+      breadcrumb={[{ label: 'Contadores Vinculados' }]}
+    >
+      <div style={{ maxWidth: 720 }}>
+      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${COM_C.borda}`, padding: 24, marginBottom: 28 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Vincular Contador</h2>
         {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
         {erro && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
@@ -54,7 +57,7 @@ export default function ContadorClient({ orgId }: Props) {
             <option value='contador'>Contador (completo)</option>
             <option value='contador_aux'>Auxiliar Contábil</option>
           </select>
-          <button onClick={handleConvidar} disabled={salvando} style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button onClick={handleConvidar} disabled={salvando} style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {salvando ? 'Vinculando...' : 'Vincular'}
           </button>
         </div>
@@ -73,7 +76,7 @@ export default function ContadorClient({ orgId }: Props) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: c.ativo ? '#dcfce7' : '#f3f4f6', color: c.ativo ? '#166534' : '#6b7280' }}>{c.ativo ? 'Ativo' : 'Inativo'}</span>
-                <button onClick={() => handleToggle(c.id, c.ativo)} style={{ padding: '6px 14px', border: `1px solid ${c.ativo ? '#fca5a5' : COR}`, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#fff', color: c.ativo ? '#dc2626' : COR }}>
+                <button onClick={() => handleToggle(c.id, c.ativo)} style={{ padding: '6px 14px', border: `1px solid ${c.ativo ? '#fca5a5' : COM_C.verde}`, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#fff', color: c.ativo ? '#dc2626' : COM_C.verde }}>
                   {c.ativo ? 'Inativar' : 'Reativar'}
                 </button>
               </div>
@@ -81,6 +84,7 @@ export default function ContadorClient({ orgId }: Props) {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </PageLayout>
   )
 }

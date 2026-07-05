@@ -10,6 +10,7 @@ import { createClient as createClientBrowser } from '@/lib/supabase/client'
 import { salvarPerfilCaptacao } from '@/lib/captacao/actions'
 import UsuariosGestao from './usuarios/UsuariosGestao'
 import ParceirosClient from './parceiros/ParceirosClient'
+import { PageLayout, MODULO_CONFIG, COM_C } from '@/components/nexcoop/ui'
 
 // ── Cores ─────────────────────────────────────────────────────────────────────
 const TEAL        = '#1D9E75'
@@ -100,13 +101,16 @@ export default function ConfiguracoesForm(props: Props) {
   const abaEfetiva: Aba = abaValida ? abaAtual : abaDefault
 
   return (
+    <PageLayout
+      titulo="Configurações"
+      icone="ti-settings"
+      modulo={MODULO_CONFIG}
+      semBreadcrumb
+    >
     <div style={{ maxWidth: '820px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Configurações</h1>
-      </div>
 
       {/* Barra de abas */}
-      <div style={{ borderBottom: '1px solid #e5e3dc', marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-end' }}>
+      <div style={{ borderBottom: `1px solid ${COM_C.borda}`, marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-end' }}>
         {visiveis.map(tab => {
           const ativo    = abaEfetiva === tab.id
           const disabled = tab.disabled ?? false
@@ -118,9 +122,9 @@ export default function ConfiguracoesForm(props: Props) {
               style={{
                 padding: '10px 20px',
                 border: 'none',
-                borderBottom: ativo ? `2px solid ${TEAL}` : '2px solid transparent',
+                borderBottom: ativo ? `2px solid ${COM_C.verde}` : '2px solid transparent',
                 background: 'transparent',
-                color: ativo ? TEAL : disabled ? '#ccc' : '#666',
+                color: ativo ? COM_C.verde : disabled ? '#ccc' : COM_C.txtSub,
                 fontSize: '13px',
                 fontWeight: ativo ? '600' : '400',
                 cursor: disabled ? 'default' : 'pointer',
@@ -193,6 +197,7 @@ export default function ConfiguracoesForm(props: Props) {
         </div>
       )}
     </div>
+    </PageLayout>
   )
 }
 

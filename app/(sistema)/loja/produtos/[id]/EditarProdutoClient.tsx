@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { atualizarProduto } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 import type { LojaFornecedor, LojaLote } from '@/types/database'
 import type { LojaProdutoComFornecedor } from '@/lib/loja/actions'
 import type { PosicaoEstoque } from '@/lib/loja/types'
@@ -19,24 +20,16 @@ interface Props {
   podeGerenciar:  boolean
 }
 
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  verde: '#166534', verdeLt: '#F0FDF4',
-  vermelho: '#DC2626', vermelhoLt: '#FEF2F2',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
-
 const inputStyle = (disabled: boolean): React.CSSProperties => ({
   width: '100%', padding: '9px 12px', fontSize: '14px',
-  border: `1px solid ${C.borda}`, borderRadius: '8px',
-  background: disabled ? '#f5f3ef' : '#fff', color: C.txt,
+  border: `1px solid ${COM_C.borda}`, borderRadius: '8px',
+  background: disabled ? '#f5f3ef' : '#fff', color: COM_C.txt,
   outline: 'none', boxSizing: 'border-box',
   cursor: disabled ? 'not-allowed' : 'text',
 })
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '12px', fontWeight: '600', color: C.txtSub, marginBottom: '5px',
+  display: 'block', fontSize: '12px', fontWeight: '600', color: COM_C.txtSub, marginBottom: '5px',
 }
 
 function formatReais(digits: string): string {
@@ -106,53 +99,24 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
   }
 
   return (
-    <>
-      <style>{`
-        .ep-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .ep-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .ep-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .ep-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="ep-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <div style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 10, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-box" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {produto.nome}
-            </h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}
-              <Link href="/loja/produtos" style={{ color: C.txtSub, textDecoration: 'none' }}>Produtos</Link>
-              {' / '}{produto.nome}
-            </div>
-          </div>
-        </div>
-        {!podeGerenciar && (
-          <span style={{ fontSize: 12, color: C.txtSub, background: '#f5f3ef', padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>
-            Somente visualização
-          </span>
-        )}
-      </header>
-
-      <div className="ep-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+    <PageLayout
+      titulo={produto.nome}
+      icone="ti-box"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Produtos', href: '/loja/produtos' }, { label: produto.nome }]}
+      acoes={!podeGerenciar ? (
+        <span style={{ fontSize: 12, color: COM_C.txtSub, background: '#f5f3ef', padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>
+          Somente visualização
+        </span>
+      ) : undefined}
+    >
         <div style={{ maxWidth: '720px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
           <form onSubmit={handleSubmit}>
 
             {/* Card: dados principais */}
-            <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '600', color: C.txt }}>Dados do produto</h2>
+            <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '600', color: COM_C.txt }}>Dados do produto</h2>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
 
@@ -200,7 +164,7 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
                 {podeGerenciar && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '8px' }}>
                     <input type="checkbox" id="ativo" checked={ativo} onChange={e => setAtivo(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                    <label htmlFor="ativo" style={{ fontSize: '14px', color: C.txt, cursor: 'pointer' }}>Produto ativo</label>
+                    <label htmlFor="ativo" style={{ fontSize: '14px', color: COM_C.txt, cursor: 'pointer' }}>Produto ativo</label>
                   </div>
                 )}
 
@@ -208,12 +172,12 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
             </div>
 
             {/* Card: desconto cooperados */}
-            <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: C.txt }}>Desconto para cooperados</h2>
+            <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: COM_C.txt }}>Desconto para cooperados</h2>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                 <input type="checkbox" id="temDesconto" checked={temDesconto} disabled={disabled} onChange={e => setTemDesconto(e.target.checked)} style={{ width: '16px', height: '16px', cursor: disabled ? 'not-allowed' : 'pointer' }} />
-                <label htmlFor="temDesconto" style={{ fontSize: '14px', color: C.txt, cursor: disabled ? 'default' : 'pointer' }}>Oferecer desconto aos cooperados</label>
+                <label htmlFor="temDesconto" style={{ fontSize: '14px', color: COM_C.txt, cursor: disabled ? 'default' : 'pointer' }}>Oferecer desconto aos cooperados</label>
               </div>
 
               {temDesconto && (
@@ -239,7 +203,7 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
             {podeGerenciar && (
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginBottom: '24px' }}>
                 <Btn variante="cinza" onClick={() => router.push('/loja/produtos')}>Cancelar</Btn>
-                <Btn type="submit" disabled={salvando} style={{ background: C.laranja, color: '#fff', border: `1.5px solid ${C.laranja}` }}>
+                <Btn type="submit" disabled={salvando} style={{ background: COM_C.laranja, color: '#fff', border: `1.5px solid ${COM_C.laranja}` }}>
                   {salvando ? 'Salvando…' : 'Salvar alterações'}
                 </Btn>
               </div>
@@ -248,27 +212,27 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
           </form>
 
           {/* Card: posição de estoque */}
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
-            <h2 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '600', color: C.txt }}>Posição de estoque</h2>
+          <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '600', color: COM_C.txt }}>Posição de estoque</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ textAlign: 'center', padding: '14px', background: eCritico ? C.vermelhoLt : C.bg, borderRadius: '10px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: eCritico ? C.vermelho : C.txt }}>
+              <div style={{ textAlign: 'center', padding: '14px', background: eCritico ? COM_C.vermelhoLt : COM_C.bg, borderRadius: '10px' }}>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: eCritico ? COM_C.vermelho : COM_C.txt }}>
                   {estoque_atual.toLocaleString('pt-BR')}
                 </div>
-                <div style={{ fontSize: '11px', color: C.txtSub, marginTop: '2px' }}>Saldo atual</div>
+                <div style={{ fontSize: '11px', color: COM_C.txtSub, marginTop: '2px' }}>Saldo atual</div>
               </div>
-              <div style={{ textAlign: 'center', padding: '14px', background: C.bg, borderRadius: '10px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: C.txt }}>
+              <div style={{ textAlign: 'center', padding: '14px', background: COM_C.bg, borderRadius: '10px' }}>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: COM_C.txt }}>
                   {estoque_minimo != null ? estoque_minimo.toLocaleString('pt-BR') : '—'}
                 </div>
-                <div style={{ fontSize: '11px', color: C.txtSub, marginTop: '2px' }}>Estoque mínimo</div>
+                <div style={{ fontSize: '11px', color: COM_C.txtSub, marginTop: '2px' }}>Estoque mínimo</div>
               </div>
-              <div style={{ textAlign: 'center', padding: '14px', background: eCritico ? C.vermelhoLt : C.verdeLt, borderRadius: '10px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: eCritico ? C.vermelho : C.verde, paddingTop: '8px' }}>
+              <div style={{ textAlign: 'center', padding: '14px', background: eCritico ? COM_C.vermelhoLt : COM_C.verdeLt, borderRadius: '10px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: eCritico ? COM_C.vermelho : COM_C.verde, paddingTop: '8px' }}>
                   {eCritico ? '⚠ Crítico' : '✓ Normal'}
                 </div>
-                <div style={{ fontSize: '11px', color: C.txtSub, marginTop: '2px' }}>Status</div>
+                <div style={{ fontSize: '11px', color: COM_C.txtSub, marginTop: '2px' }}>Status</div>
               </div>
             </div>
 
@@ -278,15 +242,15 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
               </p>
             ) : (
               <>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: C.txtSub, marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: COM_C.txtSub, marginBottom: '8px' }}>
                   LOTES ATIVOS ({lotes.length})
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: 340 }}>
                     <thead>
-                      <tr style={{ borderBottom: `1px solid ${C.borda}` }}>
+                      <tr style={{ borderBottom: `1px solid ${COM_C.borda}` }}>
                         {['Nº do lote', 'Quantidade', 'Validade'].map(h => (
-                          <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: C.txtSub, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                             {h}
                           </th>
                         ))}
@@ -299,11 +263,11 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
                           : false
                         return (
                           <tr key={lote.id} style={{ borderBottom: '1px solid #f5f3ef' }}>
-                            <td style={{ padding: '9px 10px', color: C.txtSub }}>{lote.numero_lote ?? '—'}</td>
-                            <td style={{ padding: '9px 10px', color: C.txt, fontWeight: '500' }}>
+                            <td style={{ padding: '9px 10px', color: COM_C.txtSub }}>{lote.numero_lote ?? '—'}</td>
+                            <td style={{ padding: '9px 10px', color: COM_C.txt, fontWeight: '500' }}>
                               {lote.quantidade_atual.toLocaleString('pt-BR')}
                             </td>
-                            <td style={{ padding: '9px 10px', color: vence ? '#d97706' : C.txtSub, fontWeight: vence ? '600' : '400' }}>
+                            <td style={{ padding: '9px 10px', color: vence ? '#d97706' : COM_C.txtSub, fontWeight: vence ? '600' : '400' }}>
                               {fmtData(lote.data_validade)}
                               {vence && <span style={{ fontSize: '10px', marginLeft: '6px', background: '#fffbeb', padding: '1px 6px', borderRadius: '10px' }}>vence em breve</span>}
                             </td>
@@ -318,7 +282,6 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
           </div>
 
         </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

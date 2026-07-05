@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { PageLayout, MODULO_ESCRITORIO, COM_C } from '@/components/nexcoop/ui'
 
-const COR      = '#0F766E'
-const COR_DARK = '#0c6659'
+const COR_DARK = '#15803d'
 const COR_SUC  = '#166534'
 
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
@@ -45,11 +45,13 @@ export default function EmpresaPerfilClient({ empresa }: { empresa: any }) {
   }
 
   return (
+    <PageLayout
+      titulo="Dados da Empresa"
+      icone="ti-building"
+      modulo={MODULO_ESCRITORIO}
+      breadcrumb={[{ label: 'Dados da Empresa' }]}
+    >
     <div style={{ maxWidth: 820, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>Dados da Empresa</h1>
-      </div>
-
       <form onSubmit={handleSubmit}>
         {erro && <Alerta tipo="erro" style={{ marginBottom: '1rem' }}>{erro}</Alerta>}
 
@@ -94,6 +96,7 @@ export default function EmpresaPerfilClient({ empresa }: { empresa: any }) {
         </BtnPrimary>
       </form>
     </div>
+    </PageLayout>
   )
 }
 
@@ -133,7 +136,7 @@ function InpText({ value, onChange, placeholder, type = 'text' }: {
     <input
       type={type} value={value} onChange={onChange} placeholder={placeholder}
       style={inp}
-      onFocus={e => { e.target.style.borderColor = COR }}
+      onFocus={e => { e.target.style.borderColor = COM_C.verde }}
       onBlur={e =>  { e.target.style.borderColor = '#d5d3cc' }}
     />
   )
@@ -146,7 +149,7 @@ function BtnPrimary({ children, type = 'button', loading, success }: {
   success?: boolean
 }) {
   const [hover, setHover] = useState(false)
-  const bg = success ? COR_SUC : loading ? COR : hover ? COR_DARK : COR
+  const bg = success ? COR_SUC : loading ? COM_C.verde : hover ? COR_DARK : COM_C.verde
   return (
     <button type={type} disabled={loading}
       style={{ padding: '10px 24px', background: bg, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'background 0.15s' }}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { conferirCaixa } from '@/lib/loja/actions'
 import { getDetalhesSessao } from '@/lib/loja/caixa-relatorio-actions'
 import { Btn } from '@/components/ui/Btn'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 
 function fmtReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -17,12 +18,6 @@ const inp: React.CSSProperties = {
   width: '100%', padding: '8px 12px',
   border: '1.5px solid #d1d5db', borderRadius: 8,
   fontSize: 13, outline: 'none', boxSizing: 'border-box' as const,
-}
-
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
 }
 
 interface Caixa {
@@ -98,74 +93,36 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
   const pendentes = caixas.filter(c => c.status_conferencia === 'aguardando').length
 
   return (
-    <>
-      <style>{`
-        .conf-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .conf-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .conf-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .conf-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="conf-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <i className="ti ti-checklist" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>
-                Conferência de Caixa
-              </h1>
-              {pendentes > 0 && (
-                <span style={{ background: '#fef9c3', color: '#854d0e', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                  {pendentes} pendente{pendentes !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}Conferência
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="conf-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-
+    <PageLayout
+      titulo="Conferência de Caixa"
+      subtitulo={pendentes > 0 ? `${pendentes} pendente${pendentes !== 1 ? 's' : ''}` : undefined}
+      icone="ti-checklist"
+      modulo={MODULO_LOJA}
+    >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {caixas.map(c => {
             const st = statusConfig[c.status_conferencia] ?? statusConfig.aguardando
             const aberto = selecionado === c.id
 
             return (
-              <div key={c.id} style={{ background: '#fff', border: `1px solid ${aberto ? C.laranja : C.borda}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.15s' }}>
+              <div key={c.id} style={{ background: '#fff', border: `1px solid ${aberto ? COM_C.laranja : COM_C.borda}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.15s' }}>
                 <div
                   onClick={() => abrirDetalhe(c.id)}
                   style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <i className="ti ti-cash-register" style={{ fontSize: 20, color: C.laranja }} />
+                    <i className="ti ti-cash-register" style={{ fontSize: 20, color: COM_C.laranja }} />
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.txt }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt }}>
                         {c.usuarios?.nome_completo ?? '—'}
                       </div>
-                      <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
+                      <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>
                         {fmtDt(c.aberto_em)} → {c.fechado_em ? fmtDt(c.fechado_em) : '—'}
                       </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: C.txt }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: COM_C.txt }}>
                       {fmtReal(c.total_especie + c.total_pix + c.total_cartao)}
                     </span>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: st.bg, color: st.color }}>
@@ -178,7 +135,7 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
                 {aberto && (
                   <div style={{ borderTop: '1px solid #f0eeea', padding: '20px' }}>
                     {carregando ? (
-                      <div style={{ textAlign: 'center', color: C.txtSub, fontSize: 13, padding: '20px 0' }}>Carregando...</div>
+                      <div style={{ textAlign: 'center', color: COM_C.txtSub, fontSize: 13, padding: '20px 0' }}>Carregando...</div>
                     ) : (
                       <>
                         {/* Comparativo de valores */}
@@ -190,10 +147,10 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
                           ].map(item => {
                             const dif = (item.fisico ?? 0) - item.sistema
                             return (
-                              <div key={item.label} style={{ background: C.bg, borderRadius: 8, padding: '12px' }}>
-                                <div style={{ fontSize: 11, color: C.txtSub, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>{item.label}</div>
-                                <div style={{ fontSize: 12, color: C.txtSub, marginBottom: 2 }}>Sistema: {fmtReal(item.sistema)}</div>
-                                <div style={{ fontSize: 12, color: C.txtSub, marginBottom: 4 }}>Informado: {item.fisico != null ? fmtReal(item.fisico) : '—'}</div>
+                              <div key={item.label} style={{ background: COM_C.bg, borderRadius: 8, padding: '12px' }}>
+                                <div style={{ fontSize: 11, color: COM_C.txtSub, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>{item.label}</div>
+                                <div style={{ fontSize: 12, color: COM_C.txtSub, marginBottom: 2 }}>Sistema: {fmtReal(item.sistema)}</div>
+                                <div style={{ fontSize: 12, color: COM_C.txtSub, marginBottom: 4 }}>Informado: {item.fisico != null ? fmtReal(item.fisico) : '—'}</div>
                                 {item.fisico != null && (
                                   <div style={{ fontSize: 12, fontWeight: 700, color: dif === 0 ? '#15803d' : '#dc2626' }}>
                                     {dif === 0 ? '✓ ok' : dif > 0 ? `+${fmtReal(dif)}` : fmtReal(dif)}
@@ -221,7 +178,7 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
 
                         {/* Observação */}
                         <div style={{ marginBottom: 16 }}>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: C.txt, display: 'block', marginBottom: 5 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: COM_C.txt, display: 'block', marginBottom: 5 }}>
                             Observação {c.status_conferencia === 'divergente' ? '(obrigatória)' : '(opcional)'}
                           </label>
                           <textarea
@@ -267,12 +224,11 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
           })}
 
           {caixas.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px', color: C.txtSub, fontSize: 13, background: '#fff', border: `1px solid ${C.borda}`, borderRadius: 12 }}>
+            <div style={{ textAlign: 'center', padding: '48px', color: COM_C.txtSub, fontSize: 13, background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 12 }}>
               Nenhum caixa fechado encontrado.
             </div>
           )}
         </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

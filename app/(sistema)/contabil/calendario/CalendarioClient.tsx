@@ -6,8 +6,7 @@ import {
   seedObrigacoesCooperativa, marcarObrigacaoEntregue,
 } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 export default function CalendarioClient({ orgId }: { orgId: string }) {
@@ -81,18 +80,14 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
   const entregues = ocorrencias.filter(o => o.ocorrencia?.status === 'entregue')
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Calendário de Obrigações</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Controle de vencimentos de obrigações acessórias
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+    <PageLayout
+      titulo="Calendário de Obrigações"
+      subtitulo="Controle de vencimentos de obrigações acessórias"
+      icone="ti-calendar"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Calendário de Obrigações' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <select value={mes} onChange={e => setMes(Number(e.target.value))}
             style={{ padding: '8px 12px', border: '1px solid #e5e3dc', borderRadius: 8, fontSize: 13 }}>
             {MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
@@ -102,18 +97,19 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
             {[ano - 1, ano, ano + 1].map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           <button onClick={() => setNovaModal(true)}
-            style={{ padding: '8px 16px', background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', background: '#fff', color: COM_C.verde, border: `1px solid ${COM_C.verde}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             + Nova
           </button>
           {obrigacoes.length === 0 && (
             <button onClick={handleSeed} disabled={seeding}
-              style={{ padding: '8px 16px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ padding: '8px 16px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               {seeding ? 'Carregando...' : 'Carregar Padrão'}
             </button>
           )}
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-      </div>
-
+      }
+    >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
       {erro    && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
 
@@ -122,7 +118,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
         {[
           { label: 'Atrasadas', valor: atrasadas.length, cor: '#dc2626', bg: '#fef2f2' },
           { label: 'A vencer',  valor: pendentes.length, cor: '#f59e0b', bg: '#fffbeb' },
-          { label: 'Entregues', valor: entregues.length, cor: COR,       bg: '#f0fdf9' },
+          { label: 'Entregues', valor: entregues.length, cor: COM_C.verde,       bg: '#f0fdf9' },
         ].map(c => (
           <div key={c.label} style={{ background: c.bg, borderRadius: 10, border: `1px solid ${c.cor}30`, padding: '14px 18px' }}>
             <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{c.label}</p>
@@ -174,7 +170,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
                     <td style={{ padding: '10px 14px' }}>
                       {!entregue && (
                         <button onClick={() => handleMarcarEntregue(oc)}
-                          style={{ background: COR, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                          style={{ background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                           Marcar Entregue
                         </button>
                       )}
@@ -226,13 +222,13 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
                 Cancelar
               </button>
               <button onClick={handleCriar} disabled={salvando}
-                style={{ padding: '9px 18px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '9px 18px', background: COM_C.verde, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 {salvando ? 'Salvando...' : 'Criar Obrigação'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

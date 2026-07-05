@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ajusteEstoque } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 
 interface Produto { id: string; nome: string; unidade: string; estoque_atual: number }
 
@@ -25,22 +26,14 @@ interface Props {
   usuarioId: string
 }
 
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  verde: '#1D9E75',
-  vermelho: '#dc2626',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
-
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', fontSize: '13px',
-  border: `1px solid ${C.borda}`, borderRadius: '8px', background: '#fff',
-  color: C.txt, outline: 'none', boxSizing: 'border-box',
+  border: `1px solid ${COM_C.borda}`, borderRadius: '8px', background: '#fff',
+  color: COM_C.txt, outline: 'none', boxSizing: 'border-box',
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '12px', fontWeight: '600', color: C.txtSub, marginBottom: '5px',
+  display: 'block', fontSize: '12px', fontWeight: '600', color: COM_C.txtSub, marginBottom: '5px',
 }
 
 const MOTIVOS = [
@@ -72,8 +65,8 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
 
   function descDiferenca() {
     if (!produtoSel || !contagem) return null
-    if (diferenca > 0) return { text: `Entrada de +${diferenca.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${produtoSel.unidade}`, color: C.verde }
-    if (diferenca < 0) return { text: `Saída de ${diferenca.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${produtoSel.unidade}`, color: C.vermelho }
+    if (diferenca > 0) return { text: `Entrada de +${diferenca.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${produtoSel.unidade}`, color: COM_C.verde }
+    if (diferenca < 0) return { text: `Saída de ${diferenca.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${produtoSel.unidade}`, color: COM_C.vermelho }
     return { text: 'Sem diferença', color: '#888' }
   }
 
@@ -100,40 +93,13 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
   const diff = descDiferenca()
 
   return (
-    <>
-      <style>{`
-        .aj-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .aj-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .aj-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .aj-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="aj-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-adjustments" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>Ajuste de Estoque</h1>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}
-              <Link href="/loja/estoque" style={{ color: C.txtSub, textDecoration: 'none' }}>Estoque</Link>
-              {' / '}Ajuste
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="aj-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-        <div style={{ maxWidth: 800, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <PageLayout
+      titulo="Ajuste de Estoque"
+      icone="ti-adjustments"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Estoque', href: '/loja/estoque' }, { label: 'Ajuste' }]}
+    >
+<div style={{ maxWidth: 800, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
           {sucesso && (
             <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '12px 18px', marginBottom: '1rem', fontSize: '13px', color: '#166534', fontWeight: '600' }}>
@@ -146,7 +112,7 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '1.5rem' }}>
+          <form onSubmit={handleSubmit} style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '1.5rem' }}>
             <h2 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700' }}>Registrar ajuste</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div style={{ gridColumn: '1 / -1' }}>
@@ -159,9 +125,9 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
 
               {produtoSel && (
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <div style={{ background: C.bg, borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '13px', color: C.txtSub }}>Saldo do sistema:</span>
-                    <span style={{ fontSize: '18px', fontWeight: '700', color: C.txt }}>
+                  <div style={{ background: COM_C.bg, borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '13px', color: COM_C.txtSub }}>Saldo do sistema:</span>
+                    <span style={{ fontSize: '18px', fontWeight: '700', color: COM_C.txt }}>
                       {Number(produtoSel.estoque_atual).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {produtoSel.unidade}
                     </span>
                   </div>
@@ -175,7 +141,7 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
 
               <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
                 {diff && (
-                  <div style={{ background: C.bg, borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontWeight: '700', color: diff.color, width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ background: COM_C.bg, borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontWeight: '700', color: diff.color, width: '100%', boxSizing: 'border-box' }}>
                     {diff.text}
                   </div>
                 )}
@@ -190,14 +156,14 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
             </div>
 
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <Btn type="submit" disabled={salvando || !produtoSel || !contagem} style={{ background: C.laranja, color: '#fff', border: `1.5px solid ${C.laranja}` }}>
+              <Btn type="submit" disabled={salvando || !produtoSel || !contagem} style={{ background: COM_C.laranja, color: '#fff', border: `1.5px solid ${COM_C.laranja}` }}>
                 {salvando ? 'Salvando...' : 'Confirmar ajuste'}
               </Btn>
             </div>
           </form>
 
           {/* Histórico */}
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '20px 24px' }}>
+          <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '20px 24px' }}>
             <h2 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: '700' }}>Histórico de ajustes (últimos 30 dias)</h2>
             {historico.length === 0 ? (
               <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Nenhum ajuste nos últimos 30 dias.</p>
@@ -205,9 +171,9 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: 400 }}>
                   <thead>
-                    <tr style={{ borderBottom: `2px solid ${C.borda}` }}>
+                    <tr style={{ borderBottom: `2px solid ${COM_C.borda}` }}>
                       {['Produto', 'Data', 'Diferença', 'Motivo'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: C.txtSub }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -215,13 +181,13 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
                     {historico.map(m => (
                       <tr key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
                         <td style={{ padding: '9px 10px', fontWeight: '600' }}>{m.produto_nome}</td>
-                        <td style={{ padding: '9px 10px', color: C.txtSub, whiteSpace: 'nowrap' }}>{fmtData(m.criado_em)}</td>
+                        <td style={{ padding: '9px 10px', color: COM_C.txtSub, whiteSpace: 'nowrap' }}>{fmtData(m.criado_em)}</td>
                         <td style={{ padding: '9px 10px' }}>
-                          <span style={{ fontWeight: '600', color: C.txtSub }}>
+                          <span style={{ fontWeight: '600', color: COM_C.txtSub }}>
                             {Number(m.quantidade).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} un
                           </span>
                         </td>
-                        <td style={{ padding: '9px 10px', color: C.txtSub }}>{m.motivo ?? '—'}</td>
+                        <td style={{ padding: '9px 10px', color: COM_C.txtSub }}>{m.motivo ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,7 +196,6 @@ export default function AjusteEstoqueClient({ produtos, historico, orgId, usuari
             )}
           </div>
         </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

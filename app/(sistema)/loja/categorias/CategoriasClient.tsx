@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { renomearCategoria } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
+import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 
 interface Categoria {
   nome: string
@@ -15,16 +16,10 @@ interface Props {
   categorias: Categoria[]
 }
 
-const C = {
-  laranja: '#E07B30', laranjaLt: '#FFF7ED',
-  borda: '#E5E3DC', bg: '#F8F7F4',
-  txt: '#1C1917', txtSub: '#78716C',
-}
-
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 12px', fontSize: '14px',
-  border: `1px solid ${C.borda}`, borderRadius: '8px', background: '#fff',
-  color: C.txt, outline: 'none', boxSizing: 'border-box',
+  border: `1px solid ${COM_C.borda}`, borderRadius: '8px', background: '#fff',
+  color: COM_C.txt, outline: 'none', boxSizing: 'border-box',
 }
 
 export default function CategoriasClient({ categorias: inicial }: Props) {
@@ -88,51 +83,17 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
   }
 
   return (
-    <>
-      <style>{`
-        .cat-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .cat-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .cat-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .cat-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="cat-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: `1px solid ${C.borda}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <i className="ti ti-tag" style={{ fontSize: 20, color: C.laranja }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: C.txt, margin: 0, lineHeight: 1.2 }}>
-                Categorias
-              </h1>
-              <span style={{ background: '#f0eeea', color: C.txtSub, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                {lista.length}
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: C.txtSub, marginTop: 2 }}>
-              <Link href="/loja" style={{ color: C.txtSub, textDecoration: 'none' }}>Loja Agropecuária</Link>
-              {' / '}
-              <Link href="/loja/produtos" style={{ color: C.txtSub, textDecoration: 'none' }}>Produtos</Link>
-              {' / '}Categorias
-            </div>
-          </div>
-        </div>
-
+    <PageLayout
+      titulo="Categorias"
+      subtitulo={`${lista.length} categoria${lista.length !== 1 ? 's' : ''}`}
+      icone="ti-tag"
+      modulo={MODULO_LOJA}
+      breadcrumb={[{ label: 'Produtos', href: '/loja/produtos' }, { label: 'Categorias' }]}
+      acoes={
         <button
           onClick={() => setModal({ open: true, mode: 'nova' })}
           style={{
-            padding: '9px 18px', background: C.laranja, color: '#fff',
+            padding: '9px 18px', background: COM_C.laranja, color: '#fff',
             borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none',
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
             whiteSpace: 'nowrap', flexShrink: 0,
@@ -141,13 +102,12 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
           <i className="ti ti-plus" style={{ fontSize: 15 }} />
           Nova categoria
         </button>
-      </header>
-
-      <div className="cat-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
+      }
+    >
         <div style={{ maxWidth: 720 }}>
 
           {/* Tabela */}
-          <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', overflow: 'hidden' }}>
             {lista.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: '14px' }}>
                 Nenhuma categoria cadastrada ainda.
@@ -155,11 +115,11 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${C.borda}`, background: '#fafaf9' }}>
-                    <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '700', color: C.txtSub, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <tr style={{ borderBottom: `1px solid ${COM_C.borda}`, background: '#fafaf9' }}>
+                    <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Categoria
                     </th>
-                    <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '700', color: C.txtSub, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '10px 16px', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Produtos
                     </th>
                   </tr>
@@ -177,13 +137,13 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
                         transition: 'background 0.1s',
                       }}
                     >
-                      <td style={{ padding: '12px 16px', fontSize: '14px', color: C.txt, fontWeight: '500' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: COM_C.txt, fontWeight: '500' }}>
                         {cat.nome}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                         <span style={{
                           fontSize: '12px', fontWeight: '600',
-                          color: cat.total === 0 ? '#aaa' : C.txtSub,
+                          color: cat.total === 0 ? '#aaa' : COM_C.txtSub,
                           background: cat.total === 0 ? '#f5f3ef' : '#f0f0f0',
                           padding: '2px 10px', borderRadius: '20px',
                         }}>
@@ -197,7 +157,6 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
             )}
           </div>
         </div>
-      </div>
 
       {/* Modal */}
       {modal.open && (
@@ -215,17 +174,17 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
               width: '100%', maxWidth: '440px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: '700', color: C.txt }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '17px', fontWeight: '700', color: COM_C.txt }}>
               {modal.mode === 'nova' ? 'Nova categoria' : 'Renomear categoria'}
             </h2>
 
             {modal.mode === 'nova' && (
-              <p style={{ margin: '0 0 16px', fontSize: '13px', color: C.txtSub, lineHeight: '1.5' }}>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: COM_C.txtSub, lineHeight: '1.5' }}>
                 Você pode usar esta categoria ao cadastrar ou editar produtos.
               </p>
             )}
 
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: C.txtSub, marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: COM_C.txtSub, marginBottom: '6px' }}>
               Nome da categoria
             </label>
             <input
@@ -245,13 +204,13 @@ export default function CategoriasClient({ categorias: inicial }: Props) {
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
               <Btn variante="cinza" onClick={fechar}>Cancelar</Btn>
-              <Btn onClick={handleSalvar} disabled={salvando} style={{ background: C.laranja, color: '#fff', border: `1.5px solid ${C.laranja}` }}>
+              <Btn onClick={handleSalvar} disabled={salvando} style={{ background: COM_C.laranja, color: '#fff', border: `1.5px solid ${COM_C.laranja}` }}>
                 {salvando ? 'Salvando…' : modal.mode === 'nova' ? 'Criar' : 'Salvar'}
               </Btn>
             </div>
           </div>
         </div>
       )}
-    </>
+    </PageLayout>
   )
 }

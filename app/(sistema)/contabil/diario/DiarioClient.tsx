@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getExercicioAtivo, getLivroDiario } from '@/lib/contabil/actions'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-const COR = '#0F766E'
+import { PageLayout, COM_C, MODULO_CONTABIL } from '@/components/nexcoop/ui'
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -28,25 +27,24 @@ export default function DiarioClient({ orgId }: { orgId: string }) {
   }, [orgId])
 
   return (
-    <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Livro Diário</h1>
-            <BotaoAjuda chave="manual_contabil_url" />
-          </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Registro cronológico de todos os lançamentos contábeis do exercício
-          </p>
+    <PageLayout
+      titulo="Livro Diário"
+      subtitulo="Registro cronológico de todos os lançamentos contábeis do exercício"
+      icone="ti-notebook"
+      modulo={MODULO_CONTABIL}
+      breadcrumb={[{ label: 'Livro Diário' }]}
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => window.print()}
+            style={{ padding: '9px 18px', background: '#fff', color: COM_C.verde, border: `1px solid ${COM_C.verde}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            🖨 Imprimir
+          </button>
+          <BotaoAjuda chave="manual_contabil_url" />
         </div>
-        <button
-          onClick={() => window.print()}
-          style={{ padding: '9px 18px', background: '#fff', color: COR, border: `1px solid ${COR}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-        >
-          🖨 Imprimir
-        </button>
-      </div>
-
+      }
+    >
       {exercicio && (
         <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#166534', fontWeight: 600 }}>
           Exercício {exercicio.ano} — {exercicio.status === 'ENCERRADO' ? 'Encerrado' : 'Em aberto'}
@@ -94,12 +92,12 @@ export default function DiarioClient({ orgId }: { orgId: string }) {
                 <td colSpan={5} style={{ padding: '10px 14px', fontSize: 13 }}>
                   Total de lançamentos: {itens.length}
                 </td>
-                <td style={{ padding: '10px 14px', fontSize: 14, textAlign: 'right', color: COR }}>{fmt(total)}</td>
+                <td style={{ padding: '10px 14px', fontSize: 14, textAlign: 'right', color: COM_C.verde }}>{fmt(total)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

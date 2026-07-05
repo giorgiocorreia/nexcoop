@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
-const COR = '#635BFF'
+import { PageLayout, MODULO_NEXCOOP, COM_C } from '@/components/nexcoop/ui'
 
 const MANUAIS = [
   {
@@ -94,22 +93,23 @@ export default function ManuaisClient() {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Manuais do Sistema</h1>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Gere e publique os manuais de cada módulo. Os usuários têm acesso via botão de ajuda em cada tela.
-          </p>
-        </div>
+    <PageLayout
+      titulo="Manuais do Sistema"
+      subtitulo="Gere e publique os manuais de cada módulo. Os usuários têm acesso via botão de ajuda em cada tela"
+      icone="ti-book"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[{ label: 'Admin' }, { label: 'Manuais' }]}
+      acoes={
         <button
           onClick={handleGerarTodos}
           disabled={gerando !== ''}
-          style={{ padding: '10px 20px', background: COR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ padding: '10px 20px', background: COM_C.roxo, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           {gerando === 'todos' ? 'Gerando todos...' : '🔄 Atualizar Todos'}
         </button>
-      </div>
+      }
+    >
+      <div style={{ maxWidth: 800 }}>
 
       {sucesso && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>
@@ -164,6 +164,7 @@ export default function ManuaisClient() {
         Os manuais são armazenados no Supabase Storage e disponibilizados via botão de ajuda (?) em cada módulo.
         Ao clicar em "Gerar Manual", o PDF anterior é substituído automaticamente.
       </div>
-    </div>
+      </div>
+    </PageLayout>
   )
 }
