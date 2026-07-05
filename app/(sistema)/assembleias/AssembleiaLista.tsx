@@ -4,14 +4,17 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Assembleia, TipoAssembleia, StatusAssembleia } from '@/types/database'
 import BotaoAjuda from '@/components/BotaoAjuda'
-
-// ─── Configurações ───────────────────────────────────────────────────────────
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, KpiCard, ContentCard, Badge, EmptyState,
+  Input, Select, COM_C,
+} from '@/components/nexcoop/ui'
 
 const TIPO_CONFIG: Record<TipoAssembleia, { sigla: string; label: string; cor: string; bg: string }> = {
-  AGO:        { sigla: 'AGO', label: 'Assembleia Geral Ordinária',              cor: '#185FA5', bg: '#E6F1FB' },
-  AGE:        { sigla: 'AGE', label: 'Assembleia Geral Extraordinária',         cor: '#6366f1', bg: '#ede9fe' },
-  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração',    cor: '#4840CC', bg: '#EEF0FF' },
-  reuniao_CF: { sigla: 'CF',  label: 'Reunião do Conselho Fiscal',              cor: '#854F0B', bg: '#FAEEDA' },
+  AGO:        { sigla: 'AGO', label: 'Assembleia Geral Ordinária',           cor: '#185FA5', bg: '#E6F1FB' },
+  AGE:        { sigla: 'AGE', label: 'Assembleia Geral Extraordinária',      cor: '#6366f1', bg: '#ede9fe' },
+  reuniao_CA: { sigla: 'CA',  label: 'Reunião do Conselho de Administração', cor: '#4840CC', bg: '#EEF0FF' },
+  reuniao_CF: { sigla: 'CF',  label: 'Reunião do Conselho Fiscal',           cor: '#854F0B', bg: '#FAEEDA' },
 }
 
 const STATUS_CONFIG: Record<StatusAssembleia, { label: string; cor: string; bg: string }> = {
@@ -22,14 +25,12 @@ const STATUS_CONFIG: Record<StatusAssembleia, { label: string; cor: string; bg: 
 
 const MODALIDADE_LABEL: Record<string, string> = {
   presencial: 'Presencial',
-  remota:     'Remota',
-  hibrida:    'Híbrida',
+  remota: 'Remota',
+  hibrida: 'Híbrida',
 }
 
-const TODOS_TIPOS:  TipoAssembleia[]   = ['AGO', 'AGE', 'reuniao_CA', 'reuniao_CF']
+const TODOS_TIPOS: TipoAssembleia[] = ['AGO', 'AGE', 'reuniao_CA', 'reuniao_CF']
 const TODOS_STATUS: StatusAssembleia[] = ['agendada', 'realizada', 'cancelada']
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatarData(d: string | null) {
   if (!d) return '—'
@@ -42,294 +43,148 @@ function diasAte(data: string) {
   return Math.round((alvo.getTime() - hoje.getTime()) / 86_400_000)
 }
 
-// ─── Componente ──────────────────────────────────────────────────────────────
-
 interface Props { assembleias: Assembleia[] }
 
 export default function AssembleiaLista({ assembleias }: Props) {
   const router = useRouter()
-  const [busca, setBusca]               = useState('')
-  const [filtroTipo, setFiltroTipo]     = useState<TipoAssembleia | 'todos'>('todos')
+  const [busca, setBusca] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState<TipoAssembleia | 'todos'>('todos')
   const [filtroStatus, setFiltroStatus] = useState<StatusAssembleia | 'todos'>('todos')
-  const [filtroAno, setFiltroAno]       = useState<string>('todos')
-  const [hovered, setHovered]           = useState<string | null>(null)
+  const [filtroAno, setFiltroAno] = useState<string>('todos')
+  const [hovered, setHovered] = useState<string | null>(null)
 
-  // Anos disponíveis
   const anosDisponiveis = useMemo(() => {
     const set = new Set<string>()
     for (const a of assembleias) set.add(a.data_realizacao.slice(0, 4))
     return Array.from(set).sort((a, b) => b.localeCompare(a))
   }, [assembleias])
 
-  // Cards de resumo
   const resumo = useMemo(() => ({
-    total:     assembleias.length,
+    total: assembleias.length,
     agendadas: assembleias.filter(a => a.status === 'agendada').length,
-    realizadas:assembleias.filter(a => a.status === 'realizada').length,
-    canceladas:assembleias.filter(a => a.status === 'cancelada').length,
+    realizadas: assembleias.filter(a => a.status === 'realizada').length,
+    canceladas: assembleias.filter(a => a.status === 'cancelada').length,
   }), [assembleias])
 
-  // Filtro
   const filtradas = useMemo(() => {
     const q = busca.toLowerCase().trim()
     return assembleias.filter(a => {
       if (q && !a.titulo.toLowerCase().includes(q) && !TIPO_CONFIG[a.tipo].label.toLowerCase().includes(q)) return false
-      if (filtroTipo   !== 'todos' && a.tipo   !== filtroTipo)   return false
+      if (filtroTipo !== 'todos' && a.tipo !== filtroTipo) return false
       if (filtroStatus !== 'todos' && a.status !== filtroStatus) return false
-      if (filtroAno    !== 'todos' && !a.data_realizacao.startsWith(filtroAno)) return false
+      if (filtroAno !== 'todos' && !a.data_realizacao.startsWith(filtroAno)) return false
       return true
     })
   }, [assembleias, busca, filtroTipo, filtroStatus, filtroAno])
 
+  const temFiltro = busca || filtroTipo !== 'todos' || filtroStatus !== 'todos' || filtroAno !== 'todos'
+
   return (
-    <>
-      <style>{`
-        .asm-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
-        @media (max-width: 640px) { .asm-kpi-grid { grid-template-columns: 1fr 1fr !important; } }
-      `}</style>
-
-      {/* ── Header sticky ──────────────────────────────────────────────────── */}
-      <header style={{
-        margin: '0 -2rem 0 -2rem',
-        background: '#fff',
-        borderBottom: '1px solid #e5e3dc',
-        padding: '0 2rem',
-        position: 'sticky', top: 0, zIndex: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        minHeight: '64px', gap: 12,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 9,
-            background: '#E6F1FB', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', flexShrink: 0,
-          }}>
-            <i className="ti ti-users-group" style={{ color: '#185FA5', fontSize: 18 }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>Assembleias</h1>
-              <BotaoAjuda chave="manual_assembleia_url" />
-            </div>
-            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-              {assembleias.length} registro{assembleias.length !== 1 ? 's' : ''} no total
-            </div>
-          </div>
+    <PageLayout
+      titulo="Assembleias"
+      subtitulo={`${assembleias.length} registro${assembleias.length !== 1 ? 's' : ''} no total`}
+      icone="ti-users-group"
+      modulo={{ label: 'NexCoop', href: '/dashboard' }}
+      semBreadcrumb
+      acoes={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <BotaoAjuda chave="manual_assembleia_url" />
+          <Btn variante="roxo" icone="ti-plus" onClick={() => router.push('/assembleias/nova')}>
+            Nova assembleia
+          </Btn>
         </div>
-        <button
-          onClick={() => router.push('/assembleias/nova')}
-          style={{
-            padding: '9px 18px', background: '#635BFF', color: '#fff',
-            border: 'none', borderRadius: '8px', fontSize: '13px',
-            fontWeight: '600', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', gap: '6px', flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: '16px' }}>+</span> Nova assembleia
-        </button>
-      </header>
-
-      {/* ── Conteúdo ───────────────────────────────────────────────────────── */}
-      <div className="asm-content" style={{
-        background: '#F8F7F4',
-        margin: '0 -2rem -2rem -2rem',
-        minHeight: 'calc(100vh - 88px)',
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '1.75rem 2rem' }}>
-
-          {/* ── Cards de resumo ──────────────────────────────────────────────── */}
-          <div className="asm-kpi-grid">
-            {[
-              { label: 'Total',      valor: resumo.total,      cor: '#444',    bg: '#f5f5f2', border: '#e5e3dc' },
-              { label: 'Agendadas',  valor: resumo.agendadas,  cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },
-              { label: 'Realizadas', valor: resumo.realizadas, cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
-              { label: 'Canceladas', valor: resumo.canceladas, cor: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
-            ].map(c => (
-              <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '12px', padding: '1rem 1.25rem' }}>
-                <div style={{ fontSize: '12px', fontWeight: '500', color: c.cor, marginBottom: '4px' }}>{c.label}</div>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: c.cor }}>{c.valor}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Filtros ────────────────────────────────────────────────────── */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-              <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#aaa' }}>🔍</span>
-              <input
-                type="text" placeholder="Buscar por título ou tipo…" value={busca}
-                onChange={e => setBusca(e.target.value)}
-                style={{
-                  width: '100%', padding: '9px 12px 9px 32px', border: '1px solid #d5d3cc',
-                  borderRadius: '8px', fontSize: '13px', background: '#fff', color: '#1a1a1a',
-                  outline: 'none', boxSizing: 'border-box',
-                }}
-                onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-              />
-            </div>
-
-            {[
-              {
-                val: filtroAno, set: setFiltroAno,
-                opts: [{ value: 'todos', label: 'Todos os anos' }, ...anosDisponiveis.map(a => ({ value: a, label: a }))],
-              },
-              {
-                val: filtroTipo, set: setFiltroTipo as (v: string) => void,
-                opts: [
-                  { value: 'todos', label: 'Todos os tipos' },
-                  ...TODOS_TIPOS.map(t => ({ value: t, label: TIPO_CONFIG[t].sigla + ' — ' + TIPO_CONFIG[t].label.split(' ').slice(0, 3).join(' ') + '…' })),
-                ],
-              },
-              {
-                val: filtroStatus, set: setFiltroStatus as (v: string) => void,
-                opts: [{ value: 'todos', label: 'Todos os status' }, ...TODOS_STATUS.map(s => ({ value: s, label: STATUS_CONFIG[s].label }))],
-              },
-            ].map((sel, i) => (
-              <select
-                key={i}
-                value={sel.val}
-                onChange={e => sel.set(e.target.value)}
-                style={{ padding: '9px 12px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '13px', background: '#fff', color: '#1a1a1a', outline: 'none', cursor: 'pointer' }}
-              >
-                {sel.opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            ))}
-
-            {(busca || filtroTipo !== 'todos' || filtroStatus !== 'todos' || filtroAno !== 'todos') && (
-              <button
-                onClick={() => { setBusca(''); setFiltroTipo('todos'); setFiltroStatus('todos'); setFiltroAno('todos') }}
-                style={{ padding: '9px 14px', border: '1px solid #d5d3cc', borderRadius: '8px', fontSize: '12px', background: '#fff', color: '#666', cursor: 'pointer' }}
-              >
-                ✕ Limpar
-              </button>
-            )}
-          </div>
-
-          {/* ── Tabela ─────────────────────────────────────────────────────── */}
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden' }}>
-              {filtradas.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: '14px' }}>
-                  Nenhuma assembleia encontrada com os filtros selecionados.
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #e5e3dc', background: '#fafaf8' }}>
-                      {['Tipo', 'Título', 'Data', 'Modalidade', 'Quórum', 'Status'].map(col => (
-                        <th key={col} style={{
-                          padding: '10px 16px', textAlign: 'left',
-                          fontSize: '11px', fontWeight: '600', color: '#888',
-                          textTransform: 'uppercase', letterSpacing: '0.5px',
-                        }}>{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtradas.map((a, i) => {
-                      const tipo    = TIPO_CONFIG[a.tipo]
-                      const st      = STATUS_CONFIG[a.status]
-                      const dias    = diasAte(a.data_realizacao)
-                      const proxima = a.status === 'agendada' && dias >= 0 && dias <= 7
-                      const hoje    = a.status === 'agendada' && dias === 0
-                      const isHov   = hovered === a.id
-
-                      return (
-                        <tr
-                          key={a.id}
-                          onClick={() => router.push(`/assembleias/${a.id}`)}
-                          onMouseEnter={() => setHovered(a.id)}
-                          onMouseLeave={() => setHovered(null)}
-                          style={{
-                            borderTop: i > 0 ? '1px solid #f0eeea' : 'none',
-                            cursor: 'pointer',
-                            background: proxima && !isHov ? '#fffdf5' : isHov ? '#fafaf8' : 'transparent',
-                          }}
-                        >
-                          {/* Tipo */}
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              display: 'inline-block', padding: '3px 9px',
-                              borderRadius: '6px', fontSize: '11px', fontWeight: '700',
-                              color: tipo.cor, background: tipo.bg, letterSpacing: '0.5px',
-                            }}>
-                              {tipo.sigla}
-                            </span>
-                          </td>
-
-                          {/* Título */}
-                          <td style={{ padding: '12px 16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>
-                                {a.titulo}
-                              </span>
-                              {hoje && (
-                                <span style={{ padding: '2px 7px', background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '4px', fontSize: '10px', fontWeight: '700', color: '#92400e' }}>
-                                  HOJE
-                                </span>
-                              )}
-                              {proxima && !hoje && (
-                                <span style={{ padding: '2px 7px', background: '#E6F1FB', border: '1px solid #93c5fd', borderRadius: '4px', fontSize: '10px', fontWeight: '600', color: '#185FA5' }}>
-                                  em {dias}d
-                                </span>
-                              )}
-                            </div>
-                            {a.local && (
-                              <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>📍 {a.local}</div>
-                            )}
-                          </td>
-
-                          {/* Data */}
-                          <td style={{ padding: '12px 16px', fontSize: '13px', color: '#555', whiteSpace: 'nowrap' }}>
-                            {formatarData(a.data_realizacao)}
-                          </td>
-
-                          {/* Modalidade */}
-                          <td style={{ padding: '12px 16px', fontSize: '12px', color: '#666' }}>
-                            {MODALIDADE_LABEL[a.modalidade] ?? a.modalidade}
-                          </td>
-
-                          {/* Quórum */}
-                          <td style={{ padding: '12px 16px' }}>
-                            {a.status === 'realizada' ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: a.quorum_atingido ? '#4840CC' : '#993C1D' }}>
-                                  {a.total_presentes}
-                                </span>
-                                {a.quorum_minimo ? (
-                                  <span style={{ fontSize: '11px', color: '#aaa' }}>/ {a.quorum_minimo}</span>
-                                ) : null}
-                                <span style={{ fontSize: '11px' }}>{a.quorum_atingido ? '✓' : '✗'}</span>
-                              </div>
-                            ) : (
-                              <span style={{ fontSize: '12px', color: '#aaa' }}>
-                                {a.quorum_minimo ? `Mín. ${a.quorum_minimo}` : '—'}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Status */}
-                          <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              display: 'inline-block', padding: '3px 10px',
-                              borderRadius: '20px', fontSize: '11px', fontWeight: '600',
-                              color: st.cor, background: st.bg,
-                            }}>
-                              {st.label}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
-        </div>
+      }
+    >
+      <div className="com-kpi-grid-4">
+        <KpiCard label="Total" value={String(resumo.total)} icon="ti-list" cor={COM_C.txtSub} corLt="#F5F5F4" />
+        <KpiCard label="Agendadas" value={String(resumo.agendadas)} icon="ti-calendar-event" cor={COM_C.azul} corLt={COM_C.azulLt} />
+        <KpiCard label="Realizadas" value={String(resumo.realizadas)} icon="ti-check" cor={COM_C.roxo} corLt={COM_C.roxoLt} />
+        <KpiCard label="Canceladas" value={String(resumo.canceladas)} icon="ti-x" cor={COM_C.txtSub} corLt="#F5F5F4" />
       </div>
-    </>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <Input type="text" placeholder="Buscar por título ou tipo…" value={busca} onChange={e => setBusca(e.target.value)} />
+        </div>
+        <Select value={filtroAno} onChange={e => setFiltroAno(e.target.value)} style={{ width: 'auto', minWidth: 120 }}>
+          <option value="todos">Todos os anos</option>
+          {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+        </Select>
+        <Select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value as TipoAssembleia | 'todos')} style={{ width: 'auto', minWidth: 130 }}>
+          <option value="todos">Todos os tipos</option>
+          {TODOS_TIPOS.map(t => <option key={t} value={t}>{TIPO_CONFIG[t].sigla}</option>)}
+        </Select>
+        <Select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as StatusAssembleia | 'todos')} style={{ width: 'auto', minWidth: 130 }}>
+          <option value="todos">Todos os status</option>
+          {TODOS_STATUS.map(s => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
+        </Select>
+        {temFiltro && (
+          <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroTipo('todos'); setFiltroStatus('todos'); setFiltroAno('todos') }}>
+            Limpar
+          </Btn>
+        )}
+      </div>
+
+      {filtradas.length === 0 ? (
+        <EmptyState emoji="🏛️" titulo="Nenhuma assembleia encontrada" descricao="Ajuste os filtros ou crie uma nova assembleia." />
+      ) : (
+        <ContentCard noPadding>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+              <thead>
+                <tr>
+                  {['Tipo', 'Título', 'Data', 'Modalidade', 'Quórum', 'Status'].map(col => (
+                    <th key={col}>{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtradas.map((a) => {
+                  const tipo = TIPO_CONFIG[a.tipo]
+                  const st = STATUS_CONFIG[a.status]
+                  const dias = diasAte(a.data_realizacao)
+                  const proxima = a.status === 'agendada' && dias >= 0 && dias <= 7
+                  const hoje = a.status === 'agendada' && dias === 0
+                  return (
+                    <tr
+                      key={a.id}
+                      onClick={() => router.push(`/assembleias/${a.id}`)}
+                      onMouseEnter={() => setHovered(a.id)}
+                      onMouseLeave={() => setHovered(null)}
+                      style={{
+                        cursor: 'pointer',
+                        background: proxima && hovered !== a.id ? '#FFFBEB' : hovered === a.id ? '#FAFAF9' : undefined,
+                      }}
+                    >
+                      <td><Badge label={tipo.sigla} bg={tipo.bg} cor={tipo.cor} /></td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 600 }}>{a.titulo}</span>
+                          {hoje && <Badge label="HOJE" bg="#FEF3C7" cor="#92400e" />}
+                          {proxima && !hoje && <Badge label={`em ${dias}d`} bg={COM_C.azulLt} cor={COM_C.azul} />}
+                        </div>
+                        {a.local && <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>{a.local}</div>}
+                      </td>
+                      <td style={{ color: COM_C.txtSub, whiteSpace: 'nowrap' }}>{formatarData(a.data_realizacao)}</td>
+                      <td style={{ fontSize: 12, color: COM_C.txtSub }}>{MODALIDADE_LABEL[a.modalidade] ?? a.modalidade}</td>
+                      <td>
+                        {a.status === 'realizada' ? (
+                          <span style={{ fontWeight: 700, color: a.quorum_atingido ? COM_C.roxo : COM_C.vermelho }}>
+                            {a.total_presentes}{a.quorum_minimo ? ` / ${a.quorum_minimo}` : ''} {a.quorum_atingido ? '✓' : '✗'}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: COM_C.txtSub }}>{a.quorum_minimo ? `Mín. ${a.quorum_minimo}` : '—'}</span>
+                        )}
+                      </td>
+                      <td><Badge label={st.label} bg={st.bg} cor={st.cor} /></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </ContentCard>
+      )}
+    </PageLayout>
   )
 }
