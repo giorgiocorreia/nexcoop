@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { getUsuarioLogado } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 // ── Verificar e marcar parcelas vencidas ──────────────────────────────────────
@@ -202,6 +203,14 @@ export async function quitarParcela(
 ) {
   const supabase = createAdminClient()
 
+  const { data: parcela, error: errParcela } = await supabase
+    .from('cota_pagamentos')
+    .select('valor_pago, numero_parcela, organizacao_id, registrado_por')
+    .eq('id', pagamentoId)
+    .single()
+
+  if (errParcela || !parcela) throw new Error('Parcela não encontrada.')
+
   const { error } = await supabase
     .from('cota_pagamentos')
     .update({
@@ -212,6 +221,29 @@ export async function quitarParcela(
     .eq('id', pagamentoId)
 
   if (error) throw new Error(error.message)
+
+  if (Number(parcela.valor_pago) > 0) {
+    try {
+      const usuario = await getUsuarioLogado()
+      const { criarLancamento } = await import('@/lib/financeiro/actions')
+      await criarLancamento({
+        organizacao_id: parcela.organizacao_id,
+        tipo: 'receita' as any,
+        status: 'pago' as any,
+        descricao: `Integralização de cota — Parcela ${parcela.numero_parcela ?? ''}`,
+        valor: Number(parcela.valor_pago),
+        data_competencia: dataPagamento,
+        data_pagamento: dataPagamento,
+        cooperado_id: cooperadoId,
+        numero_documento: pagamentoId.slice(0, 8),
+        observacoes: `Cota cooperativa — parcela quitada (${formaPagamento})`,
+        usuario_id: usuario.id,
+        usuario_email: usuario.email ?? undefined,
+      })
+    } catch (e) {
+      console.error('[financeiro] Erro ao criar lançamento quitação cota:', e)
+    }
+  }
 
   const { data: cota } = await supabase
     .from('cotas_cooperado')
@@ -245,6 +277,7 @@ export async function quitarParcela(
   }
 
   revalidatePath(`/cooperados/${cooperadoId}`)
+  revalidatePath('/financeiro')
 
   return { quitou, totalPago, valorTotalCota }
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { registrarPagamentoMensalidade } from '@/lib/mensalidades/actions'
 import type { Mensalidade, StatusMensalidade } from '@/types/database'
 import type { CooperadoDetalhe, HistoricoItem } from './page'
 import { Btn } from '@/components/ui/Btn'
@@ -104,19 +105,14 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
   // ── Registrar pagamento ───────────────────────────────────────────────────
   async function handlePagar() {
     setSalvando(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    const { data, error } = await supabase
-      .from('mensalidades')
-      .update({ status: 'pago', data_pagamento: dataPagamento, observacoes: obsPagamento.trim() || null, atualizado_em: new Date().toISOString(), usuario_id: user?.id ?? null })
-      .eq('id', mens.id)
-      .select()
-      .single<Mensalidade>()
-
+    const result = await registrarPagamentoMensalidade(
+      mens.id,
+      dataPagamento,
+      obsPagamento.trim() || null,
+    )
     setSalvando(false)
-    if (error) { feedback('erro', `Erro: ${error.message}`); return }
-    setMens(data)
+    if ('error' in result) { feedback('erro', result.error); return }
+    setMens(result.mensalidade)
     setModo('view')
     feedback('ok', 'Pagamento registrado com sucesso.')
   }

@@ -1,6 +1,7 @@
 "use server"
 
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUsuarioLogado } from "@/lib/auth"
 
 export type { DadosDevolucao } from "./devolucao-xml"
 
@@ -19,6 +20,7 @@ export async function processarPagamentoVendaAction(
   input: ProcessarPagamentoInput
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient()
+  const usuario = await getUsuarioLogado()
 
   try {
     const { data: venda, error: errVenda } = await supabase
@@ -72,14 +74,21 @@ export async function processarPagamentoVendaAction(
 
       if (errUpd) throw new Error("Erro ao atualizar venda: " + errUpd.message)
 
-      const { criarLancamento: criarLanc1 } = await import("@/lib/financeiro/actions")
-      await criarLanc1({
+      const { criarLancamento: criarLancEstorno } = await import("@/lib/financeiro/actions")
+      const valorEstorno = Math.round(quantidadeKg * valorUnitario * 100) / 100
+      await criarLancEstorno({
         organizacao_id:   input.orgId,
+        tipo:             "despesa",
+        status:           "pago",
         data_competencia: new Date().toISOString().substring(0, 10),
-        descricao:        `Estorno devolução parcial — Venda ${input.vendaId.substring(0, 8)}`,
-        tipo:             "debito",
-        valor:            quantidadeKg * valorUnitario,
-      } as any)
+        data_pagamento:   new Date().toISOString().substring(0, 10),
+        descricao:        `Ajuste devolução parcial — Venda ${input.vendaId.substring(0, 8)}`,
+        valor:            valorEstorno,
+        numero_documento: input.vendaId.substring(0, 8),
+        observacoes:      chaveNfeDevolucao ? `NF-e devolução: ${chaveNfeDevolucao}` : undefined,
+        usuario_id:       usuario.id,
+        usuario_email:    usuario.email ?? undefined,
+      })
 
     } else {
       const { error: errUpd } = await supabase
@@ -95,11 +104,16 @@ export async function processarPagamentoVendaAction(
     const { criarLancamento } = await import("@/lib/financeiro/actions")
     await criarLancamento({
       organizacao_id:   input.orgId,
+      tipo:             "receita",
+      status:           "pago",
       data_competencia: new Date().toISOString().substring(0, 10),
+      data_pagamento:   new Date().toISOString().substring(0, 10),
       descricao:        `Recebimento venda — ${input.vendaId.substring(0, 8)}`,
-      tipo:             "credito",
       valor:            valorFinal,
-    } as any)
+      numero_documento: input.vendaId.substring(0, 8),
+      usuario_id:       usuario.id,
+      usuario_email:    usuario.email ?? undefined,
+    })
 
     return { success: true }
   } catch (err) {
