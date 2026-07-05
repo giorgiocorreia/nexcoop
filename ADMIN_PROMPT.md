@@ -45,12 +45,13 @@ Ao salvar, criar também o primeiro usuário:
 - vincular à organização
 
 ## Padrões obrigatórios do projeto
+- UI kit: `import { PageLayout, COM_C, MODULO_NEXCOOP } from '@/components/nexcoop/ui'`
 - Inline styles em TODOS os componentes (não usar classes Tailwind)
-- Cores: #1D9E75 (verde primário), #1a1a1a (texto), #f8f7f4 (fundo), #e5e3dc (borda)
+- Cores: `COM_C` — roxo `#635BFF`, verde `#16A34A`, txt `#1C1917`, bg `#FBF8F4`, borda `#E5E3DC`
 - Server components onde possível, 'use client' apenas onde necessário
 - Supabase: @/lib/supabase/server (server) e @/lib/supabase/client (client)
 - Tipos em @/types/database
-- Mesmo visual dos módulos existentes (cooperados, financeiro, mensalidades)
+- Referência visual: `app/(sistema)/dashboard/DashboardClient.tsx`, `FinanceiroLista.tsx`
 
 ## CRÍTICO — Evitar erros conhecidos
 - NÃO usar auth_org_id() — função não existe no banco

@@ -63,6 +63,15 @@
 
 ---
 
+## UI — Redesign (✅ Concluído — 04/07/2026)
+
+- Hub extraído para `app/(sistema)/loja/LojaHubClient.tsx` com kit `components/nexcoop/ui`
+- Todas as subpáginas usam `PageLayout` + `MODULO_LOJA` + `COM_C`
+- PDV mantém layout full-screen (exceção)
+- Integração financeiro: `registrarCompra` → despesa; `cancelarVenda` → cancela lançamento
+
+---
+
 ## Fase 5 — Dashboard e Relatórios (✅ Concluída — 18/06/2026)
 
 ### O que foi entregue

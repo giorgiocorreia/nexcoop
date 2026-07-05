@@ -19,135 +19,86 @@ O NexCoop serve cooperativas rurais brasileiras. O visual deve remeter a isso:
 
 ---
 
-## Tokens de cor — sistema completo
+## UI kit — import obrigatório (jul/2026)
 
 ```typescript
-const C = {
-  // Neutros base
-  bg:       '#F8F7F4',  // fundo geral (levemente quente, não branco puro)
-  borda:    '#E5E3DC',  // bordas e divisores
-  txt:      '#1C1917',  // texto principal
-  txtSub:   '#78716C',  // texto secundário
-  cinza:    '#78716C',
-  cinzaLt:  '#F5F5F4',
-
-  // Cores semânticas
-  verde:    '#16A34A',
-  verdeLt:  '#F0FDF4',
-  vermelho: '#DC2626',
-  vermelhoLt: '#FEF2F2',
-  azul:     '#2563EB',
-  azulLt:   '#EFF6FF',
-  roxo:     '#7C3AED',
-  roxoLt:   '#F5F3FF',
-  laranja:  '#E07B30',
-  laranjaLt:'#FFF7ED',
-}
-
-// Cor primária por módulo (substituir C.laranja)
-const MODULO_COR = {
-  sidebar:        '#635BFF',  // light: '#EEF0FF'
-  dashboard:      '#635BFF',
-  cooperados:     '#635BFF',
-  financeiro:     '#635BFF',
-  mensalidades:   '#635BFF',
-  assembleias:    '#185FA5',  // light: '#E6F1FB'
-  documentos:     '#185FA5',
-  captacao:       '#1D9E75',  // light: '#E6F7F1'
-  contabil:       '#0F766E',  // light: '#F0FDFA'
-  loja:           '#E07B30',  // light: '#FFF7ED'
-  comercializacao:'#92400e',  // light: '#FDF4E7'
-}
+import {
+  PageLayout, HubStyles, KpiCard, LinkCard, ContentCard, Badge,
+  EmptyState, Input, Select, COM_C,
+  MODULO_NEXCOOP, MODULO_LOJA, MODULO_CONTABIL,
+  MODULO_CAPTACAO, MODULO_CONFIG, MODULO_ESCRITORIO,
+} from '@/components/nexcoop/ui'
 ```
+
+Fonte: `components/nexcoop/ui/index.ts` → reexporta `components/comercializacao/ui/`.
+
+**Referências:** `DashboardClient.tsx`, `FinanceiroLista.tsx`, `LojaHubClient.tsx`
 
 ---
 
-## Estrutura de página — padrão obrigatório
+## Tokens `COM_C`
 
-Toda página nova segue este template (baseado em `/loja` como referência):
-
-### 1. Header sticky
-```tsx
-// CSS class obrigatória:
-// .page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-// @media (max-width: 640px) { .page-header { padding: 0 16px 0 56px; min-height: 60px; } }
-
-// Estrutura interna:
-<div style={{
-  position: 'sticky', top: 0, zIndex: 10,
-  background: '#fff',
-  borderBottom: `1px solid ${C.borda}`,
-  // NÃO usar margin aqui — usar margin no wrapper externo
-}}>
-  {/* Ícone do módulo + Título (fontSize 19, fontWeight 800) + Subtítulo/breadcrumb */}
-  {/* Badges de status (opcional) */}
-  {/* CTA principal à direita */}
-</div>
+```typescript
+COM_C = {
+  marrom: '#92400e', marromLt: '#FEF3C7',   // Comercialização
+  verde:  '#16A34A', verdeLt:  '#F0FDF4',   // Captação, Contábil, ações primárias
+  azul:   '#2563EB', azulLt:   '#EFF6FF',   // Assembleias, Documentos
+  roxo:   '#635BFF', roxoLt:   '#EEF0FF',   // Dashboard, Cooperados, Financeiro
+  laranja:'#E07B30', laranjaLt:'#FFF7ED',   // Loja
+  vermelho, vermelhoLt,
+  borda: '#E5E3DC', bg: '#FBF8F4', txt: '#1C1917', txtSub: '#78716C',
+}
 ```
 
-**min-height: 88px** = 16px (padding sidebar) + 56px (logo sidebar) + 16px (padding sidebar)
-**Mobile ≤640px**: min-height 60px, padding-left 56px (não colidir com hamburger)
-
-### 2. Área de conteúdo
-```tsx
-<div style={{
-  background: C.bg,
-  padding: '28px 32px',
-  margin: '0 -2rem -2rem -2rem',  // cancela padding do <main>
-}}>
-  {/* conteúdo da página */}
-</div>
-```
-
-**Caso especial — layout full-screen (PDV)**: quando o root tem `overflow: hidden`, colocar `margin: 0 -2rem -2rem -2rem` no root div, não no header.
+**Nunca** criar `const C = { ... }` local nem `const COR = '#0F766E'`. Usar `COM_C`.
 
 ---
 
-## Componentes — especificações exatas
+## Estrutura de página — `PageLayout`
 
-### KPI Card
+### Subpáginas e listas (padrão)
 ```tsx
-// Quando usar: páginas com dados agregáveis úteis
-// Quando NÃO usar: cadastros simples (fornecedores, categorias, unidades)
-
-<div style={{
-  background: '#fff',
-  borderRadius: 14,
-  border: `1px solid ${C.borda}`,
-  borderTop: `3px solid ${COR_MODULO}`,  // ← cor do módulo
-  padding: '16px 20px',
-  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-}}>
-  {/* Ícone em quadrado com cor light do módulo */}
-  {/* Valor: fontSize 26, fontWeight 800 */}
-  {/* Label: fontSize 12 */}
-  {/* Sub: fontSize 10 */}
-</div>
-
-// Hover obrigatório:
-// .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07) }
+<PageLayout
+  titulo="Produtos"
+  subtitulo="42 produtos cadastrados"
+  icone="ti-package"
+  modulo={MODULO_LOJA}
+  breadcrumb={[{ label: 'Produtos' }]}
+  acoes={<Btn variante="laranja">Novo produto</Btn>}
+>
+  <KpiCard ... />
+  <ContentCard>...</ContentCard>
+</PageLayout>
 ```
 
-Grid: 6 colunas desktop → 3 colunas tablet (≤1024px) → 2 colunas mobile (≤640px)
-
-### Card de conteúdo
+### Hubs (dashboard, loja)
 ```tsx
-<div style={{
-  background: '#fff',
-  borderRadius: 14,
-  border: `1px solid ${C.borda}`,
-  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-  padding: '20px 22px',
-}}>
+<>
+  <HubStyles />
+  {/* header sticky manual OU PageLayout com semBreadcrumb */}
+  <div className="com-hub-content">...</div>
+</>
 ```
 
-### Card de navegação (link-card)
+**min-height: 88px** no header = alinhado ao sidebar (16+56+16)
+**Mobile ≤640px**: min-height 60px, padding-left 56px (hamburger)
+
+**Exceção — PDV full-screen:** `/loja/pdv` mantém layout próprio com `overflow: hidden`.
+
+---
+
+## Componentes do kit — usar sempre que possível
+
+### `KpiCard`
 ```tsx
-// Ícone 38×38 com cor light do módulo
-// Label: fontSize 13, fontWeight 700
-// Desc: fontSize 11
-// .link-card:hover { border-color: COR_MODULO; box-shadow: 0 4px 12px rgba(cor,0.12) }
+<KpiCard label="Faturamento" value="R$ 12.450" sub="Mês corrente"
+  icon="ti-currency-real" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
 ```
+Grid via classes `com-kpi-grid-4` / `com-kpi-grid-6` do `HubStyles`.
+
+### `ContentCard` — tabelas e blocos
+### `LinkCard` — navegação entre seções (hubs)
+### `Badge`, `EmptyState`, `Field`/`Input`/`Select`, `Modal`, `Tabs`
 
 ### Section label
 ```tsx
@@ -249,11 +200,13 @@ Grid: 6 colunas desktop → 3 colunas tablet (≤1024px) → 2 colunas mobile (�
 
 ## Anti-padrões — NUNCA faço
 
+- Headers locais com `padding: 32` ou `const COR = '#0F766E'` — usar `PageLayout`
+- `const C = { laranja: ... }` duplicado — usar `COM_C`
 - Gradientes decorativos em cards ou headers
 - Sombras excessivas (box-shadow só em hover e modais)
 - Mais de 6 KPI cards por página
 - Cards com bordas coloridas em todos os lados (só `borderTop` nos KPIs)
-- Títulos `<h1>` soltos sem header sticky
+- Títulos `<h1>` soltos sem `PageLayout` ou header sticky
 - Botões com `border-radius` acima de 10px (exceto pills de badge)
 - `font-family` diferente de `system-ui`
 - Ícones decorativos sem significado real
@@ -276,12 +229,11 @@ Listar todas as páginas client (`*Client.tsx`) e pages (`page.tsx`) encontradas
 ### Passo 2 — Classificar cada página
 
 Para cada arquivo, verificar:
-- Tem header sticky com min-height 88px?
-- Usa a cor correta do módulo (não hardcoded genérico)?
-- Área de conteúdo com `background: #F8F7F4` e `margin: 0 -2rem -2rem -2rem`?
-- KPI cards só onde fazem sentido?
-- CSS de responsividade presente (breakpoints 1024px e 640px)?
-- Títulos `<h1>` soltos sem header sticky?
+- Usa `PageLayout` ou `HubStyles` do kit `@/components/nexcoop/ui`?
+- Importa `COM_C` em vez de tokens locais?
+- Passa `modulo={MODULO_*}` correto no `PageLayout`?
+- KPI cards (`KpiCard`) só onde fazem sentido?
+- Títulos `<h1>` soltos ou `padding: 32` sem `PageLayout`?
 - Libs UI externas indevidas?
 
 ### Passo 3 — Relatório por severidade

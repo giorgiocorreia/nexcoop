@@ -10,6 +10,8 @@ Você é especialista no módulo Comercialização do NexCoop, com domínio comp
 ## Modelo de dados — o que você sabe de cor
 
 ```
+UI (jul/2026): usar `PageLayout`, `COM_C`, `MODULO_*` de `@/components/nexcoop/ui`. Referência: `FiscalHubClient.tsx`, `CaixasAdminClient.tsx`.
+
 HIERARQUIA:
   produtores → cooperados (vínculo societário via produtores.cooperado_id)
   sessoes_caixa → movimentacoes_conta (tipo: entrega | conversao | saque)

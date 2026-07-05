@@ -5,21 +5,30 @@
 | Módulo | Status | Última atualização |
 |---|---|---|
 | Autenticação / Onboarding | ✅ Completo | — |
-| Cooperados / Filiados | ✅ Completo | 20/06/2026 |
-| Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | — |
+| Cooperados / Filiados | ✅ Completo | 04/07/2026 — UI + cônjuge |
+| Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | 04/07/2026 — UI redesign |
 | Stripe (modo teste) | ✅ Completo | — |
-| Super Admin | ✅ Completo | — |
-| Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | — |
-| Contábil (migrations 015–024, 13 telas) | ✅ Completo | — |
-| Comercialização / Caixa Cacau | ✅ Completo | — |
-| NF-e entrada via Focus NFe | ✅ Homologação | 14/06/2026 |
-| Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | — |
-| Audit logs | ✅ Completo | — |
-| Gestão de usuários | ✅ Completo | 20/06/2026 |
-| Loja Agropecuária Fases 0–5 | ✅ Completo | 18/06/2026 |
+| Super Admin | ✅ Completo | 04/07/2026 — UI redesign |
+| Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | 04/07/2026 — UI redesign |
+| Contábil (migrations 015–024, 061; 13 telas) | ✅ Completo | 04/07/2026 — UI + classificação automática |
+| Comercialização / Caixa Cacau | ✅ Completo | 04/07/2026 — UI redesign |
+| NF-e entrada via Focus NFe | ✅ Homologação | 04/07/2026 — cônjuge como destinatário |
+| Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
+| Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
+| Gestão de usuários | ✅ Completo | 04/07/2026 — UI redesign |
+| Loja Agropecuária Fases 0–5 | ✅ Completo | 04/07/2026 — UI redesign + integração financeiro |
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
+| Escritório (portal contador) | ✅ Completo | 04/07/2026 — UI redesign |
+| Landing page | ✅ Completo | 04/07/2026 |
 | Portal do Filiado | ❌ Planejado | — |
 | Fluxo de Saque / Vendas Comercialização | ❌ Planejado | — |
+
+## UI — Design System (jul/2026)
+
+Todos os módulos usam o kit em `components/nexcoop/ui/`:
+- `PageLayout`, `HubStyles`, `KpiCard`, `LinkCard`, `ContentCard`, `COM_C`
+- Constantes: `MODULO_NEXCOOP`, `MODULO_LOJA`, `MODULO_CONTABIL`, `MODULO_CAPTACAO`, `MODULO_CONFIG`, `MODULO_ESCRITORIO`
+- Exceção: PDV (`/loja/pdv`) mantém layout full-screen próprio
 
 ## Loja Agropecuária — Fase 6 (em andamento)
 
@@ -50,6 +59,8 @@
 - Multi-caixa: abrirCaixaLoja valida por usuario_id, não por org inteira (23/06/2026)
 - fecharCaixaLoja: suporte a `forcarComoAdmin` sem filtro usuario_id (23/06/2026)
 - criarLancamento em finalizarVenda (integração contábil automática)
+- registrarCompra → lançamento despesa; cancelarVenda → cancela lançamento (04/07/2026)
+- Hub loja em `LojaHubClient.tsx` com kit UI compartilhado (04/07/2026)
 - Menu Loja simplificado: Rel. Vendas/Estoque/Caixa e Conferência removidos do sidebar (acessíveis via Hub)
 - Join PostgREST conferencia corrigido — query separada para usuarios (24/06/2026)
 
@@ -67,6 +78,16 @@
 - Regime tributário confirmado
 - CSTs ICMS/PIS/COFINS
 - Emissão real NF-e/NFC-e via Focus NFe
+
+## Contábil ✅
+Última atualização: 04/07/2026
+
+### Concluído
+- 13 telas com UI kit (`PageLayout` + `MODULO_CONTABIL` + `COM_C`)
+- Classificação automática na escrituração (migration 061, toggle em Sobras → Configurações)
+- Integração Financeiro → Contábil via `criarLancamento`:
+  - Mensalidades, cotas (`quitarParcela`), comercialização, loja (compras + cancelamento venda)
+- De/Para continua exclusivo para exportação SPED (não classifica lançamentos)
 
 ## Comercialização 🔄
 Última atualização: 26/06/2026

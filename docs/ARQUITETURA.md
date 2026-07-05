@@ -34,62 +34,73 @@
 - Padrão: `lib/modulo/feature.ts` (server actions) + `lib/modulo/feature-utils.ts` (utilitários puros importáveis no client)
 - Exemplo: `devolucao.ts` (actions) + `devolucao-xml.ts` (parse XML puro)
 
-## Padrão visual — Design System (a partir de 24/06/2026)
+## Padrão visual — Design System (atualizado jul/2026)
 
-Todas as páginas novas devem seguir o padrão da página `/loja` (LojaHubPage).
+Todas as páginas usam o **UI kit compartilhado** em `components/nexcoop/ui/` (reexporta de `components/comercializacao/ui/`).
 
-### Tokens de cor
+### Import padrão
 ```ts
-const C = {
-  laranja:    '#E07B30',  // Loja
-  laranjaLt:  '#FFF7ED',
-  verde:      '#16A34A',
-  verdeLt:    '#F0FDF4',
-  azul:       '#2563EB',
-  azulLt:     '#EFF6FF',
-  roxo:       '#7C3AED',
-  roxoLt:     '#F5F3FF',
-  vermelho:   '#DC2626',
-  vermelhoLt: '#FEF2F2',
-  cinza:      '#78716C',
-  cinzaLt:    '#F5F5F4',
-  borda:      '#E5E3DC',
-  bg:         '#F8F7F4',
-  txt:        '#1C1917',
-  txtSub:     '#78716C',
+import {
+  PageLayout, HubStyles, KpiCard, LinkCard, ContentCard, Badge,
+  EmptyState, Input, Select, COM_C,
+  MODULO_NEXCOOP, MODULO_LOJA, MODULO_CONTABIL,
+  MODULO_CAPTACAO, MODULO_CONFIG, MODULO_ESCRITORIO,
+} from '@/components/nexcoop/ui'
+```
+
+### Tokens `COM_C`
+```ts
+// components/comercializacao/ui/tokens.ts
+COM_C = {
+  marrom: '#92400e', marromLt: '#FEF3C7',   // Comercialização
+  verde:  '#16A34A', verdeLt:  '#F0FDF4',   // Ações primárias / Contábil
+  azul:   '#2563EB', azulLt:   '#EFF6FF',
+  roxo:   '#635BFF', roxoLt:   '#EEF0FF',   // Dashboard / Cooperados / Financeiro
+  laranja:'#E07B30', laranjaLt:'#FFF7ED',   // Loja
+  vermelho, vermelhoLt, borda: '#E5E3DC', bg: '#FBF8F4',
+  txt: '#1C1917', txtSub: '#78716C',
 }
 ```
-Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
-- Sidebar / Dashboard / Cooperados / Financeiro / Mensalidades: `#635BFF` (roxo) — light `#EEF0FF`
-- Assembleias / Documentos: `#185FA5` (azul) — light `#E6F1FB`
-- Captação: `#1D9E75`
-- Contábil: `#0F766E`
-- Loja: `#E07B30` — light `#FFF7ED`
-- Comercialização: `#92400e`
 
-### Estrutura de página padrão
-1. **Header sticky** — fundo branco, `border-bottom: 1px solid ${C.borda}`, `min-height: 88px; padding: 0 32px`, `position: sticky; top: 0; zIndex: 10`. Altura 88px = mesma do cabeçalho do sidebar (padding 16px + logo 56px + padding 16px). Contém: ícone + título (h1 fontSize 19 fontWeight 800) + subtítulo/breadcrumb + badges de status + CTA principal. Mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px`.
-2. **Conteúdo** — `background: C.bg`, `padding: 28px 32px`, `margin: 0 -2rem -2rem -2rem`.
-3. **KPI cards** — grid 6 colunas, `borderRadius: 14`, borda superior colorida (3px), ícone em quadrado com cor light, valor em fontSize 26 fontWeight 800, label fontSize 12, sub fontSize 10. Hover: `translateY(-2px)`.
-4. **Cards de conteúdo** — `background: #fff`, `borderRadius: 14`, `border: 1px solid ${C.borda}`, `boxShadow: 0 1px 4px rgba(0,0,0,0.04)`, `padding: 20px 22px`.
-5. **Cards de navegação (link-card)** — `borderRadius: 12`, ícone 38×38 com cor light, label fontSize 13 fontWeight 700, desc fontSize 11. Hover: `border-color` da cor do módulo.
-6. **Section labels** — `fontSize: 11`, `fontWeight: 700`, `textTransform: uppercase`, `letterSpacing: 0.08em`, `color: C.txtSub`.
-7. **Badges de status** — `fontSize: 11`, `fontWeight: 600`, `padding: 3px 9px`, `borderRadius: 6`, cor bg + txt do status.
+Cor de destaque por módulo (ícone do header + KPIs):
+- Dashboard / Cooperados / Financeiro / Mensalidades: `COM_C.roxo`
+- Assembleias / Documentos: `COM_C.azul`
+- Captação / Contábil: `COM_C.verde`
+- Loja: `COM_C.laranja`
+- Comercialização: `COM_C.marrom`
 
-### CSS classes reutilizáveis (via `<style>` inline na página)
-```css
-.kpi-card:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07) }
-.link-card:hover { border-color: <cor-modulo>; box-shadow: 0 4px 12px rgba(<cor>,0.12) }
-.btn-pdv:hover   { opacity: 0.92; transform: translateY(-1px) }
+### Estrutura de página — `PageLayout`
+
+**Hubs** (dashboard, loja, comercialização): `HubStyles` + header sticky manual ou `PageLayout` com `semBreadcrumb`.
+
+**Subpáginas e listas**:
+```tsx
+<PageLayout
+  titulo="Financeiro"
+  subtitulo="Lançamentos do período"
+  icone="ti-receipt-2"
+  modulo={MODULO_NEXCOOP}          // ou MODULO_LOJA, MODULO_CONTABIL, etc.
+  breadcrumb={[{ label: 'Financeiro' }]}
+  acoes={<Btn>Nova ação</Btn>}
+>
+  {/* conteúdo */}
+</PageLayout>
 ```
 
+`PageLayout` inclui: header sticky (88px), breadcrumb, ícone Tabler, área `com-hub-content`.
+
+### Componentes do kit
+- `KpiCard` — métricas agregadas (hubs e listas)
+- `LinkCard` — navegação entre seções
+- `ContentCard` — blocos de conteúdo/tabelas
+- `Badge`, `EmptyState`, `Field`/`Input`/`Select`, `Modal`, `Tabs`, `ListRow`
+
 ### Regras gerais
-- Sem libs UI externas — tudo inline styles
-- Ícones: Tabler Icons via CDN (`ti ti-*`)
-- Font: system-ui (não especificar)
-- Animações via `@keyframes` inline na própria página
-- Breadcrumb substituído pelo header sticky nas páginas hub
-- Subpáginas mantêm breadcrumb padrão: `Módulo / SubPágina`
+- Sem libs UI externas — inline styles + kit compartilhado
+- Ícones: Tabler Icons (`ti ti-*`)
+- Font: system-ui
+- **Não** criar headers locais com `padding: 32` — usar `PageLayout`
+- PDV (`/loja/pdv`) mantém layout full-screen próprio (exceção)
 
 ## Responsividade Mobile (a partir de 24/06/2026)
 
@@ -168,6 +179,9 @@ Cada módulo usa sua cor primária no lugar de `laranja`. Cores por módulo:
 
 | Data | Decisão | Motivo |
 |---|---|---|
+| 2026-07-04 | Redesign UI completo: Captação, Loja, Contábil, Configurações, Escritório, Perfil, Admin | Kit `components/nexcoop/ui` com `PageLayout` + `COM_C` em 52 arquivos |
+| 2026-07-04 | Classificação automática escrituração + integração financeiro (mensalidades, cotas, loja) | Financeiro → Contábil em 2 camadas; migration 061 |
+| 2026-07-04 | Cônjuge em produtor/cooperado + NF-e entrada em nome do cônjuge | Migration 060 |
 | 2026-06-24 | Padrão visual sticky-header aplicado a todos os módulos (Loja, Dashboard, Cooperados, Financeiro, Mensalidades, Assembleias, Documentos) | Consistência de UX; PDV usa variante full-screen com margin no root div por causa de overflow:hidden |
 | 2026-06-24 | `cotacoes.data` → `vigente_a_partir_de (timestamptz)` | Suporte a cotação intraday; rastreabilidade fiscal imutável por `cotacao_id` |
 | 2026-06-24 | Lotes multi-produto via `lote_itens` | Cooperativas operam lotes com múltiplos produtos (ex: merenda escolar) |

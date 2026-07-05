@@ -1,5 +1,43 @@
 # NexCoop — Changelog
 
+## 2026-07-04
+
+### feat(ui): redesign captacao, loja, contabil, config e escritorio
+- Kit `components/nexcoop/ui/` aplicado em 52 arquivos
+- Novos exports: `MODULO_LOJA`, `MODULO_CONTABIL`, `MODULO_CAPTACAO`, `MODULO_CONFIG`, `MODULO_ESCRITORIO`
+- `LojaHubClient.tsx` — hub da loja extraído de `page.tsx`
+- Captação, 13 telas contábeis, 16 subpáginas loja, configurações, escritório, perfil, admin
+- Padrão: `PageLayout` + `COM_C` + ícones Tabler; removidos headers locais (`padding: 32`, `#0F766E`)
+
+### feat(fiscal): cônjuge em produtor/cooperado e NF-e em nome do cônjuge
+- Migration 060: `conjuge_nome`, `conjuge_cpf` em cooperados/produtores
+- `notas_entrega`: snapshot destinatário + `emitido_como` (titular/conjuge)
+- UI em cooperados novo/editar/perfil, produtores detalhe, `ModalNfeEntrada`
+
+### feat(contabil): classificação automática na escrituração
+- Migration 061: `configuracoes_contabeis.classificacao_automatica`
+- `lib/contabil/classificacao-automatica.ts` — regras por palavra-chave + plano de contas
+- Hook em `criarLancamento`; toggle em Sobras → Configurações
+
+### fix(contabil): integração financeiro — mensalidades, cotas, vendas
+- Mensalidades → `registrarPagamentoMensalidade`
+- Cotas → `registrarPagamentos` + `quitarParcela`
+- Comercialização: devolução corrigida (receita/despesa)
+
+### fix(loja): compras e cancelamento vinculados ao financeiro
+- `registrarCompra` → lançamento despesa
+- `cancelarVenda` → marca lançamento cancelado + remove partidas
+
+### feat(landing): hub mockups, CTA cadastro e WhatsApp unificado
+- Hero/navbar: CTA "Começar grátis" → `/cadastro`
+- Mockups alinhados ao dashboard hub novo
+
+### feat(ui): redesign áreas primárias e comercialização (commits anteriores na mesma fase)
+- Kit UI compartilhado: Dashboard, Cooperados, Financeiro, Mensalidades, Assembleias, Documentos
+- Comercialização: 22+ telas com `PageLayout`
+
+---
+
 ## 2026-06-26
 
 ### fix(dashboard): filtros de hoje no fuso de Brasília (UTC-3)

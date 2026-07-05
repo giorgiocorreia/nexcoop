@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# NexCoop
 
-## Getting Started
+SaaS multi-tenant para cooperativas e associações brasileiras.
 
-First, run the development server:
+**Stack:** Next.js 16 + TypeScript + Supabase + Vercel  
+**Produção:** [nexcoop.com.br](https://nexcoop.com.br)  
+**Repositório:** [giorgiocorreia/nexcoop](https://github.com/giorgiocorreia/nexcoop)
+
+## Documentação
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Regras permanentes, design system, padrões de código |
+| [docs/SCHEMA.md](docs/SCHEMA.md) | Migrations e schema do banco |
+| [docs/MODULOS.md](docs/MODULOS.md) | Status de cada módulo |
+| [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações |
+| [CONTEXTO_NEXCOOP.md](CONTEXTO_NEXCOOP.md) | Contexto rápido da sessão atual |
+
+## Desenvolvimento local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Antes de commitar:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+npx tsc --noEmit
+```
 
-## Learn More
+## UI kit compartilhado
 
-To learn more about Next.js, take a look at the following resources:
+Todas as telas do sistema usam o kit em `components/nexcoop/ui/`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `PageLayout`, `HubStyles`, `KpiCard`, `LinkCard`, `ContentCard`
+- Tokens `COM_C` (cores unificadas)
+- Constantes de módulo: `MODULO_NEXCOOP`, `MODULO_LOJA`, `MODULO_CONTABIL`, etc.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Referência: `app/(sistema)/dashboard/DashboardClient.tsx`
 
-## Deploy on Vercel
+## Módulos principais
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Cooperados, Financeiro, Mensalidades, Assembleias, Documentos
+- Comercialização (cacau, lotes, NF-e)
+- Loja Agropecuária (PDV, estoque, compras)
+- Contábil (escrituração, DRE, balanço, SPED)
+- Captação de recursos (CRM + Radar)
+- Configurações, Escritório (portal contador)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Regras críticas
+
+- Nunca usar `auth_org_id()` — ver [docs/ARQUITETURA.md](docs/ARQUITETURA.md)
+- Migrations via Supabase Dashboard SQL Editor
+- `createAdminClient()` para writes org-level e relatórios

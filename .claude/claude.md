@@ -43,7 +43,11 @@ Stack: Next.js + TypeScript + Supabase + Vercel. Branch: `main`.
 ---
 
 ## Próxima migration
-A próxima migration disponível é a **056**. Verificar `docs/SCHEMA.md` antes de criar.
+A próxima migration disponível é a **062**. Verificar `docs/SCHEMA.md` antes de criar.
+
+## UI kit (jul/2026)
+Todas as telas novas usam `components/nexcoop/ui/` — `PageLayout`, `COM_C`, `MODULO_*`.
+Referência: `app/(sistema)/dashboard/DashboardClient.tsx`, `app/(sistema)/financeiro/FinanceiroLista.tsx`.
 
 ---
 

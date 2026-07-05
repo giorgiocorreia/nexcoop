@@ -35,8 +35,9 @@
 | 053 | produtores.tipo sincronizado com cooperados.status via trigger trg_sincronizar_tipo_produtor |
 | 054–059 | vendas_devolucoes, trigger lote_status_pago, impressos_numeracao, lancamentos_sessao_caixa, fix RLS captação, colunas estruturadas oportunidade_logs |
 | 060 | cooperados/produtores: +conjuge_nome, +conjuge_cpf (+conjuge_ie_produtor_rural em produtores); notas_entrega: +destinatario_nome, +destinatario_cpf, +destinatario_ie, +emitido_como — permite emitir NF-e de entrada em nome do cônjuge |
+| 061 | configuracoes_contabeis: +classificacao_automatica BOOLEAN DEFAULT TRUE — toggle na escrituração automática Financeiro → Contábil |
 
-**Próxima migration:** 061
+**Próxima migration:** 062
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
