@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { classificarLancamentoExistente } from '@/lib/financeiro/actions'
 import { traduzirErro } from '@/lib/utils/erros'
 import type { TipoLancamento, StatusLancamento } from '@/types/database'
 import { Btn } from '@/components/ui/Btn'
@@ -156,6 +157,7 @@ export default function NovoLancamentoPage() {
       return
     }
 
+    await classificarLancamentoExistente(data.id).catch(() => {})
     router.push(`/financeiro/${data.id}`)
   }
 

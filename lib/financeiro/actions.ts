@@ -51,8 +51,48 @@ export async function criarLancamento(data: {
     dados_depois: { id: novo.id, tipo: data.tipo, descricao: data.descricao, valor: data.valor },
   }).catch(e => console.error('[audit]', e))
 
+  try {
+    const { tentarClassificarAutomaticamente } = await import('@/lib/contabil/classificacao-automatica')
+    await tentarClassificarAutomaticamente({
+      org_id: data.organizacao_id,
+      lancamento_id: novo.id,
+      tipo: data.tipo,
+      status: data.status,
+      descricao: data.descricao,
+      valor: data.valor,
+      data_competencia: data.data_competencia,
+      observacoes: data.observacoes,
+      usuario_id: data.usuario_id,
+    })
+  } catch (e) {
+    console.error('[contabil] Erro na classificação automática:', e)
+  }
+
   revalidatePath('/financeiro')
   return novo
+}
+
+export async function classificarLancamentoExistente(lancamentoId: string) {
+  const supabase = createAdminClient()
+  const { data: lanc } = await supabase
+    .from('lancamentos')
+    .select('*')
+    .eq('id', lancamentoId)
+    .single()
+  if (!lanc?.usuario_id) return
+
+  const { tentarClassificarAutomaticamente } = await import('@/lib/contabil/classificacao-automatica')
+  await tentarClassificarAutomaticamente({
+    org_id: lanc.organizacao_id,
+    lancamento_id: lanc.id,
+    tipo: lanc.tipo,
+    status: lanc.status,
+    descricao: lanc.descricao,
+    valor: Number(lanc.valor),
+    data_competencia: lanc.data_competencia,
+    observacoes: lanc.observacoes,
+    usuario_id: lanc.usuario_id,
+  })
 }
 
 export async function editarLancamento(
@@ -81,6 +121,10 @@ export async function editarLancamento(
     .eq('id', id)
   if (error) throw new Error(error.message)
 
+  if (dados.status === 'cancelado') {
+    await supabase.from('partidas').delete().eq('lancamento_id', id)
+  }
+
   registrarLog({
     org_id: orgId,
     usuario_id: usuarioId,
@@ -92,6 +136,7 @@ export async function editarLancamento(
   }).catch(e => console.error('[audit]', e))
 
   revalidatePath('/financeiro')
+  if (dados.status === 'cancelado') revalidatePath('/contabil/escrituracao')
 }
 
 export async function deletarLancamento(id: string, orgId: string, usuarioId: string) {

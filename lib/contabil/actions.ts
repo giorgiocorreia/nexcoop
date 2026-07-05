@@ -687,6 +687,7 @@ export async function salvarConfiguracaoContabil(data: {
   percentual_refac: number
   percentual_fates: number
   criterio_distribuicao: string
+  classificacao_automatica?: boolean
   observacoes?: string
 }) {
   const supabase = createAdminClient()

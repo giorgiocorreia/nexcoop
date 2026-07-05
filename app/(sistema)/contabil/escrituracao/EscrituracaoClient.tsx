@@ -71,9 +71,13 @@ export default function EscrituracaoClient({ orgId, userId }: Props) {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Escrituração</h1>
         <BotaoAjuda chave="manual_contabil_url" />
       </div>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>
-        Classifique os lançamentos financeiros nas contas contábeis correspondentes
+      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
+        Classifique os lançamentos financeiros nas contas contábeis correspondentes.
+        Lançamentos com regra reconhecida (mensalidade, venda loja, cota, etc.) são classificados automaticamente.
       </p>
+      <div style={{ background: '#f0fdf9', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px', marginBottom: 24, fontSize: 12, color: '#166534' }}>
+        Histórico com prefixo <strong>[Auto]</strong> indica classificação automática. Revise na aba Classificados — o De/Para mapeia contas internas para o plano do escritório na exportação SPED.
+      </div>
 
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
 

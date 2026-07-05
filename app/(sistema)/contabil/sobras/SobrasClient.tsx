@@ -45,6 +45,7 @@ export default function SobrasClient({
   const [percRefac, setPercRefac] = useState('5.00')
   const [percFates, setPercFates] = useState('0.00')
   const [criterio, setCriterio] = useState('proporcional_operacoes')
+  const [classificacaoAutomatica, setClassificacaoAutomatica] = useState(true)
   const [salvandoConfig, setSalvandoConfig] = useState(false)
 
   const [modalFechamento, setModalFechamento] = useState(false)
@@ -82,6 +83,7 @@ export default function SobrasClient({
         setPercRefac(String(s.config.percentual_refac))
         setPercFates(String(s.config.percentual_fates))
         setCriterio(s.config.criterio_distribuicao)
+        setClassificacaoAutomatica(s.config.classificacao_automatica !== false)
       }
       if (ex) {
         getFechamento(orgId, ex.id).then(fech => {
@@ -101,6 +103,7 @@ export default function SobrasClient({
         percentual_refac: Number(percRefac),
         percentual_fates: Number(percFates),
         criterio_distribuicao: criterio,
+        classificacao_automatica: classificacaoAutomatica,
       })
       const novo = await calcularSobras(orgId, ano)
       setDados(novo)
@@ -287,6 +290,14 @@ export default function SobrasClient({
                     </select>
                   </div>
                 )}
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={classificacaoAutomatica}
+                    onChange={e => setClassificacaoAutomatica(e.target.checked)}
+                  />
+                  Classificação automática na escrituração (Financeiro → Contábil)
+                </label>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                   <button onClick={() => setEditandoConfig(false)}
                     style={{ padding: '7px 16px', border: '1px solid #e5e3dc', borderRadius: 6, fontSize: 12, background: '#fff', cursor: 'pointer' }}>
@@ -299,7 +310,7 @@ export default function SobrasClient({
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 12 }}>
                 {[
                   ['Fundo de Reserva', fmtPerc(dados.percFundoReserva)],
                   ['REFAC', fmtPerc(dados.percRefac)],
@@ -312,6 +323,13 @@ export default function SobrasClient({
                 ))}
               </div>
             )}
+            <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+              Escrituração automática:{' '}
+              <strong style={{ color: dados.config?.classificacao_automatica !== false ? COR : '#dc2626' }}>
+                {dados.config?.classificacao_automatica !== false ? 'Ativa' : 'Desativada'}
+              </strong>
+              {' '}— lançamentos do Financeiro são classificados no plano de contas por palavras-chave.
+            </p>
           </div>
 
           {/* Botão de fechamento */}
