@@ -10,3 +10,7 @@ export { Field, Input, Select, Textarea } from '@/components/comercializacao/ui/
 export { Modal } from '@/components/comercializacao/ui/Modal'
 export { Tabs } from '@/components/comercializacao/ui/Tabs'
 export { ListRow } from '@/components/comercializacao/ui/ListRow'
+export { InfoRow } from './InfoRow'
+export { AlertBanner } from './AlertBanner'
+
+export const MODULO_NEXCOOP = { label: 'NexCoop', href: '/dashboard' } as const

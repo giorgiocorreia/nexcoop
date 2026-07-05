@@ -1,10 +1,15 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import type { Cooperado } from '@/types/database'
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Field, Input, Badge,
+  AlertBanner, COM_C, MODULO_NEXCOOP,
+} from '@/components/nexcoop/ui'
 
 type CoopAtivo = Pick<Cooperado, 'id' | 'nome_completo' | 'cpf' | 'quota_parte' | 'status'>
 
@@ -12,26 +17,6 @@ interface PreviewItem {
   coop: CoopAtivo
   valor: string
   jaExiste: boolean
-}
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
-  borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
-  color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
-}
-const fo = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = '#635BFF')
-const bl = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = '#d5d3cc')
-
-function InputGroup({ label, children, dica }: { label: string; children: React.ReactNode; dica?: string }) {
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-        {label}
-      </label>
-      {children}
-      {dica && <p style={{ fontSize: '11px', color: '#aaa', marginTop: '4px', margin: '4px 0 0' }}>{dica}</p>}
-    </div>
-  )
 }
 
 const BRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -150,144 +135,146 @@ export default function GerarMensalidadesPage() {
   const existeCount = preview?.filter(p => p.jaExiste).length  ?? 0
 
   return (
-    <>
-      <style>{`
-        .gm-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .gm-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .gm-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .gm-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo="Gerar Mensalidades"
+      subtitulo="Criar cobranças mensais para os filiados ativos"
+      icone="ti-calendar-due"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: 'Mensalidades', href: '/mensalidades' },
+        { label: 'Gerar' },
+      ]}
+      fullHeight
+    >
+      <div style={{ maxWidth: 820 }}>
 
-      <header className="gm-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', gap: 12,
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-calendar-due" style={{ fontSize: 20, color: '#635BFF' }} />
+        <ContentCard title="Parâmetros">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <Field label="Mês de referência">
+              <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} />
+            </Field>
+            <Field label="Dia de vencimento" hint="Ajustado automaticamente para o último dia do mês.">
+              <Input
+                type="number" value={diaVenc} onChange={e => setDiaVenc(e.target.value)}
+                min="1" max="31" placeholder="10" style={{ maxWidth: 120 }}
+              />
+            </Field>
+            <Field label="Valor padrão (R$)" hint="Usado quando o membro não tem quota-parte definida.">
+              <Input
+                type="number" value={valorPad} onChange={e => setValorPad(e.target.value)}
+                min="0" step="0.01" placeholder="50,00" style={{ maxWidth: 160 }}
+              />
+            </Field>
           </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Gerar Mensalidades</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/mensalidades')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Mensalidades</button>
-              {' / '}Gerar
-            </div>
+
+          <div style={{ marginTop: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Btn
+              variante="roxo"
+              icone="ti-eye"
+              onClick={carregarPreview}
+              disabled={carregando || carregandoPreview}
+            >
+              {carregandoPreview ? 'Carregando…' : 'Visualizar cobranças'}
+            </Btn>
+            {carregando && <span style={{ fontSize: 12, color: COM_C.txtSub }}>Carregando membros…</span>}
           </div>
-        </div>
-      </header>
+        </ContentCard>
 
-      <div className="gm-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '820px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        {erro && (
+          <AlertBanner tipo="erro">{erro}</AlertBanner>
+        )}
 
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-        <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 1rem' }}>
-          Parâmetros
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-          <InputGroup label="Mês de referência">
-            <input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)}
-              style={inp} onFocus={fo} onBlur={bl}
-            />
-          </InputGroup>
-          <InputGroup label="Dia de vencimento" dica="Ajustado automaticamente para o último dia do mês.">
-            <input type="number" value={diaVenc} onChange={e => setDiaVenc(e.target.value)}
-              min="1" max="31" placeholder="10"
-              style={{ ...inp, maxWidth: '120px' }} onFocus={fo} onBlur={bl}
-            />
-          </InputGroup>
-          <InputGroup label="Valor padrão (R$)" dica="Usado quando o membro não tem quota-parte definida.">
-            <input type="number" value={valorPad} onChange={e => setValorPad(e.target.value)}
-              min="0" step="0.01" placeholder="50,00"
-              style={{ ...inp, maxWidth: '160px' }} onFocus={fo} onBlur={bl}
-            />
-          </InputGroup>
-        </div>
-
-        <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={carregarPreview} disabled={carregando || carregandoPreview}
-            style={{ padding: '9px 20px', background: '#635BFF', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: carregando || carregandoPreview ? 'not-allowed' : 'pointer', opacity: carregando || carregandoPreview ? 0.7 : 1 }}>
-            {carregandoPreview ? '⏳ Carregando…' : '👁 Visualizar cobranças'}
-          </button>
-          {carregando && <span style={{ fontSize: '12px', color: '#888' }}>Carregando membros…</span>}
-        </div>
-      </div>
-
-      {erro && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626', marginBottom: '1rem' }}>
-          ⚠ {erro}
-        </div>
-      )}
-
-      {preview && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '1rem' }}>
-            <div style={{ background: '#EEF0FF', border: '1px solid #635BFF33', borderRadius: '10px', padding: '0.875rem 1rem' }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: '#4840CC', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Novas cobranças</div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#4840CC', margin: '2px 0' }}>{novosCount}</div>
-              <div style={{ fontSize: '11px', color: '#4840CC99' }}>
-                Total: {BRL(preview.filter(p => !p.jaExiste).reduce((s, p) => s + Number(p.valor), 0))}
+        {preview && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                background: COM_C.roxoLt, border: `1px solid ${COM_C.roxo}33`,
+                borderRadius: 12, padding: '14px 16px',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: COM_C.roxo, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  Novas cobranças
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: COM_C.roxo, margin: '4px 0' }}>{novosCount}</div>
+                <div style={{ fontSize: 11, color: COM_C.txtSub }}>
+                  Total: {BRL(preview.filter(p => !p.jaExiste).reduce((s, p) => s + Number(p.valor), 0))}
+                </div>
+              </div>
+              <div style={{
+                background: '#FAFAF9', border: `1px solid ${COM_C.borda}`,
+                borderRadius: 12, padding: '14px 16px',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  Já existem
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: COM_C.txtSub, margin: '4px 0' }}>{existeCount}</div>
+                <div style={{ fontSize: 11, color: '#A8A29E' }}>serão ignorados</div>
               </div>
             </div>
-            <div style={{ background: '#f5f5f2', border: '1px solid #e5e3dc', borderRadius: '10px', padding: '0.875rem 1rem' }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Já existem</div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#888', margin: '2px 0' }}>{existeCount}</div>
-              <div style={{ fontSize: '11px', color: '#aaa' }}>serão ignorados</div>
-            </div>
-          </div>
 
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', overflow: 'hidden', marginBottom: '1.25rem' }}>
-            <div style={{ padding: '10px 16px', background: '#fafaf8', borderBottom: '1px solid #e5e3dc', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', gap: '0' }}>
-              {['Membro', 'Status', 'Quota-parte', 'Valor cobrança'].map(h => (
-                <div key={h} style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{h}</div>
+            <ContentCard title="Pré-visualização" noPadding>
+              <div style={{
+                padding: '12px 16px', borderBottom: `1px solid ${COM_C.borda}`,
+                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', gap: 0,
+                background: '#FAFAF9',
+              }}>
+                {['Membro', 'Status', 'Quota-parte', 'Valor cobrança'].map(h => (
+                  <div key={h} style={{ fontSize: 11, fontWeight: 600, color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    {h}
+                  </div>
+                ))}
+              </div>
+              {preview.map((p, i) => (
+                <div
+                  key={p.coop.id}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', alignItems: 'center',
+                    padding: '10px 16px', borderTop: i > 0 ? `1px solid ${COM_C.borda}` : 'none',
+                    background: p.jaExiste ? '#FAFAF9' : '#fff', opacity: p.jaExiste ? 0.55 : 1,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 500, color: COM_C.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.coop.nome_completo}
+                  </div>
+                  <div>
+                    <Badge
+                      label={p.coop.status === 'ativo' ? 'Ativo' : 'Probatório'}
+                      bg={p.coop.status === 'ativo' ? COM_C.roxoLt : COM_C.azulLt}
+                      cor={p.coop.status === 'ativo' ? COM_C.roxo : COM_C.azul}
+                    />
+                  </div>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub }}>
+                    {p.coop.quota_parte && Number(p.coop.quota_parte) > 0
+                      ? BRL(Number(p.coop.quota_parte))
+                      : <span style={{ color: '#A8A29E' }}>—</span>}
+                  </div>
+                  {p.jaExiste ? (
+                    <div style={{ fontSize: 11, color: '#A8A29E', fontStyle: 'italic' }}>já existe</div>
+                  ) : (
+                    <Input
+                      type="number" min="0" step="0.01"
+                      value={p.valor}
+                      onChange={e => setPreview(prev => prev!.map(x => x.coop.id === p.coop.id ? { ...x, valor: e.target.value } : x))}
+                      style={{ width: 100, padding: '6px 8px', fontSize: 13 }}
+                    />
+                  )}
+                </div>
               ))}
-            </div>
-            {preview.map((p, i) => (
-              <div key={p.coop.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', alignItems: 'center', padding: '10px 16px', borderTop: i > 0 ? '1px solid #f0eeea' : 'none', background: p.jaExiste ? '#fafaf8' : '#fff', opacity: p.jaExiste ? 0.55 : 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.coop.nome_completo}
-                </div>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: p.coop.status === 'ativo' ? '#4840CC' : '#185FA5', background: p.coop.status === 'ativo' ? '#EEF0FF' : '#E6F1FB', padding: '2px 7px', borderRadius: '6px' }}>
-                    {p.coop.status === 'ativo' ? 'Ativo' : 'Probatório'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '12px', color: '#555' }}>
-                  {p.coop.quota_parte && Number(p.coop.quota_parte) > 0 ? BRL(Number(p.coop.quota_parte)) : <span style={{ color: '#aaa' }}>—</span>}
-                </div>
-                {p.jaExiste ? (
-                  <div style={{ fontSize: '11px', color: '#aaa', fontStyle: 'italic' }}>já existe</div>
-                ) : (
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={p.valor}
-                    onChange={e => setPreview(prev => prev!.map(x => x.coop.id === p.coop.id ? { ...x, valor: e.target.value } : x))}
-                    style={{ padding: '5px 8px', border: '1px solid #d5d3cc', borderRadius: '6px', fontSize: '13px', width: '100px', background: '#fafaf8', outline: 'none' }}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+            </ContentCard>
 
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '2rem' }}>
-            <button type="button" onClick={() => router.push('/mensalidades')}
-              style={{ padding: '9px 20px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}>
-              Cancelar
-            </button>
-            <button onClick={handleGerar} disabled={gerando || novosCount === 0}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: gerando || novosCount === 0 ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: gerando || novosCount === 0 ? 'not-allowed' : 'pointer' }}>
-              {gerando ? 'Gerando…' : `⚡ Gerar ${novosCount} cobrança${novosCount !== 1 ? 's' : ''}`}
-            </button>
-          </div>
-        </>
-      )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20, paddingBottom: 32 }}>
+              <Btn variante="cinza" onClick={() => router.push('/mensalidades')}>Cancelar</Btn>
+              <Btn
+                variante="roxo"
+                icone="ti-bolt"
+                onClick={handleGerar}
+                disabled={gerando || novosCount === 0}
+              >
+                {gerando ? 'Gerando…' : `Gerar ${novosCount} cobrança${novosCount !== 1 ? 's' : ''}`}
+              </Btn>
+            </div>
+          </>
+        )}
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

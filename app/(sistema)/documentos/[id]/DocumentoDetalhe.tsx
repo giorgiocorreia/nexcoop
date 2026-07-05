@@ -1,12 +1,15 @@
-﻿'use client'
+'use client'
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Documento, CategoriaDocumento } from '@/types/database'
 import { traduzirErro } from '@/lib/utils/erros'
-
-// ─── Configurações ────────────────────────────────────────────────────────────
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Badge, Field, Input, Select, Textarea,
+  AlertBanner, InfoRow, Modal, MODULO_NEXCOOP, COM_C,
+} from '@/components/nexcoop/ui'
 
 const CATEGORIA_CONFIG: Record<CategoriaDocumento, { label: string; cor: string; bg: string; icone: string }> = {
   estatuto:   { label: 'Estatuto',    cor: '#185FA5', bg: '#E6F1FB', icone: '📋' },
@@ -24,8 +27,6 @@ const CATEGORIA_CONFIG: Record<CategoriaDocumento, { label: string; cor: string;
 }
 
 const CATEGORIAS_LIST = Object.entries(CATEGORIA_CONFIG) as [CategoriaDocumento, typeof CATEGORIA_CONFIG[CategoriaDocumento]][]
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 type StatusValidade = 'vencido' | 'alerta' | 'ok' | 'sem_validade'
 
@@ -61,54 +62,7 @@ function formatBytes(b: number | null) {
   return `${(b / 1024 / 1024).toFixed(2)} MB`
 }
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
-
-function InfoLinha({ label, valor }: { label: string; valor?: string | number | null }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f3ef' }}>
-      <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#1a1a1a', textAlign: 'right', maxWidth: '65%' }}>{valor ?? '—'}</span>
-    </div>
-  )
-}
-
-function Secao({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
-      <div style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span>{icone}</span> {titulo}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '8px 12px', border: '1px solid #d5d3cc',
-  borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
-  color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
-}
-const fo = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#635BFF')
-const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#d5d3cc')
-
-function CampoEdit({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '4px' }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-}
-
-// ─── Props ───────────────────────────────────────────────────────────────────
-
 interface Props { documento: Documento }
-
-// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function DocumentoDetalhe({ documento: initial }: Props) {
   const router = useRouter()
@@ -123,7 +77,6 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
   const [novoArquivo, setNovoArquivo] = useState<File | null>(null)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'done'>('idle')
 
-  // Estado do formulário de edição
   const [editForm, setEditForm] = useState({
     nome:             doc.nome,
     categoria:        doc.categoria as CategoriaDocumento,
@@ -145,7 +98,6 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
   const sv   = calcStatus(doc)
   const cat  = CATEGORIA_CONFIG[doc.categoria]
 
-  // ── Salvar edição ──────────────────────────────────────────────────────────
   async function handleSalvar() {
     if (!editForm.nome.trim()) { setErro('Nome é obrigatório.'); return }
 
@@ -221,7 +173,6 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
     setEditando(false)
   }
 
-  // ── Excluir ───────────────────────────────────────────────────────────────
   async function handleExcluir() {
     setExcluindo(true)
     const supabase = createClient()
@@ -229,322 +180,255 @@ export default function DocumentoDetalhe({ documento: initial }: Props) {
     router.push('/documentos')
   }
 
-  // ── Banner de status ───────────────────────────────────────────────────────
   const dias = doc.data_validade ? diasAteVencimento(doc.data_validade) : null
 
-  const bannerConfig = sv === 'vencido'
-    ? { bg: '#FAECE7', border: '#fca5a5', cor: '#993C1D', texto: `Documento vencido há ${Math.abs(dias!)} dia${Math.abs(dias!) !== 1 ? 's' : ''}`, icone: '⚠️' }
+  const bannerTexto = sv === 'vencido'
+    ? `Documento vencido há ${Math.abs(dias!)} dia${Math.abs(dias!) !== 1 ? 's' : ''}`
     : sv === 'alerta'
-    ? { bg: '#FAEEDA', border: '#fcd34d', cor: '#854F0B', texto: dias === 0 ? 'Vence hoje!' : `Vence em ${dias} dia${dias !== 1 ? 's' : ''}`, icone: '⏰' }
+    ? dias === 0 ? 'Vence hoje!' : `Vence em ${dias} dia${dias !== 1 ? 's' : ''}`
     : null
 
-  // ────────────────────────────────────────────────────────────────────────────
   return (
-    <>
-      <style>{`
-        .dd-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .dd-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .dd-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .dd-content { padding: 16px; }
-        }
-      `}</style>
-
-      <header className="dd-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-files" style={{ fontSize: 20, color: '#185FA5' }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{doc.nome}</h1>
-              {doc.restrito && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', padding: '2px 6px', borderRadius: 4 }}>RESTRITO</span>
-              )}
-            </div>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/documentos')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Documentos</button>
-              {' / '}
-              <span style={{ color: cat.cor }}>{cat.label}</span>
-            </div>
-          </div>
-        </div>
-        {!editando && (
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <button onClick={() => { setEditando(true); setErro('') }}
-              style={{ padding: '8px 16px', border: '1px solid #d5d3cc', borderRadius: 8, background: '#fff', fontSize: 13, color: '#444', cursor: 'pointer', fontWeight: 500 }}>
-              ✏️ Editar
-            </button>
-            <button onClick={() => setConfirmarExclusao(true)}
-              style={{ padding: '8px 16px', border: '1px solid #fca5a5', borderRadius: 8, background: '#fef2f2', fontSize: 13, color: '#dc2626', cursor: 'pointer', fontWeight: 500 }}>
-              🗑️ Excluir
-            </button>
-          </div>
+    <PageLayout
+      titulo={doc.nome}
+      subtitulo={cat.label}
+      icone="ti-files"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: 'Documentos', href: '/documentos' },
+        { label: cat.label },
+      ]}
+      fullHeight
+      acoes={
+        !editando ? (
+          <>
+            {doc.restrito && <Badge label="RESTRITO" bg={COM_C.vermelhoLt} cor={COM_C.vermelho} />}
+            <Btn variante="cinza" icone="ti-pencil" onClick={() => { setEditando(true); setErro('') }}>
+              Editar
+            </Btn>
+            <Btn variante="cinza" icone="ti-trash" onClick={() => setConfirmarExclusao(true)} style={{ color: COM_C.vermelho, borderColor: '#fca5a5' }}>
+              Excluir
+            </Btn>
+          </>
+        ) : undefined
+      }
+    >
+      <div style={{ maxWidth: 780 }}>
+        {bannerTexto && !editando && (
+          <AlertBanner tipo={sv === 'vencido' ? 'erro' : 'info'}>{bannerTexto}</AlertBanner>
         )}
-      </header>
 
-      <div className="dd-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '780px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        {!editando && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ContentCard title="Arquivo" action={
+              <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: COM_C.roxo, color: '#fff', borderRadius: 8, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+                Baixar / Visualizar
+              </a>
+            }>
+              <div style={{ fontSize: 13, color: COM_C.txt, fontWeight: 500 }}>
+                {doc.tipo_mime || 'Tipo desconhecido'}
+                {formatBytes(doc.tamanho_bytes) && (
+                  <span style={{ color: COM_C.txtSub, fontWeight: 400, marginLeft: 8 }}>{formatBytes(doc.tamanho_bytes)}</span>
+                )}
+              </div>
+              {doc.versao > 1 && (
+                <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 4 }}>Versão {doc.versao}</div>
+              )}
+            </ContentCard>
 
-      {/* Banner de alerta de validade */}
-      {bannerConfig && !editando && (
-        <div style={{ background: bannerConfig.bg, border: `1px solid ${bannerConfig.border}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>{bannerConfig.icone}</span>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: bannerConfig.cor }}>{bannerConfig.texto}</span>
-        </div>
-      )}
-
-      {/* ── MODO VISUALIZAÇÃO ─────────────────────────────────────────────────── */}
-      {!editando && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-          {/* Arquivo */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                  📎 Arquivo
+            <ContentCard title="Identificação">
+              <InfoRow label="Categoria"       valor={cat.label} />
+              <InfoRow label="Número"          valor={doc.numero_documento} />
+              <InfoRow label="Órgão emissor"   valor={doc.orgao_emissor} />
+              {doc.descricao && (
+                <div style={{ padding: '9px 0', borderBottom: `1px solid ${COM_C.borda}` }}>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, fontWeight: 500, marginBottom: 4 }}>Descrição</div>
+                  <div style={{ fontSize: 13, color: COM_C.txt, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{doc.descricao}</div>
                 </div>
-                <div style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: '500' }}>
-                  {doc.tipo_mime || 'Tipo desconhecido'}
-                  {formatBytes(doc.tamanho_bytes) && (
-                    <span style={{ color: '#888', fontWeight: '400', marginLeft: '8px' }}>{formatBytes(doc.tamanho_bytes)}</span>
+              )}
+            </ContentCard>
+
+            <ContentCard title="Datas e Validade">
+              <InfoRow label="Data de emissão"  valor={formatarData(doc.data_emissao)} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: `1px solid ${COM_C.borda}` }}>
+                <span style={{ fontSize: 12, color: COM_C.txtSub, fontWeight: 500 }}>Data de validade</span>
+                <div style={{ textAlign: 'right' }}>
+                  {doc.data_validade ? (
+                    <>
+                      <span style={{
+                        fontSize: 13,
+                        color: sv === 'vencido' ? '#993C1D' : sv === 'alerta' ? '#854F0B' : COM_C.txt,
+                        fontWeight: sv !== 'ok' && sv !== 'sem_validade' ? 700 : 400,
+                      }}>
+                        {formatarData(doc.data_validade)}
+                      </span>
+                      {dias !== null && (
+                        <div style={{ fontSize: 11, color: sv === 'vencido' ? COM_C.vermelho : sv === 'alerta' ? '#854F0B' : COM_C.txtSub, marginTop: 1 }}>
+                          {dias < 0 ? `${Math.abs(dias)}d vencido` : dias === 0 ? 'Vence hoje' : `em ${dias} dias`}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 13, color: '#A8A29E' }}>—</span>
                   )}
                 </div>
-                {doc.versao > 1 && (
-                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>Versão {doc.versao}</div>
-                )}
               </div>
-              <a href={doc.arquivo_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: '#635BFF', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>
-                ↓ Baixar / Visualizar
-              </a>
-            </div>
+              <InfoRow label="Alerta antecipado" valor={`${doc.alerta_dias} dias antes`} />
+            </ContentCard>
+
+            <ContentCard title="Informações do sistema">
+              <InfoRow label="Versão"           valor={`v${doc.versao}`} />
+              <InfoRow label="Acesso"           valor={doc.restrito ? 'Restrito' : 'Público interno'} />
+              <InfoRow label="Cadastrado em"    valor={formatarDataHora(doc.criado_em)} />
+              <InfoRow label="Atualizado em"    valor={formatarDataHora(doc.atualizado_em)} />
+            </ContentCard>
           </div>
+        )}
 
-          {/* Identificação */}
-          <Secao titulo="Identificação" icone="📋">
-            <InfoLinha label="Categoria"       valor={cat.label} />
-            <InfoLinha label="Número"          valor={doc.numero_documento} />
-            <InfoLinha label="Órgão emissor"   valor={doc.orgao_emissor} />
-            {doc.descricao && (
-              <div style={{ padding: '8px 0', borderBottom: '1px solid #f5f3ef' }}>
-                <div style={{ fontSize: '12px', color: '#888', fontWeight: '500', marginBottom: '4px' }}>Descrição</div>
-                <div style={{ fontSize: '13px', color: '#1a1a1a', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{doc.descricao}</div>
+        {editando && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ContentCard title="Identificação">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Nome *">
+                  <Input type="text" value={editForm.nome} onChange={setE('nome')} />
+                </Field>
+
+                <Field label="Categoria">
+                  <Select value={editForm.categoria} onChange={setE('categoria')}>
+                    {CATEGORIAS_LIST.map(([val, cfg]) => (
+                      <option key={val} value={val}>{cfg.icone} {cfg.label}</option>
+                    ))}
+                  </Select>
+                </Field>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Número / Código">
+                    <Input type="text" value={editForm.numero_documento} onChange={setE('numero_documento')} />
+                  </Field>
+                  <Field label="Órgão emissor">
+                    <Input type="text" value={editForm.orgao_emissor} onChange={setE('orgao_emissor')} />
+                  </Field>
+                </div>
+
+                <Field label="Descrição">
+                  <Textarea value={editForm.descricao} onChange={setE('descricao')}
+                    rows={3} style={{ minHeight: 68 }}
+                  />
+                </Field>
               </div>
-            )}
-          </Secao>
+            </ContentCard>
 
-          {/* Datas e Validade */}
-          <Secao titulo="Datas e Validade" icone="📅">
-            <InfoLinha label="Data de emissão"  valor={formatarData(doc.data_emissao)} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f3ef' }}>
-              <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>Data de validade</span>
-              <div style={{ textAlign: 'right' }}>
-                {doc.data_validade ? (
-                  <>
-                    <span style={{ fontSize: '13px', color: sv === 'vencido' ? '#993C1D' : sv === 'alerta' ? '#854F0B' : '#1a1a1a', fontWeight: sv !== 'ok' && sv !== 'sem_validade' ? '600' : '400' }}>
-                      {formatarData(doc.data_validade)}
-                    </span>
-                    {dias !== null && (
-                      <div style={{ fontSize: '11px', color: sv === 'vencido' ? '#dc2626' : sv === 'alerta' ? '#854F0B' : '#888', marginTop: '1px' }}>
-                        {dias < 0 ? `${Math.abs(dias)}d vencido` : dias === 0 ? 'Vence hoje' : `em ${dias} dias`}
-                      </div>
+            <ContentCard title="Arquivo">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Substituir arquivo (opcional)">
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Btn variante="cinza" icone="ti-folder" onClick={() => fileRef.current?.click()}>
+                      {novoArquivo ? novoArquivo.name : 'Selecionar arquivo'}
+                    </Btn>
+                    {novoArquivo && (
+                      <Btn variante="cinza" onClick={() => { setNovoArquivo(null); if (fileRef.current) fileRef.current.value = '' }}>
+                        Remover
+                      </Btn>
                     )}
-                  </>
-                ) : (
-                  <span style={{ fontSize: '13px', color: '#aaa' }}>—</span>
-                )}
-              </div>
-            </div>
-            <InfoLinha label="Alerta antecipado" valor={`${doc.alerta_dias} dias antes`} />
-          </Secao>
-
-          {/* Metadados */}
-          <Secao titulo="Informações do sistema" icone="ℹ️">
-            <InfoLinha label="Versão"           valor={`v${doc.versao}`} />
-            <InfoLinha label="Acesso"           valor={doc.restrito ? '🔒 Restrito' : '🔓 Público interno'} />
-            <InfoLinha label="Cadastrado em"    valor={formatarDataHora(doc.criado_em)} />
-            <InfoLinha label="Atualizado em"    valor={formatarDataHora(doc.atualizado_em)} />
-          </Secao>
-        </div>
-      )}
-
-      {/* ── MODO EDIÇÃO ───────────────────────────────────────────────────────── */}
-      {editando && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-          {/* Identificação */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Identificação</p>
-
-            <CampoEdit label="Nome *">
-              <input type="text" value={editForm.nome} onChange={setE('nome')}
-                style={inp} onFocus={fo} onBlur={bl}
-              />
-            </CampoEdit>
-
-            <CampoEdit label="Categoria">
-              <select value={editForm.categoria} onChange={setE('categoria')} style={inp} onFocus={fo} onBlur={bl}>
-                {CATEGORIAS_LIST.map(([val, cfg]) => (
-                  <option key={val} value={val}>{cfg.icone} {cfg.label}</option>
-                ))}
-              </select>
-            </CampoEdit>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <CampoEdit label="Número / Código">
-                <input type="text" value={editForm.numero_documento} onChange={setE('numero_documento')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </CampoEdit>
-              <CampoEdit label="Órgão emissor">
-                <input type="text" value={editForm.orgao_emissor} onChange={setE('orgao_emissor')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </CampoEdit>
-            </div>
-
-            <CampoEdit label="Descrição">
-              <textarea value={editForm.descricao} onChange={setE('descricao')}
-                rows={3} style={{ ...inp, resize: 'vertical', minHeight: '68px' }}
-                onFocus={fo} onBlur={bl}
-              />
-            </CampoEdit>
-          </div>
-
-          {/* Arquivo */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Arquivo</p>
-
-            <CampoEdit label="Substituir arquivo (opcional)">
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  style={{ padding: '8px 14px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fafaf8', fontSize: '13px', color: '#555', cursor: 'pointer' }}>
-                  📁 {novoArquivo ? novoArquivo.name : 'Selecionar arquivo'}
-                </button>
-                {novoArquivo && (
-                  <button type="button" onClick={() => { setNovoArquivo(null); if (fileRef.current) fileRef.current.value = '' }}
-                    style={{ fontSize: '12px', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}>
-                    ✕ Remover
-                  </button>
-                )}
-                <input ref={fileRef} type="file" style={{ display: 'none' }}
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
-                  onChange={e => setNovoArquivo(e.target.files?.[0] ?? null)}
-                />
-              </div>
-              {uploadStatus === 'uploading' && (
-                <div style={{ fontSize: '12px', color: '#854F0B', marginTop: '4px' }}>⏳ Enviando arquivo…</div>
-              )}
-            </CampoEdit>
-
-            <CampoEdit label="URL do arquivo">
-              <input type="url" value={editForm.arquivo_url} onChange={setE('arquivo_url')}
-                disabled={!!novoArquivo}
-                style={{ ...inp, opacity: novoArquivo ? 0.5 : 1, cursor: novoArquivo ? 'not-allowed' : 'text' }}
-                onFocus={fo} onBlur={bl}
-              />
-            </CampoEdit>
-          </div>
-
-          {/* Datas */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Datas e Validade</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <CampoEdit label="Data de emissão">
-                <input type="date" value={editForm.data_emissao} onChange={setE('data_emissao')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </CampoEdit>
-              <CampoEdit label="Data de validade">
-                <input type="date" value={editForm.data_validade} onChange={setE('data_validade')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </CampoEdit>
-            </div>
-            <CampoEdit label="Alerta (dias antes do vencimento)">
-              <input type="number" value={editForm.alerta_dias} onChange={setE('alerta_dias')}
-                min="1" max="365"
-                style={{ ...inp, maxWidth: '140px' }} onFocus={fo} onBlur={bl}
-              />
-            </CampoEdit>
-          </div>
-
-          {/* Configurações */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Configurações</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <CampoEdit label="Versão">
-                <input type="number" value={editForm.versao} onChange={setE('versao')}
-                  min="1" style={{ ...inp, maxWidth: '100px' }} onFocus={fo} onBlur={bl}
-                />
-              </CampoEdit>
-              <CampoEdit label="Acesso">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', paddingTop: '6px' }}>
-                  <div
-                    onClick={() => setEditForm(p => ({ ...p, restrito: !p.restrito }))}
-                    style={{ width: '36px', height: '20px', borderRadius: '10px', background: editForm.restrito ? '#635BFF' : '#d5d3cc', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}
-                  >
-                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '2px', left: editForm.restrito ? '18px' : '2px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                    <input ref={fileRef} type="file" style={{ display: 'none' }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+                      onChange={e => setNovoArquivo(e.target.files?.[0] ?? null)}
+                    />
                   </div>
-                  <span style={{ fontSize: '13px', color: editForm.restrito ? '#4840CC' : '#555', fontWeight: editForm.restrito ? '600' : '400' }}>
-                    {editForm.restrito ? 'Restrito' : 'Público interno'}
-                  </span>
-                </label>
-              </CampoEdit>
-            </div>
-          </div>
+                  {uploadStatus === 'uploading' && (
+                    <div style={{ fontSize: 12, color: '#854F0B', marginTop: 4 }}>⏳ Enviando arquivo…</div>
+                  )}
+                </Field>
 
-          {/* Erro */}
-          {erro && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626' }}>
-              ⚠ {erro}
-            </div>
-          )}
+                <Field label="URL do arquivo">
+                  <Input type="url" value={editForm.arquivo_url} onChange={setE('arquivo_url')}
+                    disabled={!!novoArquivo}
+                    style={{ opacity: novoArquivo ? 0.5 : 1, cursor: novoArquivo ? 'not-allowed' : 'text' }}
+                  />
+                </Field>
+              </div>
+            </ContentCard>
 
-          {/* Botões */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '2rem' }}>
-            <button type="button" onClick={() => { setEditando(false); setErro(''); setNovoArquivo(null) }}
-              style={{ padding: '9px 20px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}>
-              Cancelar
-            </button>
-            <button type="button" onClick={handleSalvar} disabled={salvando}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
-              {salvando ? (uploadStatus === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : '✓ Salvar alterações'}
-            </button>
-          </div>
-        </div>
-      )}
+            <ContentCard title="Datas e Validade">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Data de emissão">
+                    <Input type="date" value={editForm.data_emissao} onChange={setE('data_emissao')} />
+                  </Field>
+                  <Field label="Data de validade">
+                    <Input type="date" value={editForm.data_validade} onChange={setE('data_validade')} />
+                  </Field>
+                </div>
+                <Field label="Alerta (dias antes do vencimento)">
+                  <Input type="number" value={editForm.alerta_dias} onChange={setE('alerta_dias')}
+                    min="1" max="365" style={{ maxWidth: 140 }}
+                  />
+                </Field>
+              </div>
+            </ContentCard>
 
-      {/* ── Modal de confirmação de exclusão ──────────────────────────────────── */}
-      {confirmarExclusao && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '1.75rem', maxWidth: '400px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '600', margin: '0 0 8px', color: '#1a1a1a' }}>Excluir documento?</h3>
-            <p style={{ fontSize: '13px', color: '#555', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
-              O documento <strong>{doc.nome}</strong> será removido permanentemente do sistema. Esta ação não pode ser desfeita.
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setConfirmarExclusao(false)}
-                style={{ padding: '9px 18px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+            <ContentCard title="Configurações">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Versão">
+                  <Input type="number" value={editForm.versao} onChange={setE('versao')}
+                    min="1" style={{ maxWidth: 100 }}
+                  />
+                </Field>
+                <Field label="Acesso">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', paddingTop: 6 }}>
+                    <div
+                      onClick={() => setEditForm(p => ({ ...p, restrito: !p.restrito }))}
+                      style={{
+                        width: 36, height: 20, borderRadius: 10,
+                        background: editForm.restrito ? COM_C.roxo : COM_C.borda,
+                        position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: 2, transition: 'left 0.2s',
+                        left: editForm.restrito ? 18 : 2,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 13, color: editForm.restrito ? COM_C.roxo : COM_C.txtSub, fontWeight: editForm.restrito ? 600 : 400 }}>
+                      {editForm.restrito ? 'Restrito' : 'Público interno'}
+                    </span>
+                  </label>
+                </Field>
+              </div>
+            </ContentCard>
+
+            {erro && <AlertBanner tipo="erro">{erro}</AlertBanner>}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: 32 }}>
+              <Btn variante="cinza" onClick={() => { setEditando(false); setErro(''); setNovoArquivo(null) }}>
                 Cancelar
-              </button>
-              <button onClick={handleExcluir} disabled={excluindo}
-                style={{ padding: '9px 18px', border: 'none', borderRadius: '8px', background: excluindo ? '#fca5a5' : '#dc2626', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: excluindo ? 'not-allowed' : 'pointer' }}>
-                {excluindo ? 'Excluindo…' : 'Sim, excluir'}
-              </button>
+              </Btn>
+              <Btn variante="roxo" icone="ti-check" onClick={handleSalvar} disabled={salvando}>
+                {salvando ? (uploadStatus === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : 'Salvar alterações'}
+              </Btn>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {confirmarExclusao && (
+          <Modal
+            titulo="Excluir documento?"
+            subtitulo={`O documento "${doc.nome}" será removido permanentemente do sistema. Esta ação não pode ser desfeita.`}
+            onClose={() => setConfirmarExclusao(false)}
+            footer={
+              <>
+                <Btn variante="cinza" onClick={() => setConfirmarExclusao(false)}>Cancelar</Btn>
+                <Btn variante="azul" onClick={handleExcluir} disabled={excluindo} style={{ background: excluindo ? '#fca5a5' : COM_C.vermelho, borderColor: excluindo ? '#fca5a5' : COM_C.vermelho }}>
+                  {excluindo ? 'Excluindo…' : 'Sim, excluir'}
+                </Btn>
+              </>
+            }
+          >{null}</Modal>
+        )}
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

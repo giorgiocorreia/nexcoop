@@ -1,39 +1,15 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import type { TipoLancamento, StatusLancamento } from '@/types/database'
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function InputGroup({ label, children, required }: {
-  label: string; children: React.ReactNode; required?: boolean
-}) {
-  return (
-    <div>
-      <label style={{
-        display: 'block', fontSize: '12px', fontWeight: '600', color: '#555',
-        marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.4px',
-      }}>
-        {label}{required && <span style={{ color: '#dc2626', marginLeft: '3px' }}>*</span>}
-      </label>
-      {children}
-    </div>
-  )
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
-  borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
-  color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
-}
-
-const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#635BFF')
-const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#d5d3cc')
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Field, Input, Select, Textarea,
+  AlertBanner, MODULO_NEXCOOP, COM_C,
+} from '@/components/nexcoop/ui'
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -80,6 +56,12 @@ const TIPO_CONFIG = {
   despesa:      { label: 'Despesa',      icone: '↓', cor: '#993C1D', bg: '#FAECE7' },
   transferencia:{ label: 'Transferência',icone: '↔', cor: '#185FA5', bg: '#E6F1FB' },
 } as const
+
+const BTN_VARIANTE: Record<TipoLancamento, 'roxo' | 'marrom' | 'azul'> = {
+  receita: 'roxo',
+  despesa: 'marrom',
+  transferencia: 'azul',
+}
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 
@@ -180,255 +162,204 @@ export default function NovoLancamentoPage() {
   const tipo = TIPO_CONFIG[form.tipo]
 
   return (
-    <>
-      <style>{`
-        .nl-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .nl-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .nl-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .nl-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo="Novo Lançamento"
+      icone="ti-receipt-2"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: 'Financeiro', href: '/financeiro' },
+        { label: 'Novo' },
+      ]}
+      fullHeight
+    >
+      <div style={{ maxWidth: 720 }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      <header className="nl-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', gap: 12,
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-receipt-2" style={{ fontSize: 20, color: '#635BFF' }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Novo Lançamento</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/financeiro')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Financeiro</button>
-              {' / '}Novo
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="nl-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '680px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-          {/* ── Tipo ─────────────────────────────────────────────────────────── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
-              Tipo de lançamento
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-              {(Object.entries(TIPO_CONFIG) as [TipoLancamento, typeof TIPO_CONFIG[TipoLancamento]][]).map(([t, cfg]) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTipo(t)}
-                  style={{
-                    padding: '12px 10px', border: `1.5px solid ${form.tipo === t ? cfg.cor : '#d5d3cc'}`,
-                    borderRadius: '10px', background: form.tipo === t ? cfg.bg : '#fafaf8',
-                    cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', gap: '4px', transition: 'all 0.15s',
-                  }}
-                >
-                  <span style={{ fontSize: '22px', fontWeight: '700', color: cfg.cor }}>{cfg.icone}</span>
-                  <span style={{ fontSize: '12px', fontWeight: form.tipo === t ? '700' : '400', color: form.tipo === t ? cfg.cor : '#555' }}>
-                    {cfg.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Dados principais ──────────────────────────────────────────────── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-              Dados principais
-            </p>
-
-            <InputGroup label="Descrição" required>
-              <input
-                type="text" value={form.descricao} onChange={set('descricao')}
-                placeholder="Ex.: Anuidade cooperado, Compra de insumos…"
-                required style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-              />
-            </InputGroup>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Valor (R$)" required>
-                <input
-                  type="number" value={form.valor} onChange={set('valor')}
-                  placeholder="0,00" min="0.01" step="0.01" required
-                  style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-              <InputGroup label="Status" required>
-                <select value={form.status} onChange={set('status')} style={inputStyle} onFocus={onFocus} onBlur={onBlur}>
-                  <option value="pendente">Pendente</option>
-                  <option value="pago">Pago / Recebido</option>
-                  <option value="agendado">Agendado</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
-              </InputGroup>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Data de competência" required>
-                <input
-                  type="date" value={form.data_competencia} onChange={set('data_competencia')}
-                  required style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-              <InputGroup label="Data de vencimento">
-                <input
-                  type="date" value={form.data_vencimento} onChange={set('data_vencimento')}
-                  style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-            </div>
-
-            {/* Data de pagamento — só aparece se status = pago */}
-            {form.status === 'pago' && (
-              <InputGroup label="Data de pagamento / recebimento">
-                <input
-                  type="date" value={form.data_pagamento} onChange={set('data_pagamento')}
-                  style={{ ...inputStyle, maxWidth: '220px' }} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-            )}
-          </div>
-
-          {/* ── Vinculações ───────────────────────────────────────────────────── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-              Vinculações (opcional)
-            </p>
-
-            <InputGroup label="Cooperado vinculado">
-              <select value={form.cooperado_id} onChange={set('cooperado_id')} style={inputStyle} onFocus={onFocus} onBlur={onBlur}>
-                <option value="">Nenhum cooperado</option>
-                {cooperados.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome_completo}</option>
+            {/* ── Tipo ─────────────────────────────────────────────────────────── */}
+            <ContentCard title="Tipo de lançamento">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {(Object.entries(TIPO_CONFIG) as [TipoLancamento, typeof TIPO_CONFIG[TipoLancamento]][]).map(([t, cfg]) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTipo(t)}
+                    style={{
+                      padding: '12px 10px', border: `1.5px solid ${form.tipo === t ? cfg.cor : COM_C.borda}`,
+                      borderRadius: 10, background: form.tipo === t ? cfg.bg : '#FAFAF9',
+                      cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: 22, fontWeight: 700, color: cfg.cor }}>{cfg.icone}</span>
+                    <span style={{ fontSize: 12, fontWeight: form.tipo === t ? 700 : 400, color: form.tipo === t ? cfg.cor : COM_C.txtSub }}>
+                      {cfg.label}
+                    </span>
+                  </button>
                 ))}
-              </select>
-            </InputGroup>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Número do documento">
-                <input
-                  type="text" value={form.numero_documento} onChange={set('numero_documento')}
-                  placeholder="NF, recibo, boleto…" style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-              <InputGroup label="Centro de custo">
-                <input
-                  type="text" value={form.centro_custo} onChange={set('centro_custo')}
-                  placeholder="Ex.: Administrativo" style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                />
-              </InputGroup>
-            </div>
-
-            {/* Conta destino apenas para transferência */}
-            {form.tipo === 'transferencia' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Conta de origem">
-                  <input
-                    type="text" value={form.conta_id} onChange={set('conta_id')}
-                    placeholder="Nome ou ID da conta" style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                  />
-                </InputGroup>
-                <InputGroup label="Conta de destino">
-                  <input
-                    type="text" value={form.conta_destino_id} onChange={set('conta_destino_id')}
-                    placeholder="Nome ou ID da conta" style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-                  />
-                </InputGroup>
               </div>
-            )}
+            </ContentCard>
 
-            <InputGroup label="URL do comprovante">
-              <input
-                type="url" value={form.comprovante_url} onChange={set('comprovante_url')}
-                placeholder="https://…" style={inputStyle} onFocus={onFocus} onBlur={onBlur}
-              />
-            </InputGroup>
-          </div>
+            {/* ── Dados principais ──────────────────────────────────────────────── */}
+            <ContentCard title="Dados principais">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Descrição *">
+                  <Input
+                    type="text" value={form.descricao} onChange={set('descricao')}
+                    placeholder="Ex.: Anuidade cooperado, Compra de insumos…"
+                    required
+                  />
+                </Field>
 
-          {/* ── Recorrência ───────────────────────────────────────────────────── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-              Recorrência (opcional)
-            </p>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', color: '#333' }}>
-              <input
-                type="checkbox"
-                checked={form.recorrente}
-                onChange={e => setForm(prev => ({ ...prev, recorrente: e.target.checked, frequencia: '' }))}
-                style={{ accentColor: '#635BFF', width: '16px', height: '16px' }}
-              />
-              Este lançamento se repete periodicamente
-            </label>
-            {form.recorrente && (
-              <InputGroup label="Frequência">
-                <select value={form.frequencia} onChange={set('frequencia')} style={{ ...inputStyle, maxWidth: '200px' }} onFocus={onFocus} onBlur={onBlur}>
-                  <option value="">Selecione</option>
-                  <option value="mensal">Mensal</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-              </InputGroup>
-            )}
-          </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Valor (R$) *">
+                    <Input
+                      type="number" value={form.valor} onChange={set('valor')}
+                      placeholder="0,00" min="0.01" step="0.01" required
+                    />
+                  </Field>
+                  <Field label="Status *">
+                    <Select value={form.status} onChange={set('status')}>
+                      <option value="pendente">Pendente</option>
+                      <option value="pago">Pago / Recebido</option>
+                      <option value="agendado">Agendado</option>
+                      <option value="cancelado">Cancelado</option>
+                    </Select>
+                  </Field>
+                </div>
 
-          {/* ── Observações ───────────────────────────────────────────────────── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
-            <InputGroup label="Observações">
-              <textarea
-                value={form.observacoes} onChange={set('observacoes')}
-                placeholder="Anotações sobre este lançamento…"
-                rows={3}
-                style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }}
-                onFocus={onFocus} onBlur={onBlur}
-              />
-            </InputGroup>
-          </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Data de competência *">
+                    <Input
+                      type="date" value={form.data_competencia} onChange={set('data_competencia')}
+                      required
+                    />
+                  </Field>
+                  <Field label="Data de vencimento">
+                    <Input
+                      type="date" value={form.data_vencimento} onChange={set('data_vencimento')}
+                    />
+                  </Field>
+                </div>
 
-          {/* Erro */}
-          {erro && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626' }}>
-              ⚠ {erro}
+                {form.status === 'pago' && (
+                  <Field label="Data de pagamento / recebimento">
+                    <Input
+                      type="date" value={form.data_pagamento} onChange={set('data_pagamento')}
+                      style={{ maxWidth: 220 }}
+                    />
+                  </Field>
+                )}
+              </div>
+            </ContentCard>
+
+            {/* ── Vinculações ───────────────────────────────────────────────────── */}
+            <ContentCard title="Vinculações (opcional)">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Cooperado vinculado">
+                  <Select value={form.cooperado_id} onChange={set('cooperado_id')}>
+                    <option value="">Nenhum cooperado</option>
+                    {cooperados.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome_completo}</option>
+                    ))}
+                  </Select>
+                </Field>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Número do documento">
+                    <Input
+                      type="text" value={form.numero_documento} onChange={set('numero_documento')}
+                      placeholder="NF, recibo, boleto…"
+                    />
+                  </Field>
+                  <Field label="Centro de custo">
+                    <Input
+                      type="text" value={form.centro_custo} onChange={set('centro_custo')}
+                      placeholder="Ex.: Administrativo"
+                    />
+                  </Field>
+                </div>
+
+                {form.tipo === 'transferencia' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Conta de origem">
+                      <Input
+                        type="text" value={form.conta_id} onChange={set('conta_id')}
+                        placeholder="Nome ou ID da conta"
+                      />
+                    </Field>
+                    <Field label="Conta de destino">
+                      <Input
+                        type="text" value={form.conta_destino_id} onChange={set('conta_destino_id')}
+                        placeholder="Nome ou ID da conta"
+                      />
+                    </Field>
+                  </div>
+                )}
+
+                <Field label="URL do comprovante">
+                  <Input
+                    type="url" value={form.comprovante_url} onChange={set('comprovante_url')}
+                    placeholder="https://…"
+                  />
+                </Field>
+              </div>
+            </ContentCard>
+
+            {/* ── Recorrência ───────────────────────────────────────────────────── */}
+            <ContentCard title="Recorrência (opcional)">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: COM_C.txt }}>
+                  <input
+                    type="checkbox"
+                    checked={form.recorrente}
+                    onChange={e => setForm(prev => ({ ...prev, recorrente: e.target.checked, frequencia: '' }))}
+                    style={{ accentColor: COM_C.roxo, width: 16, height: 16 }}
+                  />
+                  Este lançamento se repete periodicamente
+                </label>
+                {form.recorrente && (
+                  <Field label="Frequência">
+                    <Select value={form.frequencia} onChange={set('frequencia')} style={{ maxWidth: 200 }}>
+                      <option value="">Selecione</option>
+                      <option value="mensal">Mensal</option>
+                      <option value="trimestral">Trimestral</option>
+                      <option value="anual">Anual</option>
+                    </Select>
+                  </Field>
+                )}
+              </div>
+            </ContentCard>
+
+            {/* ── Observações ───────────────────────────────────────────────────── */}
+            <ContentCard title="Observações">
+              <Field label="Observações">
+                <Textarea
+                  value={form.observacoes} onChange={set('observacoes')}
+                  placeholder="Anotações sobre este lançamento…"
+                  rows={3}
+                />
+              </Field>
+            </ContentCard>
+
+            {erro && <AlertBanner tipo="erro">{erro}</AlertBanner>}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: '2rem' }}>
+              <Btn type="button" variante="cinza" onClick={() => router.push('/financeiro')}>
+                Cancelar
+              </Btn>
+              <Btn
+                type="submit"
+                variante={BTN_VARIANTE[form.tipo]}
+                icone="ti-check"
+                disabled={salvando}
+              >
+                {salvando ? 'Salvando…' : `Registrar ${tipo.label.toLowerCase()}`}
+              </Btn>
             </div>
-          )}
-
-          {/* Ações */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '2rem' }}>
-            <button
-              type="button"
-              onClick={() => router.push('/financeiro')}
-              style={{ padding: '9px 20px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando}
-              style={{
-                padding: '9px 24px', border: 'none', borderRadius: '8px',
-                background: salvando ? '#9F9BFF' : tipo.cor,
-                color: '#fff', fontSize: '13px', fontWeight: '600',
-                cursor: salvando ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {salvando ? 'Salvando…' : `✓ Registrar ${tipo.label.toLowerCase()}`}
-            </button>
           </div>
-        </div>
-      </form>
+        </form>
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

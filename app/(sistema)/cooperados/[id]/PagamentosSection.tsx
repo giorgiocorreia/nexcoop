@@ -6,6 +6,7 @@ import { buscarCotas } from './cotas-actions'
 import { updateCooperadoStatus } from './cotas-actions'
 import { buscarPagamentos, registrarPagamentos, quitarParcela } from './pagamentos-actions'
 import { gerarReciboCota } from './recibo-cota-actions'
+import { ContentCard } from '@/components/nexcoop/ui'
 
 type FormaPag = 'dinheiro' | 'pix' | 'cartao' | 'promessa'
 
@@ -258,8 +259,10 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
 
   if (carregando) {
     return (
-      <div style={cardStyle}>
-        <div style={{ fontSize: 12, color: '#aaa' }}>Carregando pagamentos…</div>
+      <div style={{ marginTop: 12 }}>
+        <ContentCard title="Pagamentos de Cotas">
+          <div style={{ fontSize: 12, color: '#aaa' }}>Carregando pagamentos…</div>
+        </ContentCard>
       </div>
     )
   }
@@ -268,10 +271,8 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
 
   return (
     <>
-      <div style={cardStyle}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 16 }}>
-          💳 Pagamentos de Cotas
-        </div>
+      <div style={{ marginTop: 12 }}>
+      <ContentCard title="Pagamentos de Cotas">
 
         {cotas.map((cota, cotaIdx) => {
           const pags      = pagsPorCota[cota.id] ?? []
@@ -531,6 +532,7 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
             </div>
           )
         })}
+      </ContentCard>
       </div>
 
       {/* Modal de quitação total */}
@@ -569,15 +571,6 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
 export default PagamentosSection
 
 // ── Estilos ────────────────────────────────────────────────────────────────────
-const cardStyle: React.CSSProperties = {
-  marginTop: 12,
-  background: '#fff',
-  border: '1px solid #e5e3dc',
-  borderRadius: 12,
-  padding: '1.25rem',
-  fontFamily: 'system-ui, -apple-system, sans-serif',
-}
-
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '7px 10px',

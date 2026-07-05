@@ -5,6 +5,7 @@ import type { TipoCota, StatusCota, CotaCooperado, GrupoColaborador } from '@/ty
 import {
   buscarCotas, buscarGrupos, salvarCota, removerCota, criarGrupo
 } from './cotas-actions'
+import { ContentCard } from '@/components/nexcoop/ui'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_COTA: Record<StatusCota, { label: string; cor: string; bg: string }> = {
@@ -163,19 +164,17 @@ export default function CotasSection({ cooperadoId, orgId, onCotaAtualizada }: P
 
   if (carregando) {
     return (
-      <div style={cardStyle}>
-        <div style={{ fontSize: 12, color: '#aaa' }}>Carregando cotas…</div>
+      <div style={{ marginTop: 12 }}>
+        <ContentCard title="Cotas de Participação">
+          <div style={{ fontSize: 12, color: '#aaa' }}>Carregando cotas…</div>
+        </ContentCard>
       </div>
     )
   }
 
   return (
-    <div style={cardStyle}>
-
-      {/* Header */}
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 16 }}>
-        💰 Cotas de Participação
-      </div>
+    <div style={{ marginTop: 12 }}>
+    <ContentCard title="Cotas de Participação">
 
       {/* Alerta representante */}
       {alerta && (
@@ -261,6 +260,7 @@ export default function CotasSection({ cooperadoId, orgId, onCotaAtualizada }: P
         criandoGrupo={criandoGrupo}
       />
 
+    </ContentCard>
     </div>
   )
 }
@@ -507,11 +507,6 @@ function BlocoTipoCota({
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const cardStyle: React.CSSProperties = {
-  marginTop: 12, background: '#fff', border: '1px solid #e5e3dc',
-  borderRadius: 12, padding: '1.25rem',
-  fontFamily: 'system-ui, -apple-system, sans-serif',
-}
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '7px 10px', fontSize: 13,
   border: '1px solid #d5d3cc', borderRadius: 7,

@@ -1,9 +1,14 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Cooperado, StatusCooperado } from '@/types/database'
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Badge, InfoRow, AlertBanner,
+  MODULO_NEXCOOP, COM_C,
+} from '@/components/nexcoop/ui'
 import CotasSection from './CotasSection'
 import PagamentosSection from './PagamentosSection'
 
@@ -36,28 +41,6 @@ function formatarData(d: string | null) {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 }
 
-function InfoLinha({ label, valor }: { label: string; valor?: string | number | null }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f3ef' }}>
-      <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: '400', textAlign: 'right', maxWidth: '60%' }}>
-        {valor ?? '—'}
-      </span>
-    </div>
-  )
-}
-
-function Secao({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
-      <div style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span>{icone}</span> {titulo}
-      </div>
-      {children}
-    </div>
-  )
-}
-
 interface Props {
   cooperado:  Cooperado
   orgTipo:    string | null
@@ -73,11 +56,12 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
   const menuRef = useRef<HTMLDivElement>(null)
   const pagamentosRef = useRef<{ carregar: () => void } | null>(null)
 
+  const labelPlural = orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'
+
   const handleCotaAtualizada = useCallback(() => {
     pagamentosRef.current?.carregar()
   }, [])
 
-  // Fecha menu ao clicar fora
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -119,276 +103,221 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
     .join('')
     .toUpperCase()
 
+  const subtituloParts: string[] = []
+  if (cooperado.numero_matricula) subtituloParts.push(`Matríc. ${cooperado.numero_matricula}`)
+  subtituloParts.push(cooperado.tipo === 'pessoa_fisica' ? 'Pessoa Física' : 'Pessoa Jurídica')
+  if (cooperado.data_admissao) subtituloParts.push(`Admitido em ${formatarData(cooperado.data_admissao)}`)
+
   return (
-    <>
-      <style>{`
-        .cp-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .cp-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .cp-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .cp-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo={cooperado.nome_completo}
+      subtitulo={subtituloParts.join(' · ')}
+      icone="ti-user"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: labelPlural, href: '/cooperados' },
+        { label: cooperado.nome_completo },
+      ]}
+      acoes={
+        <Badge label={st.label} bg={st.bg} cor={st.cor} dot />
+      }
+    >
+      <div style={{ maxWidth: 960 }}>
 
-      <header className="cp-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-user" style={{ fontSize: 20, color: '#635BFF' }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>{cooperado.nome_completo}</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/cooperados')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>
-                {orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'}
-              </button>
-              {' / '}Perfil
-            </div>
-          </div>
-        </div>
-        <span style={{ fontSize: 12, fontWeight: 700, color: st.cor, background: st.bg, border: `1px solid ${st.border}`, padding: '3px 10px', borderRadius: 6, flexShrink: 0 }}>
-          {st.label}
-        </span>
-      </header>
-
-      <div className="cp-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '960px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-
-      {/* Mensagem de feedback */}
-      {mensagem && (
-        <div style={{
-          padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem',
-          background: mensagem.tipo === 'ok' ? '#EEF0FF' : '#fef2f2',
-          border: `1px solid ${mensagem.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`,
-          color: mensagem.tipo === 'ok' ? '#4840CC' : '#dc2626',
-        }}>
-          {mensagem.tipo === 'ok' ? '✓' : '⚠'} {mensagem.texto}
-        </div>
-      )}
-
-      {/* Cabeçalho do perfil */}
-      <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Avatar */}
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '50%', background: '#EEEDFE',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '22px', fontWeight: '700', color: '#4840CC', flexShrink: 0,
-            border: '2px solid #b8e8d6',
-          }}>
-            {iniciais}
-          </div>
-
-          <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>
-              {cooperado.nome_completo}
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flexWrap: 'wrap' }}>
-              {cooperado.numero_matricula && (
-                <span style={{ fontSize: '12px', color: '#888' }}>
-                  Matríc. {cooperado.numero_matricula}
-                </span>
-              )}
-              {cooperado.numero_matricula && <span style={{ color: '#ccc' }}>·</span>}
-              <span style={{ fontSize: '12px', color: '#888' }}>
-                {cooperado.tipo === 'pessoa_fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-              </span>
-              {cooperado.data_admissao && (
-                <>
-                  <span style={{ color: '#ccc' }}>·</span>
-                  <span style={{ fontSize: '12px', color: '#888' }}>
-                    Admitido em {formatarData(cooperado.data_admissao)}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Status com dropdown inline */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div ref={menuRef} style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowStatusMenu(prev => !prev)}
-              disabled={alterandoStatus}
-              title="Clique para alterar o status"
-              style={{
-                padding: '6px 14px 6px 10px', borderRadius: '20px',
-                border: `1.5px solid ${st.border}`, background: st.bg,
-                color: st.cor, fontSize: '12px', fontWeight: '700',
-                cursor: alterandoStatus ? 'wait' : 'pointer',
-                display: 'flex', alignItems: 'center', gap: '6px',
-                transition: 'opacity 0.1s',
-              }}
-            >
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: st.cor, flexShrink: 0, display: 'inline-block' }} />
-              {alterandoStatus ? 'Alterando…' : st.label}
-              <span style={{ fontSize: '10px', opacity: 0.6 }}>▼</span>
-            </button>
-
-            {showStatusMenu && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                background: '#fff', border: '1px solid #e5e3dc', borderRadius: '10px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.10)', zIndex: 50, overflow: 'hidden',
-                minWidth: '160px',
-              }}>
-                {TODOS_STATUS.map(s => {
-                  const cfg = STATUS_CONFIG[s]
-                  const ativo = s === cooperado.status
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => alterarStatus(s)}
-                      style={{
-                        width: '100%', padding: '9px 14px', border: 'none',
-                        background: ativo ? cfg.bg : 'transparent',
-                        color: ativo ? cfg.cor : '#444',
-                        fontSize: '13px', textAlign: 'left', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        fontWeight: ativo ? '600' : '400',
-                      }}
-                      onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = '#f8f7f4' }}
-                      onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                    >
-                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: cfg.cor, flexShrink: 0 }} />
-                      {cfg.label}
-                      {ativo && <span style={{ marginLeft: 'auto', fontSize: '11px' }}>✓</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => router.push(`/cooperados/${cooperado.id}/editar`)}
-            style={{
-              padding: '7px 16px', border: '1px solid #d5d3cc', borderRadius: '8px',
-              background: '#fff', fontSize: '13px', color: '#444', cursor: 'pointer',
-              fontWeight: '500',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f8f7f4' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff' }}
-          >
-            ✏️ Editar
-          </button>
-        </div>
-      </div>
-
-      {/* Grid de seções */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-
-        {/* Dados pessoais */}
-        <Secao titulo="Dados pessoais" icone="👤">
-          {cooperado.tipo === 'pessoa_fisica' ? (
-            <>
-              <InfoLinha label="CPF" valor={formatarCPF(cooperado.cpf)} />
-              <InfoLinha label="RG" valor={cooperado.rg} />
-              <InfoLinha label="Data de nascimento" valor={formatarData(cooperado.data_nascimento)} />
-              <InfoLinha label="Sexo" valor={cooperado.sexo === 'M' ? 'Masculino' : cooperado.sexo === 'F' ? 'Feminino' : cooperado.sexo === 'outro' ? 'Outro' : null} />
-            </>
-          ) : (
-            <>
-              <InfoLinha label="CNPJ" valor={cooperado.cnpj_pj} />
-              <InfoLinha label="Representante" valor={cooperado.representante_nome} />
-              <InfoLinha label="CPF do representante" valor={formatarCPF(cooperado.representante_cpf)} />
-            </>
-          )}
-        </Secao>
-
-        {/* Contato */}
-        <Secao titulo="Contato" icone="📞">
-          <InfoLinha label="E-mail" valor={cooperado.email} />
-          <InfoLinha label="Telefone" valor={cooperado.telefone} />
-          <InfoLinha label="WhatsApp" valor={cooperado.whatsapp} />
-        </Secao>
-
-        {/* Endereço */}
-        <Secao titulo="Endereço" icone="📍">
-          {cooperado.logradouro ? (
-            <InfoLinha
-              label="Logradouro"
-              valor={`${cooperado.logradouro}${cooperado.numero ? `, ${cooperado.numero}` : ''}${cooperado.complemento ? ` — ${cooperado.complemento}` : ''}`}
-            />
-          ) : null}
-          <InfoLinha label="Bairro" valor={cooperado.bairro} />
-          <InfoLinha label="Cidade / UF" valor={cooperado.cidade && cooperado.estado ? `${cooperado.cidade} / ${cooperado.estado}` : cooperado.cidade || cooperado.estado} />
-          <InfoLinha label="CEP" valor={cooperado.cep} />
-        </Secao>
-
-        {/* Propriedade rural */}
-        <Secao titulo="Propriedade rural" icone="🌱">
-          <InfoLinha label="Nome da propriedade" valor={cooperado.nome_propriedade} />
-          <InfoLinha label="Área total" valor={cooperado.area_total_ha != null ? `${cooperado.area_total_ha} ha` : null} />
-          <InfoLinha label="CAF" valor={cooperado.caf_numero} />
-          <InfoLinha label="Situação CAF" valor={cooperado.caf_situacao} />
-          <InfoLinha label="Validade CAF" valor={formatarData(cooperado.caf_validade)} />
-          <InfoLinha label="DAP" valor={cooperado.dap_numero} />
-        </Secao>
-
-        {/* Cadastro */}
-        <Secao titulo="Cadastro" icone="📋">
-          <InfoLinha label="Matrícula" valor={cooperado.numero_matricula} />
-          <InfoLinha label="Data de admissão" valor={formatarData(cooperado.data_admissao)} />
-          {cooperado.data_saida && (
-            <InfoLinha label="Data de saída" valor={formatarData(cooperado.data_saida)} />
-          )}
-          {cooperado.motivo_saida && (
-            <InfoLinha label="Motivo de saída" valor={cooperado.motivo_saida} />
-          )}
-          <InfoLinha label="Cadastrado em" valor={new Date(cooperado.criado_em).toLocaleDateString('pt-BR')} />
-          <InfoLinha label="Última atualização" valor={new Date(cooperado.atualizado_em).toLocaleDateString('pt-BR')} />
-        </Secao>
-
-        {/* Localização */}
-        {(cooperado.latitude || cooperado.longitude) && (
-          <Secao titulo="Geolocalização" icone="🗺️">
-            <InfoLinha label="Latitude" valor={cooperado.latitude?.toString()} />
-            <InfoLinha label="Longitude" valor={cooperado.longitude?.toString()} />
-            <div style={{ marginTop: '10px' }}>
-              <a
-                href={`https://maps.google.com/?q=${cooperado.latitude},${cooperado.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: '12px', color: '#185FA5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              >
-                🗺️ Ver no Google Maps →
-              </a>
-            </div>
-          </Secao>
+        {mensagem && (
+          <AlertBanner tipo={mensagem.tipo === 'ok' ? 'ok' : 'erro'}>
+            {mensagem.texto}
+          </AlertBanner>
         )}
-      </div>
 
-      {/* Cotas de Participação — exclusivo cooperativas */}
-      {orgTipo === 'cooperativa' && (
-        <CotasSection
-          cooperadoId={cooperado.id}
-          orgId={cooperado.organizacao_id}
-          onCotaAtualizada={handleCotaAtualizada}
-        />
-      )}
+        <div style={{ marginBottom: 16 }}>
+        <ContentCard padding="1.5rem">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%', background: COM_C.roxoLt,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, fontWeight: 700, color: COM_C.roxo, flexShrink: 0,
+                border: `2px solid ${COM_C.borda}`,
+              }}>
+                {iniciais}
+              </div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: COM_C.txt }}>
+                  {cooperado.nome_completo}
+                </div>
+                <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 4 }}>
+                  {subtituloParts.join(' · ')}
+                </div>
+              </div>
+            </div>
 
-      {/* Pagamentos de cotas — exclusivo cooperativas */}
-      {orgTipo === 'cooperativa' && (
-        <PagamentosSection
-          ref={pagamentosRef}
-          cooperadoId={cooperado.id}
-          orgId={cooperado.organizacao_id}
-          usuarioId={usuarioId}
-        />
-      )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div ref={menuRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowStatusMenu(prev => !prev)}
+                  disabled={alterandoStatus}
+                  title="Clique para alterar o status"
+                  style={{
+                    padding: '6px 14px 6px 10px', borderRadius: 20,
+                    border: `1.5px solid ${st.border}`, background: st.bg,
+                    color: st.cor, fontSize: 12, fontWeight: 700,
+                    cursor: alterandoStatus ? 'wait' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    transition: 'opacity 0.1s', fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: st.cor, flexShrink: 0, display: 'inline-block' }} />
+                  {alterandoStatus ? 'Alterando…' : st.label}
+                  <i className="ti ti-chevron-down" style={{ fontSize: 10, opacity: 0.6 }} />
+                </button>
 
-      {/* Rodapé com ID */}
-      <p style={{ fontSize: '11px', color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
-        ID: {cooperado.id}
-      </p>
+                {showStatusMenu && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                    background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 10,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.10)', zIndex: 50, overflow: 'hidden',
+                    minWidth: 160,
+                  }}>
+                    {TODOS_STATUS.map(s => {
+                      const cfg = STATUS_CONFIG[s]
+                      const ativo = s === cooperado.status
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => alterarStatus(s)}
+                          style={{
+                            width: '100%', padding: '9px 14px', border: 'none',
+                            background: ativo ? cfg.bg : 'transparent',
+                            color: ativo ? cfg.cor : COM_C.txt,
+                            fontSize: 13, textAlign: 'left', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            fontWeight: ativo ? 600 : 400, fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = COM_C.bg }}
+                          onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                        >
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.cor, flexShrink: 0 }} />
+                          {cfg.label}
+                          {ativo && <i className="ti ti-check" style={{ marginLeft: 'auto', fontSize: 12 }} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Btn
+                variante="cinza"
+                icone="ti-pencil"
+                onClick={() => router.push(`/cooperados/${cooperado.id}/editar`)}
+              >
+                Editar
+              </Btn>
+            </div>
+          </div>
+        </ContentCard>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+          <ContentCard title="Dados pessoais">
+            {cooperado.tipo === 'pessoa_fisica' ? (
+              <>
+                <InfoRow label="CPF" valor={formatarCPF(cooperado.cpf)} />
+                <InfoRow label="RG" valor={cooperado.rg} />
+                <InfoRow label="Data de nascimento" valor={formatarData(cooperado.data_nascimento)} />
+                <InfoRow label="Sexo" valor={cooperado.sexo === 'M' ? 'Masculino' : cooperado.sexo === 'F' ? 'Feminino' : cooperado.sexo === 'outro' ? 'Outro' : null} />
+              </>
+            ) : (
+              <>
+                <InfoRow label="CNPJ" valor={cooperado.cnpj_pj} />
+                <InfoRow label="Representante" valor={cooperado.representante_nome} />
+                <InfoRow label="CPF do representante" valor={formatarCPF(cooperado.representante_cpf)} />
+              </>
+            )}
+          </ContentCard>
+
+          <ContentCard title="Contato">
+            <InfoRow label="E-mail" valor={cooperado.email} />
+            <InfoRow label="Telefone" valor={cooperado.telefone} />
+            <InfoRow label="WhatsApp" valor={cooperado.whatsapp} />
+          </ContentCard>
+
+          <ContentCard title="Endereço">
+            {cooperado.logradouro ? (
+              <InfoRow
+                label="Logradouro"
+                valor={`${cooperado.logradouro}${cooperado.numero ? `, ${cooperado.numero}` : ''}${cooperado.complemento ? ` — ${cooperado.complemento}` : ''}`}
+              />
+            ) : null}
+            <InfoRow label="Bairro" valor={cooperado.bairro} />
+            <InfoRow label="Cidade / UF" valor={cooperado.cidade && cooperado.estado ? `${cooperado.cidade} / ${cooperado.estado}` : cooperado.cidade || cooperado.estado} />
+            <InfoRow label="CEP" valor={cooperado.cep} />
+          </ContentCard>
+
+          <ContentCard title="Propriedade rural">
+            <InfoRow label="Nome da propriedade" valor={cooperado.nome_propriedade} />
+            <InfoRow label="Área total" valor={cooperado.area_total_ha != null ? `${cooperado.area_total_ha} ha` : null} />
+            <InfoRow label="CAF" valor={cooperado.caf_numero} />
+            <InfoRow label="Situação CAF" valor={cooperado.caf_situacao} />
+            <InfoRow label="Validade CAF" valor={formatarData(cooperado.caf_validade)} />
+            <InfoRow label="DAP" valor={cooperado.dap_numero} />
+          </ContentCard>
+
+          <ContentCard title="Cadastro">
+            <InfoRow label="Matrícula" valor={cooperado.numero_matricula} />
+            <InfoRow label="Data de admissão" valor={formatarData(cooperado.data_admissao)} />
+            {cooperado.data_saida && (
+              <InfoRow label="Data de saída" valor={formatarData(cooperado.data_saida)} />
+            )}
+            {cooperado.motivo_saida && (
+              <InfoRow label="Motivo de saída" valor={cooperado.motivo_saida} />
+            )}
+            <InfoRow label="Cadastrado em" valor={new Date(cooperado.criado_em).toLocaleDateString('pt-BR')} />
+            <InfoRow label="Última atualização" valor={new Date(cooperado.atualizado_em).toLocaleDateString('pt-BR')} />
+          </ContentCard>
+
+          {(cooperado.latitude || cooperado.longitude) && (
+            <ContentCard title="Geolocalização">
+              <InfoRow label="Latitude" valor={cooperado.latitude?.toString()} />
+              <InfoRow label="Longitude" valor={cooperado.longitude?.toString()} />
+              <div style={{ marginTop: 10 }}>
+                <a
+                  href={`https://maps.google.com/?q=${cooperado.latitude},${cooperado.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: COM_C.azul, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  <i className="ti ti-map-pin" style={{ fontSize: 14 }} />
+                  Ver no Google Maps
+                </a>
+              </div>
+            </ContentCard>
+          )}
+        </div>
+
+        {orgTipo === 'cooperativa' && (
+          <CotasSection
+            cooperadoId={cooperado.id}
+            orgId={cooperado.organizacao_id}
+            onCotaAtualizada={handleCotaAtualizada}
+          />
+        )}
+
+        {orgTipo === 'cooperativa' && (
+          <PagamentosSection
+            ref={pagamentosRef}
+            cooperadoId={cooperado.id}
+            orgId={cooperado.organizacao_id}
+            usuarioId={usuarioId}
+          />
+        )}
+
+        <p style={{ fontSize: 11, color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
+          ID: {cooperado.id}
+        </p>
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

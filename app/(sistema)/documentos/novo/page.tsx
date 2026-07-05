@@ -1,12 +1,15 @@
-﻿'use client'
+'use client'
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import type { CategoriaDocumento } from '@/types/database'
-
-// ─── Configurações ────────────────────────────────────────────────────────────
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Field, Input, Select, Textarea,
+  AlertBanner, MODULO_NEXCOOP, COM_C,
+} from '@/components/nexcoop/ui'
 
 const CATEGORIAS: { valor: CategoriaDocumento; label: string; icone: string }[] = [
   { valor: 'estatuto',   label: 'Estatuto',    icone: '📋' },
@@ -23,50 +26,11 @@ const CATEGORIAS: { valor: CategoriaDocumento; label: string; icone: string }[] 
   { valor: 'outro',      label: 'Outro',       icone: '📄' },
 ]
 
-// ─── Helpers visuais ──────────────────────────────────────────────────────────
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
-  borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
-  color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
-}
-const fo = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#635BFF')
-const bl = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-  (e.target.style.borderColor = '#d5d3cc')
-
-function InputGroup({ label, children, required, dica }: {
-  label: string; children: React.ReactNode; required?: boolean; dica?: string
-}) {
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-        {label}{required && <span style={{ color: '#dc2626', marginLeft: '3px' }}>*</span>}
-      </label>
-      {children}
-      {dica && <p style={{ fontSize: '11px', color: '#aaa', marginTop: '4px', margin: 0 }}>{dica}</p>}
-    </div>
-  )
-}
-
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-        {titulo}
-      </p>
-      {children}
-    </div>
-  )
-}
-
 function formatBytes(b: number) {
   if (b < 1024) return `${b} B`
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
   return `${(b / 1024 / 1024).toFixed(2)} MB`
 }
-
-// ─── Form ─────────────────────────────────────────────────────────────────────
 
 interface FormData {
   nome: string
@@ -79,7 +43,7 @@ interface FormData {
   alerta_dias: string
   restrito: boolean
   versao: string
-  arquivo_url: string  // preenchido manualmente ou via upload
+  arquivo_url: string
 }
 
 const INICIAL: FormData = {
@@ -106,7 +70,7 @@ export default function NovoDocumentoPage() {
   function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null
     setArquivo(f)
-    if (f) setForm(p => ({ ...p, arquivo_url: '' })) // limpa URL manual se houver arquivo
+    if (f) setForm(p => ({ ...p, arquivo_url: '' }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -132,7 +96,6 @@ export default function NovoDocumentoPage() {
 
     let arquivoUrl = form.arquivo_url.trim()
 
-    // Upload para Supabase Storage se houver arquivo selecionado
     if (arquivo) {
       setProgresso('uploading')
       const ext  = arquivo.name.split('.').pop() ?? 'bin'
@@ -143,7 +106,6 @@ export default function NovoDocumentoPage() {
         .upload(path, arquivo, { contentType: arquivo.type, upsert: false })
 
       if (uploadErr) {
-        // Se o bucket não existir, mostra mensagem clara
         const msg = uploadErr.message.includes('Bucket not found')
           ? 'Bucket "documentos" não existe no Supabase Storage. Crie-o primeiro ou informe a URL manualmente.'
           : traduzirErro(uploadErr.message)
@@ -191,211 +153,171 @@ export default function NovoDocumentoPage() {
   const catAtual = CATEGORIAS.find(c => c.valor === form.categoria)!
 
   return (
-    <>
-      <style>{`
-        .nd-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .nd-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .nd-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .nd-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo="Novo Documento"
+      icone="ti-files"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: 'Documentos', href: '/documentos' },
+        { label: 'Novo' },
+      ]}
+      fullHeight
+    >
+      <div style={{ maxWidth: 720 }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      <header className="nd-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', gap: 12,
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-files" style={{ fontSize: 20, color: '#185FA5' }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Novo Documento</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/documentos')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Documentos</button>
-              {' / '}Novo
-            </div>
-          </div>
-        </div>
-      </header>
+            <ContentCard title="Identificação">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Nome do documento *">
+                  <Input type="text" value={form.nome} onChange={set('nome')}
+                    placeholder="Ex.: Estatuto Social 2024" required
+                  />
+                </Field>
 
-      <div className="nd-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '720px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                <Field label="Categoria *">
+                  <Select value={form.categoria} onChange={set('categoria')}>
+                    {CATEGORIAS.map(c => (
+                      <option key={c.valor} value={c.valor}>{c.icone} {c.label}</option>
+                    ))}
+                  </Select>
+                </Field>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Número / Código">
+                    <Input type="text" value={form.numero_documento} onChange={set('numero_documento')}
+                      placeholder="Ex.: 001/2024"
+                    />
+                  </Field>
+                  <Field label="Órgão emissor">
+                    <Input type="text" value={form.orgao_emissor} onChange={set('orgao_emissor')}
+                      placeholder="Ex.: JUCEB, Receita Federal"
+                    />
+                  </Field>
+                </div>
 
-          {/* ── Seção 1: Identificação ───────────────────────────────────────── */}
-          <Secao titulo="Identificação">
-            <InputGroup label="Nome do documento" required>
-              <input type="text" value={form.nome} onChange={set('nome')}
-                placeholder="Ex.: Estatuto Social 2024" required style={inp} onFocus={fo} onBlur={bl}
-              />
-            </InputGroup>
-
-            <InputGroup label="Categoria" required>
-              <select value={form.categoria} onChange={set('categoria')} style={inp} onFocus={fo} onBlur={bl}>
-                {CATEGORIAS.map(c => (
-                  <option key={c.valor} value={c.valor}>{c.icone} {c.label}</option>
-                ))}
-              </select>
-            </InputGroup>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Número / Código">
-                <input type="text" value={form.numero_documento} onChange={set('numero_documento')}
-                  placeholder="Ex.: 001/2024" style={inp} onFocus={fo} onBlur={bl}
-                />
-              </InputGroup>
-              <InputGroup label="Órgão emissor">
-                <input type="text" value={form.orgao_emissor} onChange={set('orgao_emissor')}
-                  placeholder="Ex.: JUCEB, Receita Federal" style={inp} onFocus={fo} onBlur={bl}
-                />
-              </InputGroup>
-            </div>
-
-            <InputGroup label="Descrição">
-              <textarea value={form.descricao} onChange={set('descricao')}
-                placeholder="Resumo ou observações sobre o documento…"
-                rows={3} style={{ ...inp, resize: 'vertical', minHeight: '72px' }}
-                onFocus={fo} onBlur={bl}
-              />
-            </InputGroup>
-          </Secao>
-
-          {/* ── Seção 2: Arquivo ─────────────────────────────────────────────── */}
-          <Secao titulo="Arquivo">
-            <InputGroup label="Enviar arquivo" dica="PDF, DOCX, XLSX, imagem — máx. 20 MB. Requer bucket 'documentos' no Supabase Storage.">
-              <div
-                onClick={() => fileRef.current?.click()}
-                style={{
-                  border: `2px dashed ${arquivo ? '#635BFF' : '#d5d3cc'}`,
-                  borderRadius: '10px', padding: '1.25rem', textAlign: 'center',
-                  cursor: 'pointer', background: arquivo ? '#f0fbf7' : '#fafaf8',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {arquivo ? (
-                  <div>
-                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>{catAtual.icone}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#4840CC' }}>{arquivo.name}</div>
-                    <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
-                      {arquivo.type} · {formatBytes(arquivo.size)}
-                    </div>
-                    <button type="button" onClick={e => { e.stopPropagation(); setArquivo(null); if (fileRef.current) fileRef.current.value = '' }}
-                      style={{ marginTop: '8px', fontSize: '11px', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-                      Remover
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: '28px', marginBottom: '4px' }}>📁</div>
-                    <div style={{ fontSize: '13px', color: '#555' }}>Clique para selecionar um arquivo</div>
-                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>ou arraste e solte aqui</div>
-                  </div>
-                )}
+                <Field label="Descrição">
+                  <Textarea value={form.descricao} onChange={set('descricao')}
+                    placeholder="Resumo ou observações sobre o documento…"
+                    rows={3} style={{ minHeight: 72 }}
+                  />
+                </Field>
               </div>
-              <input ref={fileRef} type="file" onChange={handleArquivo} style={{ display: 'none' }}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
-              />
-              {progresso === 'uploading' && (
-                <div style={{ fontSize: '12px', color: '#854F0B', marginTop: '6px' }}>⏳ Enviando arquivo…</div>
-              )}
-            </InputGroup>
+            </ContentCard>
 
-            <InputGroup label="Ou informe a URL do arquivo" dica="Use se o arquivo já estiver hospedado em outro lugar.">
-              <input type="url" value={form.arquivo_url} onChange={set('arquivo_url')}
-                placeholder="https://…" disabled={!!arquivo}
-                style={{ ...inp, opacity: arquivo ? 0.5 : 1, cursor: arquivo ? 'not-allowed' : 'text' }}
-                onFocus={fo} onBlur={bl}
-              />
-            </InputGroup>
-          </Secao>
-
-          {/* ── Seção 3: Datas ───────────────────────────────────────────────── */}
-          <Secao titulo="Datas e Validade">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Data de emissão">
-                <input type="date" value={form.data_emissao} onChange={set('data_emissao')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </InputGroup>
-              <InputGroup label="Data de validade">
-                <input type="date" value={form.data_validade} onChange={set('data_validade')}
-                  style={inp} onFocus={fo} onBlur={bl}
-                />
-              </InputGroup>
-            </div>
-
-            <InputGroup label="Alerta de vencimento (dias)"
-              dica="Quantos dias antes do vencimento o sistema deve alertar.">
-              <input type="number" value={form.alerta_dias} onChange={set('alerta_dias')}
-                min="1" max="365" placeholder="30"
-                style={{ ...inp, maxWidth: '160px' }} onFocus={fo} onBlur={bl}
-              />
-            </InputGroup>
-          </Secao>
-
-          {/* ── Seção 4: Configurações ───────────────────────────────────────── */}
-          <Secao titulo="Configurações">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <InputGroup label="Versão" dica="Número de versão do documento.">
-                <input type="number" value={form.versao} onChange={set('versao')}
-                  min="1" placeholder="1"
-                  style={{ ...inp, maxWidth: '120px' }} onFocus={fo} onBlur={bl}
-                />
-              </InputGroup>
-
-              <InputGroup label="Acesso restrito" dica="Somente administradores podem visualizar.">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', paddingTop: '4px' }}>
+            <ContentCard title="Arquivo">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Enviar arquivo" hint="PDF, DOCX, XLSX, imagem — máx. 20 MB. Requer bucket 'documentos' no Supabase Storage.">
                   <div
-                    onClick={() => setForm(p => ({ ...p, restrito: !p.restrito }))}
+                    onClick={() => fileRef.current?.click()}
                     style={{
-                      width: '36px', height: '20px', borderRadius: '10px',
-                      background: form.restrito ? '#635BFF' : '#d5d3cc',
-                      position: 'relative', cursor: 'pointer', flexShrink: 0,
-                      transition: 'background 0.2s',
+                      border: `2px dashed ${arquivo ? COM_C.roxo : COM_C.borda}`,
+                      borderRadius: 10, padding: '1.25rem', textAlign: 'center',
+                      cursor: 'pointer', background: arquivo ? COM_C.roxoLt : '#fafaf8',
+                      transition: 'all 0.15s',
                     }}
                   >
-                    <div style={{
-                      width: '16px', height: '16px', borderRadius: '50%', background: '#fff',
-                      position: 'absolute', top: '2px', transition: 'left 0.2s',
-                      left: form.restrito ? '18px' : '2px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                    }} />
+                    {arquivo ? (
+                      <div>
+                        <div style={{ fontSize: 24, marginBottom: 4 }}>{catAtual.icone}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: COM_C.roxo }}>{arquivo.name}</div>
+                        <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>
+                          {arquivo.type} · {formatBytes(arquivo.size)}
+                        </div>
+                        <button type="button" onClick={e => { e.stopPropagation(); setArquivo(null); if (fileRef.current) fileRef.current.value = '' }}
+                          style={{ marginTop: 8, fontSize: 11, color: COM_C.vermelho, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                          Remover
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: 28, marginBottom: 4 }}>📁</div>
+                        <div style={{ fontSize: 13, color: COM_C.txtSub }}>Clique para selecionar um arquivo</div>
+                        <div style={{ fontSize: 11, color: '#A8A29E', marginTop: 2 }}>ou arraste e solte aqui</div>
+                      </div>
+                    )}
                   </div>
-                  <span style={{ fontSize: '13px', color: form.restrito ? '#4840CC' : '#555', fontWeight: form.restrito ? '600' : '400' }}>
-                    {form.restrito ? 'Restrito' : 'Público interno'}
-                  </span>
-                </label>
-              </InputGroup>
-            </div>
-          </Secao>
+                  <input ref={fileRef} type="file" onChange={handleArquivo} style={{ display: 'none' }}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+                  />
+                  {progresso === 'uploading' && (
+                    <div style={{ fontSize: 12, color: '#854F0B', marginTop: 6 }}>⏳ Enviando arquivo…</div>
+                  )}
+                </Field>
 
-          {/* Erro */}
-          {erro && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626' }}>
-              ⚠ {erro}
-            </div>
-          )}
+                <Field label="Ou informe a URL do arquivo" hint="Use se o arquivo já estiver hospedado em outro lugar.">
+                  <Input type="url" value={form.arquivo_url} onChange={set('arquivo_url')}
+                    placeholder="https://…" disabled={!!arquivo}
+                    style={{ opacity: arquivo ? 0.5 : 1, cursor: arquivo ? 'not-allowed' : 'text' }}
+                  />
+                </Field>
+              </div>
+            </ContentCard>
 
-          {/* Ações */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingBottom: '2rem' }}>
-            <button type="button" onClick={() => router.push('/documentos')}
-              style={{ padding: '9px 20px', border: '1px solid #d5d3cc', borderRadius: '8px', background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer' }}>
-              Cancelar
-            </button>
-            <button type="submit" disabled={salvando}
-              style={{ padding: '9px 24px', border: 'none', borderRadius: '8px', background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: salvando ? 'not-allowed' : 'pointer' }}>
-              {salvando ? (progresso === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : '✓ Cadastrar documento'}
-            </button>
+            <ContentCard title="Datas e Validade">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Data de emissão">
+                    <Input type="date" value={form.data_emissao} onChange={set('data_emissao')} />
+                  </Field>
+                  <Field label="Data de validade">
+                    <Input type="date" value={form.data_validade} onChange={set('data_validade')} />
+                  </Field>
+                </div>
+
+                <Field label="Alerta de vencimento (dias)" hint="Quantos dias antes do vencimento o sistema deve alertar.">
+                  <Input type="number" value={form.alerta_dias} onChange={set('alerta_dias')}
+                    min="1" max="365" placeholder="30" style={{ maxWidth: 160 }}
+                  />
+                </Field>
+              </div>
+            </ContentCard>
+
+            <ContentCard title="Configurações">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Versão" hint="Número de versão do documento.">
+                  <Input type="number" value={form.versao} onChange={set('versao')}
+                    min="1" placeholder="1" style={{ maxWidth: 120 }}
+                  />
+                </Field>
+
+                <Field label="Acesso restrito" hint="Somente administradores podem visualizar.">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', paddingTop: 4 }}>
+                    <div
+                      onClick={() => setForm(p => ({ ...p, restrito: !p.restrito }))}
+                      style={{
+                        width: 36, height: 20, borderRadius: 10,
+                        background: form.restrito ? COM_C.roxo : COM_C.borda,
+                        position: 'relative', cursor: 'pointer', flexShrink: 0,
+                        transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: 2, transition: 'left 0.2s',
+                        left: form.restrito ? 18 : 2,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 13, color: form.restrito ? COM_C.roxo : COM_C.txtSub, fontWeight: form.restrito ? 600 : 400 }}>
+                      {form.restrito ? 'Restrito' : 'Público interno'}
+                    </span>
+                  </label>
+                </Field>
+              </div>
+            </ContentCard>
+
+            {erro && <AlertBanner tipo="erro">{erro}</AlertBanner>}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: 32 }}>
+              <Btn variante="cinza" onClick={() => router.push('/documentos')}>Cancelar</Btn>
+              <Btn type="submit" variante="roxo" icone="ti-check" disabled={salvando}>
+                {salvando ? (progresso === 'uploading' ? 'Enviando arquivo…' : 'Salvando…') : 'Cadastrar documento'}
+              </Btn>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }

@@ -5,6 +5,11 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
+import { Btn } from '@/components/ui/Btn'
+import {
+  PageLayout, ContentCard, Field, Input, Select, Textarea,
+  Tabs, AlertBanner, MODULO_NEXCOOP, COM_C,
+} from '@/components/nexcoop/ui'
 import type { StatusCooperado } from '@/types/database'
 
 const UFS = [
@@ -16,12 +21,16 @@ const CAF_SITUACOES = ['ativo', 'vencido', 'em_renovacao', 'cancelado']
 
 type Aba = 'pessoal' | 'contato' | 'propriedade' | 'cadastro'
 
-const ABAS: { id: Aba; label: string; icone: string }[] = [
-  { id: 'pessoal',     label: 'Dados pessoais',     icone: '👤' },
-  { id: 'contato',     label: 'Contato / Endereço', icone: '📍' },
-  { id: 'propriedade', label: 'Propriedade rural',  icone: '🌱' },
-  { id: 'cadastro',    label: 'Cadastro',            icone: '📋' },
+const ABAS: { id: Aba; label: string; icon: string }[] = [
+  { id: 'pessoal',     label: 'Dados pessoais',     icon: 'ti-user' },
+  { id: 'contato',     label: 'Contato / Endereço', icon: 'ti-map-pin' },
+  { id: 'propriedade', label: 'Propriedade rural',  icon: 'ti-plant-2' },
+  { id: 'cadastro',    label: 'Cadastro',            icon: 'ti-clipboard-list' },
 ]
+
+function lbl(text: string, required?: boolean) {
+  return required ? `${text} *` : text
+}
 
 interface FormData {
   tipo: 'pessoa_fisica' | 'pessoa_juridica'
@@ -56,23 +65,6 @@ interface FormData {
   numero_matricula: string
   motivo_saida: string
   quota_parte: string
-}
-
-function InputGroup({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-        {label}{required && <span style={{ color: '#dc2626', marginLeft: '3px' }}>*</span>}
-      </label>
-      {children}
-    </div>
-  )
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d5d3cc',
-  borderRadius: '8px', fontSize: '13px', background: '#fafaf8',
-  color: '#1a1a1a', outline: 'none', boxSizing: 'border-box',
 }
 
 export default function EditarCooperadoPage() {
@@ -240,373 +232,247 @@ export default function EditarCooperadoPage() {
 
   if (carregando) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', color: '#888', fontSize: '14px' }}>
-        Carregando...
-      </div>
+      <PageLayout titulo="Editar Filiado" icone="ti-user-edit" modulo={MODULO_NEXCOOP}
+        breadcrumb={[{ label: 'Cooperados', href: '/cooperados' }, { label: 'Editar' }]}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: COM_C.txtSub, fontSize: 14 }}>
+          <i className="ti ti-loader" style={{ marginRight: 8 }} /> Carregando...
+        </div>
+      </PageLayout>
     )
   }
 
   if (!form) {
     return (
-      <div style={{ color: '#dc2626', fontSize: '14px', padding: '2rem' }}>
-        {erro || 'Filiado não encontrado.'}
-      </div>
+      <PageLayout titulo="Editar Filiado" icone="ti-user-edit" modulo={MODULO_NEXCOOP}
+        breadcrumb={[{ label: 'Cooperados', href: '/cooperados' }, { label: 'Editar' }]}>
+        <AlertBanner tipo="erro">{erro || 'Filiado não encontrado.'}</AlertBanner>
+      </PageLayout>
     )
   }
 
   const abaIdx = ABAS.findIndex(a => a.id === abaAtiva)
 
   return (
-    <>
-      <style>{`
-        .ec-header  { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-        .ec-content { padding: 28px 32px; }
-        @media (max-width: 640px) {
-          .ec-header  { padding: 0 16px 0 56px; min-height: 60px; }
-          .ec-content { padding: 16px; }
-        }
-      `}</style>
+    <PageLayout
+      titulo="Editar Filiado"
+      icone="ti-user-edit"
+      modulo={MODULO_NEXCOOP}
+      breadcrumb={[
+        { label: 'Cooperados', href: '/cooperados' },
+        { label: 'Perfil', href: `/cooperados/${id}` },
+        { label: 'Editar' },
+      ]}
+    >
+      <div style={{ maxWidth: 760 }}>
 
-      <header className="ec-header" style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#fff', borderBottom: '1px solid #E5E3DC',
-        display: 'flex', alignItems: 'center', gap: 12,
-        margin: '0 -2rem 0 -2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: '#EEF0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-user-edit" style={{ fontSize: 20, color: '#635BFF' }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#1C1917', margin: 0, lineHeight: 1.2 }}>Editar Filiado</h1>
-            <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>
-              <button onClick={() => router.push('/cooperados')} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Cooperados</button>
-              {' / '}
-              <button onClick={() => router.push(`/cooperados/${id}`)} style={{ color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>Perfil</button>
-              {' / '}Editar
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="ec-content" style={{ background: '#F8F7F4', margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)' }}>
-      <div style={{ maxWidth: '760px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-
-      {/* Abas */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', borderBottom: '1px solid #e5e3dc' }}>
-        {ABAS.map((aba, i) => {
-          const ativo = aba.id === abaAtiva
-          return (
-            <button
-              key={aba.id}
-              onClick={() => setAbaAtiva(aba.id)}
-              style={{
-                padding: '9px 16px', background: 'none', border: 'none',
-                borderBottom: ativo ? '2px solid #635BFF' : '2px solid transparent',
-                cursor: 'pointer', fontSize: '13px', fontWeight: ativo ? '600' : '400',
-                color: ativo ? '#635BFF' : '#666', display: 'flex', alignItems: 'center', gap: '6px',
-                marginBottom: '-1px', transition: 'all 0.15s',
-              }}
-            >
-              <span style={{ opacity: ativo ? 1 : 0.6 }}>{aba.icone}</span>
-              <span>{i + 1}. {aba.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      <Tabs
+        tabs={ABAS.map((aba, i) => ({ id: aba.id, label: `${i + 1}. ${aba.label}`, icon: aba.icon }))}
+        ativa={abaAtiva}
+        onChange={id => setAbaAtiva(id as Aba)}
+      />
 
       <form onSubmit={handleSubmit}>
-        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.75rem' }}>
+        <ContentCard padding="1.75rem">
 
-          {/* ─── ABA 1: DADOS PESSOAIS ─── */}
           {abaAtiva === 'pessoal' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <InputGroup label="Tipo de pessoa" required>
-                <div style={{ display: 'flex', gap: '10px' }}>
+              <Field label={lbl('Tipo de pessoa', true)}>
+                <div style={{ display: 'flex', gap: 10 }}>
                   {[
-                    { val: 'pessoa_fisica', label: '👤 Pessoa Física' },
-                    { val: 'pessoa_juridica', label: '🏢 Pessoa Jurídica' },
+                    { val: 'pessoa_fisica', label: 'Pessoa Física', icon: 'ti-user' },
+                    { val: 'pessoa_juridica', label: 'Pessoa Jurídica', icon: 'ti-building' },
                   ].map(op => (
                     <label key={op.val} style={{
-                      flex: 1, display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 14px', border: `1px solid ${form.tipo === op.val ? '#635BFF' : '#d5d3cc'}`,
-                      borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
-                      background: form.tipo === op.val ? '#EEF0FF' : '#fafaf8',
-                      color: form.tipo === op.val ? '#4840CC' : '#555', fontWeight: form.tipo === op.val ? '600' : '400',
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 14px', border: `1px solid ${form.tipo === op.val ? COM_C.roxo : COM_C.borda}`,
+                      borderRadius: 8, cursor: 'pointer', fontSize: 13,
+                      background: form.tipo === op.val ? COM_C.roxoLt : '#fff',
+                      color: form.tipo === op.val ? COM_C.roxo : COM_C.txtSub,
+                      fontWeight: form.tipo === op.val ? 600 : 400,
                     }}>
                       <input type="radio" name="tipo" value={op.val}
                         checked={form.tipo === op.val} onChange={set('tipo')}
-                        style={{ accentColor: '#635BFF' }}
+                        style={{ accentColor: COM_C.roxo }}
                       />
+                      <i className={`ti ${op.icon}`} style={{ fontSize: 14 }} />
                       {op.label}
                     </label>
                   ))}
                 </div>
-              </InputGroup>
+              </Field>
 
-              <InputGroup label="Nome completo" required>
-                <input type="text" value={form.nome_completo} onChange={set('nome_completo')}
-                  placeholder={form.tipo === 'pessoa_fisica' ? 'João da Silva' : 'Razão social'}
-                  required style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                  onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
+              <Field label={lbl('Nome completo', true)}>
+                <Input type="text" value={form.nome_completo} onChange={set('nome_completo')}
+                  placeholder={form.tipo === 'pessoa_fisica' ? 'João da Silva' : 'Razão social'} required
                 />
-              </InputGroup>
+              </Field>
 
               {form.tipo === 'pessoa_fisica' ? (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <InputGroup label="CPF">
-                      <input type="text" value={form.cpf} onChange={set('cpf')}
-                        placeholder="000.000.000-00" maxLength={14} style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                      />
-                    </InputGroup>
-                    <InputGroup label="RG">
-                      <input type="text" value={form.rg} onChange={set('rg')}
-                        placeholder="0000000" style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                      />
-                    </InputGroup>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="CPF">
+                      <Input type="text" value={form.cpf} onChange={set('cpf')} placeholder="000.000.000-00" maxLength={14} />
+                    </Field>
+                    <Field label="RG">
+                      <Input type="text" value={form.rg} onChange={set('rg')} placeholder="0000000" />
+                    </Field>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <InputGroup label="Data de nascimento">
-                      <input type="date" value={form.data_nascimento} onChange={set('data_nascimento')}
-                        style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                      />
-                    </InputGroup>
-                    <InputGroup label="Sexo">
-                      <select value={form.sexo} onChange={set('sexo')} style={inputStyle}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Data de nascimento">
+                      <Input type="date" value={form.data_nascimento} onChange={set('data_nascimento')} />
+                    </Field>
+                    <Field label="Sexo">
+                      <Select value={form.sexo} onChange={set('sexo')}>
                         <option value="">Selecione</option>
                         <option value="M">Masculino</option>
                         <option value="F">Feminino</option>
                         <option value="outro">Outro</option>
-                      </select>
-                    </InputGroup>
+                      </Select>
+                    </Field>
                   </div>
                 </>
               ) : (
                 <>
-                  <InputGroup label="CNPJ">
-                    <input type="text" value={form.cnpj_pj} onChange={set('cnpj_pj')}
-                      placeholder="00.000.000/0001-00" style={inputStyle}
-                      onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                      onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                    />
-                  </InputGroup>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <InputGroup label="Nome do representante">
-                      <input type="text" value={form.representante_nome} onChange={set('representante_nome')}
-                        placeholder="Nome completo" style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                      />
-                    </InputGroup>
-                    <InputGroup label="CPF do representante">
-                      <input type="text" value={form.representante_cpf} onChange={set('representante_cpf')}
-                        placeholder="000.000.000-00" maxLength={14} style={inputStyle}
-                        onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                        onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                      />
-                    </InputGroup>
+                  <Field label="CNPJ">
+                    <Input type="text" value={form.cnpj_pj} onChange={set('cnpj_pj')} placeholder="00.000.000/0001-00" />
+                  </Field>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Nome do representante">
+                      <Input type="text" value={form.representante_nome} onChange={set('representante_nome')} placeholder="Nome completo" />
+                    </Field>
+                    <Field label="CPF do representante">
+                      <Input type="text" value={form.representante_cpf} onChange={set('representante_cpf')} placeholder="000.000.000-00" maxLength={14} />
+                    </Field>
                   </div>
                 </>
               )}
             </div>
           )}
 
-          {/* ─── ABA 2: CONTATO / ENDEREÇO ─── */}
           {abaAtiva === 'contato' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <InputGroup label="E-mail">
-                  <input type="email" value={form.email} onChange={set('email')}
-                    placeholder="nome@email.com" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Telefone">
-                  <input type="tel" value={form.telefone} onChange={set('telefone')}
-                    placeholder="(00) 00000-0000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="WhatsApp">
-                  <input type="tel" value={form.whatsapp} onChange={set('whatsapp')}
-                    placeholder="(00) 00000-0000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <Field label="E-mail">
+                  <Input type="email" value={form.email} onChange={set('email')} placeholder="nome@email.com" />
+                </Field>
+                <Field label="Telefone">
+                  <Input type="tel" value={form.telefone} onChange={set('telefone')} placeholder="(00) 00000-0000" />
+                </Field>
+                <Field label="WhatsApp">
+                  <Input type="tel" value={form.whatsapp} onChange={set('whatsapp')} placeholder="(00) 00000-0000" />
+                </Field>
               </div>
 
-              <hr style={{ border: 'none', borderTop: '1px solid #f0eeea', margin: '0.5rem 0' }} />
-              <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Endereço</p>
+              <hr style={{ border: 'none', borderTop: `1px solid ${COM_C.borda}`, margin: '0.5rem 0' }} />
+              <p style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub, margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Endereço</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '12px' }}>
-                <InputGroup label="CEP">
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12 }}>
+                <Field label="CEP">
                   <div style={{ position: 'relative' }}>
-                    <input type="text" value={form.cep}
+                    <Input type="text" value={form.cep}
                       onChange={e => {
                         set('cep')(e)
                         if (e.target.value.replace(/\D/g, '').length === 8) buscarCEP(e.target.value)
                       }}
+                      onBlur={() => buscarCEP(form.cep)}
                       placeholder="00000-000" maxLength={9}
-                      style={{ ...inputStyle, paddingRight: buscandoCep ? '32px' : undefined }}
-                      onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                      onBlur={e => { e.target.style.borderColor = '#d5d3cc'; buscarCEP(form.cep) }}
+                      style={{ paddingRight: buscandoCep ? 32 : undefined }}
                     />
                     {buscandoCep && (
-                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#635BFF' }}>⟳</span>
+                      <i className="ti ti-loader" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: COM_C.roxo }} />
                     )}
                   </div>
-                </InputGroup>
-                <InputGroup label="Logradouro">
-                  <input type="text" value={form.logradouro} onChange={set('logradouro')}
-                    placeholder="Rua, Avenida…" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+                </Field>
+                <Field label="Logradouro">
+                  <Input type="text" value={form.logradouro} onChange={set('logradouro')} placeholder="Rua, Avenida…" />
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Número">
-                  <input type="text" value={form.numero} onChange={set('numero')}
-                    placeholder="123" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Complemento">
-                  <input type="text" value={form.complemento} onChange={set('complemento')}
-                    placeholder="Apto, sala…" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Bairro">
-                  <input type="text" value={form.bairro} onChange={set('bairro')}
-                    placeholder="Bairro" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+              <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr', gap: 12 }}>
+                <Field label="Número">
+                  <Input type="text" value={form.numero} onChange={set('numero')} placeholder="123" />
+                </Field>
+                <Field label="Complemento">
+                  <Input type="text" value={form.complemento} onChange={set('complemento')} placeholder="Apto, sala…" />
+                </Field>
+                <Field label="Bairro">
+                  <Input type="text" value={form.bairro} onChange={set('bairro')} placeholder="Bairro" />
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '12px' }}>
-                <InputGroup label="Cidade">
-                  <input type="text" value={form.cidade} onChange={set('cidade')}
-                    placeholder="Cidade" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Estado">
-                  <select value={form.estado} onChange={set('estado')} style={inputStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12 }}>
+                <Field label="Cidade">
+                  <Input type="text" value={form.cidade} onChange={set('cidade')} placeholder="Cidade" />
+                </Field>
+                <Field label="Estado">
+                  <Select value={form.estado} onChange={set('estado')}>
                     <option value="">UF</option>
                     {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </InputGroup>
+                  </Select>
+                </Field>
               </div>
             </div>
           )}
 
-          {/* ─── ABA 3: PROPRIEDADE RURAL ─── */}
           {abaAtiva === 'propriedade' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ background: '#f8fdf9', border: '1px solid #c4e9dc', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#4840CC' }}>
-                💡 Preencha apenas se o membro possuir propriedade rural vinculada. Todos os campos são opcionais.
+              <AlertBanner tipo="info">
+                Preencha apenas se o membro possuir propriedade rural vinculada. Todos os campos são opcionais.
+              </AlertBanner>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
+                <Field label="Nome da propriedade">
+                  <Input type="text" value={form.nome_propriedade} onChange={set('nome_propriedade')} placeholder="Sítio São João" />
+                </Field>
+                <Field label="Área total (ha)">
+                  <Input type="number" value={form.area_total_ha} onChange={set('area_total_ha')} placeholder="12.5" min="0" step="0.01" />
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '12px' }}>
-                <InputGroup label="Nome da propriedade">
-                  <input type="text" value={form.nome_propriedade} onChange={set('nome_propriedade')}
-                    placeholder="Sítio São João" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Área total (ha)">
-                  <input type="number" value={form.area_total_ha} onChange={set('area_total_ha')}
-                    placeholder="12.5" min="0" step="0.01" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Latitude">
+                  <Input type="number" value={form.latitude} onChange={set('latitude')} placeholder="-15.7801" step="any" />
+                </Field>
+                <Field label="Longitude">
+                  <Input type="number" value={form.longitude} onChange={set('longitude')} placeholder="-47.9292" step="any" />
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Latitude">
-                  <input type="number" value={form.latitude} onChange={set('latitude')}
-                    placeholder="-15.7801" step="any" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Longitude">
-                  <input type="number" value={form.longitude} onChange={set('longitude')}
-                    placeholder="-47.9292" step="any" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-              </div>
+              <hr style={{ border: 'none', borderTop: `1px solid ${COM_C.borda}`, margin: '0.25rem 0' }} />
+              <p style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub, margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CAF / DAP</p>
 
-              <hr style={{ border: 'none', borderTop: '1px solid #f0eeea', margin: '0.25rem 0' }} />
-              <p style={{ fontSize: '12px', fontWeight: '600', color: '#888', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CAF / DAP</p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Número CAF">
-                  <input type="text" value={form.caf_numero} onChange={set('caf_numero')}
-                    placeholder="CAF-000000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Situação CAF">
-                  <select value={form.caf_situacao} onChange={set('caf_situacao')} style={inputStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Número CAF">
+                  <Input type="text" value={form.caf_numero} onChange={set('caf_numero')} placeholder="CAF-000000" />
+                </Field>
+                <Field label="Situação CAF">
+                  <Select value={form.caf_situacao} onChange={set('caf_situacao')}>
                     <option value="">Selecione</option>
                     {CAF_SITUACOES.map(s => (
                       <option key={s} value={s}>
                         {s === 'ativo' ? 'Ativo' : s === 'vencido' ? 'Vencido' : s === 'em_renovacao' ? 'Em renovação' : 'Cancelado'}
                       </option>
                     ))}
-                  </select>
-                </InputGroup>
+                  </Select>
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Validade CAF">
-                  <input type="date" value={form.caf_validade} onChange={set('caf_validade')}
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Número DAP">
-                  <input type="text" value={form.dap_numero} onChange={set('dap_numero')}
-                    placeholder="DAP-000000" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Validade CAF">
+                  <Input type="date" value={form.caf_validade} onChange={set('caf_validade')} />
+                </Field>
+                <Field label="Número DAP">
+                  <Input type="text" value={form.dap_numero} onChange={set('dap_numero')} placeholder="DAP-000000" />
+                </Field>
               </div>
             </div>
           )}
 
-          {/* ─── ABA 4: CADASTRO ─── */}
           {abaAtiva === 'cadastro' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Status" required>
-                  <select value={form.status} onChange={set('status')} style={inputStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label={lbl('Status', true)}>
+                  <Select value={form.status} onChange={set('status')}>
                     <option value="proposta">Proposta</option>
                     <option value="probatorio">Probatório</option>
                     <option value="ativo">Ativo</option>
@@ -614,110 +480,62 @@ export default function EditarCooperadoPage() {
                     <option value="suspenso">Suspenso</option>
                     <option value="demitido">Demitido</option>
                     <option value="excluido">Excluído</option>
-                  </select>
-                </InputGroup>
-                <InputGroup label="Número de matrícula">
-                  <input type="text" value={form.numero_matricula} onChange={set('numero_matricula')}
-                    placeholder="001" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+                  </Select>
+                </Field>
+                <Field label="Número de matrícula">
+                  <Input type="text" value={form.numero_matricula} onChange={set('numero_matricula')} placeholder="001" />
+                </Field>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <InputGroup label="Data de admissão">
-                  <input type="date" value={form.data_admissao} onChange={set('data_admissao')}
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
-                <InputGroup label="Quota-parte (R$)">
-                  <input type="number" value={form.quota_parte} onChange={set('quota_parte')}
-                    placeholder="0.00" min="0" step="0.01" style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Data de admissão">
+                  <Input type="date" value={form.data_admissao} onChange={set('data_admissao')} />
+                </Field>
+                <Field label="Quota-parte (R$)">
+                  <Input type="number" value={form.quota_parte} onChange={set('quota_parte')} placeholder="0.00" min="0" step="0.01" />
+                </Field>
               </div>
 
               {['suspenso', 'demitido', 'excluido'].includes(form.status) && (
-                <InputGroup label="Motivo de saída / suspensão">
-                  <textarea value={form.motivo_saida} onChange={set('motivo_saida')}
-                    placeholder="Descreva o motivo…" rows={3}
-                    style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }}
-                    onFocus={e => (e.target.style.borderColor = '#635BFF')}
-                    onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
-                  />
-                </InputGroup>
+                <Field label="Motivo de saída / suspensão">
+                  <Textarea value={form.motivo_saida} onChange={set('motivo_saida')} placeholder="Descreva o motivo…" rows={3} />
+                </Field>
               )}
             </div>
           )}
-        </div>
+        </ContentCard>
 
-        {/* Erro */}
-        {erro && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626', marginTop: '1rem' }}>
-            {erro}
-          </div>
-        )}
+        {erro && <AlertBanner tipo="erro">{erro}</AlertBanner>}
 
-        {/* Navegação entre abas + submit */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem' }}>
-          <button type="button"
+          <Btn
+            type="button"
+            variante="cinza"
+            icone="ti-arrow-left"
             onClick={() => abaIdx > 0 && setAbaAtiva(ABAS[abaIdx - 1].id)}
             disabled={abaIdx === 0}
-            style={{
-              padding: '9px 18px', border: '1px solid #d5d3cc', borderRadius: '8px',
-              background: '#fff', fontSize: '13px', color: '#555',
-              cursor: abaIdx === 0 ? 'not-allowed' : 'pointer', opacity: abaIdx === 0 ? 0.4 : 1,
-            }}
           >
-            ← Anterior
-          </button>
+            Anterior
+          </Btn>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button"
-              onClick={() => router.push(`/cooperados/${id}`)}
-              style={{
-                padding: '9px 18px', border: '1px solid #d5d3cc', borderRadius: '8px',
-                background: '#fff', fontSize: '13px', color: '#555', cursor: 'pointer',
-              }}
-            >
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn type="button" variante="cinza" onClick={() => router.push(`/cooperados/${id}`)}>
               Cancelar
-            </button>
+            </Btn>
 
             {abaIdx < ABAS.length - 1 ? (
-              <button type="button"
-                onClick={() => setAbaAtiva(ABAS[abaIdx + 1].id)}
-                style={{
-                  padding: '9px 20px', border: 'none', borderRadius: '8px',
-                  background: '#635BFF', color: '#fff', fontSize: '13px',
-                  fontWeight: '600', cursor: 'pointer',
-                }}
-                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#178a64')}
-                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#635BFF')}
-              >
-                Próximo →
-              </button>
+              <Btn type="button" variante="roxo" icone="ti-arrow-right" onClick={() => setAbaAtiva(ABAS[abaIdx + 1].id)}>
+                Próximo
+              </Btn>
             ) : (
-              <button type="submit" disabled={salvando}
-                style={{
-                  padding: '9px 24px', border: 'none', borderRadius: '8px',
-                  background: salvando ? '#9F9BFF' : '#635BFF', color: '#fff',
-                  fontSize: '13px', fontWeight: '600',
-                  cursor: salvando ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {salvando ? 'Salvando…' : '✓ Salvar alterações'}
-              </button>
+              <Btn type="submit" variante="roxo" icone="ti-check" disabled={salvando}>
+                {salvando ? 'Salvando…' : 'Salvar alterações'}
+              </Btn>
             )}
           </div>
         </div>
       </form>
       </div>
-      </div>
-    </>
+    </PageLayout>
   )
 }
