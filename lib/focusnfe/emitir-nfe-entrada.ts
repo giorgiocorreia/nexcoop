@@ -28,6 +28,7 @@ interface EmitirNfeEntradaParams {
   movimentacao_id: string
   organizacao_id: string
   preco_unitario_override?: number
+  emitir_como?: 'titular' | 'conjuge'
 }
 
 interface FocusNfeResponse {
@@ -64,7 +65,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         produtor_id,
         produtores!produtor_id(
           id, nome, cpf, municipio, endereco, tipo,
-          cooperado_id, ie_produtor_rural, tipo_posse
+          cooperado_id, ie_produtor_rural, tipo_posse,
+          conjuge_nome, conjuge_cpf, conjuge_ie_produtor_rural
         )
       )
     `)
@@ -83,6 +85,20 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
 
   if (!produtor) return { sucesso: false, erro: 'Produtor não encontrado na movimentação' }
   if (!produtor.cpf) return { sucesso: false, erro: 'CPF do produtor não cadastrado. Atualize o cadastro.' }
+
+  // 1b. Definir em nome de quem a nota sai (titular ou cônjuge). CFOP/classificação
+  // cooperado continuam vinculados ao titular — só o destinatário muda.
+  const emitirComo: 'titular' | 'conjuge' = params.emitir_como === 'conjuge' ? 'conjuge' : 'titular'
+
+  if (emitirComo === 'conjuge' && !produtor.conjuge_cpf) {
+    return { sucesso: false, erro: 'CPF do cônjuge não cadastrado. Atualize o cadastro do produtor.' }
+  }
+
+  const nomeDestinatario = emitirComo === 'conjuge' ? produtor.conjuge_nome : produtor.nome
+  const cpfDestinatario = emitirComo === 'conjuge' ? produtor.conjuge_cpf : produtor.cpf
+  const ieDestinatario = emitirComo === 'conjuge'
+    ? (produtor.conjuge_ie_produtor_rural || '')
+    : (produtor.ie_produtor_rural || '')
 
   // 2. Determinar CFOP e preço conforme tipo do produtor
   const isCooperado = !!produtor.cooperado_id || produtor.tipo === 'cooperado'
@@ -175,6 +191,10 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       referencia,
       status: 'processando' as any,
       numero_sequencial,
+      destinatario_nome: nomeDestinatario,
+      destinatario_cpf: cpfDestinatario,
+      destinatario_ie: ieDestinatario || null,
+      emitido_como: emitirComo,
     }, { onConflict: 'movimentacao_id' })
     .select('id')
     .single()
@@ -184,7 +204,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   }
 
   // 8. Montar payload Focus NFe
-  const cpfLimpo = produtor.cpf.replace(/\D/g, '')
+  const cpfLimpo = cpfDestinatario!.replace(/\D/g, '')
   const cnpjEmitente = (org.cnpj || CNPJ_COOPAIBI).replace(/\D/g, '')
 
   // FUNRURAL 1,63% sobre valor bruto (retido na fonte)
@@ -212,11 +232,12 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
     // Emitente (COOPAIBI)
     cnpj_emitente: cnpjEmitente,
 
-    // Destinatário = produtor rural (pessoa física)
-    nome_destinatario: produtor.nome,
+    // Destinatário = produtor rural (pessoa física) — titular ou cônjuge, conforme emitirComo.
+    // Endereço/município sempre vêm do produtor titular (mesma propriedade rural).
+    nome_destinatario: nomeDestinatario,
     cpf_destinatario: cpfLimpo,
-    inscricao_estadual_destinatario: produtor.ie_produtor_rural || '',
-    indicador_inscricao_estadual_destinatario: produtor.ie_produtor_rural ? '1' : '9',
+    inscricao_estadual_destinatario: ieDestinatario || '',
+    indicador_inscricao_estadual_destinatario: ieDestinatario ? '1' : '9',
     email_destinatario: '',
     telefone_destinatario: '',
     logradouro_destinatario: produtor.endereco || 'Zona Rural',

@@ -293,6 +293,8 @@ export interface Cooperado {
   cnpj_pj: string | null
   representante_nome: string | null
   representante_cpf: string | null
+  conjuge_nome: string | null
+  conjuge_cpf: string | null
   criado_em: string
   atualizado_em: string
 }
@@ -848,6 +850,9 @@ export interface Produtor {
   tipo_posse:       TipoPosseProdutor | null
   percentual_posse: number | null
   ie_produtor_rural: string | null
+  conjuge_nome:      string | null
+  conjuge_cpf:       string | null
+  conjuge_ie_produtor_rural: string | null
   ativo:            boolean
   // Colunas adicionadas na migration 034
   usuario_id:          string | null

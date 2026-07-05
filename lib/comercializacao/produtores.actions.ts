@@ -16,7 +16,8 @@ export async function listarProdutores() {
         area_total_ha, area_cacau_ha, tem_certificacao, tipo_certificacao,
         banco, agencia, conta_bancaria, tipo_conta, chave_pix,
         ativo, municipio, endereco, email,
-        nome_propriedade, tipo_posse, percentual_posse, ie_produtor_rural
+        nome_propriedade, tipo_posse, percentual_posse, ie_produtor_rural,
+        conjuge_nome, conjuge_cpf, conjuge_ie_produtor_rural
       `)
       .eq('organizacao_id', usuario.organizacao_id)
       .order('nome')
@@ -40,7 +41,7 @@ export async function getProdutorCompleto(id: string) {
       cooperado_id, area_total_ha, area_cacau_ha, tem_certificacao,
       tipo_certificacao, banco, agencia, conta_bancaria, tipo_conta,
       chave_pix, ativo, nome_propriedade, tipo_posse, percentual_posse,
-      ie_produtor_rural
+      ie_produtor_rural, conjuge_nome, conjuge_cpf, conjuge_ie_produtor_rural
     `)
     .eq('id', id)
     .eq('organizacao_id', usuario.organizacao_id)
@@ -105,6 +106,9 @@ export async function criarProdutor(form: {
   tipo_posse?: string
   percentual_posse?: number
   ie_produtor_rural?: string
+  conjuge_nome?: string
+  conjuge_cpf?: string
+  conjuge_ie_produtor_rural?: string
 }) {
   try {
     const usuario = await getUsuarioLogado()
@@ -150,6 +154,9 @@ export async function editarProdutor(id: string, form: Partial<{
   tipo_posse: string
   percentual_posse: number
   ie_produtor_rural: string
+  conjuge_nome: string
+  conjuge_cpf: string
+  conjuge_ie_produtor_rural: string
 }>) {
   try {
     const supabase = createAdminClient()
@@ -185,6 +192,8 @@ export async function vincularCooperadoComoProdutor(params: {
   municipio: string | null
   endereco: string | null
   nome_propriedade: string | null
+  conjuge_nome?: string | null
+  conjuge_cpf?: string | null
 }) {
   const supabase = createAdminClient()
 
@@ -206,6 +215,8 @@ export async function vincularCooperadoComoProdutor(params: {
         .update({
           cooperado_id: params.cooperado_id,
           tipo: 'cooperado' as TipoProdutorVinculo,
+          ...(params.conjuge_nome !== undefined ? { conjuge_nome: params.conjuge_nome } : {}),
+          ...(params.conjuge_cpf !== undefined ? { conjuge_cpf: params.conjuge_cpf } : {}),
         })
         .eq('id', existente.id)
       if (error) throw new Error(`[vincular] update produtor: ${error.message}`)
@@ -227,6 +238,8 @@ export async function vincularCooperadoComoProdutor(params: {
         municipio: params.municipio,
         endereco: params.endereco,
         nome_propriedade: params.nome_propriedade,
+        conjuge_nome: params.conjuge_nome ?? null,
+        conjuge_cpf: params.conjuge_cpf ?? null,
         tipo: 'cooperado' as TipoProdutorVinculo,
         tem_certificacao: false,
         ativo: true,

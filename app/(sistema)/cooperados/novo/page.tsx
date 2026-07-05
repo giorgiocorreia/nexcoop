@@ -46,6 +46,8 @@ interface FormData {
   cnpj_pj: string
   representante_nome: string
   representante_cpf: string
+  conjuge_nome: string
+  conjuge_cpf: string
   email: string
   telefone: string
   whatsapp: string
@@ -74,6 +76,7 @@ const FORM_INICIAL: FormData = {
   tipo: 'pessoa_fisica',
   nome_completo: '', cpf: '', rg: '', data_nascimento: '', sexo: '',
   cnpj_pj: '', representante_nome: '', representante_cpf: '',
+  conjuge_nome: '', conjuge_cpf: '',
   email: '', telefone: '', whatsapp: '',
   cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
   nome_propriedade: '', area_total_ha: '', latitude: '', longitude: '',
@@ -91,6 +94,7 @@ export default function NovoCooperadoPage() {
   const [limiteInfo, setLimiteInfo] = useState<ResultadoLimite | null>(null)
   const [carregandoMatricula, setCarregandoMatricula] = useState(false)
   const [erroCpf, setErroCpf] = useState('')
+  const [erroConjugeCpf, setErroConjugeCpf] = useState('')
 
   const set = (campo: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -147,9 +151,14 @@ export default function NovoCooperadoPage() {
       const erroCpfRep = cpfInvalidoMsg(form.representante_cpf)
       if (erroCpfRep) { setErro(erroCpfRep); setAbaAtiva('pessoal'); return }
     }
+    if (form.conjuge_cpf) {
+      const erroCpfConjuge = cpfInvalidoMsg(form.conjuge_cpf)
+      if (erroCpfConjuge) { setErroConjugeCpf(erroCpfConjuge); setAbaAtiva('pessoal'); return }
+    }
     setSalvando(true)
     setErro('')
     setErroCpf('')
+    setErroConjugeCpf('')
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -198,6 +207,8 @@ export default function NovoCooperadoPage() {
       cnpj_pj:       form.tipo === 'pessoa_juridica' ? form.cnpj_pj.replace(/\D/g, '') || null : null,
       representante_nome: form.tipo === 'pessoa_juridica' ? form.representante_nome.trim() || null : null,
       representante_cpf:  form.tipo === 'pessoa_juridica' ? form.representante_cpf.replace(/\D/g, '') || null : null,
+      conjuge_nome:  form.conjuge_nome.trim() || null,
+      conjuge_cpf:   form.conjuge_cpf.replace(/\D/g, '') || null,
       email:         form.email.trim() || null,
       telefone:      form.telefone.trim() || null,
       whatsapp:      form.whatsapp.trim() || null,
@@ -244,6 +255,8 @@ export default function NovoCooperadoPage() {
         municipio: form.cidade.trim() || null,
         endereco: form.logradouro.trim() ? `${form.logradouro.trim()}${form.numero ? ', ' + form.numero : ''}` : null,
         nome_propriedade: form.nome_propriedade.trim() || null,
+        conjuge_nome: form.conjuge_nome.trim() || null,
+        conjuge_cpf: form.conjuge_cpf.replace(/\D/g, '') || null,
       })
     } catch (eVinculo: any) {
       // Não bloqueia o cadastro — cooperado foi salvo, apenas loga o erro
@@ -356,6 +369,34 @@ export default function NovoCooperadoPage() {
                         <option value="F">Feminino</option>
                         <option value="outro">Outro</option>
                       </Select>
+                    </Field>
+                  </div>
+
+                  <hr style={{ border: 'none', borderTop: `1px solid ${COM_C.borda}`, margin: '0.25rem 0' }} />
+                  <p style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub, margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cônjuge</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Nome do cônjuge" hint="Opcional — usado para emitir NF-e em nome do cônjuge quando a CAF/DAP é conjunta">
+                      <Input type="text" value={form.conjuge_nome} onChange={set('conjuge_nome')} placeholder="Nome completo do cônjuge" />
+                    </Field>
+                    <Field label="CPF do cônjuge">
+                      <Input type="text" value={form.conjuge_cpf}
+                        onChange={e => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+                          const masked = digits
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d)/, '$1.$2')
+                            .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+                          setForm(prev => ({ ...prev, conjuge_cpf: masked }))
+                          setErroConjugeCpf('')
+                        }}
+                        onBlur={() => {
+                          if (form.conjuge_cpf) setErroConjugeCpf(cpfInvalidoMsg(form.conjuge_cpf) ?? '')
+                          else setErroConjugeCpf('')
+                        }}
+                        placeholder="000.000.000-00" maxLength={14}
+                        style={erroConjugeCpf ? { borderColor: COM_C.vermelho } : undefined}
+                      />
+                      {erroConjugeCpf && <span style={{ fontSize: 11, color: COM_C.vermelho }}>{erroConjugeCpf}</span>}
                     </Field>
                   </div>
                 </>

@@ -22,6 +22,8 @@ export async function inserirCooperado(payload: {
   cnpj_pj: string | null
   representante_nome: string | null
   representante_cpf: string | null
+  conjuge_nome: string | null
+  conjuge_cpf: string | null
   email: string | null
   telefone: string | null
   whatsapp: string | null
@@ -95,6 +97,8 @@ interface DadosCooperadoOpcional {
   rg?: string
   data_nascimento?: string
   sexo?: 'M' | 'F' | 'outro'
+  conjuge_nome?: string
+  conjuge_cpf?: string
   cep?: string
   logradouro?: string
   numero?: string
@@ -192,6 +196,8 @@ export async function criarUsuarioComCooperadoOpcional(
         rg: dc.rg ?? null,
         data_nascimento: dc.data_nascimento ?? null,
         sexo: dc.sexo ?? null,
+        conjuge_nome: dc.conjuge_nome ?? null,
+        conjuge_cpf: dc.conjuge_cpf ?? null,
         email: input.email,
         cep: dc.cep ?? null,
         logradouro: dc.logradouro ?? null,
@@ -233,6 +239,8 @@ export async function criarUsuarioComCooperadoOpcional(
         municipio: dp.municipio ?? null,
         endereco: dp.endereco ?? null,
         area_cacau_ha: dp.area_cacau_ha ?? null,
+        conjuge_nome: dc.conjuge_nome ?? null,
+        conjuge_cpf: dc.conjuge_cpf ?? null,
         ativo: true,
       } as any)
       .select('id')
@@ -270,6 +278,8 @@ interface CriarCooperadoInput {
   rg?: string
   data_nascimento?: string
   sexo?: 'M' | 'F' | 'outro'
+  conjuge_nome?: string
+  conjuge_cpf?: string
   telefone?: string
   whatsapp?: string
   cep?: string
@@ -347,6 +357,8 @@ export async function criarCooperado(
       rg: input.rg ?? null,
       data_nascimento: input.data_nascimento ?? null,
       sexo: input.sexo ?? null,
+      conjuge_nome: input.conjuge_nome ?? null,
+      conjuge_cpf: input.conjuge_cpf ?? null,
       email: input.email,
       telefone: input.telefone ?? null,
       whatsapp: input.whatsapp ?? null,
@@ -390,6 +402,8 @@ export async function criarCooperado(
       tipo: 'cooperado',
       nome_propriedade: input.nome_propriedade ?? null,
       area_total_ha: input.area_total_ha ?? null,
+      conjuge_nome: input.conjuge_nome ?? null,
+      conjuge_cpf: input.conjuge_cpf ?? null,
       ativo: true,
     } as any)
     .select('id')
@@ -430,6 +444,8 @@ interface DadosCooperadoPromocao {
   rg?: string
   data_nascimento?: string
   sexo?: 'M' | 'F' | 'outro'
+  conjuge_nome?: string
+  conjuge_cpf?: string
   cep?: string
   logradouro?: string
   numero?: string
@@ -533,6 +549,8 @@ export async function promoverProdutorACooperado(
       rg: dc.rg ?? null,
       data_nascimento: dc.data_nascimento ?? null,
       sexo: dc.sexo ?? null,
+      conjuge_nome: dc.conjuge_nome ?? null,
+      conjuge_cpf: dc.conjuge_cpf ?? null,
       nome_propriedade: (produtor as any).nome_propriedade ?? null,
       area_total_ha: (produtor as any).area_total_ha ?? null,
       cep: dc.cep ?? null,
@@ -565,6 +583,8 @@ export async function promoverProdutorACooperado(
       cooperado_id: cooperado.id,
       usuario_id: usuarioId,
       ...(input.nomeAtualizado ? { nome: input.nomeAtualizado } : {}),
+      ...(dc.conjuge_nome !== undefined ? { conjuge_nome: dc.conjuge_nome ?? null } : {}),
+      ...(dc.conjuge_cpf !== undefined ? { conjuge_cpf: dc.conjuge_cpf ?? null } : {}),
     } as any)
     .eq('id', input.produtorId)
   if (updateError) {
@@ -603,6 +623,8 @@ interface VincularUsuarioComoCooperadoInput {
   caf_numero?: string
   dap_numero?: string
   status?: StatusCooperado
+  conjuge_nome?: string
+  conjuge_cpf?: string
 }
 
 export async function vincularUsuarioComoCooperado(
@@ -673,6 +695,8 @@ export async function vincularUsuarioComoCooperado(
       dap_numero: input.dap_numero ?? null,
       status: input.status ?? 'ativo',
       tipo: 'pessoa_fisica',
+      conjuge_nome: input.conjuge_nome ?? null,
+      conjuge_cpf: input.conjuge_cpf ?? null,
     })
     .select('id')
     .single()
@@ -698,10 +722,16 @@ export async function vincularUsuarioComoCooperado(
       usuario_id: input.usuarioId,
       cooperado_id: cooperado.id,
       tipo: 'cooperado',
+      conjuge_nome: input.conjuge_nome ?? null,
+      conjuge_cpf: input.conjuge_cpf ?? null,
       ativo: true,
     } as any)
   } else {
-    await admin.from('produtores').update({ cooperado_id: cooperado.id } as any).eq('id', produtorExistente.id)
+    await admin.from('produtores').update({
+      cooperado_id: cooperado.id,
+      ...(input.conjuge_nome !== undefined ? { conjuge_nome: input.conjuge_nome ?? null } : {}),
+      ...(input.conjuge_cpf !== undefined ? { conjuge_cpf: input.conjuge_cpf ?? null } : {}),
+    } as any).eq('id', produtorExistente.id)
   }
 
   registrarLog({

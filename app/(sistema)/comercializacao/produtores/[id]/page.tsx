@@ -47,6 +47,8 @@ type Produtor = {
   tipo_conta: string | null; chave_pix: string | null; ativo: boolean
   nome_propriedade: string | null; tipo_posse: string | null
   percentual_posse: number | null; ie_produtor_rural: string | null
+  conjuge_nome: string | null; conjuge_cpf: string | null
+  conjuge_ie_produtor_rural: string | null
   cooperado_id: string | null
 }
 
@@ -91,6 +93,9 @@ type FormEdit = {
   area_cacau_ha: string
   tipo_posse: string
   ie_produtor_rural: string
+  conjuge_nome: string
+  conjuge_cpf: string
+  conjuge_ie_produtor_rural: string
   tem_certificacao: boolean
   tipo_certificacao: string
   banco: string
@@ -166,6 +171,9 @@ function initFormEdit(p: Produtor): FormEdit {
     area_cacau_ha: p.area_cacau_ha !== null ? String(p.area_cacau_ha) : '',
     tipo_posse: p.tipo_posse ?? '',
     ie_produtor_rural: p.ie_produtor_rural ?? '',
+    conjuge_nome: p.conjuge_nome ?? '',
+    conjuge_cpf: p.conjuge_cpf ? p.conjuge_cpf.replace(/\D/g, '') : '',
+    conjuge_ie_produtor_rural: p.conjuge_ie_produtor_rural ?? '',
     tem_certificacao: p.tem_certificacao ?? false,
     tipo_certificacao: p.tipo_certificacao ?? '',
     banco: p.banco ?? '',
@@ -211,7 +219,9 @@ const FORM_VAZIO: FormEdit = {
   nome: '', cpf: '', email: '', telefone: '', tipo: 'externo',
   municipio: '', endereco: '', nome_propriedade: '',
   area_total_ha: '', area_cacau_ha: '', tipo_posse: '',
-  ie_produtor_rural: '', tem_certificacao: false,
+  ie_produtor_rural: '',
+  conjuge_nome: '', conjuge_cpf: '', conjuge_ie_produtor_rural: '',
+  tem_certificacao: false,
   tipo_certificacao: '', banco: '', agencia: '',
   conta_bancaria: '', tipo_conta: '', chave_pix: '',
 }
@@ -321,6 +331,10 @@ export default function PerfilProdutorPage() {
       setErroEdit('CPF inválido. Verifique os dígitos informados.')
       return
     }
+    if (formEdit.conjuge_cpf && !validarCPF(formEdit.conjuge_cpf)) {
+      setErroEdit('CPF do cônjuge inválido. Verifique os dígitos informados.')
+      return
+    }
     setSalvando(true)
     setErroEdit('')
     try {
@@ -337,6 +351,9 @@ export default function PerfilProdutorPage() {
         area_cacau_ha: formEdit.area_cacau_ha ? parseFloat(formEdit.area_cacau_ha) : undefined,
         tipo_posse: formEdit.tipo_posse || undefined,
         ie_produtor_rural: formEdit.ie_produtor_rural.trim() || undefined,
+        conjuge_nome: formEdit.conjuge_nome.trim() || undefined,
+        conjuge_cpf: formEdit.conjuge_cpf ? formEdit.conjuge_cpf.replace(/\D/g, '') : undefined,
+        conjuge_ie_produtor_rural: formEdit.conjuge_ie_produtor_rural.trim() || undefined,
         tem_certificacao: formEdit.tem_certificacao,
         tipo_certificacao: formEdit.tem_certificacao ? (formEdit.tipo_certificacao.trim() || undefined) : undefined,
         banco: formEdit.banco.trim() || undefined,
@@ -569,6 +586,22 @@ export default function PerfilProdutorPage() {
               </>
             )}
 
+            {/* Bloco Cônjuge — oculto se todos os campos estiverem vazios */}
+            {(produtor.conjuge_nome || produtor.conjuge_cpf || produtor.conjuge_ie_produtor_rural) && (
+              <>
+                <BlocoHeader>Cônjuge</BlocoHeader>
+                <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '16px', marginBottom: '4px' }}>
+                  {produtor.conjuge_nome && (
+                    <div style={span2}><Campo label="Nome do cônjuge" valor={produtor.conjuge_nome} /></div>
+                  )}
+                  {produtor.conjuge_cpf && <Campo label="CPF do cônjuge" valor={exibirCPF(produtor.conjuge_cpf)} />}
+                  {produtor.conjuge_ie_produtor_rural && (
+                    <Campo label="IE Produtor Rural (cônjuge)" valor={produtor.conjuge_ie_produtor_rural} />
+                  )}
+                </div>
+              </>
+            )}
+
             {/* Bloco Certificação — oculto se não tem certificação */}
             {produtor.tem_certificacao && (
               <>
@@ -665,6 +698,22 @@ export default function PerfilProdutorPage() {
                   <Input value={f.endereco} onChange={e => setF({ endereco: e.target.value })} />
                 </Field>
               </div>
+            </div>
+
+            {/* Bloco Cônjuge — 4 colunas */}
+            <BlocoHeader>Cônjuge</BlocoHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: cols4, gap: '12px', marginBottom: '4px' }}>
+              <div style={span2}>
+                <Field label="Nome do cônjuge">
+                  <Input value={f.conjuge_nome} onChange={e => setF({ conjuge_nome: e.target.value })} placeholder="Nome completo do cônjuge" />
+                </Field>
+              </div>
+              <Field label="CPF do cônjuge">
+                <Input value={mascararCPF(f.conjuge_cpf)} onChange={e => setF({ conjuge_cpf: e.target.value.replace(/\D/g, '').slice(0, 11) })} placeholder="000.000.000-00" />
+              </Field>
+              <Field label="IE Produtor Rural (cônjuge)">
+                <Input value={f.conjuge_ie_produtor_rural} onChange={e => setF({ conjuge_ie_produtor_rural: e.target.value })} />
+              </Field>
             </div>
 
             {/* Bloco Certificação — 4 colunas */}

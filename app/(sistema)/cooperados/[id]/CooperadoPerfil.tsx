@@ -236,6 +236,12 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
                 <InfoRow label="CPF do representante" valor={formatarCPF(cooperado.representante_cpf)} />
               </>
             )}
+            {(cooperado.conjuge_nome || cooperado.conjuge_cpf) && (
+              <>
+                <InfoRow label="Cônjuge" valor={cooperado.conjuge_nome} />
+                <InfoRow label="CPF do cônjuge" valor={formatarCPF(cooperado.conjuge_cpf)} />
+              </>
+            )}
           </ContentCard>
 
           <ContentCard title="Contato">

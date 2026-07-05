@@ -33,8 +33,10 @@
 | 051 | loja_caixas: campos de fechamento completos (valor_fechamento, totais por forma, saldo_final_especie, conferência) |
 | 052 | cotacoes: data→vigente_a_partir_de (timestamptz); movimentacoes_conta: +cotacao_id; lotes: -produto_id, +lote_itens (multi-produto); saldos_produtor_snapshot; resultado_safra_snapshot; triggers; vw_saldos_produtor; vw_resultado_safra |
 | 053 | produtores.tipo sincronizado com cooperados.status via trigger trg_sincronizar_tipo_produtor |
+| 054–059 | vendas_devolucoes, trigger lote_status_pago, impressos_numeracao, lancamentos_sessao_caixa, fix RLS captação, colunas estruturadas oportunidade_logs |
+| 060 | cooperados/produtores: +conjuge_nome, +conjuge_cpf (+conjuge_ie_produtor_rural em produtores); notas_entrega: +destinatario_nome, +destinatario_cpf, +destinatario_ie, +emitido_como — permite emitir NF-e de entrada em nome do cônjuge |
 
-**Próxima migration:** 053
+**Próxima migration:** 061
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

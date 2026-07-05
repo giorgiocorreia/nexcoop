@@ -7,15 +7,47 @@ import { urlCompleta } from '@/lib/focusnfe/client'
 
 export async function emitirNfeEntradaAction(
   movimentacao_id: string,
-  preco_unitario_override?: number
+  preco_unitario_override?: number,
+  emitir_como?: 'titular' | 'conjuge'
 ) {
   const usuario = await getUsuarioLogado()
   const resultado = await emitirNfeEntrada({
     movimentacao_id,
     organizacao_id: usuario.organizacao_id as string,
     preco_unitario_override,
+    emitir_como,
   })
   return resultado
+}
+
+export async function getProdutorConjugeParaModal(movimentacao_id: string) {
+  const supabase = createAdminClient()
+
+  const { data: mov } = await supabase
+    .from('movimentacoes_conta')
+    .select(`
+      contas_produtor!conta_id(
+        produtores!produtor_id(nome, conjuge_nome, conjuge_cpf)
+      )
+    `)
+    .eq('id', movimentacao_id)
+    .single()
+
+  if (!mov) return null
+
+  const contaProdutor = (mov as any).contas_produtor
+  const produtorRaw = Array.isArray(contaProdutor)
+    ? contaProdutor[0]?.produtores
+    : contaProdutor?.produtores
+  const produtor = Array.isArray(produtorRaw) ? produtorRaw[0] : produtorRaw
+
+  if (!produtor) return null
+
+  return {
+    titular_nome: produtor.nome as string,
+    conjuge_nome: (produtor.conjuge_nome as string | null) ?? null,
+    conjuge_cpf: (produtor.conjuge_cpf as string | null) ?? null,
+  }
 }
 
 export async function getCotacaoParaModal(movimentacao_id: string) {

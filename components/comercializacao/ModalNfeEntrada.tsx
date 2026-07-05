@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { emitirNfeEntradaAction, getNfeStatus, getCotacaoParaModal } from '@/lib/comercializacao/nfe.actions'
+import { emitirNfeEntradaAction, getNfeStatus, getCotacaoParaModal, getProdutorConjugeParaModal } from '@/lib/comercializacao/nfe.actions'
 import { Btn } from '@/components/ui/Btn'
 
 // ─── Modal pós-entrega ────────────────────────────────────────────────────────
@@ -24,13 +24,19 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
   const [danfe_url, setDanfeUrl] = useState<string | null>(null)
   const [chave_nfe, setChaveNfe] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [produtorConjuge, setProdutorConjuge] = useState<{ titular_nome: string; conjuge_nome: string | null; conjuge_cpf: string | null } | null>(null)
+  const [emitirComo, setEmitirComo] = useState<'titular' | 'conjuge'>('titular')
 
   async function handleIrParaPreco() {
     setStatus('preco')
     try {
-      const cot = await getCotacaoParaModal(movimentacao_id)
+      const [cot, conjuge] = await Promise.all([
+        getCotacaoParaModal(movimentacao_id),
+        getProdutorConjugeParaModal(movimentacao_id),
+      ])
       setCotacoes(cot)
       if (cot) setPrecoManual(cot.preco_externo.toFixed(2))
+      setProdutorConjuge(conjuge)
     } catch {}
   }
 
@@ -46,7 +52,7 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
         preco = parseFloat(precoManual)
       }
 
-      const resultado = await emitirNfeEntradaAction(movimentacao_id, preco)
+      const resultado = await emitirNfeEntradaAction(movimentacao_id, preco, emitirComo)
       if (resultado.sucesso) {
         setDanfeUrl(resultado.danfe_url ?? null)
         setChaveNfe(resultado.chave_nfe ?? null)
@@ -106,6 +112,40 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
             <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '16px' }}>
               Qual preço usar na NF-e?
             </div>
+
+            {produtorConjuge?.conjuge_nome && produtorConjuge?.conjuge_cpf && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+                  Emitir em nome de:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div
+                    onClick={() => setEmitirComo('titular')}
+                    style={{
+                      padding: '10px 14px', borderRadius: '10px', cursor: 'pointer',
+                      border: `2px solid ${emitirComo === 'titular' ? '#92400e' : '#e5e3dc'}`,
+                      background: emitirComo === 'titular' ? '#fef3c7' : '#fff',
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                    }}
+                  >
+                    <input type="radio" checked={emitirComo === 'titular'} onChange={() => setEmitirComo('titular')} />
+                    <div style={{ fontSize: '13px' }}>{produtorConjuge.titular_nome} <span style={{ color: '#6b6b6b' }}>(titular)</span></div>
+                  </div>
+                  <div
+                    onClick={() => setEmitirComo('conjuge')}
+                    style={{
+                      padding: '10px 14px', borderRadius: '10px', cursor: 'pointer',
+                      border: `2px solid ${emitirComo === 'conjuge' ? '#92400e' : '#e5e3dc'}`,
+                      background: emitirComo === 'conjuge' ? '#fef3c7' : '#fff',
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                    }}
+                  >
+                    <input type="radio" checked={emitirComo === 'conjuge'} onChange={() => setEmitirComo('conjuge')} />
+                    <div style={{ fontSize: '13px' }}>{produtorConjuge.conjuge_nome} <span style={{ color: '#6b6b6b' }}>(cônjuge)</span></div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
               {/* Cooperado */}
