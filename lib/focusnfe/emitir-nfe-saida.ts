@@ -129,7 +129,7 @@ export async function emitirNfeSaida(params: EmitirNfeSaidaParams): Promise<{
 
   let focusResposta: any
   try {
-    focusResposta = await focusPost(`/v2/nfe?ref=${referencia}`, payload)
+    focusResposta = await focusPost(`/v2/nfe?ref=${referencia}`, payload, 'comercializacao')
   } catch (err: any) {
     await supabase.from('vendas_externas').update({ status_nfe: 'erro' } as any).eq('id', vendaId)
     return { sucesso: false, erro: err.message }
@@ -142,7 +142,7 @@ export async function emitirNfeSaida(params: EmitirNfeSaidaParams): Promise<{
     for (let i = 0; i < 3; i++) {
       await sleep(3000)
       try {
-        respostaFinal = await focusGet(`/v2/nfe/${referencia}`)
+        respostaFinal = await focusGet(`/v2/nfe/${referencia}`, 'comercializacao')
         statusFocus = respostaFinal.status
         if (statusFocus !== 'processando_autorizacao') break
       } catch {}

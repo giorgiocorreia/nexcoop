@@ -16,6 +16,8 @@ export async function criarLancamento(data: {
   data_pagamento?: string | null
   numero_documento?: string | null
   cooperado_id?: string | null
+  conta_id?: string | null
+  conta_destino_id?: string | null
   observacoes?: string | null
   usuario_id: string
   usuario_email?: string
@@ -34,6 +36,8 @@ export async function criarLancamento(data: {
       data_pagamento:   data.data_pagamento ?? null,
       numero_documento: data.numero_documento ?? null,
       cooperado_id:     data.cooperado_id ?? null,
+      conta_id:         data.conta_id ?? null,
+      conta_destino_id: data.conta_destino_id ?? null,
       observacoes:      data.observacoes ?? null,
       usuario_id:       data.usuario_id,
     })

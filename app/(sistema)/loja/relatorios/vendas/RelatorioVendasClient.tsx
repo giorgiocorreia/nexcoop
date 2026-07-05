@@ -101,10 +101,25 @@ export default function RelatorioVendasClient({ vendas, operadores }: { vendas: 
       breadcrumb={[{ label: 'Relatórios' }]}
       acoes={
         <>
+          <a
+            href={(() => {
+              const params = new URLSearchParams()
+              if (filtroInicio) params.set('dataInicio', filtroInicio)
+              if (filtroFim) params.set('dataFim', filtroFim)
+              const qs = params.toString()
+              return `/api/loja/relatorio/vendas/pdf${qs ? `?${qs}` : ''}`
+            })()}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ padding: '8px 14px', background: COM_C.azul, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0, textDecoration: 'none' }}
+          >
+            <i className="ti ti-file-type-pdf" style={{ fontSize: 15 }} />
+            Exportar PDF
+          </a>
           <button onClick={() => exportCSV(filtradas)} style={{ padding: '8px 14px', background: '#fff', color: COM_C.txt, border: `1px solid ${COM_C.borda}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <i className="ti ti-download" style={{ fontSize: 15 }} />
-          Exportar CSV
-        </button>
+            <i className="ti ti-download" style={{ fontSize: 15 }} />
+            Exportar CSV
+          </button>
         </>
       }
     >

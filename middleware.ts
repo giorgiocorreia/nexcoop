@@ -31,8 +31,10 @@ export async function middleware(request: NextRequest) {
   const isApiCron = pathname.startsWith('/api/cron')
   const isApiWhatsApp = pathname.startsWith('/api/whatsapp')
   const isApiNfe = pathname.startsWith('/api/nfe')
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha')
-  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado')
+  const isFiliadoLogin = pathname.startsWith('/filiado/login')
+  const isFiliadoPublic = pathname === '/filiado' || isFiliadoLogin
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha') || isFiliadoLogin
+  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || isFiliadoPublic
   const isOnboarding = pathname.startsWith('/onboarding')
   const isRSC = request.headers.get('rsc') === '1'
 
@@ -47,12 +49,14 @@ export async function middleware(request: NextRequest) {
   // Já autenticado tentando acessar login
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = isFiliadoLogin ? '/filiado/inicio' : '/dashboard'
     return NextResponse.redirect(url)
   }
 
+  const isFiliadoArea = pathname.startsWith('/filiado')
+
   // Verifica onboarding apenas em navegação completa (não RSC)
-  if (user && !isAuthPage && !isPublicPage && !isOnboarding && !isRSC) {
+  if (user && !isAuthPage && !isPublicPage && !isOnboarding && !isRSC && !isFiliadoArea) {
     const { data: usuario } = await supabase
       .from('usuarios')
       .select('organizacao_id, role')

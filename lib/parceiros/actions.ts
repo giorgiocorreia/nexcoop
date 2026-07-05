@@ -69,6 +69,29 @@ export async function criarParceira(data: {
   return nova
 }
 
+export async function atualizarAcessoFiscalParceira(id: string, acessoFiscal: boolean) {
+  const supabase = createAdminClient()
+  const { data: empresa } = await supabase
+    .from('empresas_parceiras')
+    .select('modulos_acesso')
+    .eq('id', id)
+    .single()
+  const modulos = [...((empresa?.modulos_acesso as string[]) ?? [])]
+  if (acessoFiscal && !modulos.includes('fiscal_comercializacao')) {
+    modulos.push('fiscal_comercializacao')
+  }
+  if (!acessoFiscal) {
+    const idx = modulos.indexOf('fiscal_comercializacao')
+    if (idx >= 0) modulos.splice(idx, 1)
+  }
+  const { error } = await supabase
+    .from('empresas_parceiras')
+    .update({ acesso_fiscal: acessoFiscal, modulos_acesso: modulos })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/configuracoes')
+}
+
 export async function atualizarStatusParceira(id: string, status: 'ativo' | 'inativo') {
   const supabase = createAdminClient()
   const { error } = await supabase

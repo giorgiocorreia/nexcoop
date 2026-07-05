@@ -61,7 +61,7 @@ export async function consultarNFeNaSEFAZ(chaveAcesso: string): Promise<{
   erro?: string
 }> {
   try {
-    const json = await focusGet<any>(`/v2/nfe/${chaveAcesso}`)
+    const json = await focusGet<any>(`/v2/nfe/${chaveAcesso}`, 'loja')
     const nfe = json?.nfe_proc?.NFe?.infNFe
 
     if (!nfe) return { ok: false, erro: 'Estrutura de resposta inesperada da SEFAZ' }

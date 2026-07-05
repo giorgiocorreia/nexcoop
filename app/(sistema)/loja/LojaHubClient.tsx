@@ -7,6 +7,7 @@ import {
 } from '@/components/nexcoop/ui'
 
 const GESTAO = [
+  { label: 'Conta Corrente', desc: 'Consulte saldo financeiro e extrato do cooperado por CPF.', icon: 'ti-wallet', cor: COM_C.azul, corLt: COM_C.azulLt, href: '/loja/conta-corrente' },
   { label: 'Conferência de Caixa', desc: 'Confira e aprove os fechamentos dos operadores de caixa.', icon: 'ti-clipboard-check', cor: COM_C.laranja, corLt: COM_C.laranjaLt, href: '/loja/conferencia' },
   { label: 'Caixas', desc: 'Veja as sessões abertas e fechadas, e force o fechamento.', icon: 'ti-cash-register', cor: COM_C.verde, corLt: COM_C.verdeLt, href: '/loja/caixas' },
   { label: 'Rel. Vendas', desc: 'Histórico e totais de vendas por período e operador.', icon: 'ti-chart-bar', cor: COM_C.azul, corLt: COM_C.azulLt, href: '/loja/relatorios/vendas' },

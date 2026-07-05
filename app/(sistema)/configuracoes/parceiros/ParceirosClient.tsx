@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getParceiras, criarParceira, criarParceiraComSenha, atualizarStatusParceira, reenviarConviteParceira, removerParceira } from '@/lib/parceiros/actions'
+import { getParceiras, criarParceira, criarParceiraComSenha, atualizarStatusParceira, atualizarAcessoFiscalParceira, reenviarConviteParceira, removerParceira } from '@/lib/parceiros/actions'
 import { TIPO_PARCERIA_LABEL, TipoParceria } from '@/lib/parceiros/types'
 
 const COR = '#635BFF'
@@ -309,6 +309,20 @@ export default function ParceirosClient({ orgId }: { orgId: string }) {
                     )}
                   </div>
                 </div>
+                {p.tipo === 'contabilidade' && p.status === 'ativo' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12, color: '#6b7280', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!p.acesso_fiscal}
+                      onChange={async e => {
+                        await atualizarAcessoFiscalParceira(p.id, e.target.checked)
+                        const novas = await getParceiras(orgId)
+                        setParceiras(novas)
+                      }}
+                    />
+                    Permitir acesso às Notas Fiscais da Comercialização (/comercializacao/fiscal)
+                  </label>
+                )}
               </div>
             )
           })}

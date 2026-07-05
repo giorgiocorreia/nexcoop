@@ -4,20 +4,15 @@
 // NCM 18010000 | Série 002 | CST ICMS 041 | PIS/COFINS CST 72 | FUNRURAL 1,63%
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { focusPost, focusGet, FOCUS_BASE_URL } from './client'
+import { focusPost, focusGet, urlCompleta } from './client'
+
+const FOCUS_MOD = 'comercializacao' as const
 
 // CNPJ da COOPAIBI (emitente) — vem da org, mas fixamos como fallback
 const CNPJ_COOPAIBI = '54305114000179'
 const SERIE = '002'
 const NCM = '18010000'
 const UNIDADE_COMERCIAL = 'KG'
-
-// Monta URL completa para XML/DANFE retornados como path relativo pela Focus
-function urlCompleta(path?: string): string | undefined {
-  if (!path) return undefined
-  if (path.startsWith('http')) return path
-  return `${FOCUS_BASE_URL}${path}`
-}
 
 // Aguarda em ms
 function sleep(ms: number) {
@@ -298,7 +293,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   try {
     focusResposta = await focusPost<FocusNfeResponse>(
       `/v2/nfe?ref=${referencia}`,
-      payload
+      payload,
+      FOCUS_MOD,
     )
   } catch (err: any) {
     // A Focus retorna "already_processed" quando a referência já foi autorizada anteriormente.
@@ -313,8 +309,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
               status: 'autorizada' as any,
               chave_nfe: consultaResp.chave_nfe,
               numero_nfe: consultaResp.numero,
-              xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal),
-              danfe_url: urlCompleta(consultaResp.caminho_danfe),
+              xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal, FOCUS_MOD),
+              danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD),
               emitido_em: new Date().toISOString(),
             })
             .eq('id', notaRecord.id)
@@ -323,7 +319,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
             sucesso: true,
             nota_id: notaRecord.id,
             chave_nfe: consultaResp.chave_nfe,
-            danfe_url: urlCompleta(consultaResp.caminho_danfe),
+            danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD),
           }
         }
       } catch {
@@ -363,8 +359,8 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         status: 'autorizada' as any,
         chave_nfe: respostaFinal.chave_nfe,
         numero_nfe: respostaFinal.numero,
-        xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal),
-        danfe_url: urlCompleta(respostaFinal.caminho_danfe),
+        xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal, FOCUS_MOD),
+        danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD),
         emitido_em: new Date().toISOString(),
       })
       .eq('id', notaRecord.id)
@@ -373,7 +369,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
       sucesso: true,
       nota_id: notaRecord.id,
       chave_nfe: respostaFinal.chave_nfe,
-      danfe_url: urlCompleta(respostaFinal.caminho_danfe),
+      danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD),
     }
   }
 
@@ -402,5 +398,5 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
 
 // Consulta status de uma NF-e na Focus (para polling)
 export async function consultarNfeEntrada(referencia: string): Promise<FocusNfeResponse> {
-  return focusGet<FocusNfeResponse>(`/v2/nfe/${referencia}`)
+  return focusGet<FocusNfeResponse>(`/v2/nfe/${referencia}`, FOCUS_MOD)
 }

@@ -59,6 +59,8 @@ const CONTABIL_ITENS: NavItem[] = [
 
 function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null, isParceiro?: boolean): NavGrupo[] {
   const funcoes = (usuario?.funcoes ?? []) as string[]
+  const orgTipo = usuario?.organizacao?.tipo
+  const exibeMensalidades = orgTipo !== 'associacao' && orgTipo !== 'central'
   const isAdmin          = funcoes.includes('admin')
   const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
   const isFinanceiro     = funcoes.includes('financeiro')
@@ -78,7 +80,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     principalItens.push({ label: 'Dashboard',    href: '/dashboard',    icone: '📊' })
   if (isAdmin || isTecnico)
     principalItens.push({ label: 'Cooperados',   href: '/cooperados',   icone: '👥' })
-  if (isAdmin || isFinanceiro)
+  if (exibeMensalidades && (isAdmin || isFinanceiro))
     principalItens.push({ label: 'Mensalidades', href: '/mensalidades', icone: '💳' })
   if (isAdmin || isFinanceiro || isConselhoFiscal)
     principalItens.push({ label: 'Financeiro',   href: '/financeiro',   icone: '💰' })
@@ -459,6 +461,10 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       const grupos = []
       if (modulosAcesso?.includes('financeiro_leitura'))
         grupos.push(renderGrupo('Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
+      if (modulosAcesso?.includes('fiscal_comercializacao'))
+        grupos.push(renderGrupo('Comercialização', [
+          { label: 'Notas Fiscais', href: '/comercializacao/fiscal', icone: '🧾' },
+        ]))
       grupos.push(renderGrupo('Contábil', [
         ...CONTABIL_ITENS,
         { label: 'De/Para Contas', href: '/contabil/depara', icone: '🔀' },

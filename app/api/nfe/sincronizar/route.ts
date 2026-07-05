@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
 
   try {
-    const resposta = await focusGet<any>(`/v2/nfe/${referencia}`)
+    const resposta = await focusGet<any>(`/v2/nfe/${referencia}`, 'comercializacao')
 
     if (resposta.status === 'autorizado') {
       await supabase

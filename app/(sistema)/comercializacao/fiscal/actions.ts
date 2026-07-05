@@ -76,7 +76,7 @@ export async function cancelarNfe(chave: string, justificativa: string) {
   const referencia = `SAIDA-${orgId.slice(0, 8)}-${venda.id.slice(0, 8)}`
 
   try {
-    await focusDelete(`/v2/nfe/${referencia}`, { justificativa })
+    await focusDelete(`/v2/nfe/${referencia}`, { justificativa }, 'comercializacao')
     await supabase
       .from('vendas_externas')
       .update({ status_nfe: 'cancelada' } as any)

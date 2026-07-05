@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { Lancamento, TipoLancamento, StatusLancamento } from '@/types/database'
 import BotaoAjuda from '@/components/BotaoAjuda'
 import { Btn } from '@/components/ui/Btn'
+import Link from 'next/link'
 import {
   PageLayout, KpiCard, ContentCard, Badge, EmptyState,
   Input, Select, COM_C,
@@ -92,9 +93,23 @@ export default function FinanceiroLista({ lancamentos, nomeCooperado, isParceiro
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <BotaoAjuda chave="manual_financeiro_url" />
           {!isParceiro && (
-            <Btn variante="roxo" icone="ti-plus" onClick={() => router.push('/financeiro/novo')}>
-              Novo lançamento
-            </Btn>
+            <>
+              <Link
+                href="/financeiro/tesouraria"
+                style={{
+                  padding: '8px 14px', background: '#fff', color: COM_C.azul,
+                  border: `1px solid ${COM_C.borda}`, borderRadius: 8, fontSize: 13,
+                  fontWeight: 600, textDecoration: 'none', display: 'inline-flex',
+                  alignItems: 'center', gap: 6,
+                }}
+              >
+                <i className="ti ti-building-bank" style={{ fontSize: 15 }} />
+                Tesouraria
+              </Link>
+              <Btn variante="roxo" icone="ti-plus" onClick={() => router.push('/financeiro/novo')}>
+                Novo lançamento
+              </Btn>
+            </>
           )}
         </div>
       }
