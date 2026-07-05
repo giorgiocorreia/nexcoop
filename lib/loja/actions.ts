@@ -450,9 +450,34 @@ export async function registrarCompra(
       if (errProd) return { error: traduzirErro(errProd.message) }
     }
 
+    try {
+      const { data: fornecedor } = await admin
+        .from('loja_fornecedores')
+        .select('nome')
+        .eq('id', compra.fornecedor_id)
+        .single()
+
+      const { criarLancamento } = await import('@/lib/financeiro/actions')
+      await criarLancamento({
+        organizacao_id: orgId,
+        tipo: 'despesa',
+        status: 'pago',
+        descricao: `Compra Loja — ${fornecedor?.nome ?? 'Fornecedor'}${compra.numero_nf ? ` — NF ${compra.numero_nf}` : ''}`,
+        valor: total_geral,
+        data_competencia: compra.data_compra,
+        data_pagamento: compra.data_compra,
+        numero_documento: compra_id.slice(0, 8),
+        observacoes: compra.observacoes ?? `Entrada de estoque — compra #${compra_id.slice(0, 8)}`,
+        usuario_id: operadorId,
+      })
+    } catch (e) {
+      console.error('[financeiro] Erro ao criar lançamento compra loja:', e)
+    }
+
     revalidatePath('/loja/compras')
     revalidatePath('/loja/estoque')
     revalidatePath('/loja')
+    revalidatePath('/financeiro')
     return { data: { id: compra_id } }
   } catch (e) {
     return { error: String(e) }
@@ -995,18 +1020,19 @@ export async function finalizarVenda(
     const { criarLancamento } = await import('@/lib/financeiro/actions')
     await criarLancamento({
       organizacao_id: orgId,
-      tipo: 'receita' as any,
-      status: 'pago' as any,
+      tipo: 'receita',
+      status: 'pago',
       descricao: `Venda Loja #${vendaId.slice(0, 8)} — ${new Date().toLocaleDateString('pt-BR')}`,
       valor: Number(venda.total),
       data_competencia: new Date().toISOString().split('T')[0],
       data_pagamento: new Date().toISOString().split('T')[0],
       numero_documento: vendaId.slice(0, 8),
+      cooperado_id: venda.cooperado_id ?? null,
       observacoes: `Venda finalizada no PDV`,
       usuario_id: operadorId,
     })
   } catch (e) {
-    console.error('[contabil] Erro ao criar lançamento venda loja:', e)
+    console.error('[financeiro] Erro ao criar lançamento venda loja:', e)
   }
 
   return { vendaId }
@@ -1080,9 +1106,30 @@ export async function cancelarVenda(
     }
   }
 
+  try {
+    const { data: lancamento } = await admin
+      .from('lancamentos')
+      .select('id, status')
+      .eq('organizacao_id', orgId)
+      .eq('numero_documento', vendaId.slice(0, 8))
+      .eq('tipo', 'receita')
+      .maybeSingle()
+
+    if (lancamento && lancamento.status !== 'cancelado') {
+      const { editarLancamento } = await import('@/lib/financeiro/actions')
+      await editarLancamento(lancamento.id, orgId, operadorId, {
+        status: 'cancelado',
+        observacoes: `Estornado — venda loja cancelada (${vendaId.slice(0, 8)})`,
+      })
+    }
+  } catch (e) {
+    console.error('[financeiro] Erro ao estornar lançamento venda loja:', e)
+  }
+
   await admin.from('loja_vendas').update({ status: 'cancelada' }).eq('id', vendaId)
   await registrarLog({ org_id: orgId, usuario_id:operadorId, modulo: 'loja', acao: 'loja_venda_cancelada', dados_depois: { venda_id: vendaId } })
 
+  revalidatePath('/financeiro')
   return { ok: true }
 }
 
