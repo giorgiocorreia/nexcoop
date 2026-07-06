@@ -4,6 +4,40 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getUsuarioLogado } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { registrarEntradaAutomatica } from '@/lib/comercializacao/aportes'
+
+// Integralização de cota não é venda de produto (não gera nota, não passa por
+// movimentacoes_conta) mas é dinheiro entrando de verdade — precisa de rastro no
+// caixa da comercialização pra ter controle, do mesmo jeito que qualquer outra
+// entrada. Dinheiro/Pix/cartão passam pelo caixa igual; só promessa não move
+// dinheiro nenhum ainda, então não tem o que registrar no caixa.
+const FORMA_CAIXA: Record<string, 'especie' | 'pix' | 'cartao' | null> = {
+  dinheiro: 'especie', pix: 'pix', cartao: 'cartao', promessa: null,
+}
+
+// Sem caixa aberto não tem onde registrar a entrada — igual à tela de caixa da
+// comercialização, que já exige sessão aberta antes de qualquer operação. Bloqueia
+// ANTES de inserir parcela/lançamento, pra nunca ficar com pagamento registrado
+// pela metade (parcela/lançamento gravados, entrada de caixa não).
+async function exigirSessaoCaixaAberta(orgId: string, formasPagamento: string[]): Promise<string | null> {
+  const precisaCaixa = formasPagamento.some(f => FORMA_CAIXA[f] !== null)
+  if (!precisaCaixa) return null
+
+  const supabase = createAdminClient()
+  const { data: sessaoAberta } = await supabase
+    .from('sessoes_caixa')
+    .select('id')
+    .eq('organizacao_id', orgId)
+    .eq('status', 'aberta')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!sessaoAberta) {
+    throw new Error('Não há caixa aberto na Comercialização. Abra um caixa em Comercialização → Caixa antes de registrar este pagamento.')
+  }
+  return sessaoAberta.id
+}
 
 // ── Verificar e marcar parcelas vencidas ──────────────────────────────────────
 export async function verificarInadimplencia(orgId: string) {
@@ -93,6 +127,8 @@ export async function registrarPagamentos(
     observacoes?:    string
   }>
 ) {
+  const sessaoCaixaId = await exigirSessaoCaixaAberta(orgId, parcelas.map(p => p.forma_pagamento))
+
   const supabase = createAdminClient()
 
   const { data: cota } = await supabase
@@ -130,6 +166,12 @@ export async function registrarPagamentos(
 
   try {
     const { criarLancamento } = await import('@/lib/financeiro/actions')
+    const { data: cooperado } = await supabase
+      .from('cooperados')
+      .select('nome_completo')
+      .eq('id', cooperadoId)
+      .single()
+
     const parcelasPagas = (inseridos ?? []).filter((p: any) => p.forma_pagamento !== 'promessa' && Number(p.valor_pago) > 0)
     for (const parcela of parcelasPagas) {
       await criarLancamento({
@@ -145,6 +187,18 @@ export async function registrarPagamentos(
         observacoes: `Cota cooperativa — parcela`,
         usuario_id: registradoPor,
       })
+
+      const formaCaixa = FORMA_CAIXA[(parcela as any).forma_pagamento]
+      if (formaCaixa && sessaoCaixaId) {
+        await registrarEntradaAutomatica({
+          organizacaoId: orgId,
+          sessaoCaixaId,
+          formaPagamento: formaCaixa,
+          valor: Number((parcela as any).valor_pago),
+          usuarioId: registradoPor,
+          observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${(parcela as any).numero_parcela ?? ''}`,
+        })
+      }
     }
   } catch (e) {
     console.error('[contabil] Erro ao criar lançamento cota:', e)
@@ -211,6 +265,8 @@ export async function quitarParcela(
 
   if (errParcela || !parcela) throw new Error('Parcela não encontrada.')
 
+  const sessaoCaixaId = await exigirSessaoCaixaAberta(parcela.organizacao_id, [formaPagamento])
+
   const { error } = await supabase
     .from('cota_pagamentos')
     .update({
@@ -240,6 +296,24 @@ export async function quitarParcela(
         usuario_id: usuario.id,
         usuario_email: usuario.email ?? undefined,
       })
+
+      const { data: cooperado } = await supabase
+        .from('cooperados')
+        .select('nome_completo')
+        .eq('id', cooperadoId)
+        .single()
+
+      const formaCaixa = FORMA_CAIXA[formaPagamento]
+      if (formaCaixa && sessaoCaixaId) {
+        await registrarEntradaAutomatica({
+          organizacaoId: parcela.organizacao_id,
+          sessaoCaixaId,
+          formaPagamento: formaCaixa,
+          valor: Number(parcela.valor_pago),
+          usuarioId: usuario.id,
+          observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${parcela.numero_parcela ?? ''} (quitação)`,
+        })
+      }
     } catch (e) {
       console.error('[financeiro] Erro ao criar lançamento quitação cota:', e)
     }

@@ -46,6 +46,64 @@ export async function getSolicitacoesPendentes(organizacaoId: string) {
   return data ?? []
 }
 
+// Entrada de dinheiro na sessão de caixa que não vem de venda de produto nem de
+// aporte manual do operador (ex: integralização de cota paga no cadastro do
+// cooperado) — grava em aportes_sangrias (origem='cota_cooperado') sem exigir a
+// reautenticação de admin do fluxo manual (registrarAporteSangria), já que o
+// dinheiro já foi validado no pagamento da cota. Só espécie mexe no saldo físico
+// contado no caixa (saldo_especie_calculado); pix/cartão só somam nos totais
+// informativos da sessão (migration 063), pra não inflar uma contagem de cédulas
+// com dinheiro que nunca passou pela gaveta.
+export async function registrarEntradaAutomatica(params: {
+  organizacaoId: string
+  sessaoCaixaId: string
+  formaPagamento: 'especie' | 'pix' | 'cartao'
+  valor: number
+  usuarioId: string
+  observacoes?: string
+}): Promise<void> {
+  if (params.valor <= 0) return
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase.from('aportes_sangrias').insert({
+    organizacao_id: params.organizacaoId,
+    sessao_caixa_id: params.sessaoCaixaId,
+    tipo: 'aporte',
+    valor: params.valor,
+    forma_pagamento: params.formaPagamento,
+    origem: 'cota_cooperado',
+    autorizado_por: params.usuarioId,
+    executado_por: params.usuarioId,
+    observacoes: params.observacoes ?? null,
+  })
+  if (error) throw new Error(error.message)
+
+  if (params.formaPagamento === 'especie') {
+    const { data: sessao } = await supabase
+      .from('sessoes_caixa')
+      .select('saldo_especie_calculado')
+      .eq('id', params.sessaoCaixaId)
+      .single()
+    await supabase
+      .from('sessoes_caixa')
+      .update({ saldo_especie_calculado: Number(sessao?.saldo_especie_calculado ?? 0) + params.valor })
+      .eq('id', params.sessaoCaixaId)
+    return
+  }
+
+  const campo = params.formaPagamento === 'pix' ? 'total_entradas_pix' : 'total_entradas_cartao'
+  const { data: sessao } = await supabase
+    .from('sessoes_caixa')
+    .select(campo)
+    .eq('id', params.sessaoCaixaId)
+    .single()
+  await supabase
+    .from('sessoes_caixa')
+    .update({ [campo]: Number((sessao as any)?.[campo] ?? 0) + params.valor } as any)
+    .eq('id', params.sessaoCaixaId)
+}
+
 export async function marcarSolicitacaoAtendida(solicitacaoId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
