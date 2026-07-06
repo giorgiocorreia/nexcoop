@@ -9,12 +9,24 @@ export function HubStyles() {
       .com-page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
       .com-hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #FBF8F4; min-height: 100vh; }
       .com-hub-date { font-size: 12px; color: #78716C; padding-left: 50px; }
-      .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
-      .com-kpi-card { background: #fff; border-radius: 14px; border: 1px solid #E5E3DC; padding: 18px 18px 16px;
-        position: relative; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        transition: transform 0.15s, box-shadow 0.15s; }
-      .com-kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
-      .com-kpi-value { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 5px; }
+      .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
+      .com-kpi-card {
+        display: flex; align-items: center; gap: 14px;
+        border-radius: 12px; border: 1px solid #E5E3DC;
+        padding: 14px 16px; min-height: 72px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .com-kpi-card:hover { border-color: #D6D3CD; box-shadow: 0 3px 12px rgba(28,25,23,0.06); }
+      .com-kpi-icon {
+        width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .com-kpi-icon i { font-size: 20px; color: #fff; }
+      .com-kpi-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+      .com-kpi-label { font-size: 11px; font-weight: 600; color: #78716C; line-height: 1.3; }
+      .com-kpi-value { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+      .com-kpi-sub { font-size: 10px; color: #A8A29E; line-height: 1.3; margin-top: 1px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .com-chart-row { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 16px; margin-bottom: 24px; }
       .com-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
       .com-link-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
@@ -29,7 +41,7 @@ export function HubStyles() {
       .com-guia-card { background: #fff; border: 1px solid #E5E3DC; border-radius: 12px; padding: 16px 18px; }
       .com-venda-row:hover { background: #FAFAF9 !important; }
       .com-list-row:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); border-color: #D6D3CD !important; }
-      .com-kpi-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
+      .com-kpi-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
       .com-table th { font-size: 10px; font-weight: 700; color: #78716C; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid #E5E3DC; background: #FAFAF9; }
       .com-table td { padding: 12px 16px; border-bottom: 1px solid #F5F5F4; font-size: 13px; color: #1C1917; }
       .com-table tr:hover td { background: #FAFAF9; }
@@ -46,8 +58,12 @@ export function HubStyles() {
         .com-page-header { padding: 0 16px 0 56px; min-height: 60px; flex-wrap: wrap; }
         .com-hub-content { padding: 16px; }
         .com-hub-date { display: none; }
-        .com-kpi-value { font-size: 20px; }
+        .com-kpi-value { font-size: 18px; }
+        .com-kpi-icon { width: 38px; height: 38px; }
+        .com-kpi-icon i { font-size: 17px; }
+        .com-kpi-card { padding: 12px 14px; min-height: 64px; gap: 10px; }
         .com-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .com-kpi-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-link-grid { grid-template-columns: 1fr; }
       }
     `}</style>
