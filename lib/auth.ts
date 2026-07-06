@@ -13,11 +13,20 @@ export async function getUsuarioLogado() {
   const admin = createAdminClient()
   const { data: usuario, error } = await admin
     .from('usuarios')
-    .select('id, organizacao_id, role, funcoes, nome_completo, email')
+    .select('id, organizacao_id, role, funcoes, nome_completo, email, ativo')
     .eq('id', user.id)
     .single()
 
   if (error || !usuario) redirect('/login')
+
+  // toggleAtivo (configuracoes/usuarios/actions.ts) só marca a flag — sem essa
+  // checagem aqui, um usuário "desativado" continuava com sessão válida e
+  // conseguia usar o sistema normalmente (bug real, 2026-07-06).
+  if (usuario.ativo === false) {
+    await supabase.auth.signOut()
+    redirect('/login?erro=inativo')
+  }
+
   return usuario
 }
 

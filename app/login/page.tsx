@@ -24,7 +24,9 @@ function AuthForm({ onEmailClick }: { onEmailClick: () => void }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [nomeOrg, setNomeOrg] = useState('')
-  const [erro, setErro] = useState('')
+  const [erro, setErro] = useState(
+    searchParams.get('erro') === 'inativo' ? 'Sua conta está inativa. Fale com o administrador da sua organização.' : ''
+  )
   const [sucesso, setSucesso] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [foco, setFoco] = useState<string | null>(null)
@@ -42,6 +44,17 @@ function AuthForm({ onEmailClick }: { onEmailClick: () => void }) {
       setErro('E-mail ou senha incorretos. Tente novamente.')
       setCarregando(false)
       return
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: usuario } = await supabase.from('usuarios').select('ativo').eq('id', user.id).maybeSingle()
+      if (usuario?.ativo === false) {
+        await supabase.auth.signOut()
+        setErro('Sua conta está inativa. Fale com o administrador da sua organização.')
+        setCarregando(false)
+        return
+      }
     }
 
     router.push(redirect)

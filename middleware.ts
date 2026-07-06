@@ -59,9 +59,19 @@ export async function middleware(request: NextRequest) {
   if (user && !isAuthPage && !isPublicPage && !isOnboarding && !isRSC && !isFiliadoArea) {
     const { data: usuario } = await supabase
       .from('usuarios')
-      .select('organizacao_id, role')
+      .select('organizacao_id, role, ativo')
       .eq('id', user.id)
       .single()
+
+    // toggleAtivo só marca a flag no banco — sem essa checagem, usuário
+    // desativado com sessão ainda válida continuava navegando normalmente.
+    if (usuario?.ativo === false) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('erro', 'inativo')
+      return NextResponse.redirect(url)
+    }
 
     if (usuario?.role !== 'super_admin' && usuario?.organizacao_id) {
       const { data: org } = await supabase
