@@ -15,6 +15,29 @@ const FORMA_CAIXA: Record<string, 'especie' | 'pix' | 'cartao' | null> = {
   dinheiro: 'especie', pix: 'pix', cartao: 'cartao', promessa: null,
 }
 
+// Registrado em produção (2026-07-06, pagamento do Paulino): a entrada de caixa
+// pode falhar por instabilidade de rede pontual (TypeError: fetch failed) mesmo
+// com sessão aberta e dados válidos — sem isso, o pagamento parece ter dado certo
+// (parcela + lançamento no Financeiro OK) mas a entrada no caixa simplesmente some
+// em silêncio, sem aviso nenhum pro operador. Uma segunda tentativa resolve a
+// maioria dos casos transitórios; se ainda assim falhar, o chamador precisa saber
+// pra avisar visivelmente o operador (nunca mais engolir em silêncio).
+async function registrarEntradaComRetry(params: Parameters<typeof registrarEntradaAutomatica>[0]): Promise<string | null> {
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    try {
+      await registrarEntradaAutomatica(params)
+      return null
+    } catch (e) {
+      if (tentativa === 2) {
+        const msg = e instanceof Error ? e.message : 'erro desconhecido'
+        console.error('[caixa] Falha ao registrar entrada automática após retry:', e)
+        return `Pagamento e lançamento no Financeiro foram registrados, mas a entrada de R$ ${params.valor.toFixed(2)} NÃO entrou no caixa (falha: ${msg}). Registre manualmente em Comercialização → Caixa.`
+      }
+    }
+  }
+  return null
+}
+
 // Sem caixa aberto não tem onde registrar a entrada — igual à tela de caixa da
 // comercialização, que já exige sessão aberta antes de qualquer operação. Bloqueia
 // ANTES de inserir parcela/lançamento, pra nunca ficar com pagamento registrado
@@ -164,16 +187,18 @@ export async function registrarPagamentos(
 
   if (error) throw new Error(error.message)
 
-  try {
-    const { criarLancamento } = await import('@/lib/financeiro/actions')
-    const { data: cooperado } = await supabase
-      .from('cooperados')
-      .select('nome_completo')
-      .eq('id', cooperadoId)
-      .single()
+  const avisosCaixa: string[] = []
 
-    const parcelasPagas = (inseridos ?? []).filter((p: any) => p.forma_pagamento !== 'promessa' && Number(p.valor_pago) > 0)
-    for (const parcela of parcelasPagas) {
+  const { data: cooperado } = await supabase
+    .from('cooperados')
+    .select('nome_completo')
+    .eq('id', cooperadoId)
+    .single()
+
+  const parcelasPagas = (inseridos ?? []).filter((p: any) => p.forma_pagamento !== 'promessa' && Number(p.valor_pago) > 0)
+  for (const parcela of parcelasPagas) {
+    try {
+      const { criarLancamento } = await import('@/lib/financeiro/actions')
       await criarLancamento({
         organizacao_id: orgId,
         tipo: 'receita' as any,
@@ -187,21 +212,22 @@ export async function registrarPagamentos(
         observacoes: `Cota cooperativa — parcela`,
         usuario_id: registradoPor,
       })
-
-      const formaCaixa = FORMA_CAIXA[(parcela as any).forma_pagamento]
-      if (formaCaixa && sessaoCaixaId) {
-        await registrarEntradaAutomatica({
-          organizacaoId: orgId,
-          sessaoCaixaId,
-          formaPagamento: formaCaixa,
-          valor: Number((parcela as any).valor_pago),
-          usuarioId: registradoPor,
-          observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${(parcela as any).numero_parcela ?? ''}`,
-        })
-      }
+    } catch (e) {
+      console.error('[contabil] Erro ao criar lançamento cota:', e)
     }
-  } catch (e) {
-    console.error('[contabil] Erro ao criar lançamento cota:', e)
+
+    const formaCaixa = FORMA_CAIXA[(parcela as any).forma_pagamento]
+    if (formaCaixa && sessaoCaixaId) {
+      const aviso = await registrarEntradaComRetry({
+        organizacaoId: orgId,
+        sessaoCaixaId,
+        formaPagamento: formaCaixa,
+        valor: Number((parcela as any).valor_pago),
+        usuarioId: registradoPor,
+        observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${(parcela as any).numero_parcela ?? ''}`,
+      })
+      if (aviso) avisosCaixa.push(aviso)
+    }
   }
 
   const { data: todasParcelas } = await supabase
@@ -244,7 +270,7 @@ export async function registrarPagamentos(
 
   revalidatePath(`/cooperados/${cooperadoId}`)
 
-  return { pagamentos: inseridos ?? [], quitou, totalPago, valorTotalCota }
+  return { pagamentos: inseridos ?? [], quitou, totalPago, valorTotalCota, avisoCaixa: avisosCaixa.join(' ') || null }
 }
 
 // ── Quitar parcela pendente ───────────────────────────────────────────────────
@@ -278,9 +304,12 @@ export async function quitarParcela(
 
   if (error) throw new Error(error.message)
 
+  let avisoCaixa: string | null = null
+
   if (Number(parcela.valor_pago) > 0) {
+    const usuario = await getUsuarioLogado()
+
     try {
-      const usuario = await getUsuarioLogado()
       const { criarLancamento } = await import('@/lib/financeiro/actions')
       await criarLancamento({
         organizacao_id: parcela.organizacao_id,
@@ -296,26 +325,26 @@ export async function quitarParcela(
         usuario_id: usuario.id,
         usuario_email: usuario.email ?? undefined,
       })
-
-      const { data: cooperado } = await supabase
-        .from('cooperados')
-        .select('nome_completo')
-        .eq('id', cooperadoId)
-        .single()
-
-      const formaCaixa = FORMA_CAIXA[formaPagamento]
-      if (formaCaixa && sessaoCaixaId) {
-        await registrarEntradaAutomatica({
-          organizacaoId: parcela.organizacao_id,
-          sessaoCaixaId,
-          formaPagamento: formaCaixa,
-          valor: Number(parcela.valor_pago),
-          usuarioId: usuario.id,
-          observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${parcela.numero_parcela ?? ''} (quitação)`,
-        })
-      }
     } catch (e) {
       console.error('[financeiro] Erro ao criar lançamento quitação cota:', e)
+    }
+
+    const { data: cooperado } = await supabase
+      .from('cooperados')
+      .select('nome_completo')
+      .eq('id', cooperadoId)
+      .single()
+
+    const formaCaixa = FORMA_CAIXA[formaPagamento]
+    if (formaCaixa && sessaoCaixaId) {
+      avisoCaixa = await registrarEntradaComRetry({
+        organizacaoId: parcela.organizacao_id,
+        sessaoCaixaId,
+        formaPagamento: formaCaixa,
+        valor: Number(parcela.valor_pago),
+        usuarioId: usuario.id,
+        observacoes: `Cota — ${cooperado?.nome_completo ?? 'cooperado'} — parcela ${parcela.numero_parcela ?? ''} (quitação)`,
+      })
     }
   }
 
@@ -353,5 +382,5 @@ export async function quitarParcela(
   revalidatePath(`/cooperados/${cooperadoId}`)
   revalidatePath('/financeiro')
 
-  return { quitou, totalPago, valorTotalCota }
+  return { quitou, totalPago, valorTotalCota, avisoCaixa }
 }

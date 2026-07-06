@@ -184,6 +184,10 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
       await carregar()
       setShowForm(prev => ({ ...prev, [cotaId]: false }))
 
+      if (result.avisoCaixa) {
+        setErroPorCota(prev => ({ ...prev, [cotaId]: `⚠️ ${result.avisoCaixa}` }))
+      }
+
       if (result.quitou) {
         setQuitouModal({ tipoCota: cota.tipo_cota })
       }
@@ -217,6 +221,7 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
       const result = await quitarParcela(pagId, cooperadoId, cotaId, form.forma_pagamento, form.data_pagamento)
       await carregar()
       setQuitarState(prev => { const n = { ...prev }; delete n[pagId]; return n })
+      if (result.avisoCaixa) alert(`⚠️ ${result.avisoCaixa}`)
       if (result.quitou) setQuitouModal({ tipoCota: cota.tipo_cota })
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro ao quitar.')
