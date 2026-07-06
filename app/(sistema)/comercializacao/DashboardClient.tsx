@@ -79,6 +79,7 @@ export default function DashboardComercializacao({
   const fiscalCards = [
     { href: '/comercializacao/fiscal', label: 'Documentos Fiscais', desc: 'NF-e entrada, saída e devoluções.', icon: 'ti-file-invoice', cor: COM_C.marrom, corLt: COM_C.marromLt },
     { href: '/comercializacao/painel', label: 'Painel de Mercado', desc: 'Cotações externas e indicadores.', icon: 'ti-chart-dots', cor: COM_C.azul, corLt: COM_C.azulLt },
+    { href: '/comercializacao/boletim-preview', label: 'Boletim Cacau (prévia)', desc: 'Modelo visual do boletim ANPC — temporário.', icon: 'ti-report-analytics', cor: COM_C.verde, corLt: COM_C.verdeLt },
   ]
 
   async function handleAbrirCaixa() {
