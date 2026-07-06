@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { salvarPerfil } from '@/lib/perfil/actions'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import { PageLayout, MODULO_NEXCOOP } from '@/components/nexcoop/ui'
+import { CampoSenha } from '@/components/CampoSenha'
+import { createClient } from '@/lib/supabase/client'
 
 type Atividade = {
   id: string
@@ -125,6 +127,12 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
   const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState<string | null>(null)
+  const [modalSenha, setModalSenha]     = useState(false)
+  const [novaSenha, setNovaSenha]       = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [salvandoSenha, setSalvandoSenha]   = useState(false)
+  const [erroSenha, setErroSenha]       = useState<string | null>(null)
+  const [sucessoSenha, setSucessoSenha] = useState(false)
   const [form, setForm] = useState<FormFields>({
     nome_completo: usuario.nome_completo ?? '',
     cpf:           usuario.cpf           ?? '',
@@ -151,6 +159,47 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
     } finally {
       setSalvando(false)
     }
+  }
+
+  function abrirModalSenha() {
+    setNovaSenha('')
+    setConfirmarSenha('')
+    setErroSenha(null)
+    setSucessoSenha(false)
+    setModalSenha(true)
+  }
+
+  function fecharModalSenha() {
+    setModalSenha(false)
+  }
+
+  async function handleAlterarSenha() {
+    if (novaSenha.length < 8) {
+      setErroSenha('A senha deve ter no mínimo 8 caracteres.')
+      return
+    }
+    if (novaSenha !== confirmarSenha) {
+      setErroSenha('As senhas não coincidem.')
+      return
+    }
+
+    setSalvandoSenha(true)
+    setErroSenha(null)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ password: novaSenha })
+
+    setSalvandoSenha(false)
+
+    if (error) {
+      setErroSenha('Erro ao alterar senha: ' + error.message)
+      return
+    }
+
+    setSucessoSenha(true)
+    setNovaSenha('')
+    setConfirmarSenha('')
+    setTimeout(() => setModalSenha(false), 1800)
   }
 
   function cancelar() {
@@ -469,6 +518,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
               Segurança
             </div>
             <button
+              onClick={abrirModalSenha}
               style={{
                 width: '100%', background: 'none', border: '1px solid #e5e3dc',
                 borderRadius: 8, padding: '8px 12px', fontSize: 13,
@@ -482,6 +532,81 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
 
         </div>
       </div>
+
+      {modalSenha && (
+        <div
+          onClick={fecharModalSenha}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white', borderRadius: 12, padding: '1.5rem',
+              width: '100%', maxWidth: 380, fontFamily: 'system-ui, -apple-system, sans-serif',
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '1rem' }}>
+              Alterar senha
+            </div>
+
+            {sucessoSenha ? (
+              <div style={{
+                background: '#f0faf6', border: '1px solid #6ee7b7', borderRadius: 8,
+                padding: '10px 14px', fontSize: 13, color: '#065f46',
+              }}>
+                ✅ Senha alterada com sucesso!
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={labelStyle}>Nova senha</div>
+                  <CampoSenha value={novaSenha} onChange={setNovaSenha} placeholder="Mínimo 8 caracteres" />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={labelStyle}>Confirmar nova senha</div>
+                  <CampoSenha value={confirmarSenha} onChange={setConfirmarSenha} placeholder="Repita a nova senha" />
+                </div>
+
+                {erroSenha && (
+                  <div style={{
+                    background: '#FCEBEB', border: '1px solid #F09595', borderRadius: 8,
+                    padding: '10px 14px', fontSize: 13, color: '#A32D2D', marginBottom: '1rem',
+                  }}>
+                    {erroSenha}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={fecharModalSenha}
+                    style={{
+                      background: 'none', border: '1px solid #e5e3dc', borderRadius: 8,
+                      padding: '6px 14px', fontSize: 13, color: 'var(--color-text-secondary)', cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleAlterarSenha}
+                    disabled={salvandoSenha}
+                    style={{
+                      background: '#378ADD', border: '1px solid #378ADD', borderRadius: 8,
+                      padding: '6px 14px', fontSize: 13, color: 'white',
+                      cursor: salvandoSenha ? 'not-allowed' : 'pointer',
+                      opacity: salvandoSenha ? 0.7 : 1,
+                    }}
+                  >
+                    {salvandoSenha ? 'Salvando...' : 'Salvar nova senha'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </PageLayout>
   )
 }
