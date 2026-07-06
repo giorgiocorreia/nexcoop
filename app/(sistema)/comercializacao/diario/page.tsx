@@ -14,7 +14,9 @@ import { COM_C } from '@/components/comercializacao/ui/tokens'
 type Sessao = {
   id: string; data: string; hora_abertura: string; hora_fechamento: string | null
   saldo_inicial_especie: number; saldo_final_especie: number | null; saldo_especie_calculado: number | null
-  total_saidas_especie: number; total_pix: number; observacoes_fechamento: string | null
+  total_saidas_especie: number; total_pix: number
+  total_entradas_pix: number | null; total_entradas_cartao: number | null
+  observacoes_fechamento: string | null
   usuarios: { id: string; nome_completo: string } | null
 }
 
@@ -26,9 +28,12 @@ type Movimentacao = {
 }
 
 type AporteSangria = {
-  id: string; tipo: string; valor: number; observacoes: string | null; created_at: string
+  id: string; tipo: string; valor: number; forma_pagamento: 'especie' | 'pix' | 'cartao'; origem: 'manual' | 'cota_cooperado'
+  observacoes: string | null; created_at: string
   autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null
 }
+
+const FORMA_LABEL: Record<string, string> = { especie: 'Espécie', pix: 'Pix', cartao: 'Cartão' }
 
 type TotalProduto = { nome: string; unidade: string; total_kg: number; num_produtores: number }
 
@@ -174,13 +179,20 @@ export default function DiarioCaixaPage() {
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt, marginBottom: 10 }}>Balanço financeiro</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
-                            {[
-                              { label: 'Saldo inicial', valor: fmtReal(detalhe.sessao.saldo_inicial_especie), cor: COM_C.txt },
-                              ...detalhe.aportes.filter(a => a.tipo === 'aporte').length > 0 ? [{ label: `Aportes (${detalhe.aportes.filter(a => a.tipo === 'aporte').length})`, valor: `+ ${fmtReal(detalhe.aportes.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}`, cor: COM_C.verde }] : [],
-                              ...detalhe.aportes.filter(a => a.tipo === 'sangria').length > 0 ? [{ label: `Sangrias (${detalhe.aportes.filter(a => a.tipo === 'sangria').length})`, valor: `− ${fmtReal(detalhe.aportes.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}`, cor: COM_C.vermelho }] : [],
-                              { label: 'Saídas espécie', valor: `− ${fmtReal(detalhe.sessao.total_saidas_especie ?? 0)}`, cor: COM_C.txt },
-                              { label: 'Total Pix', valor: fmtReal(detalhe.sessao.total_pix ?? 0), cor: COM_C.txt },
-                            ].map((row, i) => (
+                            {(() => {
+                              const aportesEspecie = detalhe.aportes.filter(a => a.forma_pagamento === 'especie')
+                              const nAp = aportesEspecie.filter(a => a.tipo === 'aporte').length
+                              const nSg = aportesEspecie.filter(a => a.tipo === 'sangria').length
+                              return [
+                                { label: 'Saldo inicial', valor: fmtReal(detalhe.sessao.saldo_inicial_especie), cor: COM_C.txt },
+                                ...nAp > 0 ? [{ label: `Aportes em espécie (${nAp})`, valor: `+ ${fmtReal(aportesEspecie.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}`, cor: COM_C.verde }] : [],
+                                ...nSg > 0 ? [{ label: `Sangrias em espécie (${nSg})`, valor: `− ${fmtReal(aportesEspecie.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}`, cor: COM_C.vermelho }] : [],
+                                { label: 'Saídas espécie', valor: `− ${fmtReal(detalhe.sessao.total_saidas_especie ?? 0)}`, cor: COM_C.txt },
+                                { label: 'Total Pix (pagamentos)', valor: fmtReal(detalhe.sessao.total_pix ?? 0), cor: COM_C.txt },
+                                ...(detalhe.sessao.total_entradas_pix ?? 0) > 0 ? [{ label: 'Entradas Pix (cota/outros)', valor: fmtReal(detalhe.sessao.total_entradas_pix ?? 0), cor: COM_C.txt }] : [],
+                                ...(detalhe.sessao.total_entradas_cartao ?? 0) > 0 ? [{ label: 'Entradas cartão (cota/outros)', valor: fmtReal(detalhe.sessao.total_entradas_cartao ?? 0), cor: COM_C.txt }] : [],
+                              ]
+                            })().map((row, i) => (
                               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${COM_C.borda}` }}>
                                 <span style={{ color: row.cor }}>{row.label}</span>
                                 <span style={{ color: row.cor }}>{row.valor}</span>
@@ -229,6 +241,7 @@ export default function DiarioCaixaPage() {
                                     <span style={{ fontWeight: 600, color: a.tipo === 'aporte' ? COM_C.verde : COM_C.vermelho }}>
                                       {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
                                     </span>
+                                    <span style={{ color: COM_C.txtSub, marginLeft: 6, fontSize: 11 }}>· {FORMA_LABEL[a.forma_pagamento] ?? a.forma_pagamento}</span>
                                     <span style={{ color: COM_C.txtSub, marginLeft: 8 }}>{new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                                     {a.autorizador && <span style={{ color: COM_C.txtSub, marginLeft: 8 }}>· Auth: {(a.autorizador as any).nome_completo}</span>}
                                     {a.observacoes && <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{a.observacoes}</div>}

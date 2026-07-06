@@ -14,6 +14,7 @@ export async function listarSessoesFechadas(mes?: number, ano?: number) {
       saldo_inicial_especie, saldo_final_especie,
       saldo_especie_calculado,
       total_saidas_especie, total_pix,
+      total_entradas_pix, total_entradas_cartao,
       observacoes_fechamento, status,
       usuarios(id, nome_completo)
     `)
@@ -46,6 +47,7 @@ export async function getDetalheSessao(sessao_id: string) {
       id, data, hora_abertura, hora_fechamento,
       saldo_inicial_especie, saldo_final_especie,
       saldo_especie_calculado, total_saidas_especie, total_pix,
+      total_entradas_pix, total_entradas_cartao,
       snapshot_estoque, observacoes_fechamento,
       usuarios(id, nome_completo)
     `)
@@ -71,7 +73,7 @@ export async function getDetalheSessao(sessao_id: string) {
   const { data: aportes, error: eAportes } = await supabase
     .from('aportes_sangrias')
     .select(`
-      id, tipo, valor, observacoes, created_at,
+      id, tipo, valor, forma_pagamento, origem, observacoes, created_at,
       autorizador:autorizado_por(nome_completo),
       executor:executado_por(nome_completo)
     `)

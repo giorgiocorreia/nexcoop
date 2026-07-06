@@ -35,7 +35,7 @@ import { EmptyState } from '@/components/comercializacao/ui/EmptyState'
 import { ListRow } from '@/components/comercializacao/ui/ListRow'
 import { COM_C } from '@/components/comercializacao/ui/tokens'
 
-type Sessao = { id: string; data: string; saldo_inicial_especie: number; saldo_especie_calculado: number; total_saidas_especie: number; total_pix: number }
+type Sessao = { id: string; data: string; saldo_inicial_especie: number; saldo_especie_calculado: number; total_saidas_especie: number; total_pix: number; total_entradas_pix?: number; total_entradas_cartao?: number }
 type ProdutorBusca = { id: string; nome: string; cpf: string | null; telefone: string | null; tipo: string; chave_pix: string | null; tipo_posse?: string | null; percentual_posse?: number | null }
 type SaldoProduto = { produto_id: string; quantidade: number; produtos: { nome: string; unidade: string } }
 type Conta = { id: string; saldo_financeiro: number; saldos_produto: SaldoProduto[] }
@@ -44,7 +44,9 @@ type Produto = { id: string; nome: string; unidade: string }
 type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; forma_pagamento: string; chave_pix: string | null; produtores: { nome: string; telefone: string | null }; produtos: { nome: string; unidade: string }; cotacoes: { preco_cooperado: number } }
 type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
 type AdminOrg = { id: string; nome_completo: string; email: string }
-type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
+type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; forma_pagamento: 'especie' | 'pix' | 'cartao'; origem: 'manual' | 'cota_cooperado'; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
+
+const FORMA_LABEL: Record<string, string> = { especie: 'Espécie', pix: 'Pix', cartao: 'Cartão' }
 type Categoria = { id: string; nome: string; grupo: string | null }
 
 type ParticipanteModal = {
@@ -629,8 +631,12 @@ export default function CaixaPage() {
   async function handleFecharCaixa() {
     if (!sessao) return
     setFechando(true)
-    const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
-    const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
+    // Só espécie afeta a gaveta física — aporte de cota via Pix/cartão fica de fora
+    // dessa conta (some/some no dinheiro em papel, mas não conta pra conferência
+    // de saldo físico). Ver total_entradas_pix/cartao pra esses valores.
+    const aportesEspecie = aportesDia.filter(a => a.forma_pagamento === 'especie')
+    const totalAp = aportesEspecie.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
+    const totalSang = aportesEspecie.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
     const saldoCalculado = sessao.saldo_inicial_especie + totalAp - totalSang - (sessao.total_saidas_especie ?? 0)
     const saldoParaSalvar = saldoFinal ? parseFloat(saldoFinal) : saldoCalculado
     try {
@@ -684,6 +690,12 @@ export default function CaixaPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Saldo inicial</span><span>{fmtReal(resumoFechamento.saldo_inicial_especie)}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Saídas espécie</span><span>{fmtReal(resumoFechamento.total_saidas_especie ?? 0)}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Total Pix</span><span>{fmtReal(resumoFechamento.total_pix ?? 0)}</span></div>
+            {(resumoFechamento.total_entradas_pix ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Entradas Pix (cota/outros)</span><span>{fmtReal(resumoFechamento.total_entradas_pix ?? 0)}</span></div>
+            )}
+            {(resumoFechamento.total_entradas_cartao ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: COM_C.txtSub }}>Entradas cartão (cota/outros)</span><span>{fmtReal(resumoFechamento.total_entradas_cartao ?? 0)}</span></div>
+            )}
             <div style={{ borderTop: `1px solid ${COM_C.borda}`, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
               <span>Saldo final espécie</span>
               <span style={{ color: COM_C.marrom }}>{fmtReal(saldoFinal ? parseFloat(saldoFinal) : saldoEsperado)}</span>
@@ -692,8 +704,9 @@ export default function CaixaPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
             <button
               onClick={async () => {
-                const totalAp = aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
-                const totalSang = aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
+                const aportesEspecie = aportesDia.filter(a => a.forma_pagamento === 'especie')
+                const totalAp = aportesEspecie.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
+                const totalSang = aportesEspecie.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
                 const saldoEsp = resumoFechamento.saldo_inicial_especie + totalAp - totalSang - (resumoFechamento.total_saidas_especie ?? 0)
                 const saldoCont = saldoFinal ? parseFloat(saldoFinal) : saldoEsp
                 await baixarPdf({
@@ -707,12 +720,15 @@ export default function CaixaPage() {
                   totalSangrias: totalSang,
                   totalSaquesEspecie: resumoFechamento.total_saidas_especie ?? 0,
                   totalPix: resumoFechamento.total_pix ?? 0,
+                  totalEntradasPixCota: resumoFechamento.total_entradas_pix ?? 0,
+                  totalEntradasCartaoCota: resumoFechamento.total_entradas_cartao ?? 0,
                   saldoEsperado: saldoEsp,
                   saldoContado: saldoCont,
                   diferenca: saldoCont - saldoEsp,
                   aportesSangrias: aportesDia.map(a => ({
                     tipo: a.tipo as 'aporte' | 'sangria',
                     valor: a.valor,
+                    formaPagamento: FORMA_LABEL[a.forma_pagamento] ?? a.forma_pagamento,
                     motivo: a.observacoes ?? '',
                     autorizadorNome: a.autorizador?.nome_completo ?? 'Sistema',
                     horario: new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -1471,28 +1487,49 @@ export default function CaixaPage() {
                 <span style={{ color: COM_C.txtSub }}>Saldo inicial espécie</span>
                 <span>{fmtReal(sessao.saldo_inicial_especie)}</span>
               </div>
-              {aportesDia.filter(a => a.tipo === 'aporte').length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.verde }}>
-                  <span>Aportes ({aportesDia.filter(a => a.tipo === 'aporte').length})</span>
-                  <span>+ {fmtReal(aportesDia.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
-                </div>
-              )}
-              {aportesDia.filter(a => a.tipo === 'sangria').length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.vermelho }}>
-                  <span>Sangrias ({aportesDia.filter(a => a.tipo === 'sangria').length})</span>
-                  <span>− {fmtReal(aportesDia.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
-                </div>
-              )}
+              {(() => {
+                const aportesEspecie = aportesDia.filter(a => a.forma_pagamento === 'especie')
+                const nAportes = aportesEspecie.filter(a => a.tipo === 'aporte').length
+                const nSangrias = aportesEspecie.filter(a => a.tipo === 'sangria').length
+                return (
+                  <>
+                    {nAportes > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.verde }}>
+                        <span>Aportes em espécie ({nAportes})</span>
+                        <span>+ {fmtReal(aportesEspecie.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0))}</span>
+                      </div>
+                    )}
+                    {nSangrias > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: COM_C.vermelho }}>
+                        <span>Sangrias em espécie ({nSangrias})</span>
+                        <span>− {fmtReal(aportesEspecie.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0))}</span>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: COM_C.txtSub }}>Saídas espécie (pagamentos)</span>
                 <span>− {fmtReal(sessao.total_saidas_especie ?? 0)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: COM_C.txtSub }}>Total Pix</span>
+                <span style={{ color: COM_C.txtSub }}>Total Pix (pagamentos)</span>
                 <span>{fmtReal(sessao.total_pix ?? 0)}</span>
               </div>
+              {(sessao.total_entradas_pix ?? 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: COM_C.txtSub }}>Entradas Pix (cota/outros)</span>
+                  <span>{fmtReal(sessao.total_entradas_pix ?? 0)}</span>
+                </div>
+              )}
+              {(sessao.total_entradas_cartao ?? 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: COM_C.txtSub }}>Entradas cartão (cota/outros)</span>
+                  <span>{fmtReal(sessao.total_entradas_cartao ?? 0)}</span>
+                </div>
+              )}
               <div style={{ borderTop: `1px solid ${COM_C.borda}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                <span>Saldo esperado em caixa</span>
+                <span>Saldo esperado em caixa (espécie)</span>
                 <span style={{ color: COM_C.marrom }}>{fmtReal(saldoEsperado)}</span>
               </div>
             </div>
@@ -1505,6 +1542,9 @@ export default function CaixaPage() {
                   <div>
                     <div style={{ fontWeight: 600, color: a.tipo === 'aporte' ? COM_C.verde : COM_C.vermelho }}>
                       {a.tipo === 'aporte' ? '↓ Aporte' : '↑ Sangria'}
+                      <span style={{ fontWeight: 500, color: COM_C.txtSub, marginLeft: 6, fontSize: 11 }}>
+                        · {FORMA_LABEL[a.forma_pagamento] ?? a.forma_pagamento}
+                      </span>
                     </div>
                     <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>
                       {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

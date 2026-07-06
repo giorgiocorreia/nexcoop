@@ -13,12 +13,15 @@ export interface DadosFechamentoPdf {
   totalSangrias: number
   totalSaquesEspecie: number
   totalPix: number
+  totalEntradasPixCota?: number
+  totalEntradasCartaoCota?: number
   saldoEsperado: number
   saldoContado: number
   diferenca: number
   aportesSangrias: Array<{
     tipo: 'aporte' | 'sangria'
     valor: number
+    formaPagamento?: string
     motivo: string
     autorizadorNome: string
     horario: string
@@ -144,6 +147,8 @@ export async function gerarPdfFechamentoCaixa(dados: DadosFechamentoPdf): Promis
   row('(-) Sangrias do dia', fmt(dados.totalSangrias))
   row('(-) Saques em espécie (operações)', fmt(dados.totalSaquesEspecie))
   row('(+) Entradas via Pix (operações)', fmt(dados.totalPix))
+  if (dados.totalEntradasPixCota) row('(  ) Entradas Pix — cota/outros (não afeta espécie)', fmt(dados.totalEntradasPixCota))
+  if (dados.totalEntradasCartaoCota) row('(  ) Entradas cartão — cota/outros (não afeta espécie)', fmt(dados.totalEntradasCartaoCota))
   y -= 4; divider()
   row('Saldo esperado (sistema)', fmt(dados.saldoEsperado), true)
   row('Saldo contado (operador)', fmt(dados.saldoContado), true)
@@ -195,20 +200,22 @@ export async function gerarPdfFechamentoCaixa(dados: DadosFechamentoPdf): Promis
       color: rgb(0.88, 0.88, 0.88)
     })
     text('Horário', MARGIN, 8, true)
-    text('Tipo', MARGIN + 65, 8, true)
-    text('Valor', MARGIN + 120, 8, true)
-    text('Motivo', MARGIN + 185, 8, true)
-    text('Autorizador', MARGIN + 365, 8, true)
+    text('Tipo', MARGIN + 60, 8, true)
+    text('Forma', MARGIN + 110, 8, true)
+    text('Valor', MARGIN + 155, 8, true)
+    text('Motivo', MARGIN + 215, 8, true)
+    text('Autorizador', MARGIN + 385, 8, true)
     y -= 16
     for (const as of dados.aportesSangrias) {
       checkPage()
       const tipoColor = as.tipo === 'aporte' ? rgb(0.1, 0.5, 0.2) : rgb(0.7, 0.1, 0.1)
       text(as.horario, MARGIN, 8)
-      text(as.tipo === 'aporte' ? 'Aporte' : 'Sangria', MARGIN + 65, 8, false, tipoColor)
-      text(fmt(as.valor), MARGIN + 120, 8)
-      const motivo = as.motivo.length > 28 ? as.motivo.slice(0, 27) + '…' : as.motivo
-      text(motivo, MARGIN + 185, 8)
-      text(as.autorizadorNome, MARGIN + 365, 8)
+      text(as.tipo === 'aporte' ? 'Aporte' : 'Sangria', MARGIN + 60, 8, false, tipoColor)
+      text(as.formaPagamento ?? 'Espécie', MARGIN + 110, 8)
+      text(fmt(as.valor), MARGIN + 155, 8)
+      const motivo = as.motivo.length > 24 ? as.motivo.slice(0, 23) + '…' : as.motivo
+      text(motivo, MARGIN + 215, 8)
+      text(as.autorizadorNome, MARGIN + 385, 8)
       y -= LINE_H
     }
     y -= 4
