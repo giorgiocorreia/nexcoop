@@ -223,6 +223,16 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
 
 const SIDEBAR_KEY = 'nexcoop_sidebar_collapsed'
 
+const HERO_BG     = 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 55%, #388E3C 100%)'
+const HERO_BORDA  = '1px solid rgba(255,255,255,0.15)'
+const HERO_HOVER  = 'rgba(255,255,255,0.10)'
+
+// Logos sao azul-marinho sobre fundo transparente: sem o chip branco somem no verde.
+const HERO_CHIP: React.CSSProperties = {
+  background: '#fff', borderRadius: 10, padding: 6,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+}
+
 export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg, modulosAcesso }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
@@ -483,14 +493,14 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         title={collapsed ? 'Expandir menu' : 'Recolher menu'}
         style={{
           width: 28, height: 28, borderRadius: '50%',
-          background: '#f5f5f2', border: '1px solid #e5e3dc',
+          background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', fontSize: 13, color: '#888',
+          cursor: 'pointer', fontSize: 13, color: '#fff',
           transition: 'background 0.15s',
           flexShrink: 0,
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#e5e3dc')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#f5f5f2')}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.30)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
       >
         <i className={`ti ${collapsed ? 'ti-layout-sidebar-left-expand' : 'ti-layout-sidebar-left-collapse'}`} style={{ fontSize: 15 }} />
       </button>
@@ -527,41 +537,51 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       {/* Cabeçalho */}
       {collapsed ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 8px', borderBottom: '1px solid #e5e3dc', gap: 8 }}>
-          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 8px', background: HERO_BG, borderBottom: HERO_BORDA, gap: 8 }}>
+          <div style={{ ...HERO_CHIP, padding: 4 }}>
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          </div>
           <ToggleBtn />
         </div>
       ) : isParceiro ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem', borderBottom: '1px solid #e5e3dc', marginBottom: '1rem' }}>
-          <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem', background: HERO_BG, borderBottom: HERO_BORDA, marginBottom: '1rem' }}>
+          <div style={HERO_CHIP}>
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+          </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {orgNomeProp}
             </div>
-            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>Escritório Parceiro</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.78)', marginTop: 1 }}>Escritório Parceiro</div>
           </div>
           <ToggleBtn />
         </div>
       ) : isSuperAdmin ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e5e3dc' }}>
-          <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: HERO_BG, borderBottom: HERO_BORDA }}>
+          <div style={HERO_CHIP}>
+            <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          </div>
           <ToggleBtn />
         </div>
       ) : (
-        <div style={{ position: 'relative', borderBottom: '1px solid #e5e3dc' }}>
+        <div style={{ position: 'relative', background: HERO_BG, borderBottom: HERO_BORDA }}>
           <Link
             href="/configuracoes"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+            onMouseEnter={e => (e.currentTarget.style.background = HERO_HOVER)}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             title="Configurações da organização"
           >
-            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-            <div style={{ width: 1, height: 40, background: '#e5e3dc', flexShrink: 0 }} />
+            <div style={{ ...HERO_CHIP, padding: 5 }}>
+              <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
+            </div>
+            <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
             {org?.logo_url ? (
-              <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 80, objectFit: 'contain', flexShrink: 0 }} />
+              <div style={{ ...HERO_CHIP, padding: 5 }}>
+                <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 80, objectFit: 'contain' }} />
+              </div>
             ) : (
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E' }}>{org?.nome_curto || org?.nome}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{org?.nome_curto || org?.nome}</span>
             )}
             <SettingsIconHover />
           </Link>
@@ -648,7 +668,7 @@ function SettingsIconHover() {
   const [hover, setHover] = useState(false)
   return (
     <span
-      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#94A3B8', opacity: hover ? 1 : 0, transition: 'opacity 0.15s' }}
+      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#fff', opacity: hover ? 1 : 0, transition: 'opacity 0.15s' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
