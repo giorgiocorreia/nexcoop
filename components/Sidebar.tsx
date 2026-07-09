@@ -106,6 +106,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
         { label: 'Impressos', href: '/comercializacao/impressos', icone: '🖨️' },
         ...(isAdmin ? [
           { label: 'Cotações',    href: '/comercializacao/cotacoes',      icone: '📋' },
+          { label: 'Boletim',     href: '/comercializacao/boletim-preview', icone: '📈' },
           { label: 'Lotes',       href: '/comercializacao/lotes',         icone: '📦' },
           { label: 'Compradores', href: '/comercializacao/compradores',   icone: '🏭' },
           { label: 'Documentos Fiscais', href: '/comercializacao/fiscal', icone: '🧾' },
