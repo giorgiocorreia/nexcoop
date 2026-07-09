@@ -2,6 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import { atualizarIndiceNex, registrarCotacaoMoageira } from '@/lib/dashboard/indice-nex.actions'
+import { COM_C } from '@/components/nexcoop/ui'
 
 type Snapshot = {
   score_final: number; faixa: string
@@ -114,7 +115,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: '#aaa' }}>
+          <span style={{ fontSize: 11, color: COM_C.txtSub }}>
             {snapshot
               ? `Atualizado às ${new Date(snapshot.calculado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
               : 'Nunca atualizado'}
@@ -127,9 +128,6 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             <i className="ti ti-refresh" style={{ fontSize: 13 }} aria-hidden="true" />
             {isPending ? 'Atualizando…' : 'Atualizar agora'}
           </button>
-          <a href="/comercializacao/painel" style={{ fontSize: 11, color: '#92400e', textDecoration: 'none' }}>
-            ver painel completo →
-          </a>
         </div>
       </div>
 
@@ -218,7 +216,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
               <div key={fonte} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0eeea' }}>
                 <div>
                   <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{NOME_MOAGEIRA[fonte]}</span>
-                  <span style={{ fontSize: 10, color: '#aaa', display: 'block' }}>
+                  <span style={{ fontSize: 10, color: COM_C.txtSub, display: 'block' }}>
                     {BANDEIRA[fonte]}{cot ? ` · ${new Date(cot.data_referencia).toLocaleDateString('pt-BR')}` : ''}
                   </span>
                 </div>
@@ -229,7 +227,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
                       {deságio && <span style={{ fontSize: 10, color: '#993C1D', display: 'block' }}>{deságio}% vs. mercado</span>}
                     </>
                   ) : (
-                    <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                    <span style={{ fontSize: 12, color: COM_C.txtSub }}>—</span>
                   )}
                 </div>
               </div>
@@ -273,7 +271,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
           </div>
           {ultimasCotacoesOrg.slice(0, 3).map((c, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderTop: '1px solid #f0eeea' }}>
-              <span style={{ fontSize: 11, color: '#aaa', width: 48 }}>
+              <span style={{ fontSize: 11, color: COM_C.txtSub, width: 48 }}>
                 {new Date(c.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
               </span>
               <span style={{ fontSize: 11, color: '#374151', flex: 1, padding: '0 8px' }}>{c.obs ?? '—'}</span>
@@ -284,7 +282,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             </div>
           ))}
           {ultimasCotacoesOrg.length === 0 && (
-            <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', padding: '8px 0' }}>Nenhuma cotação registrada.</p>
+            <p style={{ fontSize: 12, color: COM_C.txtSub, textAlign: 'center', padding: '8px 0' }}>Nenhuma cotação registrada.</p>
           )}
         </div>
 
@@ -297,14 +295,14 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             <div key={i} style={{ paddingBottom: 9, marginBottom: 9, borderBottom: i < arr.length - 1 ? '1px solid #f0eeea' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                 <ImpactoBadge impacto={sinal.impacto} />
-                <span style={{ fontSize: 10, color: '#aaa' }}>{sinal.dimensao}</span>
-                <span style={{ fontSize: 10, color: '#aaa', marginLeft: 'auto' }}>
+                <span style={{ fontSize: 10, color: COM_C.txtSub }}>{sinal.dimensao}</span>
+                <span style={{ fontSize: 10, color: COM_C.txtSub, marginLeft: 'auto' }}>
                   {new Date(sinal.coletado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.45, marginBottom: 3 }}>{sinal.titulo}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 10, color: '#aaa' }}>{sinal.fonte}</span>
+                <span style={{ fontSize: 10, color: COM_C.txtSub }}>{sinal.fonte}</span>
                 {sinal.url && (
                   <a href={sinal.url} target="_blank" rel="noopener noreferrer"
                     style={{ fontSize: 10, color: '#185FA5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -315,7 +313,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             </div>
           ))}
           {sinais.filter(s => s.titulo).length === 0 && (
-            <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', padding: '1rem 0' }}>
+            <p style={{ fontSize: 12, color: COM_C.txtSub, textAlign: 'center', padding: '1rem 0' }}>
               Sem notícias ainda. Clique em &quot;Atualizar agora&quot;.
             </p>
           )}
@@ -338,10 +336,10 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
                 <div style={{ width: `${score ?? 50}%`, height: '100%', borderRadius: 3, background: '#92400e' }} />
               </div>
               <span style={{ fontSize: 11, fontWeight: 500, color: '#1a1a1a', width: 22, textAlign: 'right' }}>{score ?? '—'}</span>
-              <span style={{ fontSize: 10, color: '#aaa', width: 28, textAlign: 'right' }}>{peso}</span>
+              <span style={{ fontSize: 10, color: COM_C.txtSub, width: 28, textAlign: 'right' }}>{peso}</span>
             </div>
           ))}
-          {!snapshot && <p style={{ fontSize: 12, color: '#aaa' }}>Sem dados.</p>}
+          {!snapshot && <p style={{ fontSize: 12, color: COM_C.txtSub }}>Sem dados.</p>}
         </div>
         <div style={s.card}>
           <div style={{ fontSize: 11, fontWeight: 500, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Contexto</div>
@@ -359,7 +357,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
         </div>
       </div>
 
-      <div style={{ fontSize: 11, color: '#bbb', textAlign: 'center', marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: COM_C.txtSub, textAlign: 'center', marginTop: 8 }}>
         Mercado: precodocacau.com.br · Moageiras: cadastro manual · BCB · ICCO · NOAA · CFTC
       </div>
     </div>
