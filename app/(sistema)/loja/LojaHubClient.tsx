@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import GraficoFaturamento from '@/components/loja/GraficoFaturamento'
 import {
-  HubStyles, KpiCard, LinkCard, ContentCard, COM_C,
+  HubStyles, KpiCard, LinkCard, ContentCard, COM_C, HERO,
 } from '@/components/nexcoop/ui'
 
 const GESTAO = [
@@ -106,23 +106,23 @@ export default function LojaHubClient({
       <HubStyles />
 
       <div style={{
-        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
-        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+        position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
+        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: COM_C.laranjaLt,
+                width: 36, height: 36, borderRadius: 9, background: HERO.chip,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <i className="ti ti-building-store" style={{ fontSize: 20, color: COM_C.laranja }} />
+                <i className="ti ti-building-store" style={{ fontSize: 20, color: HERO.txt }} />
               </div>
-              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: COM_C.txt, letterSpacing: '-0.02em' }}>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: HERO.txt, letterSpacing: '-0.02em' }}>
                 Loja Agropecuária
               </h1>
             </div>
-            <div className="com-hub-date">{hoje}</div>
+            <div className="com-hub-date" style={{ color: HERO.txtSub }}>{hoje}</div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

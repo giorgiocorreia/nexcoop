@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { HubStyles } from './HubStyles'
-import { COM_C } from './tokens'
+import { COM_C, HERO } from './tokens'
 
 interface ModuloRef {
   label: string
@@ -40,38 +40,38 @@ export function PageLayout({
     <>
       <HubStyles />
       <div style={{
-        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
-        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+        position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
+        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
             <div style={{
-              width: 38, height: 38, borderRadius: 10, background: COM_C.marromLt, flexShrink: 0,
+              width: 38, height: 38, borderRadius: 10, background: HERO.chip, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <i className={`ti ${icone}`} style={{ fontSize: 20, color: COM_C.marrom }} />
+              <i className={`ti ${icone}`} style={{ fontSize: 20, color: HERO.txt }} />
             </div>
             <div style={{ minWidth: 0 }}>
               {!semBreadcrumb && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
-                  <Link href={modulo.href} style={{ fontSize: 12, color: COM_C.txtSub, textDecoration: 'none' }}>
+                  <Link href={modulo.href} style={{ fontSize: 12, color: HERO.txtSub, textDecoration: 'none' }}>
                     {modulo.label}
                   </Link>
                   {crumbs.filter(c => c.href !== modulo.href && c.label !== modulo.label).map((c, i) => (
                     <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, color: COM_C.borda }}>/</span>
+                      <span style={{ fontSize: 12, color: HERO.divisor }}>/</span>
                       {c.href ? (
-                        <Link href={c.href} style={{ fontSize: 12, color: COM_C.txtSub, textDecoration: 'none' }}>{c.label}</Link>
+                        <Link href={c.href} style={{ fontSize: 12, color: HERO.txtSub, textDecoration: 'none' }}>{c.label}</Link>
                       ) : (
-                        <span style={{ fontSize: 12, color: COM_C.txtSub }}>{c.label}</span>
+                        <span style={{ fontSize: 12, color: HERO.txtSub }}>{c.label}</span>
                       )}
                     </span>
                   ))}
                 </div>
               )}
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: COM_C.txt, margin: 0, lineHeight: 1.2 }}>{titulo}</h1>
+              <h1 style={{ fontSize: 19, fontWeight: 800, color: HERO.txt, margin: 0, lineHeight: 1.2 }}>{titulo}</h1>
               {subtitulo && (
-                <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{subtitulo}</div>
+                <div style={{ fontSize: 12, color: HERO.txtSub, marginTop: 2 }}>{subtitulo}</div>
               )}
             </div>
           </div>

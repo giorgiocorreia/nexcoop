@@ -8,7 +8,7 @@ import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn, BtnLink } from '@/components/ui/Btn'
-import { COM_C } from '@/components/comercializacao/ui/tokens'
+import { COM_C, HERO } from '@/components/comercializacao/ui/tokens'
 import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
 import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
 import { LinkCard } from '@/components/comercializacao/ui/LinkCard'
@@ -150,23 +150,23 @@ export default function DashboardComercializacao({
 
       {/* Header */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
-        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+        position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
+        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: COM_C.marromLt,
+                width: 36, height: 36, borderRadius: 9, background: HERO.chip,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <i className="ti ti-plant-2" style={{ fontSize: 20, color: COM_C.marrom }} />
+                <i className="ti ti-plant-2" style={{ fontSize: 20, color: HERO.txt }} />
               </div>
-              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: COM_C.txt, letterSpacing: '-0.02em' }}>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: HERO.txt, letterSpacing: '-0.02em' }}>
                 Comercialização
               </h1>
             </div>
-            <div className="com-hub-date">{hoje}</div>
+            <div className="com-hub-date" style={{ color: HERO.txtSub }}>{hoje}</div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

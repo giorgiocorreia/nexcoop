@@ -47,7 +47,11 @@ export const HERO = {
   hover:   'rgba(255,255,255,0.10)',
   chip:    'rgba(255,255,255,0.18)',
   txt:     '#fff',
-  txtSub:  'rgba(255,255,255,0.78)',
+  // 0.85 e o minimo para 4.5:1 no ponto mais ALTO onde texto secundario cai
+  // (breadcrumb do PageLayout, t~0.30 do gradiente). Mais abaixo sobra folga.
+  txtSub:  'rgba(255,255,255,0.85)',
+  // Separador do breadcrumb: decorativo, so precisa ser visto.
+  divisor: 'rgba(255,255,255,0.40)',
   // Casa com o min-height de .com-page-header (HubStyles).
   altura:  88,
 } as const
