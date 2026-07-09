@@ -32,20 +32,26 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [x] Módulo Resultado por Safra (`/comercializacao/resultado`)
 - [x] WhatsApp webhook + agente Mariana (`/api/whatsapp/webhook`)
 - [x] Fluxo conversão/saque no caixa cacau (`registrarConversaoESaque`)
+- [x] Tela de vendas lote → comprador completa (`/comercializacao/vendas`) — [antes "Vender produto"]
+- [x] Extrato conta corrente: loja (`/loja/conta-corrente`) + produtor/cooperado PDF (`/api/comercializacao/extrato-produtor`)
+- [x] Relatório de estoque — tela (`/loja/relatorios/estoque`)
+- [x] DRE contábil (`/contabil/dre`)
+- [x] Fix KPI "Saldo em caixa" transbordando o card (comercialização)
+- [x] Promoção a cooperado desacoplada de login; acesso gerado sob demanda na ficha
 
 ## 🧩 Funcionalidades — pendentes
 
-- [ ] Relatórios A4 PDF estoque e compras (vendas já feito)
-- [ ] Extrato conta corrente cooperado — relatórios compras A4
-- [ ] Separação completa tokens Focus por org (hoje por módulo)
-- [ ] KPI comercialização: validar em produção com dados reais pós-redesign
-- [ ] `saldo_kg` em `contas_produtor` (hoje via `saldos_produtor_snapshot`)
-- [ ] Tela dedicada "Vender produto" (parcialmente coberta pelo caixa)
-- [ ] DRE integrado comercialização + loja + custos (com Marcos)
-- [ ] Migração multi-org (`usuario_organizacoes`) — ver `docs/PLANO_MULTI_ORG.md`
-- [ ] Portal filiado: cotas, documentos, assembleias (MVP só saldo/login)
+> Revisado por varredura de código em 2026-07-09. Itens acima foram movidos para "concluídas".
+
+- [ ] Export **PDF A4** de estoque (tela existe, falta PDF) e de **compras** (sem tela nem PDF)
+- [ ] Separação completa tokens Focus por org (hoje global por ambiente/módulo)
+- [ ] `saldo_kg` em `contas_produtor` (hoje só via `saldos_produtor_snapshot`)
+- [ ] **DRE gerencial integrado** comercialização + loja + custos (DRE contábil já existe; falta o operacional — com Marcos)
+- [ ] Migração multi-org (`usuario_organizacoes`) — NÃO iniciado — ver `docs/PLANO_MULTI_ORG.md`
+- [ ] Sistema de Módulos com cobrança (gate por `modulos_ativos` + Stripe) — ver `docs/PLANO_MODULOS.md`
+- [ ] Portal filiado: cotas, documentos, assembleias (hoje só saldo + extrato PDF)
 - [ ] Gestão caixa físico avançada (origem/destino multi-conta — tesouraria básica feita)
-- [ ] Renomear cooperados → membros (futuro)
+- [ ] Renomear cooperados → membros / terminologia dinâmica via `tipos_org` (hard-coded hoje)
 - [ ] Teste smoke completo em produção pós-redesign
 
 ## 📋 Bloqueado — aguardando contador (Marcos/Contabahia)
@@ -59,4 +65,4 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ---
 
-> Atualizado em: 2026-07-05
+> Atualizado em: 2026-07-09 (varredura de código para validar pendências)
