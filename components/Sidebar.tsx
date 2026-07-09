@@ -240,12 +240,14 @@ const SB = {
   badgeBg:  'rgba(255,255,255,0.14)',
 } as const
 
-// Altura travada na do header da pagina: as duas metades da faixa verde tem que
-// terminar no mesmo pixel, senao a emenda aparece. La e min-height 88 + 1px de
-// borda por fora, entao aqui content-box para a borda tambem somar (total 89).
+// Sem borda inferior: na pagina ela separa o verde do conteudo creme, mas aqui
+// cairia sobre o verde do menu e viraria uma linha branca.
+// A altura ainda tem que ser 89: o fundo do header da pagina pinta a border-box
+// (min-height 88 + 1px de borda), entao o gradiente de la cobre 89px. Com 88 as
+// duas metades da faixa desandariam de cor.
 const HERO_BOX: React.CSSProperties = {
-  height: HERO.altura, boxSizing: 'content-box',
-  background: HERO.bg, borderBottom: HERO.borda,
+  height: HERO.altura + 1, boxSizing: 'content-box',
+  background: HERO.bg,
 }
 
 // Logos sao azul-marinho sobre fundo transparente: sem o chip branco somem no verde.
