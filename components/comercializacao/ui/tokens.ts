@@ -25,6 +25,9 @@ export const COM_C = {
 // sidebar (que muda ao recolher).
 export const HERO = {
   bg:      'linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%)',
+  // Cor em que o gradiente termina. O corpo da sidebar continua nela, entao a
+  // faixa desce sem degrau.
+  fim:     '#1B5E20',
   borda:   '1px solid rgba(255,255,255,0.15)',
   hover:   'rgba(255,255,255,0.10)',
   chip:    'rgba(255,255,255,0.18)',

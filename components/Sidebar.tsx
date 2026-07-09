@@ -226,6 +226,20 @@ const SIDEBAR_KEY = 'nexcoop_sidebar_collapsed'
 
 const BORDA = '#e5e3dc'
 
+// Paleta do menu sobre o verde. Os alfas nao sao chute: sobre HERO.fim (#1B5E20),
+// 0.70 e o minimo que leva o rotulo de grupo (10px) a 4.5:1 (WCAG AA texto
+// pequeno) — 0.55 daria 3.4:1. Item ativo: branco sobre 0.16 da 4.7:1.
+const SB = {
+  bg:       HERO.fim,
+  txt:      'rgba(255,255,255,0.88)',
+  txtSub:   'rgba(255,255,255,0.70)',
+  hoverBg:  'rgba(255,255,255,0.08)',
+  ativoBg:  'rgba(255,255,255,0.16)',
+  ativoTxt: '#fff',
+  borda:    'rgba(255,255,255,0.12)',
+  badgeBg:  'rgba(255,255,255,0.14)',
+} as const
+
 // Altura travada na do header da pagina: as duas metades da faixa verde tem que
 // terminar no mesmo pixel, senao a emenda aparece. La e min-height 88 + 1px de
 // borda por fora, entao aqui content-box para a borda tambem somar (total 89).
@@ -328,10 +342,10 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '8px 0',
-              background: childActive ? '#EEEDFE' : 'transparent',
+              background: childActive ? SB.ativoBg : 'transparent',
               border: 'none', cursor: 'pointer',
             }}
-            onMouseEnter={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+            onMouseEnter={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
             onMouseLeave={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
           >
             <span style={{ fontSize: '18px' }}>{item.icone}</span>
@@ -347,18 +361,18 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 1rem',
-              background: childActive && !expanded ? '#EEEDFE' : 'transparent',
+              background: childActive && !expanded ? SB.ativoBg : 'transparent',
               border: 'none', cursor: 'pointer', textAlign: 'left',
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = childActive && !expanded ? '#EEEDFE' : 'transparent' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = childActive && !expanded ? SB.ativoBg : 'transparent' }}
           >
             <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
-            <span style={{ fontSize: '13px', fontWeight: childActive ? '600' : '400', color: childActive ? '#4840CC' : '#444', flex: 1 }}>
+            <span style={{ fontSize: '13px', fontWeight: childActive ? '600' : '400', color: childActive ? SB.ativoTxt : SB.txt, flex: 1 }}>
               {item.label}
             </span>
             <span style={{
-              fontSize: 10, color: '#aaa',
+              fontSize: 10, color: SB.txtSub,
               transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s', display: 'inline-block',
             }}>▼</span>
@@ -379,19 +393,19 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '7px 1rem 7px 2.5rem',
-                    background: ativo ? '#EEEDFE' : 'transparent',
+                    background: ativo ? SB.ativoBg : 'transparent',
                     border: 'none', cursor: child.em_breve ? 'default' : 'pointer',
-                    textAlign: 'left', opacity: child.em_breve ? 0.5 : 1,
+                    textAlign: 'left',
                   }}
-                  onMouseEnter={e => { if (!ativo && !child.em_breve) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+                  onMouseEnter={e => { if (!ativo && !child.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
                   onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                 >
-                  <span style={{ fontSize: '14px', flexShrink: 0 }}>{child.icone}</span>
-                  <span style={{ fontSize: '12px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#555', flex: 1 }}>
+                  <span style={{ fontSize: '14px', flexShrink: 0, opacity: child.em_breve ? 0.6 : 1 }}>{child.icone}</span>
+                  <span style={{ fontSize: '12px', fontWeight: ativo ? '600' : '400', color: child.em_breve ? SB.txtSub : ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
                     {child.label}
                   </span>
                   {child.em_breve && (
-                    <span style={{ fontSize: '9px', background: '#f0f0ec', color: '#888', padding: '2px 5px', borderRadius: '4px', fontWeight: '500', marginRight: '0.5rem' }}>
+                    <span style={{ fontSize: '9px', background: SB.badgeBg, color: SB.txtSub, padding: '2px 5px', borderRadius: '4px', fontWeight: '500', marginRight: '0.5rem' }}>
                       em breve
                     </span>
                   )}
@@ -415,11 +429,11 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           title={item.label}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '8px 0', background: ativo ? '#EEEDFE' : 'transparent',
+            padding: '8px 0', background: ativo ? SB.ativoBg : 'transparent',
             border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
-            opacity: item.em_breve ? 0.4 : 1,
+            opacity: item.em_breve ? 0.55 : 1,
           }}
-          onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+          onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
           onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
         >
           <span style={{ fontSize: '18px' }}>{item.icone}</span>
@@ -433,19 +447,19 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         onClick={() => !item.em_breve && router.push(item.href)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '8px 1rem', background: ativo ? '#EEEDFE' : 'transparent',
+          padding: '8px 1rem', background: ativo ? SB.ativoBg : 'transparent',
           border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
-          textAlign: 'left', opacity: item.em_breve ? 0.5 : 1,
+          textAlign: 'left',
         }}
-        onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f2' }}
+        onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
         onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
       >
-        <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
-        <span style={{ fontSize: item.em_breve ? '11px' : '13px', fontWeight: ativo ? '600' : '400', color: ativo ? '#4840CC' : '#444', flex: 1 }}>
+        <span style={{ fontSize: '16px', flexShrink: 0, opacity: item.em_breve ? 0.6 : 1 }}>{item.icone}</span>
+        <span style={{ fontSize: item.em_breve ? '11px' : '13px', fontWeight: ativo ? '600' : '400', color: item.em_breve ? SB.txtSub : ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
           {item.label}
         </span>
         {item.em_breve && (
-          <span style={{ fontSize: '9px', background: '#f0f0ec', color: '#888', padding: '2px 5px', borderRadius: '4px', fontWeight: '500' }}>
+          <span style={{ fontSize: '9px', background: SB.badgeBg, color: SB.txtSub, padding: '2px 5px', borderRadius: '4px', fontWeight: '500' }}>
             em breve
           </span>
         )}
@@ -458,14 +472,14 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
     if (collapsed) {
       return (
         <div key={label} style={{ marginBottom: '0.25rem' }}>
-          <div style={{ height: 1, background: '#f0eeea', margin: '4px 8px' }} />
+          <div style={{ height: 1, background: SB.borda, margin: '4px 8px' }} />
           {sorted.map(renderItem)}
         </div>
       )
     }
     return (
       <div key={label} style={{ marginBottom: '0.5rem' }}>
-        <div style={{ fontSize: '10px', fontWeight: '600', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0.5rem 1rem 0.25rem' }}>
+        <div style={{ fontSize: '10px', fontWeight: '600', color: SB.txtSub, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0.5rem 1rem 0.25rem' }}>
           {label}
         </div>
         {sorted.map(renderItem)}
@@ -525,6 +539,15 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           font-size: 14px; opacity: 0; transition: opacity 0.15s; pointer-events: none;
         }
         .nxc-hero-link:hover .nxc-hero-gear { opacity: 0.9; }
+        /* Scrollbar padrao vira uma faixa clara berrante sobre o verde. */
+        .nxc-sidebar nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.28) transparent; }
+        .nxc-sidebar nav::-webkit-scrollbar { width: 8px; }
+        .nxc-sidebar nav::-webkit-scrollbar-track { background: transparent; }
+        .nxc-sidebar nav::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.28); border-radius: 4px;
+          border: 2px solid transparent; background-clip: content-box;
+        }
+        .nxc-sidebar nav::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.45); }
         @media (max-width: 767px) {
           .nxc-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
           .nxc-sidebar.nxc-sidebar-open { transform: translateX(0); }
@@ -540,8 +563,8 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       className={`nxc-sidebar${mobileOpen ? ' nxc-sidebar-open' : ''}`}
       style={{
         width: isMobile ? 240 : `${W}px`,
-        height: '100vh', background: '#ffffff',
-        // Sem borda no aside: ela cortaria a faixa verde em duas. Vive no nav/rodape.
+        // Continua a cor em que o gradiente do hero termina: a faixa desce sem degrau.
+        height: '100vh', background: SB.bg,
         position: 'fixed', top: 0, left: 0,
         display: 'flex', flexDirection: 'column',
         fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -612,22 +635,22 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       )}
 
       {/* Navegação */}
-      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto', overflowX: 'hidden', borderRight: `1px solid ${BORDA}` }}>
+      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto', overflowX: 'hidden' }}>
         {renderNav()}
       </nav>
 
       {/* Rodapé */}
       {!collapsed && (
-        <div style={{ borderTop: `1px solid ${BORDA}`, borderRight: `1px solid ${BORDA}`, padding: '0.75rem 1rem' }}>
+        <div style={{ borderTop: `1px solid ${SB.borda}`, padding: '0.75rem 1rem' }}>
           {isParceiro ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
                 {nomeDisplay?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDisplay || 'Usuário'}</div>
-                  <div style={{ fontSize: 11, color: '#0F766E' }}>Parceiro</div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDisplay || 'Usuário'}</div>
+                  <div style={{ fontSize: 11, color: SB.txtSub }}>Parceiro</div>
                 </Link>
               </div>
             </div>
@@ -635,7 +658,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
             <Link
               href="/perfil"
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', position: 'relative', transition: 'background 0.15s', margin: '0 4px 8px' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#f1f0eb')}
+              onMouseEnter={e => (e.currentTarget.style.background = SB.hoverBg)}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               title="Meu perfil"
             >
@@ -643,17 +666,17 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
                 {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#0D2B5E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{usuario?.nome_completo || 'Usuário'}</div>
-                <div style={{ fontSize: 11, color: '#94A3B8' }}>{labelUsuario(usuario)}</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{usuario?.nome_completo || 'Usuário'}</div>
+                <div style={{ fontSize: 11, color: SB.txtSub }}>{labelUsuario(usuario)}</div>
               </div>
               <UserEditIconHover />
             </Link>
           )}
           <button
             onClick={handleLogout}
-            style={{ width: '100%', padding: '7px', background: 'transparent', border: '1px solid #e5e3dc', borderRadius: '8px', fontSize: '12px', color: '#666', cursor: 'pointer' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fef2f2'; (e.currentTarget as HTMLButtonElement).style.color = '#dc2626' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#666' }}
+            style={{ width: '100%', padding: '7px', background: 'transparent', border: `1px solid ${SB.borda}`, borderRadius: '8px', fontSize: '12px', color: SB.txt, cursor: 'pointer' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DC2626'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = SB.txt }}
           >
             Sair da conta
           </button>
@@ -662,7 +685,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       {/* Rodapé colapsado: só avatar + logout */}
       {collapsed && (
-        <div style={{ borderTop: `1px solid ${BORDA}`, borderRight: `1px solid ${BORDA}`, padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <div style={{ borderTop: `1px solid ${SB.borda}`, padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <Link href="/perfil" title={usuario?.nome_completo || 'Perfil'} style={{ textDecoration: 'none' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: isSuperAdmin ? '#1a1a1a' : '#635BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
               {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
@@ -671,9 +694,9 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           <button
             onClick={handleLogout}
             title="Sair da conta"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa', padding: '2px' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#aaa')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: SB.txtSub, padding: '2px' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#FCA5A5')}
+            onMouseLeave={e => (e.currentTarget.style.color = SB.txtSub)}
           >
             ⏻
           </button>
@@ -688,7 +711,7 @@ function UserEditIconHover() {
   const [hover, setHover] = useState(false)
   return (
     <span
-      style={{ fontSize: 14, color: '#94A3B8', opacity: hover ? 1 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+      style={{ fontSize: 14, color: SB.txtSub, opacity: hover ? 1 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
