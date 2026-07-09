@@ -29,6 +29,12 @@ Kit `components/nexcoop/ui/` aplicado em todos os módulos que ainda usavam head
 - Toggle em Contábil → Sobras → Configurações
 - Migration 061 aplicada
 
+### Parceiro contábil — acesso fiscal (migration 062)
+- Coluna `acesso_fiscal` em `empresas_parceiras`
+- Toggle em Configurações → Parceiros
+- Parceiro com flag ativa vê `/comercializacao/fiscal` na org cliente
+- Migration 062 aplicada em produção
+
 ### Integração Financeiro → Contábil
 - Mensalidades, cotas, comercialização, loja (compras + cancelamento venda)
 - Modelo em 2 camadas: `lancamentos` (operacional) + `partidas` (escrituração)
@@ -51,7 +57,7 @@ import {
 - [ ] Verificar KPIs comercialização com dados reais (fuso Brasília)
 - [ ] Gestão de caixa físico com origem/destino (cofre, banco, transferências)
 - [ ] Marcos (Contabahia): CSC NFC-e, NCMs, CSTs para emissão fiscal loja
-- [ ] Resetar chaves Supabase e atualizar Vercel (ver PENDENCIAS.md)
+
 
 ## IDs críticos
 - COOPAIBI organizacao_id: `3ad97dc2-f87f-4e67-950e-387854d5bccc`

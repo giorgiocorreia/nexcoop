@@ -2,7 +2,7 @@
 
 **Status:** Não iniciado — documento de referência  
 **Criado em:** 27/06/2026  
-**Próxima migration disponível ao iniciar:** verificar `docs/SCHEMA.md` (062 em jul/2026)
+**Próxima migration disponível ao iniciar:** verificar `docs/SCHEMA.md` (063 em jul/2026)
 
 ---
 

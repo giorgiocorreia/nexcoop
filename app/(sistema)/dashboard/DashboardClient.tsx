@@ -83,23 +83,24 @@ export default function DashboardClient({
       <HubStyles />
 
       <div style={{
-        position: 'sticky', top: 0, zIndex: 10, background: '#fff',
-        borderBottom: `1px solid ${COM_C.borda}`, margin: '0 -2rem 0 -2rem',
+        position: 'sticky', top: 0, zIndex: 10,
+        background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 55%, #388E3C 100%)',
+        borderBottom: '1px solid rgba(255,255,255,0.15)', margin: '0 -2rem 0 -2rem',
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: COM_C.roxoLt,
+                width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.18)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <i className="ti ti-layout-dashboard" style={{ fontSize: 20, color: COM_C.roxo }} />
+                <i className="ti ti-layout-dashboard" style={{ fontSize: 20, color: '#fff' }} />
               </div>
-              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: COM_C.txt, letterSpacing: '-0.02em' }}>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
                 Dashboard
               </h1>
             </div>
-            <div className="com-hub-date">{hoje}</div>
+            <div className="com-hub-date" style={{ color: 'rgba(255,255,255,0.78)' }}>{hoje}</div>
           </div>
         </div>
       </div>

@@ -6,8 +6,8 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ## 🔐 Infraestrutura (ação manual)
 
-- [ ] Resetar chaves do Supabase (anon + service_role) e atualizar `.env.local` e Vercel
-- [ ] Hotmail/Outlook DMARC (configuração DNS Zoho)
+- [x] Resetar chaves do Supabase (anon + service_role) e atualizar `.env.local` e Vercel
+- [x] Hotmail/Outlook DMARC (TXT `_dmarc` no Registro.br + DKIM Zoho)
 - [x] Domínio nexcoop.com.br ativo na Vercel
 
 ## 🎨 UI / Design
