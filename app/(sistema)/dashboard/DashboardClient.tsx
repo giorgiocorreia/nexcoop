@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import {
-  HubStyles, KpiCard, LinkCard, ContentCard, COM_C,
+  HubStyles, KpiCard, LinkCard, ContentCard, COM_C, HERO,
 } from '@/components/nexcoop/ui'
 
 interface LancamentoResumo {
@@ -84,23 +84,23 @@ export default function DashboardClient({
 
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
-        background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 55%, #388E3C 100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.15)', margin: '0 -2rem 0 -2rem',
+        background: HERO.bg,
+        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.18)',
+                width: 36, height: 36, borderRadius: 9, background: HERO.chip,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <i className="ti ti-layout-dashboard" style={{ fontSize: 20, color: '#fff' }} />
+                <i className="ti ti-layout-dashboard" style={{ fontSize: 20, color: HERO.txt }} />
               </div>
-              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: HERO.txt, letterSpacing: '-0.02em' }}>
                 Dashboard
               </h1>
             </div>
-            <div className="com-hub-date" style={{ color: 'rgba(255,255,255,0.78)' }}>{hoje}</div>
+            <div className="com-hub-date" style={{ color: HERO.txtSub }}>{hoje}</div>
           </div>
         </div>
       </div>

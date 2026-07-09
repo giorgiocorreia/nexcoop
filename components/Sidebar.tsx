@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Usuario, Organizacao } from '@/types/database'
 import { temModulo } from '@/lib/org'
+import { HERO } from '@/components/nexcoop/ui'
 
 interface NavItem {
   label: string
@@ -223,14 +224,21 @@ function labelUsuario(usuario: { role: string; funcoes: string[] } | null | unde
 
 const SIDEBAR_KEY = 'nexcoop_sidebar_collapsed'
 
-const HERO_BG     = 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 55%, #388E3C 100%)'
-const HERO_BORDA  = '1px solid rgba(255,255,255,0.15)'
-const HERO_HOVER  = 'rgba(255,255,255,0.10)'
+const BORDA = '#e5e3dc'
+
+// Altura travada na do header da pagina: as duas metades da faixa verde tem que
+// terminar no mesmo pixel, senao a emenda aparece. La e min-height 88 + 1px de
+// borda por fora, entao aqui content-box para a borda tambem somar (total 89).
+const HERO_BOX: React.CSSProperties = {
+  height: HERO.altura, boxSizing: 'content-box',
+  background: HERO.bg, borderBottom: HERO.borda,
+}
 
 // Logos sao azul-marinho sobre fundo transparente: sem o chip branco somem no verde.
 const HERO_CHIP: React.CSSProperties = {
-  background: '#fff', borderRadius: 10, padding: 6,
-  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  background: '#fff', borderRadius: 10, padding: '5px 8px',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  gap: 10, flexShrink: 0,
 }
 
 export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg, modulosAcesso }: Props) {
@@ -511,6 +519,12 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
     <>
       <style>{`
         .nxc-sidebar { transition: width 0.2s ease; }
+        .nxc-hero-link { position: relative; }
+        .nxc-hero-gear {
+          position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+          font-size: 14px; opacity: 0; transition: opacity 0.15s; pointer-events: none;
+        }
+        .nxc-hero-link:hover .nxc-hero-gear { opacity: 0.9; }
         @media (max-width: 767px) {
           .nxc-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
           .nxc-sidebar.nxc-sidebar-open { transform: translateX(0); }
@@ -527,7 +541,8 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       style={{
         width: isMobile ? 240 : `${W}px`,
         height: '100vh', background: '#ffffff',
-        borderRight: '1px solid #e5e3dc', position: 'fixed', top: 0, left: 0,
+        // Sem borda no aside: ela cortaria a faixa verde em duas. Vive no nav/rodape.
+        position: 'fixed', top: 0, left: 0,
         display: 'flex', flexDirection: 'column',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         zIndex: isMobile ? 200 : 100,
@@ -537,68 +552,73 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       {/* Cabeçalho */}
       {collapsed ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 8px', background: HERO_BG, borderBottom: HERO_BORDA, gap: 8 }}>
+        <div style={{ ...HERO_BOX, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <div style={{ ...HERO_CHIP, padding: 4 }}>
-            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 30, height: 30, objectFit: 'contain' }} />
           </div>
           <ToggleBtn />
         </div>
       ) : isParceiro ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem', background: HERO_BG, borderBottom: HERO_BORDA, marginBottom: '1rem' }}>
-          <div style={HERO_CHIP}>
-            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+        <div style={{ ...HERO_BOX, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px' }}>
+          <div style={{ ...HERO_CHIP, padding: 4 }}>
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 40, height: 40, objectFit: 'contain' }} />
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: HERO.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {orgNomeProp}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.78)', marginTop: 1 }}>Escritório Parceiro</div>
+            <div style={{ fontSize: 11, color: HERO.txtSub, marginTop: 1 }}>Escritório Parceiro</div>
           </div>
           <ToggleBtn />
         </div>
       ) : isSuperAdmin ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: HERO_BG, borderBottom: HERO_BORDA }}>
-          <div style={HERO_CHIP}>
-            <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ ...HERO_BOX, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
+          <div style={{ ...HERO_CHIP, padding: '5px 10px' }}>
+            <img src="/images/logo-nexcoop-horizontal.png" alt="NexCoop" style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </div>
           <ToggleBtn />
         </div>
       ) : (
-        <div style={{ position: 'relative', background: HERO_BG, borderBottom: HERO_BORDA }}>
+        <div style={{ ...HERO_BOX, position: 'relative' }}>
           <Link
             href="/configuracoes"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = HERO_HOVER)}
+            className="nxc-hero-link"
+            style={{
+              height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 44px 0 30px', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = HERO.hover)}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             title="Configurações da organização"
           >
-            <div style={{ ...HERO_CHIP, padding: 5 }}>
-              <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
+            {/* Um chip so, com divisor interno: le como um elemento, nao dois cartoes. */}
+            <div style={HERO_CHIP}>
+              <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+              <div style={{ width: 1, height: 30, background: BORDA, flexShrink: 0 }} />
+              {org?.logo_url ? (
+                <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 44, width: 'auto', maxWidth: 72, objectFit: 'contain' }} />
+              ) : (
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2B5E', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {org?.nome_curto || org?.nome}
+                </span>
+              )}
             </div>
-            <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
-            {org?.logo_url ? (
-              <div style={{ ...HERO_CHIP, padding: 5 }}>
-                <img src={org.logo_url} alt={org?.nome_curto || org?.nome || ''} style={{ height: 56, width: 'auto', maxWidth: 80, objectFit: 'contain' }} />
-              </div>
-            ) : (
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{org?.nome_curto || org?.nome}</span>
-            )}
-            <SettingsIconHover />
+            <span className="nxc-hero-gear" aria-hidden>⚙️</span>
           </Link>
-          <div style={{ position: 'absolute', right: 10, bottom: 8 }}>
+          <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
             <ToggleBtn />
           </div>
         </div>
       )}
 
       {/* Navegação */}
-      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto', overflowX: 'hidden' }}>
+      <nav style={{ flex: 1, padding: '0.75rem 0', overflowY: 'auto', overflowX: 'hidden', borderRight: `1px solid ${BORDA}` }}>
         {renderNav()}
       </nav>
 
       {/* Rodapé */}
       {!collapsed && (
-        <div style={{ borderTop: '1px solid #e5e3dc', padding: '0.75rem 1rem' }}>
+        <div style={{ borderTop: `1px solid ${BORDA}`, borderRight: `1px solid ${BORDA}`, padding: '0.75rem 1rem' }}>
           {isParceiro ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
@@ -642,7 +662,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       {/* Rodapé colapsado: só avatar + logout */}
       {collapsed && (
-        <div style={{ borderTop: '1px solid #e5e3dc', padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <div style={{ borderTop: `1px solid ${BORDA}`, borderRight: `1px solid ${BORDA}`, padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <Link href="/perfil" title={usuario?.nome_completo || 'Perfil'} style={{ textDecoration: 'none' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: isSuperAdmin ? '#1a1a1a' : '#635BFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
               {usuario?.nome_completo?.charAt(0).toUpperCase() || 'U'}
@@ -661,19 +681,6 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       )}
     </aside>
     </>
-  )
-}
-
-function SettingsIconHover() {
-  const [hover, setHover] = useState(false)
-  return (
-    <span
-      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#fff', opacity: hover ? 1 : 0, transition: 'opacity 0.15s' }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      ⚙️
-    </span>
   )
 }
 

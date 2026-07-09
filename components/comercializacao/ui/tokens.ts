@@ -18,6 +18,22 @@ export const COM_C = {
   txtSub:    '#78716C',
 } as const
 
+// Faixa verde que atravessa sidebar + header da pagina como um bloco unico.
+// O gradiente e vertical de proposito: um gradiente diagonal e calculado por
+// elemento, entao reiniciaria na divisa e deixaria uma emenda visivel. Vertical,
+// cada coluna tem a mesma cor e a faixa continua independente da largura da
+// sidebar (que muda ao recolher).
+export const HERO = {
+  bg:      'linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%)',
+  borda:   '1px solid rgba(255,255,255,0.15)',
+  hover:   'rgba(255,255,255,0.10)',
+  chip:    'rgba(255,255,255,0.18)',
+  txt:     '#fff',
+  txtSub:  'rgba(255,255,255,0.78)',
+  // Casa com o min-height de .com-page-header (HubStyles).
+  altura:  88,
+} as const
+
 export const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   border: `1px solid ${COM_C.borda}`,

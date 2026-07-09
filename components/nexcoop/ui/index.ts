@@ -1,4 +1,4 @@
-export { COM_C, inputStyle, STATUS_LOTE } from '@/components/comercializacao/ui/tokens'
+export { COM_C, HERO, inputStyle, STATUS_LOTE } from '@/components/comercializacao/ui/tokens'
 export { HubStyles } from '@/components/comercializacao/ui/HubStyles'
 export { PageLayout } from '@/components/comercializacao/ui/PageLayout'
 export { KpiCard } from '@/components/comercializacao/ui/KpiCard'
