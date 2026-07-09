@@ -12,10 +12,22 @@ export const COM_C = {
   laranjaLt: '#FFF7ED',
   vermelho:  '#DC2626',
   vermelhoLt:'#FEF2F2',
-  borda:     '#E5E3DC',
-  bg:        '#FBF8F4',
-  txt:       '#1C1917',
-  txtSub:    '#78716C',
+  // Versoes para TEXTO. verde e laranja so passam contraste como fundo de icone
+  // (com glifo branco em cima); como texto sobre branco dao 3.3:1 e 3.0:1.
+  verdeTxt:   '#15803D',
+  laranjaTxt: '#B45309',
+  // Verde da marca, o mesmo da faixa do topo (HERO). Para acentos que devem
+  // conversar com ela, e nao para status semantico (use verde/vermelho).
+  marca:     '#1B5E20',
+  marcaMd:   '#2E7D32',
+  marcaLt:   '#EDF4EC',
+  // Escala neutra com leve vies verde (matiz ~120), no lugar da stone quente
+  // que brigava com a faixa. txtSub e o limite: 4.7:1 sobre bg e 5.0:1 sobre
+  // branco. Clarear mais reprova nos rotulos de 11px.
+  borda:     '#DFE6DD',
+  bg:        '#F5F8F4',
+  txt:       '#18211A',
+  txtSub:    '#647365',
 } as const
 
 // Faixa verde que atravessa sidebar + header da pagina como um bloco unico.

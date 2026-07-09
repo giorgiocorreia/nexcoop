@@ -50,7 +50,7 @@ const BRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const MODULOS = [
-  { href: '/cooperados', label: 'Cooperados', desc: 'Cadastro, perfil, cotas e histórico dos filiados.', icon: 'ti-users', cor: COM_C.roxo, corLt: COM_C.roxoLt },
+  { href: '/cooperados', label: 'Cooperados', desc: 'Cadastro, perfil, cotas e histórico dos filiados.', icon: 'ti-users', cor: COM_C.marca, corLt: COM_C.marcaLt },
   { href: '/mensalidades', label: 'Mensalidades', desc: 'Cobranças mensais, geração em lote e acompanhamento.', icon: 'ti-calendar-due', cor: COM_C.azul, corLt: COM_C.azulLt },
   { href: '/financeiro', label: 'Financeiro', desc: 'Receitas, despesas e lançamentos contábeis.', icon: 'ti-receipt-2', cor: COM_C.verde, corLt: COM_C.verdeLt },
   { href: '/assembleias', label: 'Assembleias', desc: 'AGO, AGE e reuniões de conselho.', icon: 'ti-users-group', cor: COM_C.azul, corLt: COM_C.azulLt },
@@ -108,7 +108,7 @@ export default function DashboardClient({
       <div className="com-hub-content">
         <div className="com-kpi-grid-4" style={{ marginBottom: resumoCotas ? 16 : 24 }}>
           <KpiCard label="Filiados" value={String(totalCooperados)} sub={`${cooperadosAtivos} ativos`}
-            icon="ti-users" cor={COM_C.roxo} corLt={COM_C.roxoLt} />
+            icon="ti-users" cor={COM_C.marca} corLt={COM_C.marcaLt} />
           <KpiCard label="A receber" value={BRL(totalReceber)} sub="Lançamentos pendentes"
             icon="ti-arrow-down-left" cor={COM_C.azul} corLt={COM_C.azulLt} />
           <KpiCard label="A pagar" value={BRL(totalPagar)} sub="Lançamentos pendentes"
@@ -141,7 +141,7 @@ export default function DashboardClient({
           <ContentCard
             title="Últimos lançamentos"
             action={
-              <Link href="/financeiro" style={{ fontSize: 12, color: COM_C.roxo, textDecoration: 'none', fontWeight: 600 }}>
+              <Link href="/financeiro" style={{ fontSize: 12, color: COM_C.marcaMd, textDecoration: 'none', fontWeight: 600 }}>
                 Ver todos →
               </Link>
             }
@@ -157,14 +157,14 @@ export default function DashboardClient({
                       <div style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt }}>{l.descricao}</div>
                       <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>
                         {new Date(l.data_competencia).toLocaleDateString('pt-BR')} ·{' '}
-                        <span style={{ color: l.status === 'pago' ? COM_C.roxo : COM_C.laranja }}>
+                        <span style={{ color: l.status === 'pago' ? COM_C.verdeTxt : COM_C.laranjaTxt }}>
                           {l.status === 'pago' ? 'Pago' : 'Pendente'}
                         </span>
                       </div>
                     </div>
                     <div style={{
                       fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                      color: l.tipo === 'receita' ? COM_C.roxo : COM_C.vermelho,
+                      color: l.tipo === 'receita' ? COM_C.verdeTxt : COM_C.vermelho,
                     }}>
                       {l.tipo === 'receita' ? '+' : '-'}{BRL(Number(l.valor))}
                     </div>
@@ -226,7 +226,7 @@ export default function DashboardClient({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {ACOES.map((a) => (
                   <Link key={a.href} href={a.href} className="com-link-card" style={{ padding: '12px 14px' }}>
-                    <i className={`ti ${a.icon}`} style={{ fontSize: 16, color: COM_C.roxo, flexShrink: 0 }} />
+                    <i className={`ti ${a.icon}`} style={{ fontSize: 16, color: COM_C.marcaMd, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, fontWeight: 600, color: COM_C.txt }}>{a.label}</span>
                   </Link>
                 ))}
