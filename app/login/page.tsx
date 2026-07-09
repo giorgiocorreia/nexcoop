@@ -230,7 +230,7 @@ function PainelMarca({
   videoTerminou,
   onVideoEnded,
 }: {
-  videoRef: React.RefObject<HTMLVideoElement | null>
+  videoRef: React.RefObject<HTMLVideoElement>
   corinaAtiva: boolean
   videoTerminou: boolean
   onVideoEnded: () => void
