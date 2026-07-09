@@ -22,14 +22,15 @@ export const COM_C = {
   marcaMd:   '#2E7D32',
   marcaLt:   '#EDF4EC',
   // Escala neutra esverdeada (matiz ~120) no lugar da stone quente, que era o
-  // que brigava com a faixa. O bg carrega verde de verdade (dE 5.7 vs o creme
-  // antigo); um tom mais claro so se percebia lado a lado.
-  // txtSub acompanha o bg: em #E9F0E7 ele precisa ser >= #5F6C61 para manter
-  // 4.5:1 nos rotulos de 11px.
-  borda:     '#D5DFD3',
-  bg:        '#E9F0E7',
+  // que brigava com a faixa.
+  // Os tres andam juntos: escurecer o bg derruba o contraste do txtSub sobre
+  // ele e faz a borda passar a ser mais clara que o fundo (inverte). Em
+  // #D2D8D0, txtSub precisa ser >= #515E53 para os rotulos de 11px baterem
+  // 4.5:1, e a borda precisa ser mais escura que o bg.
+  borda:     '#BCC9BA',
+  bg:        '#D2D8D0',
   txt:       '#18211A',
-  txtSub:    '#5F6C61',
+  txtSub:    '#515E53',
 } as const
 
 // Faixa verde que atravessa sidebar + header da pagina como um bloco unico.

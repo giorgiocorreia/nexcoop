@@ -7,12 +7,12 @@ export function HubStyles() {
       }
       .com-dot-pulse { animation: com-pulse 2s ease-in-out infinite; }
       .com-page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
-      .com-hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #E9F0E7; min-height: 100vh; }
-      .com-hub-date { font-size: 12px; color: #5F6C61; padding-left: 50px; }
+      .com-hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #D2D8D0; min-height: 100vh; }
+      .com-hub-date { font-size: 12px; color: #515E53; padding-left: 50px; }
       .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
       .com-kpi-card {
         display: flex; align-items: center; gap: 14px;
-        border-radius: 12px; border: 1px solid #D5DFD3;
+        border-radius: 12px; border: 1px solid #BCC9BA;
         padding: 14px 16px; min-height: 72px;
         transition: border-color 0.15s, box-shadow 0.15s;
       }
@@ -23,7 +23,7 @@ export function HubStyles() {
       }
       .com-kpi-icon i { font-size: 20px; color: #fff; }
       .com-kpi-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-      .com-kpi-label { font-size: 11px; font-weight: 600; color: #5F6C61; line-height: 1.3; }
+      .com-kpi-label { font-size: 11px; font-weight: 600; color: #515E53; line-height: 1.3; }
       .com-kpi-value { font-size: clamp(17px, 1.35vw, 22px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
       .com-kpi-sub { font-size: 10px; color: #96A398; line-height: 1.3; margin-top: 1px;
@@ -32,18 +32,18 @@ export function HubStyles() {
       .com-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
       .com-link-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
       .com-link-card { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px;
-        background: #fff; border: 1px solid #D5DFD3; border-radius: 12px; text-decoration: none;
+        background: #fff; border: 1px solid #BCC9BA; border-radius: 12px; text-decoration: none;
         transition: border-color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
       .com-link-card:hover { border-color: #2E7D32; box-shadow: 0 4px 12px rgba(27,94,32,0.14); }
       .com-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.08em; color: #5F6C61; margin: 0 0 12px; }
+        letter-spacing: 0.08em; color: #515E53; margin: 0 0 12px; }
       .com-btn-cta { transition: opacity 0.15s, transform 0.1s; }
       .com-btn-cta:hover { opacity: 0.92; transform: translateY(-1px); }
-      .com-guia-card { background: #fff; border: 1px solid #D5DFD3; border-radius: 12px; padding: 16px 18px; }
+      .com-guia-card { background: #fff; border: 1px solid #BCC9BA; border-radius: 12px; padding: 16px 18px; }
       .com-venda-row:hover { background: #F7FAF6 !important; }
       .com-list-row:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); border-color: #C6D4C4 !important; }
       .com-kpi-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
-      .com-table th { font-size: 10px; font-weight: 700; color: #5F6C61; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid #D5DFD3; background: #F7FAF6; }
+      .com-table th { font-size: 10px; font-weight: 700; color: #515E53; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid #BCC9BA; background: #F7FAF6; }
       .com-table td { padding: 12px 16px; border-bottom: 1px solid #EDF2EC; font-size: 13px; color: #18211A; }
       .com-table tr:hover td { background: #F7FAF6; }
       .com-saldo-bar { background: linear-gradient(135deg, #92400e 0%, #78350f 100%); color: #fff; border-radius: 12px; padding: 16px 22px; margin-bottom: 20px; }
