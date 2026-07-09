@@ -12,7 +12,7 @@ interface Props {
   emailAtual: string | null
   organizacaoId: string
   onClose: () => void
-  onSucesso: (senhaTemporaria?: string, emailLogin?: string) => void
+  onSucesso: () => void
 }
 
 const inp: React.CSSProperties = {
@@ -47,7 +47,6 @@ export default function ModalPromoverCooperado({
 }: Props) {
   const hoje = new Date().toISOString().split('T')[0]
 
-  const [email, setEmail]                   = useState(emailAtual ?? '')
   const [status, setStatus]                 = useState<StatusCooperado>('ativo')
   const [dataAdmissao, setDataAdmissao]     = useState(hoje)
   const [numeroMatricula, setNumeroMatricula] = useState('')
@@ -60,16 +59,12 @@ export default function ModalPromoverCooperado({
   const [isPending, startTransition]        = useTransition()
 
   function handleConfirmar() {
-    if (!email.trim()) {
-      setErro('E-mail para login é obrigatório.')
-      return
-    }
     setErro('')
     startTransition(async () => {
       try {
         const result = await promoverProdutorACooperado(organizacaoId, {
           produtorId,
-          email: email.trim(),
+          email: emailAtual ?? undefined,
           dadosCooperado: {
             status,
             data_admissao:    dataAdmissao   || undefined,
@@ -85,7 +80,7 @@ export default function ModalPromoverCooperado({
           setErro(result.error ?? 'Erro ao promover produtor.')
           return
         }
-        onSucesso(result.senhaTemporaria, email.trim())
+        onSucesso()
       } catch (e: any) {
         setErro(e.message ?? 'Erro ao promover produtor.')
       }
@@ -140,19 +135,15 @@ export default function ModalPromoverCooperado({
         {/* Corpo */}
         <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', flex: 1 }}>
 
-          {/* Bloco: Dados de acesso */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={blocoTitulo}>Dados de acesso</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={labelStyle}>E-mail para login *</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-                style={inp}
-              />
-            </div>
+          {/* Aviso: promoção não cria login */}
+          <div style={{
+            marginBottom: '24px',
+            background: '#f8f7f4', border: '1px solid #e5e3dc',
+            borderRadius: '10px', padding: '12px 16px',
+            fontSize: '12px', color: '#6b6b6b', lineHeight: 1.5,
+          }}>
+            A promoção registra o produtor como cooperado, mas <strong>não cria acesso ao
+            sistema</strong>. O login pode ser gerado depois, quando necessário, na ficha do cooperado.
           </div>
 
           {/* Bloco: Dados societários */}

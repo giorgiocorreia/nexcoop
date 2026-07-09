@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getProdutorCompleto, editarProdutor } from '@/lib/comercializacao/produtores.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
-import { getContextoUsuario, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
+import { getContextoUsuario } from '@/lib/cooperados/actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
 import ModalPromoverCooperado from '@/components/cooperados/ModalPromoverCooperado'
@@ -248,13 +248,7 @@ export default function PerfilProdutorPage() {
 
   const [ehAdmin, setEhAdmin] = useState(false)
   const [organizacaoId, setOrganizacaoId] = useState<string | null>(null)
-  const [nomeOrg, setNomeOrg] = useState<string | null>(null)
   const [modalPromoverAberto, setModalPromoverAberto] = useState(false)
-  const [senhaGerada, setSenhaGerada] = useState<string | null>(null)
-  const [emailCooperadoGerado, setEmailCooperadoGerado] = useState<string | null>(null)
-  const [enviandoEmailBoasVindas, setEnviandoEmailBoasVindas] = useState(false)
-  const [emailBoasVindasEnviado, setEmailBoasVindasEnviado] = useState(false)
-  const [erroEmailBoasVindas, setErroEmailBoasVindas] = useState<string | null>(null)
   const [modalCaixaAcao, setModalCaixaAcao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
 
   const [modalExtrato, setModalExtrato] = useState(false)
@@ -283,7 +277,6 @@ export default function PerfilProdutorPage() {
       ])
       setEhAdmin(ctx.ehAdmin)
       setOrganizacaoId(ctx.organizacaoId)
-      if (ctx.nomeOrg) setNomeOrg(ctx.nomeOrg)
       const prod = res.produtor as unknown as Produtor
       setProdutor(prod)
       setConta(res.conta as unknown as Conta | null)
@@ -370,30 +363,6 @@ export default function PerfilProdutorPage() {
       setErroEdit(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
       setSalvando(false)
-    }
-  }
-
-  async function handleEnviarEmailBoasVindas() {
-    if (!senhaGerada || !emailCooperadoGerado || !produtor) return
-    setEnviandoEmailBoasVindas(true)
-    setErroEmailBoasVindas(null)
-    try {
-      const result = await enviarEmailBoasVindas({
-        nomeCooperado: produtor.nome,
-        emailCooperado: emailCooperadoGerado,
-        senhaTemporaria: senhaGerada,
-        nomeOrg: nomeOrg ?? 'sua cooperativa',
-        tipoMembro: 'cooperado',
-      })
-      if (result.success) {
-        setEmailBoasVindasEnviado(true)
-      } else {
-        setErroEmailBoasVindas(result.error ?? 'Erro ao enviar e-mail.')
-      }
-    } catch (e: any) {
-      setErroEmailBoasVindas(e.message ?? 'Erro ao enviar e-mail.')
-    } finally {
-      setEnviandoEmailBoasVindas(false)
     }
   }
 
@@ -494,33 +463,6 @@ export default function PerfilProdutorPage() {
           ✓ {okEdit}
         </div>
       )}
-      {senhaGerada && (
-        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1E40AF', marginBottom: '4px' }}>Cooperado criado com sucesso</div>
-            <div style={{ fontSize: '13px', color: '#1E3A8A' }}>
-              Senha temporária: <strong style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}>{senhaGerada}</strong>
-            </div>
-            <div style={{ fontSize: '12px', color: '#3B82F6', marginTop: '4px' }}>Compartilhe esta senha com o cooperado. Ela não será exibida novamente.</div>
-            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {emailBoasVindasEnviado ? (
-                <span style={{ fontSize: '12px', color: '#166534', fontWeight: 500 }}>✓ E-mail enviado para {emailCooperadoGerado}</span>
-              ) : (
-                <>
-                  <Btn variante="cinza" icone="ti-mail" tamanho="sm" onClick={handleEnviarEmailBoasVindas} disabled={enviandoEmailBoasVindas}>
-                    {enviandoEmailBoasVindas ? 'Enviando...' : 'Enviar por e-mail'}
-                  </Btn>
-                  {erroEmailBoasVindas && (
-                    <span style={{ fontSize: '12px', color: '#991b1b' }}>{erroEmailBoasVindas}</span>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          <button onClick={() => setSenhaGerada(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#93C5FD', fontSize: '18px', lineHeight: 1, padding: '2px', flexShrink: 0 }}>×</button>
-        </div>
-      )}
-
       {/* PARTE 2: Card "Dados cadastrais" */}
       <div style={{ marginBottom: 20 }}>
       <ContentCard
@@ -937,14 +879,10 @@ export default function PerfilProdutorPage() {
           emailAtual={produtor.email}
           organizacaoId={organizacaoId}
           onClose={() => setModalPromoverAberto(false)}
-          onSucesso={async (senha, emailLogin) => {
+          onSucesso={async () => {
             setModalPromoverAberto(false)
-            if (senha) {
-              setSenhaGerada(senha)
-              setEmailCooperadoGerado(emailLogin ?? produtor.email)
-              setEmailBoasVindasEnviado(false)
-              setErroEmailBoasVindas(null)
-            }
+            setOkEdit('Produtor promovido a cooperado.')
+            setTimeout(() => setOkEdit(''), 3000)
             await carregar()
           }}
         />

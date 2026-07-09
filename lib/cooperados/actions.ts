@@ -465,7 +465,9 @@ interface DadosCooperadoPromocao {
 
 interface PromoverProdutorInput {
   produtorId: string
-  email: string
+  /** E-mail de contato do cooperado (opcional). A promoção NÃO cria acesso ao
+   *  sistema — isso é feito separadamente via `gerarAcessoCooperado`. */
+  email?: string
   dadosCooperado: DadosCooperadoPromocao
   nomeAtualizado?: string
 }
@@ -493,47 +495,11 @@ export async function promoverProdutorACooperado(
     return { success: false as const, error: 'Este produtor já é cooperado. Não é possível promover novamente.' }
   }
 
-  let usuarioId: string = (produtor as any).usuario_id
-  let senhaTemporaria: string | undefined
-
-  // 2. Se produtor não tem usuario_id, criar usuário
-  if (!usuarioId) {
-    senhaTemporaria = gerarSenhaTemporaria()
-    const { data: authData, error: authError } = await admin.auth.admin.createUser({
-      email: input.email,
-      password: senhaTemporaria,
-      email_confirm: true,
-    })
-    if (authError || !authData.user) {
-      if (
-        authError?.message?.toLowerCase().includes('already registered') ||
-        authError?.message?.toLowerCase().includes('already exists') ||
-        (authError as any)?.status === 422
-      ) {
-        return { success: false as const, error: 'Este e-mail já está cadastrado no sistema. Informe um e-mail diferente.' }
-      }
-      return { success: false as const, error: `Erro ao criar acesso: ${authError?.message}` }
-    }
-    usuarioId = authData.user.id
-
-    // TODO: terminologia dinâmica via tipos_org para vinculo
-    const { error: usuarioInsertError } = await admin.from('usuarios').insert({
-      id: usuarioId,
-      organizacao_id: organizacaoId,
-      nome_completo: input.nomeAtualizado ?? (produtor as any).nome,
-      cpf: (produtor as any).cpf ?? null,
-      email: input.email,
-      role: 'cooperado' as RoleUsuario,
-      funcoes: [],
-      vinculo: 'cooperado' as VinculoUsuario,
-      ativo: true,
-      // TODO: marcar troca_senha_obrigatoria: true quando coluna existir
-    })
-    if (usuarioInsertError) {
-      await admin.auth.admin.deleteUser(usuarioId).catch(() => null)
-      return { success: false as const, error: `Erro ao criar usuário: ${usuarioInsertError.message}` }
-    }
-  }
+  // Promoção NÃO cria conta de acesso. O cooperado herda o usuario_id do
+  // produtor caso já exista (raro); o acesso ao sistema é gerado depois, sob
+  // demanda, via `gerarAcessoCooperado` na ficha do cooperado.
+  const usuarioId: string | null = (produtor as any).usuario_id ?? null
+  const emailCooperado = input.email?.trim() || (produtor as any).email || null
 
   // 3. Criar cooperado com colunas estruturadas
   const dc = input.dadosCooperado
@@ -544,7 +510,7 @@ export async function promoverProdutorACooperado(
       usuario_id: usuarioId,
       nome_completo: input.nomeAtualizado ?? (produtor as any).nome,
       cpf: (produtor as any).cpf ?? null,
-      email: input.email,
+      email: emailCooperado,
       telefone: (produtor as any).telefone ?? null,
       rg: dc.rg ?? null,
       data_nascimento: dc.data_nascimento ?? null,
@@ -606,7 +572,120 @@ export async function promoverProdutorACooperado(
   revalidatePath('/comercializacao/produtores')
   revalidatePath('/dashboard')
 
-  return { success: true, cooperadoId: cooperado.id, usuarioId, senhaTemporaria }
+  return { success: true as const, cooperadoId: cooperado.id, usuarioId }
+}
+
+// ── Gerar acesso ao sistema para um cooperado existente ───────────────────────
+
+interface GerarAcessoCooperadoResult {
+  success: boolean
+  error?: string
+  usuarioId?: string
+  email?: string
+  senhaTemporaria?: string
+}
+
+/**
+ * Cria a conta de acesso (login) para um cooperado que ainda não possui usuário.
+ * Chamado sob demanda pelo administrador na ficha do cooperado.
+ */
+export async function gerarAcessoCooperado(
+  cooperadoId: string,
+  emailInput?: string
+): Promise<GerarAcessoCooperadoResult> {
+  const { userId: adminId, usuarioAtual } = await verificarAdmin()
+  const admin = createAdminClient()
+
+  // 1. Buscar cooperado e validar org + ausência de acesso
+  const { data: cooperado, error: cooperadoError } = await admin
+    .from('cooperados')
+    .select('id, nome_completo, cpf, email, usuario_id, organizacao_id')
+    .eq('id', cooperadoId)
+    .single()
+  if (cooperadoError || !cooperado) {
+    return { success: false, error: 'Cooperado não encontrado.' }
+  }
+  if ((cooperado as any).organizacao_id !== (usuarioAtual as any).organizacao_id) {
+    return { success: false, error: 'Cooperado não pertence a esta organização.' }
+  }
+  if ((cooperado as any).usuario_id) {
+    return { success: false, error: 'Este cooperado já possui acesso ao sistema.' }
+  }
+
+  const email = (emailInput?.trim() || (cooperado as any).email || '').trim()
+  if (!email) {
+    return { success: false, error: 'Informe um e-mail para criar o acesso.' }
+  }
+
+  const organizacaoId = (cooperado as any).organizacao_id as string
+
+  // 2. Criar usuário no Auth
+  const senhaTemporaria = gerarSenhaTemporaria()
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password: senhaTemporaria,
+    email_confirm: true,
+  })
+  if (authError || !authData.user) {
+    if (
+      authError?.message?.toLowerCase().includes('already registered') ||
+      authError?.message?.toLowerCase().includes('already exists') ||
+      (authError as any)?.status === 422
+    ) {
+      return { success: false, error: 'Este e-mail já está cadastrado no sistema. Informe um e-mail diferente.' }
+    }
+    return { success: false, error: `Erro ao criar acesso: ${authError?.message}` }
+  }
+  const usuarioId = authData.user.id
+
+  // 3. Criar registro em usuarios
+  const { error: usuarioInsertError } = await admin.from('usuarios').insert({
+    id: usuarioId,
+    organizacao_id: organizacaoId,
+    nome_completo: (cooperado as any).nome_completo,
+    cpf: (cooperado as any).cpf ?? null,
+    email,
+    role: 'cooperado' as RoleUsuario,
+    funcoes: [],
+    vinculo: 'cooperado' as VinculoUsuario,
+    ativo: true,
+  })
+  if (usuarioInsertError) {
+    await admin.auth.admin.deleteUser(usuarioId).catch(() => null)
+    return { success: false, error: `Erro ao criar usuário: ${usuarioInsertError.message}` }
+  }
+
+  // 4. Vincular usuario_id no cooperado (+ e-mail, se informado)
+  const { error: updateCoopError } = await admin
+    .from('cooperados')
+    .update({ usuario_id: usuarioId, email } as any)
+    .eq('id', cooperadoId)
+  if (updateCoopError) {
+    return { success: false, error: `Erro ao vincular acesso ao cooperado: ${updateCoopError.message}` }
+  }
+
+  // 5. Vincular usuario_id em produtores ligados a este cooperado (se houver)
+  await admin
+    .from('produtores')
+    .update({ usuario_id: usuarioId } as any)
+    .eq('cooperado_id', cooperadoId)
+    .is('usuario_id', null)
+
+  // 6. Log (non-blocking)
+  registrarLog({
+    org_id: organizacaoId,
+    usuario_id: adminId,
+    usuario_email: usuarioAtual.email,
+    acao: 'gerar_acesso_cooperado',
+    modulo: 'cooperados',
+    descricao: `Acesso ao sistema gerado para cooperado: ${(cooperado as any).nome_completo}`,
+    dados_depois: { cooperadoId, usuarioId, email },
+  }).catch(e => console.error('[audit]', e))
+
+  revalidatePath('/cooperados')
+  revalidatePath(`/cooperados/${cooperadoId}`)
+
+  return { success: true, usuarioId, email, senhaTemporaria }
 }
 
 // ── Fluxo 4: Vincular usuário existente como cooperado ────────────────────────

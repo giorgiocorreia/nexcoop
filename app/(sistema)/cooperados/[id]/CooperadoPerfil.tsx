@@ -11,6 +11,8 @@ import {
 } from '@/components/nexcoop/ui'
 import CotasSection from './CotasSection'
 import PagamentosSection from './PagamentosSection'
+import AcessoSistemaCard from './AcessoSistemaCard'
+import type { AcessoCooperado } from './page'
 
 const STATUS_CONFIG: Record<
   StatusCooperado,
@@ -44,10 +46,13 @@ function formatarData(d: string | null) {
 interface Props {
   cooperado:  Cooperado
   orgTipo:    string | null
+  orgNome:    string | null
   usuarioId:  string
+  ehAdmin:    boolean
+  acesso:     AcessoCooperado
 }
 
-export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId }: Props) {
+export default function CooperadoPerfil({ cooperado: initial, orgTipo, orgNome, usuarioId, ehAdmin, acesso }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -302,6 +307,18 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, usuarioId
             </ContentCard>
           )}
         </div>
+
+        {ehAdmin && (
+          <div style={{ marginTop: 12 }}>
+            <AcessoSistemaCard
+              cooperadoId={cooperado.id}
+              nome={cooperado.nome_completo}
+              orgNome={orgNome}
+              emailPadrao={cooperado.email}
+              acessoInicial={acesso}
+            />
+          </div>
+        )}
 
         {orgTipo === 'cooperativa' && (
           <CotasSection
