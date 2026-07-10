@@ -23,6 +23,7 @@ interface Props {
   ultimasCotacoesOrg: CotacaoOrg[]
   precoBahia: { preco_brl: number | null } | null
   usdBrl: { preco_brl: number | null; cambio_usd_brl: number | null } | null
+  iceNy: { preco_usd: number | null; preco_brl: number | null; data_referencia: string } | null
 }
 
 const NOME_MOAGEIRA: Record<string, string> = {
@@ -59,7 +60,7 @@ function ImpactoBadge({ impacto }: { impacto: number }) {
   )
 }
 
-export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, precoBahia, usdBrl }: Props) {
+export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, precoBahia, usdBrl, iceNy }: Props) {
   const [isPending, startTransition] = useTransition()
   const [moageiraSel, setMoageiraSel] = useState('barry_callebaut')
   const [precoInput, setPrecoInput] = useState('')
@@ -67,6 +68,9 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   const precoBahiaVal = precoBahia?.preco_brl ? Number(precoBahia.preco_brl) : null
+  // preco_usd é USD/tonelada; preco_brl da mesma linha ja vem convertido em BRL/kg pelo cron.
+  const iceUsdTon = iceNy?.preco_usd ? Number(iceNy.preco_usd) : null
+  const iceBrlKg = iceNy?.preco_brl ? Number(iceNy.preco_brl) : null
 
   const calcDeságio = (preco: number) => {
     if (!precoBahiaVal) return null
@@ -156,6 +160,21 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
               <div style={{ fontSize: 10, color: '#185FA5', marginBottom: 2 }}>Mercado Bahia</div>
               <div style={{ fontSize: 14, fontWeight: 500, color: '#042C53' }}>
                 {precoBahiaVal ? `R$ ${precoBahiaVal.toFixed(0)}` : '—'}
+              </div>
+            </div>
+            <div style={{ gridColumn: '1 / -1', background: 'rgba(24,95,165,0.1)', borderRadius: 8, padding: '8px 10px' }}>
+              <div style={{ fontSize: 10, color: '#185FA5', marginBottom: 2 }}>
+                ICE Nova York {iceNy?.data_referencia ? `· ${new Date(iceNy.data_referencia + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#042C53' }}>
+                  {iceUsdTon ? `US$ ${iceUsdTon.toLocaleString('pt-BR')} /t` : '—'}
+                </span>
+                {iceBrlKg && (
+                  <span style={{ fontSize: 11, color: '#185FA5' }}>
+                    ≈ R$ {iceBrlKg.toFixed(2)}/kg
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Vercel Cron invoca GET a cada 6h com Authorization: Bearer <CRON_SECRET>
+// Vercel Cron invoca GET diariamente as 08:00 UTC (ver vercel.json) com
+// Authorization: Bearer <CRON_SECRET>
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
@@ -23,6 +24,29 @@ export async function GET(req: NextRequest) {
   }
 
   const cambio = await fetchUsdBrl()
+
+  // ── USD/BRL (PTAX) ─────────────────────────────────────────────────────────
+  // getUsdBrl() no dashboard le produto='usd_brl', fonte='bcb'. Essa linha nunca
+  // era gravada: o card "USD / BRL" do Indice Nex ficava sempre em "—".
+  try {
+    if (cambio != null) {
+      const supabase = createAdminClient()
+      await supabase.from('cotacoes_mercado_externo').upsert({
+        produto: 'usd_brl',
+        fonte: 'bcb',
+        preco_brl: cambio,
+        preco_usd: null,
+        cambio_usd_brl: cambio,
+        data_referencia: hoje,
+        coletado_em: new Date().toISOString(),
+      }, { onConflict: 'fonte,produto,data_referencia' })
+      resultados.usd_brl = { cotacao: cambio }
+    } else {
+      resultados.usd_brl_erro = 'PTAX e Yahoo indisponiveis'
+    }
+  } catch (e) {
+    resultados.usd_brl_erro = String(e)
+  }
 
   // ── ICE NY (USD/ton) ───────────────────────────────────────────────────────
   try {

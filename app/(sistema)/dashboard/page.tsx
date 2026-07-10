@@ -9,6 +9,7 @@ import {
   getCotacoesMoageiras,
   getPrecoBahia,
   getUsdBrl,
+  getIceNy,
   getUltimasCotacoesOrg,
 } from '@/lib/dashboard/indice-nex.actions'
 import {
@@ -57,7 +58,7 @@ export default async function DashboardPage() {
   }
 
   // Índice Nex — só para cooperativas
-  const [snapshot, sinaisNex, cotacoesMoageiras, precoBahia, usdBrl, ultimasCotacoesOrg] =
+  const [snapshot, sinaisNex, cotacoesMoageiras, precoBahia, usdBrl, iceNy, ultimasCotacoesOrg] =
     orgTipo === 'cooperativa' && usuarioOrg?.organizacao_id
       ? await Promise.all([
           getUltimoIndiceNex(usuarioOrg.organizacao_id),
@@ -65,9 +66,10 @@ export default async function DashboardPage() {
           getCotacoesMoageiras(usuarioOrg.organizacao_id),
           getPrecoBahia(),
           getUsdBrl(),
+          getIceNy(),
           getUltimasCotacoesOrg(usuarioOrg.organizacao_id),
         ])
-      : [null, [], [], null, null, []]
+      : [null, [], [], null, null, null, []]
 
   const [
     { count: totalCooperados },
@@ -135,6 +137,7 @@ export default async function DashboardPage() {
           ultimasCotacoesOrg={ultimasCotacoesOrg as Parameters<typeof IndiceNex>[0]['ultimasCotacoesOrg']}
           precoBahia={precoBahia}
           usdBrl={usdBrl}
+          iceNy={iceNy as Parameters<typeof IndiceNex>[0]['iceNy']}
         />
       ) : undefined}
     />

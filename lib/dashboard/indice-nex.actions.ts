@@ -307,6 +307,19 @@ export async function getUsdBrl() {
   return data
 }
 
+export async function getIceNy() {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('cotacoes_mercado_externo')
+    .select('*')
+    .eq('produto', 'cacau')
+    .eq('fonte', 'ice_ny')
+    .order('data_referencia', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data
+}
+
 export async function getUltimasCotacoesOrg(orgId: string) {
   const supabase = createAdminClient()
   const { data } = await supabase
