@@ -274,76 +274,6 @@ export default function DashboardComercializacao({
           </div>
         )}
 
-        {/* Cacau à ordem — área detalhada por produtor (alvo do clique no KPI) */}
-        <div
-          ref={cacauAreaRef}
-          style={{
-            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
-            borderTop: `3px solid ${COM_C.marrom}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            padding: '20px 22px', marginBottom: 24, scrollMarginTop: 100,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <i className="ti ti-basket" style={{ fontSize: 18, color: COM_C.marrom }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt }}>Cacau à ordem por produtor</span>
-              </div>
-              <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 3 }}>
-                Cacau entregue à cooperativa e ainda não convertido em dinheiro.
-              </div>
-            </div>
-            <div style={{
-              background: COM_C.marromLt, color: COM_C.marromDk, borderRadius: 9,
-              padding: '8px 14px', fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-            }}>
-              {fmtKgExato(cacauAOrdem.saldo_total_kg)}
-            </div>
-          </div>
-
-          {cacauAOrdem.produtores.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem 0', color: COM_C.txtSub }}>
-              <div style={{ fontSize: 30, marginBottom: 8 }}>✅</div>
-              <p style={{ fontSize: 13, margin: 0 }}>Nenhum produtor com cacau à ordem no momento.</p>
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {['Produtor', 'Kg à ordem', ''].map((h, i) => (
-                    <th key={i} style={{
-                      fontSize: 10, color: COM_C.txtSub, fontWeight: 700,
-                      textAlign: i === 1 ? 'right' : 'left',
-                      padding: '0 0 8px', borderBottom: `1px solid ${COM_C.borda}`,
-                      textTransform: 'uppercase', width: i === 2 ? 24 : undefined,
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {cacauAOrdem.produtores.map((p) => (
-                  <tr
-                    key={p.produtor_id}
-                    className="com-venda-row"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => router.push(`/comercializacao/produtores/${p.produtor_id}`)}
-                  >
-                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', color: COM_C.txt, fontWeight: 600 }}>
-                      {p.nome}
-                    </td>
-                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: COM_C.txt }}>
-                      {fmtKgExato(p.saldo_kg)}
-                    </td>
-                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', color: COM_C.txtSub }}>
-                      <i className="ti ti-chevron-right" style={{ fontSize: 15 }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
         {/* Navegação — Operação */}
         <p className="com-section-label">Operação</p>
         <div className="com-link-grid" style={{ marginBottom: 28 }}>
@@ -424,7 +354,7 @@ export default function DashboardComercializacao({
           ))}
         </div>
 
-        {/* Últimas entregas + Guia */}
+        {/* Últimas entregas + Cacau à ordem */}
         <div className="com-two-col">
           {d.ultimasEntregas.length > 0 && (
             <div style={{
@@ -467,30 +397,101 @@ export default function DashboardComercializacao({
             </div>
           )}
 
-          <div style={{
-            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
-            padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: COM_C.txtSub, marginBottom: 14 }}>
-              Como funciona
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {GUIA.map((g, i) => (
-                <div key={g.titulo} className="com-guia-card" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 8, background: COM_C.marromLt,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 800, color: COM_C.marrom, flexShrink: 0,
-                  }}>{i + 1}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt, marginBottom: 3 }}>
-                      {g.icone} {g.titulo}
-                    </div>
-                    <div style={{ fontSize: 12, color: COM_C.txtSub, lineHeight: 1.45 }}>{g.desc}</div>
-                  </div>
+          {/* Cacau à ordem — área detalhada por produtor (alvo do clique no KPI) */}
+          <div
+            ref={cacauAreaRef}
+            style={{
+              background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+              borderTop: `3px solid ${COM_C.marrom}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              padding: '20px 22px', scrollMarginTop: 100,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="ti ti-basket" style={{ fontSize: 18, color: COM_C.marrom }} />
+                  <span style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt }}>Cacau à ordem por produtor</span>
                 </div>
-              ))}
+                <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 3 }}>
+                  Cacau entregue à cooperativa e ainda não convertido em dinheiro.
+                </div>
+              </div>
+              <div style={{
+                background: COM_C.marromLt, color: COM_C.marromDk, borderRadius: 9,
+                padding: '8px 14px', fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+              }}>
+                {fmtKgExato(cacauAOrdem.saldo_total_kg)}
+              </div>
             </div>
+
+            {cacauAOrdem.produtores.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0', color: COM_C.txtSub }}>
+                <div style={{ fontSize: 30, marginBottom: 8 }}>✅</div>
+                <p style={{ fontSize: 13, margin: 0 }}>Nenhum produtor com cacau à ordem no momento.</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    {['Produtor', 'Kg à ordem', ''].map((h, i) => (
+                      <th key={i} style={{
+                        fontSize: 10, color: COM_C.txtSub, fontWeight: 700,
+                        textAlign: i === 1 ? 'right' : 'left',
+                        padding: '0 0 8px', borderBottom: `1px solid ${COM_C.borda}`,
+                        textTransform: 'uppercase', width: i === 2 ? 24 : undefined,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {cacauAOrdem.produtores.map((p) => (
+                    <tr
+                      key={p.produtor_id}
+                      className="com-venda-row"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => router.push(`/comercializacao/produtores/${p.produtor_id}`)}
+                    >
+                      <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', color: COM_C.txt, fontWeight: 600 }}>
+                        {p.nome}
+                      </td>
+                      <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: COM_C.txt }}>
+                        {fmtKgExato(p.saldo_kg)}
+                      </td>
+                      <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', color: COM_C.txtSub }}>
+                        <i className="ti ti-chevron-right" style={{ fontSize: 15 }} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Orientações de usabilidade — como funciona o fluxo */}
+        <div style={{
+          background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+          padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: COM_C.txtSub, marginBottom: 14 }}>
+            Orientações de usabilidade
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+            {GUIA.map((g, i) => (
+              <div key={g.titulo} className="com-guia-card" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, background: COM_C.marromLt,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800, color: COM_C.marrom, flexShrink: 0,
+                }}>{i + 1}</div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COM_C.txt, marginBottom: 3 }}>
+                    {g.icone} {g.titulo}
+                  </div>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, lineHeight: 1.45 }}>{g.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
