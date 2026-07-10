@@ -14,22 +14,46 @@ export async function GET(req: NextRequest) {
   const hoje = new Date().toISOString().split('T')[0]
   const resultados: Record<string, unknown> = {}
 
-  // ── ICE NY (CC=F) via Yahoo Finance ────────────────────────────────────────
+  // Uma unica leitura da pagina alimenta ICE e mercado fisico.
+  let pagina: PrecoDoCacau | null = null
   try {
-    const iceData = await fetchIceNyPrice()
-    if (iceData) {
-      const cambio = await fetchUsdBrl()
+    pagina = await fetchPrecoDoCacau()
+  } catch (e) {
+    resultados.precodocacau_erro = String(e)
+  }
+
+  const cambio = await fetchUsdBrl()
+
+  // ── ICE NY (USD/ton) ───────────────────────────────────────────────────────
+  try {
+    // Preferimos o precodocacau; Yahoo (CC=F) so se a pagina nao trouxer o valor.
+    let precoUsd = pagina?.iceUsdTon ?? null
+    let dataIce = pagina?.data ?? null
+    let origem = 'precodocacau'
+
+    if (precoUsd == null) {
+      const yahoo = await fetchIceNyYahoo()
+      if (yahoo) {
+        precoUsd = yahoo.preco_usd
+        dataIce = yahoo.data
+        origem = 'yahoo'
+      }
+    }
+
+    if (precoUsd != null) {
       const supabase = createAdminClient()
       await supabase.from('cotacoes_mercado_externo').upsert({
         produto: 'cacau',
         fonte: 'ice_ny',
-        preco_usd: iceData.preco_usd,
-        preco_brl: cambio ? iceData.preco_usd * cambio / 1000 : null, // USD/ton → BRL/kg
+        preco_usd: precoUsd,
+        preco_brl: cambio ? precoUsd * cambio / 1000 : null, // USD/ton → BRL/kg
         cambio_usd_brl: cambio,
-        data_referencia: iceData.data ?? hoje,
+        data_referencia: dataIce ?? hoje,
         coletado_em: new Date().toISOString(),
       }, { onConflict: 'fonte,produto,data_referencia' })
-      resultados.ice_ny = { preco_usd: iceData.preco_usd, cambio }
+      resultados.ice_ny = { preco_usd: precoUsd, cambio, origem, contrato: pagina?.contrato ?? null }
+    } else {
+      resultados.ice_ny_erro = 'sem valor no precodocacau nem no Yahoo'
     }
   } catch (e) {
     resultados.ice_ny_erro = String(e)
@@ -37,19 +61,18 @@ export async function GET(req: NextRequest) {
 
   // ── Mercado fisico Bahia (BRL/arroba) ──────────────────────────────────────
   try {
-    const bahia = await fetchPrecoBahia()
-    if (bahia) {
+    if (pagina?.bahiaArroba != null) {
       const supabase = createAdminClient()
       await supabase.from('cotacoes_mercado_externo').upsert({
         produto: 'cacau',
         fonte: 'precodocacau',
-        preco_brl: bahia.preco_brl, // BRL/arroba (15kg)
+        preco_brl: pagina.bahiaArroba, // BRL/arroba (15kg)
         preco_usd: null,
         cambio_usd_brl: null,
-        data_referencia: bahia.data ?? hoje,
+        data_referencia: pagina.data ?? hoje,
         coletado_em: new Date().toISOString(),
       }, { onConflict: 'fonte,produto,data_referencia' })
-      resultados.cacau_bahia = { preco_brl: bahia.preco_brl, data: bahia.data }
+      resultados.cacau_bahia = { preco_brl: pagina.bahiaArroba, data: pagina.data }
     } else {
       resultados.cacau_bahia_erro = 'nenhum parser reconheceu a pagina'
     }
@@ -62,7 +85,8 @@ export async function GET(req: NextRequest) {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-async function fetchIceNyPrice(): Promise<{ preco_usd: number; data: string | null } | null> {
+// Fallback do ICE, usado so quando o precodocacau nao traz o valor.
+async function fetchIceNyYahoo(): Promise<{ preco_usd: number; data: string | null } | null> {
   const res = await fetch(
     'https://query1.finance.yahoo.com/v8/finance/chart/CC=F?interval=1d&range=5d',
     {
@@ -134,18 +158,27 @@ async function fetchUsdBrlYahoo(): Promise<number | null> {
   return null
 }
 
-// Fonte: precodocacau.com.br (Cacau Bahia, R$/arroba).
-// O site ja migrou o schema uma vez (Product/offers -> Dataset/variableMeasured) e
-// quebrou este parser em silencio. Por isso: tres caminhos, e null explicito se
-// nenhum reconhecer — o cron reporta cacau_bahia_erro em vez de fingir sucesso.
-const PRECO_ARROBA_MIN = 50
-const PRECO_ARROBA_MAX = 2000
-
-function precoPlausivel(v: number): boolean {
-  return Number.isFinite(v) && v >= PRECO_ARROBA_MIN && v <= PRECO_ARROBA_MAX
+// Fonte: precodocacau.com.br — mercado fisico da Bahia (R$/arroba) e ICE NY
+// (USD/ton). Eles nao expoem API: o ICE vem do objeto window.CDC embutido na
+// pagina, e a Bahia do JSON-LD. O site ja migrou o schema uma vez
+// (Product/offers -> Dataset/variableMeasured) e quebrou este parser em
+// silencio, entao cada valor tem mais de um caminho e a faixa de
+// plausibilidade barra lixo. Nenhum caminho reconhecido => null explicito, e o
+// cron reporta erro em vez de fingir sucesso.
+interface PrecoDoCacau {
+  bahiaArroba: number | null
+  iceUsdTon: number | null
+  contrato: string | null
+  data: string | null
 }
 
-async function fetchPrecoBahia(): Promise<{ preco_brl: number; data: string | null } | null> {
+const ARROBA_MIN = 50, ARROBA_MAX = 2000
+const ICE_MIN = 500, ICE_MAX = 30000
+
+const naFaixa = (v: number, min: number, max: number) =>
+  Number.isFinite(v) && v >= min && v <= max
+
+async function fetchPrecoDoCacau(): Promise<PrecoDoCacau | null> {
   let html: string | null = null
 
   try {
@@ -172,54 +205,66 @@ async function fetchPrecoBahia(): Promise<{ preco_brl: number; data: string | nu
   if (!html) return null
 
   const scriptTags = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) ?? []
-
-  // 1) Schema atual: Dataset.variableMeasured[] com "Cacau Bahia — preço por arroba (15 kg)"
+  const jsonLd: Record<string, unknown>[] = []
   for (const script of scriptTags) {
     try {
-      const json = JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, ''))
-      const vars: Array<{ name?: string; value?: number | string; unitText?: string }> =
-        Array.isArray(json?.variableMeasured) ? json.variableMeasured : []
-      const arroba = vars.find(v => /^Cacau Bahia\b.*arroba/i.test(v.name ?? ''))
-      if (arroba?.value != null) {
-        const preco = Number(arroba.value)
-        if (!precoPlausivel(preco)) continue
-        const data = typeof json.dateModified === 'string'
-          ? json.dateModified.split('T')[0]
-          : null
-        return { preco_brl: preco, data }
-      }
-    } catch { continue }
+      jsonLd.push(JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')))
+    } catch { /* ignora bloco invalido */ }
   }
 
-  // 2) Schema antigo: Product.offers[] com name === "Cacau Bahia"
-  for (const script of scriptTags) {
-    try {
-      const json = JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, ''))
-      const offers: Array<{ name?: string; price?: number | string; priceValidUntil?: string }> =
-        Array.isArray(json?.offers) ? json.offers : []
+  let data: string | null = null
+  let bahiaArroba: number | null = null
+
+  // Bahia, 1) schema atual: Dataset.variableMeasured[]
+  for (const json of jsonLd) {
+    const vars = Array.isArray(json.variableMeasured)
+      ? (json.variableMeasured as Array<{ name?: string; value?: number | string }>)
+      : []
+    const arroba = vars.find(v => /^Cacau Bahia\b.*arroba/i.test(v.name ?? ''))
+    if (arroba?.value != null) {
+      const preco = Number(arroba.value)
+      if (!naFaixa(preco, ARROBA_MIN, ARROBA_MAX)) continue
+      bahiaArroba = preco
+      if (typeof json.dateModified === 'string') data = json.dateModified.split('T')[0]
+      break
+    }
+  }
+
+  // Bahia, 2) schema antigo: Product.offers[]
+  if (bahiaArroba == null) {
+    for (const json of jsonLd) {
+      const offers = Array.isArray(json.offers)
+        ? (json.offers as Array<{ name?: string; price?: number | string; priceValidUntil?: string }>)
+        : []
       const bahia = offers.find(o => o.name === 'Cacau Bahia')
       if (bahia?.price != null) {
         const preco = Number(bahia.price)
-        if (!precoPlausivel(preco)) continue
-        let data: string | null = null
+        if (!naFaixa(preco, ARROBA_MIN, ARROBA_MAX)) continue
+        bahiaArroba = preco
         if (bahia.priceValidUntil && /\d{2}\/\d{2}\/\d{4}/.test(bahia.priceValidUntil)) {
           const [d, m, y] = bahia.priceValidUntil.split('/')
           data = `${y}-${m}-${d}`
         }
-        return { preco_brl: preco, data }
+        break
       }
-    } catch { continue }
-  }
-
-  // 3) Ultimo recurso: objeto window.CDC embutido na pagina
-  const cdc = html.match(/"bahia"\s*:\s*\{[^}]*?"preco_arroba"\s*:\s*([\d.]+)/)
-  if (cdc) {
-    const preco = Number(cdc[1])
-    if (precoPlausivel(preco)) {
-      const dt = html.match(/atualizado_em:\s*"(\d{4}-\d{2}-\d{2})/)
-      return { preco_brl: preco, data: dt?.[1] ?? null }
     }
   }
 
-  return null
+  // Bahia, 3) ultimo recurso: window.CDC
+  if (bahiaArroba == null) {
+    const m = html.match(/"bahia"\s*:\s*\{[^}]*?"preco_arroba"\s*:\s*([\d.]+)/)
+    if (m && naFaixa(Number(m[1]), ARROBA_MIN, ARROBA_MAX)) bahiaArroba = Number(m[1])
+  }
+
+  // ICE: so existe no window.CDC — nao esta no JSON-LD.
+  let iceUsdTon: number | null = null
+  const ice = html.match(/"ice_usd_ton"\s*:\s*([\d.]+)/)
+  if (ice && naFaixa(Number(ice[1]), ICE_MIN, ICE_MAX)) iceUsdTon = Number(ice[1])
+
+  const contrato = html.match(/"contrato"\s*:\s*"([^"]+)"/)?.[1]?.replace(/\\\//g, '/') ?? null
+
+  if (!data) data = html.match(/atualizado_em:\s*"(\d{4}-\d{2}-\d{2})/)?.[1] ?? null
+
+  if (bahiaArroba == null && iceUsdTon == null) return null
+  return { bahiaArroba, iceUsdTon, contrato, data }
 }
