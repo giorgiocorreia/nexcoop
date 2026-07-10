@@ -10,23 +10,55 @@ import { parseIndicesCacau, SINAL_LABEL, type IndicesCacau } from '@/lib/comerci
 export const revalidate = 300 // 5 min: nao martelar a origem a cada F5
 const URL = 'https://br.investing.com/commodities/us-cocoa'
 
-async function carregar(): Promise<{ dados: IndicesCacau | null; erro: string | null }> {
-  try {
-    const res = await fetch(URL, {
+// O Cloudflare do investing.com responde 403 para IP de datacenter: direto da
+// Vercel nunca passa, so de IP residencial. O leitor da jina.ai busca do lado
+// dele e devolve o HTML cru — inclusive o __NEXT_DATA__ — se pedirmos
+// X-Return-Format: html (o padrao dele e markdown, que perde o script).
+type Origem = 'direto' | 'proxy'
+
+async function baixar(): Promise<{ html: string; origem: Origem } | { erro: string }> {
+  const tentativas: { origem: Origem; url: string; headers: Record<string, string> }[] = [
+    {
+      origem: 'direto',
+      url: URL,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
         'Accept-Language': 'pt-BR,pt;q=0.9',
       },
-      next: { revalidate },
-      signal: AbortSignal.timeout(20000),
-    })
-    if (!res.ok) return { dados: null, erro: `origem respondeu HTTP ${res.status}` }
-    const dados = parseIndicesCacau(await res.text())
-    if (!dados) return { dados: null, erro: 'nao encontrei __NEXT_DATA__ ou o preco principal na pagina' }
-    return { dados, erro: null }
-  } catch (e) {
-    return { dados: null, erro: String(e) }
+    },
+    {
+      origem: 'proxy',
+      url: `https://r.jina.ai/${URL}`,
+      headers: { 'X-Return-Format': 'html' },
+    },
+  ]
+
+  const falhas: string[] = []
+  for (const t of tentativas) {
+    try {
+      const res = await fetch(t.url, {
+        headers: t.headers,
+        next: { revalidate },
+        signal: AbortSignal.timeout(25000),
+      })
+      if (!res.ok) { falhas.push(`${t.origem}: HTTP ${res.status}`); continue }
+      return { html: await res.text(), origem: t.origem }
+    } catch (e) {
+      falhas.push(`${t.origem}: ${String(e)}`)
+    }
   }
+  return { erro: falhas.join(' · ') }
+}
+
+async function carregar(): Promise<{ dados: IndicesCacau | null; origem: Origem | null; erro: string | null }> {
+  const r = await baixar()
+  if ('erro' in r) return { dados: null, origem: null, erro: r.erro }
+
+  const dados = parseIndicesCacau(r.html)
+  if (!dados) {
+    return { dados: null, origem: r.origem, erro: `baixou via ${r.origem}, mas nao achei __NEXT_DATA__ ou o preco principal` }
+  }
+  return { dados, origem: r.origem, erro: null }
 }
 
 const usd = (v: number | null) =>
@@ -37,14 +69,14 @@ const corPct = (v: number | null) =>
   v == null ? COM_C.txtSub : v > 0 ? COM_C.verdeTxt : v < 0 ? COM_C.vermelho : COM_C.txtSub
 
 export default async function PainelTempPage() {
-  const { dados, erro } = await carregar()
+  const { dados, origem, erro } = await carregar()
 
   if (!dados) {
     return (
       <PageLayout titulo="Índices do cacau (preview)" icone="ti-chart-dots" breadcrumb={[{ label: 'Painel de mercado', href: '/comercializacao/painel' }, { label: 'Preview' }]}>
         <AlertBanner tipo="erro">
-          Não consegui ler a origem: {erro}. O investing.com fica atrás de Cloudflare — pode estar
-          bloqueando o IP do servidor, ou o payload <code>__NEXT_DATA__</code> deixou de existir.
+          Não consegui ler a origem. Tentativas — {erro}. O investing.com fica atrás de Cloudflare e
+          recusa IP de datacenter; o proxy de leitura é o plano B, e ele também falhou.
         </AlertBanner>
       </PageLayout>
     )
@@ -178,7 +210,10 @@ export default async function PainelTempPage() {
       </ContentCard>
 
       <p style={{ fontSize: 11, color: COM_C.txtSub, textAlign: 'center', marginTop: 16 }}>
-        Preview interno · dados lidos de {URL} · revalida a cada {revalidate / 60} min
+        Preview interno · {URL} · revalida a cada {revalidate / 60} min ·{' '}
+        {origem === 'proxy'
+          ? 'lido via proxy r.jina.ai (Cloudflare recusa o IP do servidor)'
+          : 'lido direto da origem'}
       </p>
     </PageLayout>
   )
