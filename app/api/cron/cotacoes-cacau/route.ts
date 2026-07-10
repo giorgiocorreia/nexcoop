@@ -35,24 +35,26 @@ export async function GET(req: NextRequest) {
     resultados.ice_ny_erro = String(e)
   }
 
-  // ── CEPEA (cacau, BRL/arroba) ───────────────────────────────────────────────
+  // ── Mercado fisico Bahia (BRL/arroba) ──────────────────────────────────────
   try {
-    const cepeaData = await fetchCepeaPrice()
-    if (cepeaData) {
+    const bahia = await fetchPrecoBahia()
+    if (bahia) {
       const supabase = createAdminClient()
       await supabase.from('cotacoes_mercado_externo').upsert({
         produto: 'cacau',
-        fonte: 'cepea',
-        preco_brl: cepeaData.preco_brl, // BRL/arroba (15kg)
+        fonte: 'precodocacau',
+        preco_brl: bahia.preco_brl, // BRL/arroba (15kg)
         preco_usd: null,
         cambio_usd_brl: null,
-        data_referencia: cepeaData.data ?? hoje,
+        data_referencia: bahia.data ?? hoje,
         coletado_em: new Date().toISOString(),
       }, { onConflict: 'fonte,produto,data_referencia' })
-      resultados.cacau_bahia = { preco_brl: cepeaData.preco_brl, data: cepeaData.data }
+      resultados.cacau_bahia = { preco_brl: bahia.preco_brl, data: bahia.data }
+    } else {
+      resultados.cacau_bahia_erro = 'nenhum parser reconheceu a pagina'
     }
   } catch (e) {
-    resultados.cepea_erro = String(e)
+    resultados.cacau_bahia_erro = String(e)
   }
 
   return NextResponse.json({ ok: true, data: resultados })
@@ -86,7 +88,36 @@ async function fetchIceNyPrice(): Promise<{ preco_usd: number; data: string | nu
   return null
 }
 
+// PTAX venda do Banco Central: oficial, gratuita, sem chave. E o mesmo numero que
+// o mercado usa para converter USD/ton em BRL. Yahoo fica so como rede de seguranca.
 async function fetchUsdBrl(): Promise<number | null> {
+  return (await fetchPtaxVenda()) ?? (await fetchUsdBrlYahoo())
+}
+
+async function fetchPtaxVenda(): Promise<number | null> {
+  // Janela de 10 dias: cobre fim de semana e feriado sem cair no fallback.
+  const mmddyyyy = (d: Date) =>
+    `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${d.getFullYear()}`
+  const fim = new Date()
+  const ini = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+
+  const url =
+    'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/' +
+    `CotacaoDolarPeriodo(dataInicial=@i,dataFinalCotacao=@f)?@i='${mmddyyyy(ini)}'&@f='${mmddyyyy(fim)}'` +
+    '&$format=json&$orderby=dataHoraCotacao%20desc&$top=1'
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return null
+    const json = await res.json()
+    const venda = json?.value?.[0]?.cotacaoVenda
+    return typeof venda === 'number' && venda > 0 ? venda : null
+  } catch {
+    return null
+  }
+}
+
+async function fetchUsdBrlYahoo(): Promise<number | null> {
   const res = await fetch(
     'https://query1.finance.yahoo.com/v8/finance/chart/USDBRL=X?interval=1d&range=1d',
     {
@@ -104,8 +135,17 @@ async function fetchUsdBrl(): Promise<number | null> {
 }
 
 // Fonte: precodocacau.com.br (Cacau Bahia, R$/arroba).
-// Mantemos fonte='cepea' no DB para compatibilidade com CardCotacaoCacau.tsx sem alterações em cascata.
-async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | null } | null> {
+// O site ja migrou o schema uma vez (Product/offers -> Dataset/variableMeasured) e
+// quebrou este parser em silencio. Por isso: tres caminhos, e null explicito se
+// nenhum reconhecer — o cron reporta cacau_bahia_erro em vez de fingir sucesso.
+const PRECO_ARROBA_MIN = 50
+const PRECO_ARROBA_MAX = 2000
+
+function precoPlausivel(v: number): boolean {
+  return Number.isFinite(v) && v >= PRECO_ARROBA_MIN && v <= PRECO_ARROBA_MAX
+}
+
+async function fetchPrecoBahia(): Promise<{ preco_brl: number; data: string | null } | null> {
   let html: string | null = null
 
   try {
@@ -131,8 +171,27 @@ async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | nu
 
   if (!html) return null
 
-  // JSON-LD estruturado é a fonte mais confiável (imune a mudanças de layout)
   const scriptTags = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) ?? []
+
+  // 1) Schema atual: Dataset.variableMeasured[] com "Cacau Bahia — preço por arroba (15 kg)"
+  for (const script of scriptTags) {
+    try {
+      const json = JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, ''))
+      const vars: Array<{ name?: string; value?: number | string; unitText?: string }> =
+        Array.isArray(json?.variableMeasured) ? json.variableMeasured : []
+      const arroba = vars.find(v => /^Cacau Bahia\b.*arroba/i.test(v.name ?? ''))
+      if (arroba?.value != null) {
+        const preco = Number(arroba.value)
+        if (!precoPlausivel(preco)) continue
+        const data = typeof json.dateModified === 'string'
+          ? json.dateModified.split('T')[0]
+          : null
+        return { preco_brl: preco, data }
+      }
+    } catch { continue }
+  }
+
+  // 2) Schema antigo: Product.offers[] com name === "Cacau Bahia"
   for (const script of scriptTags) {
     try {
       const json = JSON.parse(script.replace(/<script[^>]*>/, '').replace(/<\/script>/, ''))
@@ -141,7 +200,7 @@ async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | nu
       const bahia = offers.find(o => o.name === 'Cacau Bahia')
       if (bahia?.price != null) {
         const preco = Number(bahia.price)
-        if (isNaN(preco) || preco < 50) continue
+        if (!precoPlausivel(preco)) continue
         let data: string | null = null
         if (bahia.priceValidUntil && /\d{2}\/\d{2}\/\d{4}/.test(bahia.priceValidUntil)) {
           const [d, m, y] = bahia.priceValidUntil.split('/')
@@ -152,18 +211,13 @@ async function fetchCepeaPrice(): Promise<{ preco_brl: number; data: string | nu
     } catch { continue }
   }
 
-  // Fallback: elemento HTML id="preco-bahia"
-  const htmlMatch = html.match(/id="preco-bahia"[\s\S]{0,100}?R\$\s*([\d.,]+)/)
-  if (htmlMatch) {
-    const preco = parseFloat(htmlMatch[1].replace(/\./g, '').replace(',', '.'))
-    if (!isNaN(preco) && preco > 50) {
-      const dateMatch = html.match(/"priceValidUntil"\s*:\s*"(\d{2}\/\d{2}\/\d{4})"/)
-      let data: string | null = null
-      if (dateMatch) {
-        const [d, m, y] = dateMatch[1].split('/')
-        data = `${y}-${m}-${d}`
-      }
-      return { preco_brl: preco, data }
+  // 3) Ultimo recurso: objeto window.CDC embutido na pagina
+  const cdc = html.match(/"bahia"\s*:\s*\{[^}]*?"preco_arroba"\s*:\s*([\d.]+)/)
+  if (cdc) {
+    const preco = Number(cdc[1])
+    if (precoPlausivel(preco)) {
+      const dt = html.match(/atualizado_em:\s*"(\d{4}-\d{2}-\d{2})/)
+      return { preco_brl: preco, data: dt?.[1] ?? null }
     }
   }
 

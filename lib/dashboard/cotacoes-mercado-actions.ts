@@ -15,7 +15,9 @@ export async function getCotacaoMercadoAtual(): Promise<{
       .from('cotacoes_mercado_externo')
       .select('*')
       .eq('produto', 'cacau')
-      .eq('fonte', 'cepea')
+      // O cron gravava mercado fisico sob 'cepea' mesmo lendo do precodocacau.
+      // Linhas novas usam 'precodocacau'; as antigas continuam validas.
+      .in('fonte', ['precodocacau', 'cepea'])
       .order('data_referencia', { ascending: false })
       .limit(1)
       .maybeSingle(),
