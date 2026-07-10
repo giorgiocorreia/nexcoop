@@ -58,11 +58,10 @@ direto por `lib/loja/actions.ts` (PDV `:1017` e estorno `:1109`), fora de
 `movimentacoes_conta` — recomputá-lo apagaria esses ajustes. Por isso o
 financeiro continua incremental (INSERT-only), inalterado.
 
-> ⚠️ **PENDENTE:** a migration 064 **ainda não foi rodada** no SQL Editor do
-> Supabase (regra: migrations nunca via `npx supabase db push`). Enquanto não
-> for aplicada, o card segue com o valor antigo. Query de verificação está no
-> fim do arquivo da migration (deve dar 0 kg para o produtor
-> `6f78f629-060d-47ac-9324-aad862095c15`, Cristiano Dias dos Santos).
+> ✅ **APLICADA** (2026-07-10): a migration 064 foi rodada no SQL Editor do
+> Supabase. Query de verificação está no fim do arquivo da migration (deve dar
+> 0 kg para o produtor `6f78f629-060d-47ac-9324-aad862095c15`, Cristiano Dias
+> dos Santos).
 
 `saldos_produto` é lida por 4 fluxos — se mexer nela, conferir todos:
 `produtores.actions.ts`, `caixa.actions.ts`, `extrato-produtor.ts`, `notas.ts`.
@@ -123,14 +122,23 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
 
 ## 4. Pendências abertas
 
-- [ ] **Rodar a migration 064** no SQL Editor do Supabase e verificar o card do
-      Cristiano (0 kg). Sem isso, o bug do saldo persiste em produção.
-- [ ] **Insert de `estorno` quebrado** em `lib/loja/actions.ts:1100`: grava
-      colunas inexistentes em `movimentacoes_conta` (`valor`, `saldo_apos`,
-      `criado_em`) e omite `usuario_id` (NOT NULL) → falha em runtime. O saldo
-      financeiro do estorno é aplicado por UPDATE direto (`:1109`), mas o
-      lançamento no razão não persiste. Investigar em chat dedicado (mexe em
-      financeiro, fora do escopo do fix 064).
+- [x] **Rodar a migration 064** no SQL Editor do Supabase — aplicada em
+      2026-07-10. Verificar o card do Cristiano (deve mostrar 0 kg).
+- [x] **Insert de `estorno` quebrado** em `lib/loja/actions.ts` — corrigido em
+      2026-07-10. Três bugs no mesmo fluxo, todos usavam colunas inexistentes em
+      `movimentacoes_conta` (`valor`, `saldo_apos`, `descricao`, `criado_em`) e
+      omitiam `usuario_id` (NOT NULL):
+      1. Insert de `compra_loja` no PDV (`finalizarVenda`) falhava silencioso →
+         nenhuma linha de razão. Corrigido para `valor_financeiro`/`observacoes`
+         + `usuario_id`; **removido o UPDATE manual do saldo** — o trigger já
+         debita `saldo_financeiro` no INSERT de `compra_loja` (evita dupla
+         escrita).
+      2. `cancelarVenda` lia `.select('id, conta_id, valor')` (`valor` não
+         existe) → `movConta` vinha null e o estorno nunca rodava. Agora lê
+         `valor_financeiro`.
+      3. Insert de `estorno` corrigido (colunas + `usuario_id`). O UPDATE manual
+         do saldo **fica** porque o trigger não mexe em `saldo_financeiro` para
+         tipo `estorno` (só produto). `npx tsc --noEmit` OK.
 - [ ] **Decisão de fonte do ICE** (ver seção 3): contrato + licença.
 - [ ] Rodapé do Índice Nex cita `NOAA` e `CFTC` — não verifiquei se há código
       alimentando essas fontes ou se é só texto aspiracional.

@@ -998,23 +998,27 @@ export async function finalizarVenda(
 
     const { data: contaData } = await admin
       .from('contas_produtor')
-      .select('id, saldo_financeiro')
+      .select('id')
       .eq('organizacao_id', orgId)
       .eq('produtor_id', produtor?.id ?? '')
       .maybeSingle()
 
     if (contaData) {
-      const novoSaldo = contaData.saldo_financeiro - (venda.pago_conta ?? 0)
-      await admin.from('movimentacoes_conta').insert({
+      // Lança o débito no razão. O trigger trg_atualizar_saldos_conta debita
+      // contas_produtor.saldo_financeiro (-= ABS(valor_financeiro)) no INSERT de
+      // 'compra_loja', então NÃO atualizamos o saldo aqui — seria dupla escrita.
+      // valor_financeiro é sempre magnitude positiva; o tipo define o sinal.
+      const { error: eMov } = await admin.from('movimentacoes_conta').insert({
         organizacao_id: orgId,
         conta_id: contaData.id,
+        usuario_id: operadorId,
         tipo: 'compra_loja',
-        valor: -(venda.pago_conta ?? 0),
-        saldo_apos: novoSaldo,
-        descricao: `Compra na Loja — Venda #${vendaId.slice(-6).toUpperCase()}`,
-        criado_em: new Date().toISOString(),
+        valor_financeiro: venda.pago_conta ?? 0,
+        referencia_id: vendaId,
+        referencia_tipo: 'venda_loja',
+        observacoes: `Compra na Loja — Venda #${vendaId.slice(-6).toUpperCase()}`,
       })
-      await admin.from('contas_produtor').update({ saldo_financeiro: novoSaldo }).eq('id', contaData.id)
+      if (eMov) console.error('[loja] Erro ao lançar débito em conta (compra_loja):', eMov)
     }
   }
 
@@ -1088,7 +1092,7 @@ export async function cancelarVenda(
   // Estorna conta corrente se havia débito
   const { data: movConta } = await admin
     .from('movimentacoes_conta')
-    .select('id, conta_id, valor')
+    .select('id, conta_id, valor_financeiro')
     .eq('referencia_id', vendaId)
     .eq('tipo', 'compra_loja')
     .maybeSingle()
@@ -1096,16 +1100,22 @@ export async function cancelarVenda(
   if (movConta) {
     const { data: conta } = await admin.from('contas_produtor').select('saldo_financeiro').eq('id', movConta.conta_id).single()
     if (conta) {
-      const novoSaldo = conta.saldo_financeiro + Math.abs(movConta.valor as number)
-      await admin.from('movimentacoes_conta').insert({
+      const valorEstorno = Math.abs(movConta.valor_financeiro as number)
+      const novoSaldo = conta.saldo_financeiro + valorEstorno
+      const { error: eEstorno } = await admin.from('movimentacoes_conta').insert({
         organizacao_id: orgId,
         conta_id: movConta.conta_id,
+        usuario_id: operadorId,
         tipo: 'estorno' as const,
-        valor: Math.abs(movConta.valor as number),
-        saldo_apos: novoSaldo,
-        descricao: `Estorno — Venda cancelada #${vendaId.slice(-6).toUpperCase()}`,
-        criado_em: new Date().toISOString(),
+        valor_financeiro: valorEstorno,
+        referencia_id: vendaId,
+        referencia_tipo: 'estorno_venda',
+        observacoes: `Estorno — Venda cancelada #${vendaId.slice(-6).toUpperCase()}`,
       })
+      if (eEstorno) console.error('[loja] Erro ao lançar estorno em conta:', eEstorno)
+      // O trigger trg_atualizar_saldos_conta NÃO mexe em saldo_financeiro para
+      // tipo 'estorno' (só recalcula saldo de produto), então o crédito de volta
+      // é aplicado aqui por UPDATE direto.
       await admin.from('contas_produtor').update({ saldo_financeiro: novoSaldo }).eq('id', movConta.conta_id)
     }
   }
