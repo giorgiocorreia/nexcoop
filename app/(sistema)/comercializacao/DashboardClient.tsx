@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getDashboardComercializacao } from '@/lib/comercializacao/dashboard'
+import type { getCacauAOrdem } from '@/lib/comercializacao/cacau-a-ordem'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
@@ -25,6 +26,16 @@ function fmtKg(n: number) {
   return `${fmt(n)} kg`
 }
 
+// Formatação determinística de kg (3 casas), sem toLocaleString — evita
+// divergência de hidratação entre server e client. Ex.: 758.25 → "758,250 kg".
+function fmtKgExato(n: number) {
+  const gramas = Math.round(Math.abs(n) * 1000)
+  const inteiro = Math.floor(gramas / 1000)
+  const frac = String(gramas % 1000).padStart(3, '0')
+  const intFmt = String(inteiro).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${n < 0 ? '-' : ''}${intFmt},${frac} kg`
+}
+
 const GUIA = [
   { icone: '📦', titulo: 'Entrega', desc: 'Produtor entrega cacau no caixa. O sistema registra kg na conta dele.' },
   { icone: '💰', titulo: 'Conversão', desc: 'Produtor converte kg em dinheiro (espécie ou Pix) na cotação do dia.' },
@@ -34,12 +45,15 @@ const GUIA = [
 
 export default function DashboardComercializacao({
   data: d,
+  cacauAOrdem,
   organizacaoId,
 }: {
   data: Awaited<ReturnType<typeof getDashboardComercializacao>>
+  cacauAOrdem: Awaited<ReturnType<typeof getCacauAOrdem>>
   organizacaoId: string
 }) {
   const router = useRouter()
+  const cacauAreaRef = useRef<HTMLDivElement>(null)
   const [modalAbrirCaixa, setModalAbrirCaixa] = useState(false)
   const [saldoInicial, setSaldoInicial] = useState('')
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
@@ -231,8 +245,10 @@ export default function DashboardComercializacao({
             icon="ti-box" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
           <KpiCard label="Kg na semana" value={fmtKg(kgSemana)} sub="últimos 7 dias"
             icon="ti-weight" cor={COM_C.azul} corLt={COM_C.azulLt} />
-          <KpiCard label="Últimas entregas" value={fmt(d.ultimasEntregas.length)} sub="registradas no sistema"
-            icon="ti-history" cor={COM_C.txtSub} corLt="#F5F5F4" />
+          <KpiCard label="Qtd. Cacau à ordem" value={fmtKgExato(cacauAOrdem.saldo_total_kg)}
+            sub={cacauAOrdem.produtores.length > 0 ? `${fmt(cacauAOrdem.produtores.length)} produtor${cacauAOrdem.produtores.length > 1 ? 'es' : ''} · ver detalhe` : 'aguardando conversão'}
+            icon="ti-basket" cor={COM_C.marrom} corLt={COM_C.marromLt}
+            onClick={() => cacauAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
         </div>
 
         {/* Alerta aportes */}
@@ -257,6 +273,76 @@ export default function DashboardComercializacao({
             </div>
           </div>
         )}
+
+        {/* Cacau à ordem — área detalhada por produtor (alvo do clique no KPI) */}
+        <div
+          ref={cacauAreaRef}
+          style={{
+            background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
+            borderTop: `3px solid ${COM_C.marrom}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            padding: '20px 22px', marginBottom: 24, scrollMarginTop: 100,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="ti ti-basket" style={{ fontSize: 18, color: COM_C.marrom }} />
+                <span style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt }}>Cacau à ordem por produtor</span>
+              </div>
+              <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 3 }}>
+                Cacau entregue à cooperativa e ainda não convertido em dinheiro.
+              </div>
+            </div>
+            <div style={{
+              background: COM_C.marromLt, color: COM_C.marromDk, borderRadius: 9,
+              padding: '8px 14px', fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+            }}>
+              {fmtKgExato(cacauAOrdem.saldo_total_kg)}
+            </div>
+          </div>
+
+          {cacauAOrdem.produtores.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: COM_C.txtSub }}>
+              <div style={{ fontSize: 30, marginBottom: 8 }}>✅</div>
+              <p style={{ fontSize: 13, margin: 0 }}>Nenhum produtor com cacau à ordem no momento.</p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {['Produtor', 'Kg à ordem', ''].map((h, i) => (
+                    <th key={i} style={{
+                      fontSize: 10, color: COM_C.txtSub, fontWeight: 700,
+                      textAlign: i === 1 ? 'right' : 'left',
+                      padding: '0 0 8px', borderBottom: `1px solid ${COM_C.borda}`,
+                      textTransform: 'uppercase', width: i === 2 ? 24 : undefined,
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cacauAOrdem.produtores.map((p) => (
+                  <tr
+                    key={p.produtor_id}
+                    className="com-venda-row"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => router.push(`/comercializacao/produtores/${p.produtor_id}`)}
+                  >
+                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', color: COM_C.txt, fontWeight: 600 }}>
+                      {p.nome}
+                    </td>
+                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: COM_C.txt }}>
+                      {fmtKgExato(p.saldo_kg)}
+                    </td>
+                    <td style={{ padding: '11px 0', borderBottom: '1px solid #f5f5f4', textAlign: 'right', color: COM_C.txtSub }}>
+                      <i className="ti ti-chevron-right" style={{ fontSize: 15 }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
 
         {/* Navegação — Operação */}
         <p className="com-section-label">Operação</p>
