@@ -54,6 +54,21 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [ ] Renomear cooperados → membros / terminologia dinâmica via `tipos_org` (hard-coded hoje)
 - [ ] Teste smoke completo em produção pós-redesign
 
+## 🔒 Segurança — auditoria 2026-07-12
+
+> Ver detalhes em `docs/AUDITORIA_SEGURANCA_2026-07-12.md`. Ordem = prioridade.
+
+- [ ] IDOR em `vendas.actions.ts` (`atualizarStatusVenda`, `editarVenda`) e `lotes.actions.ts` (`editarLote`) — admin client sem checar `organizacao_id` nem usuário logado
+- [ ] `app/api/nfe/sincronizar` sem autenticação — atualiza `notas_entrega` por id sem checar org
+- [ ] Deletar rota de debug `app/api/debug-vendas` (pública, admin client, org hardcoded)
+- [ ] Escopo de módulo do parceiro contábil (`parceiro_org_id`) só é checado ao setar o cookie, não a cada request — reaplicar `modulos_acesso` por request
+- [ ] Webhook WhatsApp (`app/api/whatsapp/webhook`) sem validação de assinatura/origem + remover `console.log` de payload completo
+- [ ] Padronizar erros de API (não retornar `error.message`/`String(e)` cru ao cliente)
+- [ ] Validação Zod na fronteira das server actions (hoje `form` do cliente vai direto pro insert/update)
+- [ ] Limpar lixo versionado: `middleware.ts.bak`, `tsc_out.txt`, `tsc_output.txt`, `GerarPage.txt`, `MensalidadesLista.txt`, `.claude/worktrees/` (migrations duplicadas)
+- [ ] Consolidar helpers de contexto (`getUsuarioLogado`, `getOrgContext`, `getCtx` da loja) num único `withOrg()` obrigatório
+- [ ] Testes de isolamento multi-tenant (org A não acessa recurso de org B)
+
 ## 📋 Bloqueado — aguardando contador (Marcos/Contabahia)
 
 - CSC ID e CSC Token NFC-e
@@ -65,4 +80,4 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ---
 
-> Atualizado em: 2026-07-09 (varredura de código para validar pendências)
+> Atualizado em: 2026-07-12 (adicionada seção de segurança da auditoria)
