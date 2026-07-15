@@ -46,6 +46,12 @@ export default async function CooperadoPage({ params }: Props) {
     .eq('id', cooperado.organizacao_id)
     .single()
 
+  const { data: propriedades } = await supabase
+    .from('propriedades_rurais' as any)
+    .select('*')
+    .eq('cooperado_id', id)
+    .order('criado_em', { ascending: true })
+
   // Permissão de admin do usuário logado
   const { data: usuarioAtual } = await supabase
     .from('usuarios')
@@ -73,6 +79,7 @@ export default async function CooperadoPage({ params }: Props) {
   return (
     <CooperadoPerfil
       cooperado={cooperado}
+      propriedades={(propriedades ?? []) as any}
       orgTipo={org?.tipo ?? null}
       orgNome={org?.nome ?? null}
       usuarioId={user.id}

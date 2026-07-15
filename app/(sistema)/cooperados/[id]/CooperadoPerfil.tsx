@@ -43,8 +43,21 @@ function formatarData(d: string | null) {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 }
 
+type Propriedade = {
+  id: string
+  nome: string | null
+  area_total_ha: number | null
+  latitude: number | null
+  longitude: number | null
+  caf_numero: string | null
+  caf_situacao: string | null
+  caf_validade: string | null
+  dap_numero: string | null
+}
+
 interface Props {
   cooperado:  Cooperado
+  propriedades: Propriedade[]
   orgTipo:    string | null
   orgNome:    string | null
   usuarioId:  string
@@ -52,7 +65,7 @@ interface Props {
   acesso:     AcessoCooperado
 }
 
-export default function CooperadoPerfil({ cooperado: initial, orgTipo, orgNome, usuarioId, ehAdmin, acesso }: Props) {
+export default function CooperadoPerfil({ cooperado: initial, propriedades, orgTipo, orgNome, usuarioId, ehAdmin, acesso }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -267,13 +280,28 @@ export default function CooperadoPerfil({ cooperado: initial, orgTipo, orgNome, 
             <InfoRow label="CEP" valor={cooperado.cep} />
           </ContentCard>
 
-          <ContentCard title="Propriedade rural">
-            <InfoRow label="Nome da propriedade" valor={cooperado.nome_propriedade} />
-            <InfoRow label="Área total" valor={cooperado.area_total_ha != null ? `${cooperado.area_total_ha} ha` : null} />
-            <InfoRow label="CAF" valor={cooperado.caf_numero} />
-            <InfoRow label="Situação CAF" valor={cooperado.caf_situacao} />
-            <InfoRow label="Validade CAF" valor={formatarData(cooperado.caf_validade)} />
-            <InfoRow label="DAP" valor={cooperado.dap_numero} />
+          <ContentCard title={`Propriedades rurais${propriedades.length > 0 ? ` (${propriedades.length})` : ''}`}>
+            {propriedades.length === 0 ? (
+              <div style={{ fontSize: 13, color: COM_C.txtSub }}>Nenhuma propriedade cadastrada.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {propriedades.map((p, i) => (
+                  <div key={p.id} style={i > 0 ? { paddingTop: 16, borderTop: `1px solid ${COM_C.borda}` } : undefined}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt, marginBottom: 6 }}>
+                      {p.nome || `Propriedade ${i + 1}`}
+                    </div>
+                    <InfoRow label="Área total" valor={p.area_total_ha != null ? `${p.area_total_ha} ha` : null} />
+                    <InfoRow label="CAF" valor={p.caf_numero} />
+                    <InfoRow label="Situação CAF" valor={p.caf_situacao} />
+                    <InfoRow label="Validade CAF" valor={formatarData(p.caf_validade)} />
+                    <InfoRow label="DAP" valor={p.dap_numero} />
+                    {(p.latitude != null && p.longitude != null) && (
+                      <InfoRow label="Coordenadas" valor={`${p.latitude}, ${p.longitude}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </ContentCard>
 
           <ContentCard title="Cadastro">
