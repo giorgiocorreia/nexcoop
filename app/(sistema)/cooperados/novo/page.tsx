@@ -36,6 +36,16 @@ function lbl(text: string, required?: boolean) {
   return required ? `${text} *` : text
 }
 
+type PropriedadeLocal = {
+  nome: string; area_total_ha: string; latitude: string; longitude: string
+  caf_numero: string; caf_situacao: string; caf_validade: string; dap_numero: string
+}
+
+const PROPRIEDADE_FORM_INICIAL: PropriedadeLocal = {
+  nome: '', area_total_ha: '', latitude: '', longitude: '',
+  caf_numero: '', caf_situacao: '', caf_validade: '', dap_numero: '',
+}
+
 interface FormData {
   tipo: 'pessoa_fisica' | 'pessoa_juridica'
   nome_completo: string
@@ -96,6 +106,20 @@ export default function NovoCooperadoPage() {
   const [erroCpf, setErroCpf] = useState('')
   const [erroConjugeCpf, setErroConjugeCpf] = useState('')
 
+  const [propriedades, setPropriedades] = useState<PropriedadeLocal[]>([])
+  const [mostrarFormPropriedade, setMostrarFormPropriedade] = useState(false)
+  const [formPropriedade, setFormPropriedade] = useState<PropriedadeLocal>(PROPRIEDADE_FORM_INICIAL)
+
+  function adicionarPropriedadeLocal() {
+    setPropriedades(prev => [...prev, formPropriedade])
+    setFormPropriedade(PROPRIEDADE_FORM_INICIAL)
+    setMostrarFormPropriedade(false)
+  }
+
+  function removerPropriedadeLocal(idx: number) {
+    setPropriedades(prev => prev.filter((_, i) => i !== idx))
+  }
+
   const set = (campo: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => setForm(prev => ({ ...prev, [campo]: e.target.value }))
@@ -138,6 +162,10 @@ export default function NovoCooperadoPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    await salvar()
+  }
+
+  async function salvar() {
     if (!form.nome_completo.trim()) {
       setErro('Nome completo é obrigatório.')
       setAbaAtiva('pessoal')
@@ -242,6 +270,25 @@ export default function NovoCooperadoPage() {
     }
 
     const data = resultado.data!
+
+    // ── PROPRIEDADES RURAIS (lista) ──────────────────────────
+    if (propriedades.length > 0) {
+      await supabase.from('propriedades_rurais' as any).insert(
+        propriedades.map(p => ({
+          organizacao_id: usuario.organizacao_id,
+          cooperado_id: data.id,
+          nome: p.nome.trim() || null,
+          area_total_ha: p.area_total_ha ? parseFloat(p.area_total_ha) : null,
+          latitude: p.latitude ? parseFloat(p.latitude) : null,
+          longitude: p.longitude ? parseFloat(p.longitude) : null,
+          caf_numero: p.caf_numero.trim() || null,
+          caf_situacao: p.caf_situacao || null,
+          caf_validade: p.caf_validade || null,
+          dap_numero: p.dap_numero.trim() || null,
+        })) as any
+      )
+    }
+    // ────────────────────────────────────────────────────────
 
     // ── VÍNCULO AUTOMÁTICO COOPERADO → PRODUTOR ──────────────
     try {
@@ -506,54 +553,89 @@ export default function NovoCooperadoPage() {
           {abaAtiva === 'propriedade' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <AlertBanner tipo="info">
-                Preencha apenas se o cooperado possuir propriedade rural vinculada. Todos os campos são opcionais.
+                Um cooperado pode ter mais de uma propriedade rural vinculada. Adicione quantas forem necessárias (opcional).
               </AlertBanner>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
-                <Field label="Nome da propriedade">
-                  <Input type="text" value={form.nome_propriedade} onChange={set('nome_propriedade')} placeholder="Sítio São João" />
-                </Field>
-                <Field label="Área total (ha)">
-                  <Input type="number" value={form.area_total_ha} onChange={set('area_total_ha')} placeholder="12.5" min="0" step="0.01" />
-                </Field>
-              </div>
+              {propriedades.length === 0 && !mostrarFormPropriedade && (
+                <div style={{ fontSize: 13, color: COM_C.txtSub }}>Nenhuma propriedade adicionada.</div>
+              )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Field label="Latitude">
-                  <Input type="number" value={form.latitude} onChange={set('latitude')} placeholder="-15.7801" step="any" />
-                </Field>
-                <Field label="Longitude">
-                  <Input type="number" value={form.longitude} onChange={set('longitude')} placeholder="-47.9292" step="any" />
-                </Field>
-              </div>
+              {propriedades.map((p, idx) => (
+                <div key={idx} style={{
+                  border: `1px solid ${COM_C.borda}`, borderRadius: 10, padding: '12px 16px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                }}>
+                  <div style={{ fontSize: 13, color: COM_C.txt }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>{p.nome || 'Propriedade sem nome'}</div>
+                    <div style={{ color: COM_C.txtSub, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                      {p.area_total_ha && <span>{p.area_total_ha} ha</span>}
+                      {p.caf_numero && <span>CAF {p.caf_numero}</span>}
+                      {p.dap_numero && <span>DAP {p.dap_numero}</span>}
+                      {(p.latitude && p.longitude) && <span>{p.latitude}, {p.longitude}</span>}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => removerPropriedadeLocal(idx)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: COM_C.vermelho, fontSize: 13 }}>
+                    <i className="ti ti-trash" />
+                  </button>
+                </div>
+              ))}
 
-              <hr style={{ border: 'none', borderTop: `1px solid ${COM_C.borda}`, margin: '0.25rem 0' }} />
-              <p style={{ fontSize: 12, fontWeight: 600, color: COM_C.txtSub, margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CAF / DAP</p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Field label="Número CAF">
-                  <Input type="text" value={form.caf_numero} onChange={set('caf_numero')} placeholder="CAF-000000" />
-                </Field>
-                <Field label="Situação CAF">
-                  <Select value={form.caf_situacao} onChange={set('caf_situacao')}>
-                    <option value="">Selecione</option>
-                    {CAF_SITUACOES.map(s => (
-                      <option key={s} value={s}>
-                        {s === 'ativo' ? 'Ativo' : s === 'vencido' ? 'Vencido' : s === 'em_renovacao' ? 'Em renovação' : 'Cancelado'}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Field label="Validade CAF">
-                  <Input type="date" value={form.caf_validade} onChange={set('caf_validade')} />
-                </Field>
-                <Field label="Número DAP">
-                  <Input type="text" value={form.dap_numero} onChange={set('dap_numero')} placeholder="DAP-000000" />
-                </Field>
-              </div>
+              {mostrarFormPropriedade ? (
+                <div style={{ border: `1px dashed ${COM_C.borda}`, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
+                    <Field label="Nome da propriedade">
+                      <Input type="text" value={formPropriedade.nome} onChange={e => setFormPropriedade(f => ({ ...f, nome: e.target.value }))} placeholder="Sítio São João" />
+                    </Field>
+                    <Field label="Área total (ha)">
+                      <Input type="number" value={formPropriedade.area_total_ha} onChange={e => setFormPropriedade(f => ({ ...f, area_total_ha: e.target.value }))} placeholder="12.5" min="0" step="0.01" />
+                    </Field>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Latitude">
+                      <Input type="number" value={formPropriedade.latitude} onChange={e => setFormPropriedade(f => ({ ...f, latitude: e.target.value }))} placeholder="-15.7801" step="any" />
+                    </Field>
+                    <Field label="Longitude">
+                      <Input type="number" value={formPropriedade.longitude} onChange={e => setFormPropriedade(f => ({ ...f, longitude: e.target.value }))} placeholder="-47.9292" step="any" />
+                    </Field>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Número CAF">
+                      <Input type="text" value={formPropriedade.caf_numero} onChange={e => setFormPropriedade(f => ({ ...f, caf_numero: e.target.value }))} placeholder="CAF-000000" />
+                    </Field>
+                    <Field label="Situação CAF">
+                      <Select value={formPropriedade.caf_situacao} onChange={e => setFormPropriedade(f => ({ ...f, caf_situacao: e.target.value }))}>
+                        <option value="">Selecione</option>
+                        {CAF_SITUACOES.map(s => (
+                          <option key={s} value={s}>
+                            {s === 'ativo' ? 'Ativo' : s === 'vencido' ? 'Vencido' : s === 'em_renovacao' ? 'Em renovação' : 'Cancelado'}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Field label="Validade CAF">
+                      <Input type="date" value={formPropriedade.caf_validade} onChange={e => setFormPropriedade(f => ({ ...f, caf_validade: e.target.value }))} />
+                    </Field>
+                    <Field label="Número DAP">
+                      <Input type="text" value={formPropriedade.dap_numero} onChange={e => setFormPropriedade(f => ({ ...f, dap_numero: e.target.value }))} placeholder="DAP-000000" />
+                    </Field>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Btn type="button" variante="roxo" icone="ti-check" onClick={adicionarPropriedadeLocal}>
+                      Adicionar à lista
+                    </Btn>
+                    <Btn type="button" variante="cinza" onClick={() => { setMostrarFormPropriedade(false); setFormPropriedade(PROPRIEDADE_FORM_INICIAL) }}>
+                      Cancelar
+                    </Btn>
+                  </div>
+                </div>
+              ) : (
+                <Btn type="button" variante="cinza" icone="ti-plus" onClick={() => setMostrarFormPropriedade(true)}>
+                  Adicionar propriedade
+                </Btn>
+              )}
             </div>
           )}
 
@@ -614,14 +696,19 @@ export default function NovoCooperadoPage() {
 
           <div style={{ display: 'flex', gap: 8 }}>
             {abaIdx < ABAS.length - 1 ? (
-              <Btn
-                type="button"
-                variante="roxo"
-                icone="ti-arrow-right"
-                onClick={() => setAbaAtiva(ABAS[abaIdx + 1].id)}
-              >
-                Próximo
-              </Btn>
+              <>
+                <Btn type="button" variante="cinza" icone="ti-check" disabled={salvando} onClick={salvar}>
+                  {salvando ? 'Salvando…' : 'Salvar'}
+                </Btn>
+                <Btn
+                  type="button"
+                  variante="roxo"
+                  icone="ti-arrow-right"
+                  onClick={() => setAbaAtiva(ABAS[abaIdx + 1].id)}
+                >
+                  Próximo
+                </Btn>
+              </>
             ) : (
               <Btn type="submit" variante="roxo" icone="ti-check" disabled={salvando}>
                 {salvando ? 'Salvando…' : 'Salvar filiado'}
