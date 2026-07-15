@@ -37,8 +37,12 @@
 | 060 | cooperados/produtores: +conjuge_nome, +conjuge_cpf (+conjuge_ie_produtor_rural em produtores); notas_entrega: +destinatario_nome, +destinatario_cpf, +destinatario_ie, +emitido_como — permite emitir NF-e de entrada em nome do cônjuge |
 | 061 | configuracoes_contabeis: +classificacao_automatica BOOLEAN DEFAULT TRUE — toggle na escrituração automática Financeiro → Contábil |
 | 062 | empresas_parceiras: +acesso_fiscal BOOLEAN — parceiro contábil acessa /comercializacao/fiscal na org cliente |
+| 063 | entradas_cota_caixa |
+| 064 | fix recompute de saldos_produto: trigger passa a RECALCULAR (SUM da ledger) em vez de incremental, cobre INSERT/UPDATE/DELETE |
+| 065 | contas_produtor: +CHECK saldo_financeiro >= 0 (venda antecipada — saldo de produto pode ficar negativo, saldo em R$ nunca) |
+| 066 | propriedades_rurais (NOVA) — lista de propriedades por cooperado (0..N), substitui os campos soltos em cooperados |
 
-**Próxima migration:** 063
+**Próxima migration:** 067
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -80,6 +84,7 @@
   - Cotação ativa: WHERE vigente_a_partir_de <= now() ORDER BY vigente_a_partir_de DESC LIMIT 1
   - UNIQUE antigo (org, produto, data) removido — múltiplas cotações no mesmo dia são permitidas
 - `movimentacoes_conta` — +cotacao_id uuid FK → cotacoes (nullable; obrigatório apenas em tipo='conversao', validado na action)
+- `contas_produtor` — +CHECK saldo_financeiro >= 0 (migration 065, NOT VALID + validada em produção). `saldos_produto.quantidade` PODE ficar negativo (venda antecipada / débito de produto); saldo_financeiro NUNCA. Cascata em `registrarSaquePorValor` (lib/comercializacao/caixa.actions.ts): cobre o que der do saldo em R$, converte o restante em produto
 - `lotes` — codigo, peso_total_kg (mantido por trigger), status (rascunho|aberto|em_venda|entregue), produto_descricao (legacy, só para NF-es emitidas antes de 052), data_fechamento, safra_id
   - SEM produto_id — removido na migration 052
   - Produtos do lote vivem em `lote_itens`
@@ -112,6 +117,9 @@
 - `loja_estoque_movimentos`
 - `loja_notas_fiscais`
 - `loja_unidades` — unidades dinâmicas por org
+
+### Cooperados — Propriedades
+- `propriedades_rurais` (NOVA — migration 066) — cooperado_id FK, 0..N por cooperado. nome, area_total_ha, latitude, longitude, caf_numero, caf_situacao, caf_validade, dap_numero. Substitui os campos soltos que existiam em `cooperados` (nome_propriedade, area_total_ha etc. — mantidos na tabela por compatibilidade, não usados pela UI a partir da 066)
 
 ### Cooperados — Cotas
 - `grupos_colaboradores` — grupos por org (com/sem CNPJ, criação inline)

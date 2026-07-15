@@ -1,5 +1,20 @@
 # NexCoop — Changelog
 
+## 2026-07-14 / 2026-07-15
+
+### feat(comercializacao): venda antecipada — saldo negativo em produto, nunca em R$
+- Migration 065: `contas_produtor` +CHECK `saldo_financeiro >= 0` (NOT VALID, validada em produção após correção do achado pré-existente)
+- `registrarSaquePorValor` (cascata): cobre o que der do saldo em R$, converte o restante em produto (débito, liquida sozinho na próxima entrega)
+- `registrarSaqueFinanceiro`: guarda de aplicação contra saldo negativo (defesa em profundidade além do CHECK)
+- `getSaldosProdutoParaSelecao`: catálogo completo de produtos + saldo do produtor, pro autocomplete
+- Caixa (Pagar produtor / Saque financeiro): autocomplete sem filtrar por saldo positivo, confirmação de venda antecipada, saldo negativo em vermelho
+- Perfil do produtor: saldo negativo em vermelho
+
+### feat(cooperados): lista de propriedades rurais + botão Salvar em toda aba
+- Migration 066: tabela `propriedades_rurais` (0..N por cooperado), migra o que já existia nos campos soltos de `cooperados`
+- Aba "Propriedade rural" (cadastro/edição/perfil): lista de propriedades com botão "+ Adicionar propriedade" em vez de um único conjunto de campos
+- Botão "Salvar" adicionado em toda aba do cadastro/edição de cooperado (antes só existia na última aba)
+
 ## 2026-07-04
 
 ### feat(ui): redesign captacao, loja, contabil, config e escritorio
