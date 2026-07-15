@@ -389,9 +389,9 @@ export default function PerfilProdutorPage() {
   if (carregando) return <div style={{ padding: '32px', color: COM_C.txtSub, fontFamily: 'system-ui' }}>Carregando...</div>
   if (!produtor) return <div style={{ padding: '32px', color: COM_C.txtSub, fontFamily: 'system-ui' }}>Produtor não encontrado.</div>
 
-  const allSaldosProduto = conta?.saldos_produto ?? []
+  const allSaldosProduto = (conta?.saldos_produto ?? []).filter(s => s.quantidade !== 0)
   const mainSaldo = allSaldosProduto.length > 0
-    ? allSaldosProduto.reduce((max, s) => s.quantidade > max.quantidade ? s : max, allSaldosProduto[0])
+    ? allSaldosProduto.reduce((max, s) => Math.abs(s.quantidade) > Math.abs(max.quantidade) ? s : max, allSaldosProduto[0])
     : null
   const mainPrevisao = mainSaldo ? (previsoes.find(p => p.produto_id === mainSaldo.produtos.id) ?? null) : null
   const saldoFinanceiro = conta?.saldo_financeiro ?? 0
@@ -760,9 +760,11 @@ export default function PerfilProdutorPage() {
               {mainSaldo ? (
                 <>
                   <div style={{ fontSize: '11px', color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-                    {mainSaldo.produtos.nome}
+                    {mainSaldo.produtos.nome}{mainSaldo.quantidade < 0 ? ' (devendo)' : ''}
                   </div>
-                  <KgDisplay valor={mainSaldo.quantidade} fontSize={22} />
+                  {mainSaldo.quantidade < 0
+                    ? <div style={{ fontSize: 22, fontWeight: 700, color: COM_C.vermelho }}>−<KgDisplay valor={Math.abs(mainSaldo.quantidade)} fontSize={22} cor={COM_C.vermelho} /></div>
+                    : <KgDisplay valor={mainSaldo.quantidade} fontSize={22} />}
                   <div style={{ marginTop: '8px' }}>
                     {carregandoPrevisao ? (
                       <div style={{ fontSize: '12px', color: '#9a9a9a' }}>calculando...</div>

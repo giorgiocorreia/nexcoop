@@ -7,12 +7,12 @@ import {
   getSessaoAberta, abrirCaixa, fecharCaixa,
   buscarProdutor, getContaProdutor, getExtrato,
   registrarEntrega, registrarEntregaComRateio,
-  registrarConversaoESaque, registrarSaqueFinanceiro,
+  registrarConversaoESaque, registrarSaqueFinanceiro, registrarSaquePorValor,
   listarSolicitacoesPendentes, getProdutorParaRateio,
   getOperacoesHoje, listarAdminsDaOrg,
   registrarAporteSangria, getAportesESangriasDaSessao,
   getProdutorPorId, listarCategoriasDesp, registrarSaidaAvulsa,
-  criarCategoriaDesp,
+  criarCategoriaDesp, getSaldosProdutoParaSelecao,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
@@ -173,7 +173,9 @@ export default function CaixaPage() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '' })
   const [formReceber, setFormReceber] = useState({ produto_id: '', quantidade: '', preco_kg: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
-  const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
+  const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '', produto_id: '', preco_kg: '' })
+  const [saldosSelecao, setSaldosSelecao] = useState<{ produto_id: string; nome: string; unidade: string; saldo: number }[]>([])
+  const [confirmarAntecipacao, setConfirmarAntecipacao] = useState<{ tipo: 'receber' | 'saque'; mensagem: string } | null>(null)
   const [statusOp, setStatusOp] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([])
@@ -497,6 +499,8 @@ export default function CaixaPage() {
     if (c) {
       const ext = await getExtrato((c as unknown as Conta).id)
       setExtrato((ext ?? []) as unknown as Movimentacao[])
+      const saldos = await getSaldosProdutoParaSelecao((c as unknown as Conta).id)
+      setSaldosSelecao(saldos)
     }
     setOperacao(null)
     setFormReceber(f => ({ ...f, chave_pix: p.chave_pix ?? '' }))
@@ -586,9 +590,20 @@ export default function CaixaPage() {
     finally { setSalvandoRateio(false) }
   }
 
-  async function handleReceber() {
+  async function handleReceber(force = false) {
     if (!sessao || !conta || !formReceber.produto_id || !formReceber.quantidade || !formReceber.preco_kg) return
     const qtd = parseFloat(formReceber.quantidade), preco = parseFloat(formReceber.preco_kg)
+    const saldoAtual = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.saldo ?? 0
+    if (!force && qtd > saldoAtual) {
+      const ficaDevendo = (qtd - saldoAtual).toFixed(3)
+      const nomeProduto = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.nome ?? 'produto'
+      setConfirmarAntecipacao({
+        tipo: 'receber',
+        mensagem: `${produtorSelecionado?.nome} tem ${saldoAtual.toFixed(3)} de saldo em ${nomeProduto} e está vendendo ${qtd.toFixed(3)} — vai ficar devendo ${ficaDevendo}. Confirmar venda antecipada?`
+      })
+      return
+    }
+    setConfirmarAntecipacao(null)
     setStatusOp('salvando')
     try {
       const result = await registrarConversaoESaque({
@@ -604,16 +619,37 @@ export default function CaixaPage() {
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
   }
 
-  async function handleSaque() {
+  async function handleSaque(force = false) {
     if (!sessao || !conta || !formSaque.valor) return
+    const valor = parseFloat(formSaque.valor)
+    const restante = Number((valor - Math.max(conta.saldo_financeiro, 0)).toFixed(2))
+    if (restante > 0 && !force) {
+      if (!formSaque.produto_id || !formSaque.preco_kg) {
+        setErroMsg('Saldo em conta insuficiente: selecione um produto e o preço para cobrir o restante (venda antecipada).')
+        setStatusOp('erro')
+        return
+      }
+      const qtdProduto = restante / parseFloat(formSaque.preco_kg)
+      const saldoAtual = saldosSelecao.find(s => s.produto_id === formSaque.produto_id)?.saldo ?? 0
+      const nomeProduto = saldosSelecao.find(s => s.produto_id === formSaque.produto_id)?.nome ?? 'produto'
+      const ficaDevendo = (qtdProduto - saldoAtual).toFixed(3)
+      setConfirmarAntecipacao({
+        tipo: 'saque',
+        mensagem: `Saldo em conta cobre ${fmtReal(Math.max(conta.saldo_financeiro, 0))}. O restante (${fmtReal(restante)}) será convertido em ${qtdProduto.toFixed(3)} de ${nomeProduto} — ${produtorSelecionado?.nome} vai ficar devendo ${ficaDevendo}. Confirmar venda antecipada?`
+      })
+      return
+    }
+    setConfirmarAntecipacao(null)
     setStatusOp('salvando')
     try {
-      await registrarSaqueFinanceiro({
-        sessao_id: sessao.id, conta_id: conta.id,
-        valor_financeiro: parseFloat(formSaque.valor),
-        forma_pagamento: formSaque.forma_pagamento, chave_pix: formSaque.chave_pix || undefined
+      await registrarSaquePorValor({
+        sessao_id: sessao.id, produtor_id: produtorSelecionado!.id, conta_id: conta.id,
+        valor_total: valor,
+        forma_pagamento: formSaque.forma_pagamento, chave_pix: formSaque.chave_pix || undefined,
+        produto_id: formSaque.produto_id || undefined,
+        preco_unitario: formSaque.preco_kg ? parseFloat(formSaque.preco_kg) : undefined
       })
-      setFormSaque(f => ({ ...f, valor: '' }))
+      setFormSaque(f => ({ ...f, valor: '', produto_id: '', preco_kg: '' }))
       await recarregarConta(); await recarregarSessao()
       setStatusOp('sucesso'); setTimeout(() => setStatusOp('idle'), 3000)
     } catch (e: any) { setErroMsg(e.message); setStatusOp('erro') }
@@ -625,7 +661,12 @@ export default function CaixaPage() {
     if (!produtorSelecionado) return
     const c = await getContaProdutor(produtorSelecionado.id)
     setConta(c as unknown as Conta | null)
-    if (c) { const ext = await getExtrato((c as unknown as Conta).id); setExtrato((ext ?? []) as unknown as Movimentacao[]) }
+    if (c) {
+      const ext = await getExtrato((c as unknown as Conta).id)
+      setExtrato((ext ?? []) as unknown as Movimentacao[])
+      const saldos = await getSaldosProdutoParaSelecao((c as unknown as Conta).id)
+      setSaldosSelecao(saldos)
+    }
   }
 
   async function handleFecharCaixa() {
@@ -795,6 +836,25 @@ export default function CaixaPage() {
     <>
       {modalNfe && (
         <ModalNfeEntrada movimentacao_id={modalNfe} onClose={() => setModalNfe(null)} />
+      )}
+
+      {confirmarAntecipacao && (
+        <Modal
+          titulo="Venda antecipada"
+          subtitulo="Confirmação necessária"
+          onClose={() => setConfirmarAntecipacao(null)}
+          largura={440}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setConfirmarAntecipacao(null)}>Cancelar</Btn>
+              <Btn variante="marrom" icone="ti-check" onClick={() => confirmarAntecipacao.tipo === 'receber' ? handleReceber(true) : handleSaque(true)}>
+                Confirmar
+              </Btn>
+            </>
+          }
+        >
+          <p style={{ fontSize: 14, color: COM_C.txt, lineHeight: 1.5 }}>{confirmarAntecipacao.mensagem}</p>
+        </Modal>
       )}
 
       {modalAporte && (
@@ -1195,10 +1255,16 @@ export default function CaixaPage() {
                 action={<Badge label={produtorSelecionado.tipo === 'cooperado' ? 'Cooperado' : 'Externo'} bg={COM_C.marromLt} cor={COM_C.marrom} />}
               >
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {conta.saldos_produto?.filter(s => s.quantidade > 0).map(s => (
-                    <div key={s.produto_id} style={{ background: COM_C.marromLt, border: '1px solid #fde68a', borderRadius: 8, padding: '8px 14px', textAlign: 'center' }}>
-                      <KgDisplay valor={s.quantidade} fontSize={16} cor={COM_C.marrom} />
-                      <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>{s.produtos.nome}</div>
+                  {conta.saldos_produto?.filter(s => s.quantidade !== 0).map(s => (
+                    <div key={s.produto_id} style={{
+                      background: s.quantidade < 0 ? COM_C.vermelhoLt : COM_C.marromLt,
+                      border: s.quantidade < 0 ? '1px solid #fecaca' : '1px solid #fde68a',
+                      borderRadius: 8, padding: '8px 14px', textAlign: 'center'
+                    }}>
+                      {s.quantidade < 0
+                        ? <div style={{ fontSize: 16, fontWeight: 700, color: COM_C.vermelho }}>−<KgDisplay valor={Math.abs(s.quantidade)} fontSize={16} cor={COM_C.vermelho} /></div>
+                        : <KgDisplay valor={s.quantidade} fontSize={16} cor={COM_C.marrom} />}
+                      <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>{s.produtos.nome}{s.quantidade < 0 ? ' (devendo)' : ''}</div>
                     </div>
                   ))}
                   {conta.saldo_financeiro > 0 && (
@@ -1292,9 +1358,9 @@ export default function CaixaPage() {
                       <Select value={formReceber.produto_id}
                         onChange={e => { setFormReceber(f => ({ ...f, produto_id: e.target.value })); carregarCotacao(e.target.value) }}>
                         <option value="">Selecionar...</option>
-                        {conta.saldos_produto?.filter(s => s.quantidade > 0).map(s => (
+                        {saldosSelecao.map(s => (
                           <option key={s.produto_id} value={s.produto_id}>
-                            {s.produtos.nome} ({(() => { const {inteiro, decimal} = formatarKg(s.quantidade); return inteiro + decimal })()}{s.produtos.unidade})
+                            {s.nome} (saldo: {s.saldo.toFixed(3)}{s.unidade})
                           </option>
                         ))}
                       </Select>
@@ -1325,7 +1391,7 @@ export default function CaixaPage() {
                         <PixInput value={formReceber.chave_pix} onChange={v => setFormReceber(f => ({ ...f, chave_pix: v }))} />
                       </div>
                     )}
-                    <Btn variante="verde" disabled={statusOp === 'salvando'} onClick={handleReceber}>
+                    <Btn variante="verde" disabled={statusOp === 'salvando'} onClick={() => handleReceber(false)}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar pagamento'}
                     </Btn>
                   </div>
@@ -1352,10 +1418,30 @@ export default function CaixaPage() {
                         <PixInput value={formSaque.chave_pix} onChange={v => setFormSaque(f => ({ ...f, chave_pix: v }))} />
                       </div>
                     )}
-                    <Btn variante="marrom" disabled={statusOp === 'salvando'} onClick={handleSaque}>
+                    <Btn variante="marrom" disabled={statusOp === 'salvando'} onClick={() => handleSaque(false)}>
                       {statusOp === 'salvando' ? 'Salvando...' : 'Confirmar saque'}
                     </Btn>
                   </div>
+                  {formSaque.valor && parseFloat(formSaque.valor) > Math.max(conta.saldo_financeiro, 0) && (
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COM_C.borda}` }}>
+                      <div style={{ fontSize: 13, color: COM_C.txtSub, width: '100%' }}>
+                        Valor excede o saldo em conta — o restante ({fmtReal(parseFloat(formSaque.valor) - Math.max(conta.saldo_financeiro, 0))}) precisa ser convertido em produto (venda antecipada):
+                      </div>
+                      <Field label="Produto (venda antecipada)">
+                        <Select value={formSaque.produto_id} onChange={e => setFormSaque(f => ({ ...f, produto_id: e.target.value }))}>
+                          <option value="">Selecionar...</option>
+                          {saldosSelecao.map(s => (
+                            <option key={s.produto_id} value={s.produto_id}>{s.nome} (saldo: {s.saldo.toFixed(3)}{s.unidade})</option>
+                          ))}
+                        </Select>
+                      </Field>
+                      <Field label="Preço/kg (R$)">
+                        <Input type="number" step="0.01" placeholder="0,00" value={formSaque.preco_kg}
+                          onChange={e => setFormSaque(f => ({ ...f, preco_kg: e.target.value }))}
+                          style={{ width: 100 }} />
+                      </Field>
+                    </div>
+                  )}
                 </ContentCard>
               )}
               {operacao === 'saque' && <div style={{ height: 16 }} />}

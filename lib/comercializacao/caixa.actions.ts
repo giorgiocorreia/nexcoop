@@ -151,6 +151,36 @@ export async function getContaProdutor(produtor_id: string) {
   return data
 }
 
+// Base pro autocomplete de "Pagar produtor": TODOS os produtos catalogados,
+// com o saldo atual do produtor (0 se nunca houve movimento — hoje
+// saldos_produto só tem linha pra quem já movimentou, então sem isso produto
+// nunca-movimentado simplesmente não aparecia como opção).
+export async function getSaldosProdutoParaSelecao(conta_id: string) {
+  const usuario = await getUsuarioLogado()
+  const supabase = createAdminClient()
+  const [{ data: produtos, error: e1 }, { data: saldos, error: e2 }] = await Promise.all([
+    supabase
+      .from('produtos')
+      .select('id, nome, unidade')
+      .eq('organizacao_id', usuario.organizacao_id as string)
+      .eq('ativo', true)
+      .order('nome'),
+    supabase
+      .from('saldos_produto')
+      .select('produto_id, quantidade')
+      .eq('conta_id', conta_id)
+  ])
+  if (e1) throw new Error(e1.message)
+  if (e2) throw new Error(e2.message)
+  const saldoPorProduto = new Map((saldos ?? []).map(s => [s.produto_id, s.quantidade as number]))
+  return (produtos ?? []).map(p => ({
+    produto_id: p.id,
+    nome: p.nome,
+    unidade: p.unidade,
+    saldo: saldoPorProduto.get(p.id) ?? 0
+  }))
+}
+
 export async function getProdutorPorId(produtor_id: string) {
   const supabase = createAdminClient()
   const { data, error } = await supabase
@@ -401,6 +431,19 @@ export async function registrarSaqueFinanceiro(params: {
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
+
+  const { data: conta } = await supabase
+    .from('contas_produtor')
+    .select('saldo_financeiro')
+    .eq('id', params.conta_id)
+    .single()
+  const saldoAtual = (conta?.saldo_financeiro as number) ?? 0
+  if (params.valor_financeiro > saldoAtual) {
+    throw new Error(
+      `Saldo insuficiente: conta tem R$ ${saldoAtual.toFixed(2)}, saque de R$ ${params.valor_financeiro.toFixed(2)} solicitado.`
+    )
+  }
+
   const tipoSaque = params.forma_pagamento === 'pix' ? 'saque_pix' : 'saque_especie'
   const { error } = await supabase
     .from('movimentacoes_conta')
@@ -426,6 +469,78 @@ export async function registrarSaqueFinanceiro(params: {
       .from('sessoes_caixa')
       .update({ [campo]: (sessao[campo as keyof typeof sessao] as number ?? 0) + params.valor_financeiro } as any)
       .eq('id', params.sessao_id)
+  }
+}
+
+// Cascata do "saque financeiro": cobre o que der do saldo em R$ (nunca deixa
+// negativar) e converte o restante em produto (venda antecipada — pode
+// deixar saldos_produto negativo, essa parte é permitida e liquida sozinha
+// quando o produtor entregar). Reusa as duas primitivas já existentes em vez
+// de duplicar a lógica de inserção nas movimentações.
+export async function registrarSaquePorValor(params: {
+  sessao_id: string
+  produtor_id: string
+  conta_id: string
+  valor_total: number
+  forma_pagamento: 'especie' | 'pix'
+  chave_pix?: string
+  produto_id?: string
+  preco_unitario?: number
+  observacoes?: string
+}): Promise<{
+  usou_saldo: number
+  converteu_produto: number
+  quantidade_produto: number
+  valor_total_processado: number
+}> {
+  const supabase = createAdminClient()
+  const { data: conta } = await supabase
+    .from('contas_produtor')
+    .select('saldo_financeiro')
+    .eq('id', params.conta_id)
+    .single()
+  const saldoAtual = (conta?.saldo_financeiro as number) ?? 0
+
+  const usarDoSaldo = Math.min(params.valor_total, Math.max(saldoAtual, 0))
+  const restante = Number((params.valor_total - usarDoSaldo).toFixed(2))
+
+  if (restante > 0 && (!params.produto_id || !params.preco_unitario)) {
+    throw new Error('Saldo em conta insuficiente: informe produto e preço para converter o restante (venda antecipada).')
+  }
+
+  if (usarDoSaldo > 0) {
+    await registrarSaqueFinanceiro({
+      sessao_id: params.sessao_id,
+      conta_id: params.conta_id,
+      valor_financeiro: usarDoSaldo,
+      forma_pagamento: params.forma_pagamento,
+      chave_pix: params.chave_pix,
+      observacoes: params.observacoes
+    })
+  }
+
+  let quantidadeProduto = 0
+  if (restante > 0) {
+    quantidadeProduto = Number((restante / params.preco_unitario!).toFixed(3))
+    await registrarConversaoESaque({
+      sessao_id: params.sessao_id,
+      produtor_id: params.produtor_id,
+      conta_id: params.conta_id,
+      produto_id: params.produto_id!,
+      quantidade_produto: quantidadeProduto,
+      preco_unitario: params.preco_unitario!,
+      valor_financeiro: restante,
+      forma_pagamento: params.forma_pagamento,
+      chave_pix: params.chave_pix,
+      observacoes: params.observacoes
+    })
+  }
+
+  return {
+    usou_saldo: usarDoSaldo,
+    converteu_produto: restante,
+    quantidade_produto: quantidadeProduto,
+    valor_total_processado: usarDoSaldo + restante
   }
 }
 
