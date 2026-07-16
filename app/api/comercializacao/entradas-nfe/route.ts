@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
         produtores (nome, cpf)
       `)
       .eq("organizacao_id", usuario.organizacao_id)
-      .in("status", ["autorizada", "emitida"])
+      // 'processando' entra na lista para permitir a consulta manual do status
+      // na Focus (botão Consultar → /api/nfe/sincronizar) — sem isso a nota
+      // que fica presa em processamento nunca sai desse estado.
+      .in("status", ["autorizada", "emitida", "processando"])
       .order("created_at", { ascending: false })
 
     if (error) return NextResponse.json([], { status: 500 })

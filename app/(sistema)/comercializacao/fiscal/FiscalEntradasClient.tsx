@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { fmt } from "@/lib/fmt"
 import { HubStyles } from "@/components/comercializacao/ui/HubStyles"
 import { ContentCard } from "@/components/comercializacao/ui/ContentCard"
@@ -15,12 +15,40 @@ async function listarEntradasComercializacao(orgId: string) {
 }
 
 export default function FiscalEntradasClient({ orgId }: { orgId: string }) {
-  const [dados, setDados]     = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [dados, setDados]           = useState<any[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [consultando, setConsultando] = useState<string | null>(null)
+  const [erro, setErro]             = useState<string | null>(null)
 
-  useEffect(() => {
-    listarEntradasComercializacao(orgId).then((d: any[]) => { setDados(d); setLoading(false) })
+  const carregar = useCallback(() => {
+    return listarEntradasComercializacao(orgId).then((d: any[]) => { setDados(d); setLoading(false) })
   }, [orgId])
+
+  useEffect(() => { carregar() }, [carregar])
+
+  async function handleConsultar(notaId: string) {
+    setConsultando(notaId)
+    setErro(null)
+    try {
+      const res = await fetch("/api/nfe/sincronizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nota_id: notaId }),
+      })
+      const json = await res.json()
+      if (json.sucesso) {
+        await carregar()
+      } else {
+        setErro(json.status === "processando_autorizacao"
+          ? "Ainda em processamento na SEFAZ. Tente novamente em instantes."
+          : (json.erro ?? "Não foi possível consultar o status da nota."))
+      }
+    } catch {
+      setErro("Não foi possível consultar o status da nota.")
+    } finally {
+      setConsultando(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -43,6 +71,11 @@ export default function FiscalEntradasClient({ orgId }: { orgId: string }) {
   return (
     <>
       <HubStyles />
+      {erro && (
+        <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 8, background: COM_C.laranjaLt, color: COM_C.laranjaTxt, fontSize: 13 }}>
+          {erro}
+        </div>
+      )}
       <ContentCard noPadding>
         <div style={{ overflowX: "auto" }}>
           <table className="com-table" style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -63,7 +96,25 @@ export default function FiscalEntradasClient({ orgId }: { orgId: string }) {
                   <td>{n.quantidade_kg ? fmt.peso(n.quantidade_kg) : "—"}</td>
                   <td style={{ fontWeight: 600 }}>{n.valor_total ? fmt.moeda(n.valor_total) : "—"}</td>
                   <td>
-                    <Badge label="Autorizada" bg={COM_C.verdeLt} cor={COM_C.verde} dot />
+                    {n.status === "processando" ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <Badge label="Processando" bg={COM_C.laranjaLt} cor={COM_C.laranjaTxt} dot />
+                        <button
+                          onClick={() => handleConsultar(n.id)}
+                          disabled={consultando === n.id}
+                          style={{
+                            fontSize: 12, fontWeight: 600, color: "#185FA5",
+                            background: "none", border: `1px solid ${COM_C.borda}`,
+                            borderRadius: 6, padding: "3px 10px",
+                            cursor: consultando === n.id ? "wait" : "pointer",
+                          }}
+                        >
+                          {consultando === n.id ? "Consultando..." : "Consultar"}
+                        </button>
+                      </span>
+                    ) : (
+                      <Badge label="Autorizada" bg={COM_C.verdeLt} cor={COM_C.verde} dot />
+                    )}
                   </td>
                 </tr>
               ))}
