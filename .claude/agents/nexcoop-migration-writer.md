@@ -1,6 +1,6 @@
 ---
 name: nexcoop-migration-writer
-description: Especialista em migrations Supabase do NexCoop. Use quando precisar criar ou alterar schema do banco — novas tabelas, colunas, índices, triggers, RLS policies, views. Entrega obrigatória: (1) SQL para executar no Dashboard e (2) arquivo de migration em supabase/migrations/. NUNCA use para lógica de negócio, componentes React ou server actions.
+description: "Especialista em migrations Supabase do NexCoop. Use quando precisar criar ou alterar schema do banco — novas tabelas, colunas, índices, triggers, RLS policies, views. Entrega obrigatória — (1) SQL para executar no Dashboard e (2) arquivo de migration em supabase/migrations/. NUNCA use para lógica de negócio, componentes React ou server actions."
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
 ---
