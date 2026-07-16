@@ -75,8 +75,11 @@ export async function processarPagamentoVendaAction(
           quantidade_kg_original:  (venda as any).quantidade_kg_original ?? venda.quantidade_kg,
           valor_bruto_original:    (venda as any).valor_bruto_original   ?? venda.valor_bruto,
           quantidade_kg_devolvida: quantidadeKg,
+          // valor_bruto é GENERATED (quantidade_kg * preco_kg) — o Postgres
+          // rejeita UPDATE direto (428C9); ele recalcula sozinho ao mudar
+          // quantidade_kg. O lançamento de recebimento usa valorFinal, que
+          // considera o valor_unitario da devolução e as quebras de peso.
           quantidade_kg:           quantidadeFinal,
-          valor_bruto:             valorFinal,
           status_nfe:              "devolvida",
           status:                  "pago",
         } as any)
