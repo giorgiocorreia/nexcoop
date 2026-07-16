@@ -9,6 +9,7 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [x] Resetar chaves do Supabase (anon + service_role) e atualizar `.env.local` e Vercel
 - [x] Hotmail/Outlook DMARC (TXT `_dmarc` no Registro.br + DKIM Zoho)
 - [x] Domínio nexcoop.com.br ativo na Vercel
+- [ ] Definir `EVOLUTION_WEBHOOK_SECRET` (valor aleatório forte) em `.env.local` e nas env vars da Vercel; garantir que o mesmo valor está configurado como header `x-webhook-secret` no painel/config da Evolution API (ver `app/api/whatsapp/_lib/evolution.ts` → `configurarWebhook`, que já envia esse header automaticamente ao registrar o webhook — só reexecutar o registro após definir a env). Sem essa env, o webhook rejeita tudo (fail-closed).
 
 ## 🎨 UI / Design
 
@@ -63,8 +64,8 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [x] IDOR em `vendas.actions.ts` (`atualizarStatusVenda`, `editarVenda`) e `lotes.actions.ts` (`editarLote`) — admin client sem checar `organizacao_id` nem usuário logado
 - [x] `app/api/nfe/sincronizar` sem autenticação — atualiza `notas_entrega` por id sem checar org
 - [x] Deletar rota de debug `app/api/debug-vendas` (pública, admin client, org hardcoded)
-- [ ] Escopo de módulo do parceiro contábil (`parceiro_org_id`) só é checado ao setar o cookie, não a cada request — reaplicar `modulos_acesso` por request
-- [ ] Webhook WhatsApp (`app/api/whatsapp/webhook`) sem validação de assinatura/origem + remover `console.log` de payload completo
+- [x] Escopo de módulo do parceiro contábil (`parceiro_org_id`) só é checado ao setar o cookie, não a cada request — reaplicar `modulos_acesso` por request
+- [x] Webhook WhatsApp (`app/api/whatsapp/webhook`) sem validação de assinatura/origem + remover `console.log` de payload completo
 - [ ] Padronizar erros de API (não retornar `error.message`/`String(e)` cru ao cliente)
 - [ ] Validação Zod na fronteira das server actions (hoje `form` do cliente vai direto pro insert/update)
 - [ ] Limpar lixo versionado: `middleware.ts.bak`, `tsc_out.txt`, `tsc_output.txt`, `GerarPage.txt`, `MensalidadesLista.txt`, `.claude/worktrees/` (migrations duplicadas)
@@ -84,4 +85,4 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ---
 
-> Atualizado em: 2026-07-16 — itens 1/3/4 da auditoria corrigidos; transferência interna + quebra de peso concluídas
+> Atualizado em: 2026-07-16 — itens 1/2/3/4/5 da auditoria corrigidos; transferência interna + quebra de peso concluídas

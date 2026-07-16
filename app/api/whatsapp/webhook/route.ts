@@ -1,18 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { enviarMensagem } from '../_lib/evolution'
 import { buscarOuCriarSessao, adicionarMensagemHistorico, atualizarSessao } from '../_lib/session'
 import { gerarResposta } from '../_lib/agent'
 
 const NUMERO_GIORGIO = '5573999693548'
 
+let avisouEnvAusente = false
+
+/**
+ * Valida que o POST veio realmente da Evolution API, comparando o header
+ * `x-webhook-secret` (configurado no painel da Evolution ao registrar o webhook)
+ * com EVOLUTION_WEBHOOK_SECRET em tempo constante — evita timing attack e evita
+ * que qualquer terceiro injete mensagens no fluxo da Mariana.
+ * Fail-closed: sem a env definida, rejeita tudo (não existe um "modo aberto" seguro).
+ */
+function origemValida(request: NextRequest): boolean {
+  const secretEsperado = process.env.EVOLUTION_WEBHOOK_SECRET
+  if (!secretEsperado) {
+    if (!avisouEnvAusente) {
+      console.warn('[whatsapp] EVOLUTION_WEBHOOK_SECRET não configurado — rejeitando webhooks (fail-closed)')
+      avisouEnvAusente = true
+    }
+    return false
+  }
+
+  const recebido = request.headers.get('x-webhook-secret') ?? ''
+  const bufEsperado = Buffer.from(secretEsperado)
+  const bufRecebido = Buffer.from(recebido)
+
+  // timingSafeEqual exige buffers do mesmo tamanho — se o tamanho já difere, é inválido
+  if (bufEsperado.length !== bufRecebido.length) return false
+
+  return timingSafeEqual(bufEsperado, bufRecebido)
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const headersObj: Record<string, string> = {}
-    request.headers.forEach((value, key) => { headersObj[key] = value })
-    console.log('[Headers]', headersObj)
+    if (!origemValida(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const body = await request.json()
-    console.log('[Webhook] body completo:', JSON.stringify(body).slice(0, 500))
 
     // Filtra apenas mensagens recebidas (não enviadas pelo bot)
     const evento = body?.event
@@ -36,13 +65,11 @@ export async function POST(request: NextRequest) {
                   ''
     const nomeContato = mensagem.pushName || null
 
-    console.log('[Webhook] telefone:', telefone, 'texto:', texto)
-
     if (!telefone || !texto.trim()) return NextResponse.json({ ok: true })
 
     // Busca ou cria sessão
     const sessao = await buscarOuCriarSessao(telefone, nomeContato)
-    console.log('[Webhook] sessao:', sessao?.estado)
+    console.log('[whatsapp] evento recebido: messages.upsert, estado:', sessao?.estado)
 
     // Se já foi transferido, não responde automaticamente
     if (sessao.estado === 'transferido') {
@@ -62,11 +89,9 @@ export async function POST(request: NextRequest) {
       historicoAtualizado.slice(0, -1), // histórico sem a última (já é a mensagem atual)
       texto
     )
-    console.log('[Webhook] resposta gerada:', resposta?.slice(0, 50))
 
     // Envia resposta
     await enviarMensagem(telefone, resposta)
-    console.log('[Webhook] mensagem enviada')
 
     // Adiciona resposta ao histórico
     await adicionarMensagemHistorico(
