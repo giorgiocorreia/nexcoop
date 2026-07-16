@@ -32,8 +32,18 @@ export async function processarPagamentoVendaAction(
     if (errVenda || !venda) throw new Error("Venda não encontrada")
     if (venda.status !== "entregue") throw new Error("Venda não está com status entregue")
 
+    // Comprador paga o peso RECEBIDO: quebras de peso registradas reduzem o
+    // valor do recebimento (a cooperativa absorve — ver migration 069).
+    const { data: quebras } = await (supabase as any)
+      .from("vendas_quebras_peso")
+      .select("valor_total")
+      .eq("venda_id", input.vendaId)
+    const totalQuebras = (quebras ?? []).reduce(
+      (soma: number, q: any) => soma + Number(q.valor_total ?? 0), 0
+    )
+
     let quantidadeFinal = venda.quantidade_kg
-    let valorFinal      = venda.valor_bruto
+    let valorFinal      = Math.max(0, Math.round((venda.valor_bruto - totalQuebras) * 100) / 100)
 
     if (input.devolucao) {
       const { quantidadeKg, valorUnitario, chaveNfeDevolucao, xmlNfeDevolucao } = input.devolucao
@@ -57,7 +67,7 @@ export async function processarPagamentoVendaAction(
       if (errDev) throw new Error("Erro ao registrar devolução: " + errDev.message)
 
       quantidadeFinal = venda.quantidade_kg - quantidadeKg
-      valorFinal      = Math.round(quantidadeFinal * valorUnitario * 100) / 100
+      valorFinal      = Math.max(0, Math.round((quantidadeFinal * valorUnitario - totalQuebras) * 100) / 100)
 
       const { error: errUpd } = await supabase
         .from("vendas_externas")
