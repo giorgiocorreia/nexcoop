@@ -35,11 +35,13 @@ export async function editarLote(id: string, form: {
   status?: 'aberto' | 'em_venda' | 'entregue'
   observacoes?: string
 }) {
+  const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('lotes')
     .update(form)
     .eq('id', id)
+    .eq('organizacao_id', usuario.organizacao_id as string)
   if (error) throw new Error(error.message)
 }
 

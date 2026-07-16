@@ -35,11 +35,13 @@ export async function criarVenda(form: {
 }
 
 export async function atualizarStatusVenda(id: string, novoStatus: 'rascunho' | 'confirmada' | 'entregue' | 'paga') {
+  const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('vendas_externas')
     .update({ status: novoStatus })
     .eq('id', id)
+    .eq('organizacao_id', usuario.organizacao_id as string)
   if (error) throw new Error(error.message)
 
   // Propagar status para lotes
@@ -48,9 +50,14 @@ export async function atualizarStatusVenda(id: string, novoStatus: 'rascunho' | 
       .from('vendas_externas')
       .select('lote_id')
       .eq('id', id)
+      .eq('organizacao_id', usuario.organizacao_id as string)
       .single()
     if (venda?.lote_id) {
-      await supabase.from('lotes').update({ status: 'entregue' } as any).eq('id', venda.lote_id)
+      await supabase
+        .from('lotes')
+        .update({ status: 'entregue' } as any)
+        .eq('id', venda.lote_id)
+        .eq('organizacao_id', usuario.organizacao_id as string)
     }
   }
 
@@ -67,10 +74,12 @@ export async function editarVenda(id: string, form: {
   custos_logistica?: number
   observacoes?: string
 }) {
+  const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('vendas_externas')
     .update(form)
     .eq('id', id)
+    .eq('organizacao_id', usuario.organizacao_id as string)
   if (error) throw new Error(error.message)
 }
