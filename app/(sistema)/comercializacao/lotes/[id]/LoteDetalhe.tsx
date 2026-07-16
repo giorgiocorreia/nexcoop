@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { confirmarComposicaoLote, fecharLote, criarVendaExterna, adicionarEntregaAoLote } from '../actions'
 import ModalInformarPagamento from '@/components/comercializacao/ModalInformarPagamento'
+import ModalQuebraPeso from '@/components/comercializacao/ModalQuebraPeso'
 import { marcarVendaEntregueAction } from '@/lib/comercializacao/devolucao'
 import { BotaoNfe } from '@/components/comercializacao/ModalNfeEntrada'
 import { fmt } from '@/lib/fmt'
@@ -42,6 +43,17 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const vendaConfirmada   = nfeAutorizada || (isTransferencia && vendaNfe?.status !== 'rascunho')
   const st                = STATUS_LOTE[lote.status] ?? STATUS_LOTE.rascunho
 
+  // Quebra de peso: comprador paga o peso recebido no destino, não o
+  // faturado — a diferença reduz o valor a receber da venda.
+  const quebrasDaVenda     = (vendaNfe?.vendas_quebras_peso as any[]) ?? []
+  const totalQuebraKg      = quebrasDaVenda.reduce((acc, q) => acc + Number(q.quantidade_kg), 0)
+  const totalQuebraReais   = quebrasDaVenda.reduce((acc, q) => acc + Number(q.valor_total), 0)
+  const saldoMaximoQuebra  = vendaNfe
+    ? Number(vendaNfe.quantidade_kg) - Number(vendaNfe.quantidade_kg_devolvida ?? 0) - totalQuebraKg
+    : 0
+  const valorBrutoEfetivo  = vendaNfe ? Number(vendaNfe.valor_bruto) - totalQuebraReais : 0
+  const podeRegistrarQuebra = vendaNfe && (vendaNfe.status === 'confirmada' || vendaNfe.status === 'entregue')
+
   const todasEntregas = useMemo(() => loteFechado
     ? entregasDoLote.map((e: any) => ({ ...e, _noLote: true }))
     : [...entregasDoLote.map((e: any) => ({ ...e, _noLote: true })), ...entregasDisponiveis.map((e: any) => ({ ...e, _noLote: false }))]
@@ -70,6 +82,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
   const [modalConfirmar, setModalConfirmar]       = useState<{ movimentacaoId: string; cotacaoValor: number } | null>(null)
   const [showModalPagamento, setShowModalPagamento] = useState(false)
+  const [showModalQuebra, setShowModalQuebra]       = useState(false)
   const [processandoEntrega, setProcessandoEntrega] = useState(false)
 
   const toggleEntrega = (id: string) =>
@@ -199,6 +212,18 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
                   <Btn variante="verde" onClick={() => setShowModalPagamento(true)}>
                     Informar pagamento
                   </Btn>
+                )}
+                {podeRegistrarQuebra && (
+                  <Btn variante="cinza" icone="ti-scale" onClick={() => setShowModalQuebra(true)}>
+                    Registrar quebra de peso
+                  </Btn>
+                )}
+                {totalQuebraKg > 0 && (
+                  <Badge
+                    label={`Quebra: -${fmt.peso(totalQuebraKg)} (${fmt.moeda(totalQuebraReais)})`}
+                    bg={COM_C.vermelhoLt}
+                    cor={COM_C.vermelho}
+                  />
                 )}
               </>
             ) : (
@@ -406,10 +431,21 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
       {/* Modal pagamento */}
       {showModalPagamento && vendaNfe && (
         <ModalInformarPagamento
-          venda={{ id: vendaNfe.id, quantidade_kg: vendaNfe.quantidade_kg, valor_bruto: vendaNfe.valor_bruto, lote_codigo: lote.codigo }}
+          venda={{ id: vendaNfe.id, quantidade_kg: vendaNfe.quantidade_kg, valor_bruto: valorBrutoEfetivo, lote_codigo: lote.codigo }}
           orgId={lote.organizacao_id}
           onClose={() => setShowModalPagamento(false)}
           onSuccess={() => { setShowModalPagamento(false); router.refresh() }}
+        />
+      )}
+
+      {/* Modal quebra de peso */}
+      {showModalQuebra && vendaNfe && (
+        <ModalQuebraPeso
+          vendaId={vendaNfe.id}
+          precoKg={Number(vendaNfe.preco_kg)}
+          saldoMaximo={saldoMaximoQuebra}
+          onClose={() => setShowModalQuebra(false)}
+          onSuccess={() => { setShowModalQuebra(false); router.refresh() }}
         />
       )}
     </PageLayout>

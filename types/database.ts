@@ -1075,6 +1075,17 @@ export interface VendaExternaDevolucao {
   created_at:          string
 }
 
+export interface VendaQuebraPeso {
+  id:             string
+  organizacao_id: string
+  venda_id:       string
+  quantidade_kg:  number
+  valor_unitario: number
+  valor_total:    number
+  motivo:         string | null
+  criado_em:      string
+}
+
 export interface RateioEntrega {
   id:                string
   organizacao_id:    string
@@ -1393,6 +1404,7 @@ export type Database = {
       saldos_produtor_snapshot:    TableDef<any>
       resultado_safra_snapshot:    TableDef<any>
       vendas_externas:             TableDef<VendaExterna>
+      vendas_quebras_peso:         TableDef<VendaQuebraPeso>
       distribuicao_resultado:      TableDef<DistribuicaoResultado>
       // ── Comercialização (027) ──────────────────────────────────────────────
       rateio_entrega:              TableDef<RateioEntrega>
