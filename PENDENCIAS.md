@@ -73,12 +73,14 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ## 📋 Bloqueado — aguardando contador (Marcos/Contabahia)
 
-- CSC ID e CSC Token NFC-e
-- NCMs dos produtos da loja
-- Regime tributário confirmado
-- CSTs ICMS/PIS/COFINS
-- Emissão real NF-e/NFC-e via Focus NFe
-- Teste CFOP 1159 NF-e entrada cooperado em homologação
+> Revisado em 2026-07-16: comercialização está 100% resolvida fiscalmente —
+> NF-e entrada (CFOP 1159/1102) e saída (NCM 18010000, CST ICMS 041,
+> PIS/COFINS 72) emitindo em produção; CSC NFC-e de produção obtido.
+> O que resta é só da LOJA:
+
+- NCMs dos produtos da loja (campo existe desde migration 040; falta o dado produto a produto)
+- CSTs ICMS/PIS/COFINS dos produtos da loja
+- Ligar emissão real de NFC-e no PDV da loja (config pronta em lib/loja/fiscal-actions.ts)
 
 ---
 
