@@ -38,6 +38,8 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [x] DRE contábil (`/contabil/dre`)
 - [x] Fix KPI "Saldo em caixa" transbordando o card (comercialização)
 - [x] Promoção a cooperado desacoplada de login; acesso gerado sob demanda na ficha
+- [x] Venda de lote como transferência interna sem NF-e — comprador é empresa do próprio cooperado (migrations 067/068)
+- [x] Quebra de peso em vendas — comprador paga peso recebido, reduz valor a receber (migration 069)
 
 ## 🧩 Funcionalidades — pendentes
 
@@ -58,9 +60,9 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 > Ver detalhes em `docs/AUDITORIA_SEGURANCA_2026-07-12.md`. Ordem = prioridade.
 
-- [ ] IDOR em `vendas.actions.ts` (`atualizarStatusVenda`, `editarVenda`) e `lotes.actions.ts` (`editarLote`) — admin client sem checar `organizacao_id` nem usuário logado
-- [ ] `app/api/nfe/sincronizar` sem autenticação — atualiza `notas_entrega` por id sem checar org
-- [ ] Deletar rota de debug `app/api/debug-vendas` (pública, admin client, org hardcoded)
+- [x] IDOR em `vendas.actions.ts` (`atualizarStatusVenda`, `editarVenda`) e `lotes.actions.ts` (`editarLote`) — admin client sem checar `organizacao_id` nem usuário logado
+- [x] `app/api/nfe/sincronizar` sem autenticação — atualiza `notas_entrega` por id sem checar org
+- [x] Deletar rota de debug `app/api/debug-vendas` (pública, admin client, org hardcoded)
 - [ ] Escopo de módulo do parceiro contábil (`parceiro_org_id`) só é checado ao setar o cookie, não a cada request — reaplicar `modulos_acesso` por request
 - [ ] Webhook WhatsApp (`app/api/whatsapp/webhook`) sem validação de assinatura/origem + remover `console.log` de payload completo
 - [ ] Padronizar erros de API (não retornar `error.message`/`String(e)` cru ao cliente)
@@ -80,4 +82,4 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 
 ---
 
-> Atualizado em: 2026-07-12 (adicionada seção de segurança da auditoria)
+> Atualizado em: 2026-07-16 — itens 1/3/4 da auditoria corrigidos; transferência interna + quebra de peso concluídas
