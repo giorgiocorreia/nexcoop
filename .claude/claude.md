@@ -9,6 +9,21 @@ Stack: Next.js + TypeScript + Supabase + Vercel. Branch: `main`.
 - Super admin: gio.pessoal@gmail.com
 - Deploy: nexcoop.com.br (Vercel Hobby)
 
+## Projeto irmão — NexCore
+`Documents/nexcore` (agente WhatsApp "Humani") é outro projeto do Giorgio,
+funcionalidades sobrepostas em alguns pontos — melhoria num pode valer no
+outro, vale checar antes de assumir que é exclusivo daqui.
+
+**Número 73999693548 é do NexCoop (Mariana), produção.** O NexCore usa outro
+número normalmente, mas seu `.env.local` já foi visto apontando
+`EVOLUTION_API_URL`/`EVOLUTION_API_KEY` pra essa MESMA instância "nexcoop"
+(pediu emprestado só pra teste, 2026-07-16). `webhook/set` na Evolution só
+guarda UMA URL por instância — se alguém rodar `configurarWebhook`/
+`/api/whatsapp/setup` a partir do NexCore enquanto ele ainda estiver
+apontando pra essa instância, derruba o webhook da Mariana em produção sem
+querer. Antes de rodar esse setup em QUALQUER um dos dois projetos, confirmar
+com o Giorgio qual instância/número está ativo no momento.
+
 ---
 
 ## Regras críticas — NUNCA violar em nenhum arquivo
