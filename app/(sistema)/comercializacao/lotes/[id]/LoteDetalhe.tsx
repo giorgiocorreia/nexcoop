@@ -34,9 +34,13 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const fatorSaca     = lote.produtos?.fator_saca ?? 60
   const podeEditar    = lote.status === 'rascunho' || lote.status === 'aberto'
   const loteFechado   = !podeEditar
-  const vendaNfe      = (lote.vendas_externas as any[])?.[0] ?? null
-  const nfeAutorizada = vendaNfe?.status_nfe === 'autorizada'
-  const st            = STATUS_LOTE[lote.status] ?? STATUS_LOTE.rascunho
+  const vendaNfe          = (lote.vendas_externas as any[])?.[0] ?? null
+  const isTransferencia   = vendaNfe?.tipo_documento === 'transferencia_interna'
+  const nfeAutorizada     = vendaNfe?.status_nfe === 'autorizada'
+  // Transferência interna não passa pelo fluxo de NF-e/Focus — o status
+  // 'confirmada' já é o estado final equivalente à NF-e autorizada.
+  const vendaConfirmada   = nfeAutorizada || (isTransferencia && vendaNfe?.status !== 'rascunho')
+  const st                = STATUS_LOTE[lote.status] ?? STATUS_LOTE.rascunho
 
   const todasEntregas = useMemo(() => loteFechado
     ? entregasDoLote.map((e: any) => ({ ...e, _noLote: true }))
@@ -60,6 +64,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
   const [mostrarVenda, setMostrarVenda]           = useState(false)
   const [compradorId, setCompradorId]             = useState('')
   const [precoKg, setPrecoKg]                     = useState('')
+  const [tipoDocumento, setTipoDocumento]         = useState<'nfe_saida' | 'transferencia_interna'>('nfe_saida')
   const [salvando, setSalvando]                   = useState(false)
   const [inserindo, setInserindo]                 = useState<string | null>(null)
   const [cotacoesEditaveis, setCotacoesEditaveis] = useState<Record<string, string>>({})
@@ -86,8 +91,20 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     if (!compradorId || !precoKg) { alert('Preencha comprador e preço/kg.'); return }
     setSalvando(true)
     try {
-      const venda = await criarVendaExterna({ loteId: lote.id, compradorId, dataVenda: new Date().toISOString().split('T')[0], quantidadeKg: lote.peso_total_kg, precoKg: parseFloat(precoKg) })
-      router.push(`/comercializacao/lotes/${lote.id}/nfe?venda=${venda.id}`)
+      const venda = await criarVendaExterna({
+        loteId: lote.id,
+        compradorId,
+        dataVenda: new Date().toISOString().split('T')[0],
+        quantidadeKg: lote.peso_total_kg,
+        precoKg: parseFloat(precoKg),
+        tipoDocumento,
+      })
+      if (tipoDocumento === 'transferencia_interna') {
+        setMostrarVenda(false)
+        router.refresh()
+      } else {
+        router.push(`/comercializacao/lotes/${lote.id}/nfe?venda=${venda.id}`)
+      }
     } catch (e: any) { alert(e.message) }
     finally { setSalvando(false) }
   }
@@ -145,19 +162,34 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
             </>
           )}
           {(lote.status === 'em_venda' || lote.status === 'entregue' || lote.status === 'pago') && !mostrarVenda && (
-            nfeAutorizada ? (
+            vendaConfirmada ? (
               <>
-                <Badge label={`NF-e nº ${vendaNfe.numero_nfe}`} bg={COM_C.verdeLt} cor={COM_C.verde} />
-                <BtnLink
-                  variante="cinza"
-                  icone="ti-printer"
-                  href={vendaNfe.xml_nfe ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : '#'}
-                >
-                  DANFE
-                </BtnLink>
-                <BtnLink variante="cinza" icone="ti-file-invoice" href="/comercializacao/fiscal">
-                  Notas fiscais
-                </BtnLink>
+                {isTransferencia ? (
+                  <>
+                    <Badge label="Transferência interna" bg={COM_C.marromLt} cor={COM_C.marrom} />
+                    <BtnLink
+                      variante="cinza"
+                      icone="ti-file-download"
+                      href={`/api/comercializacao/documento-transferencia/${vendaNfe.id}`}
+                    >
+                      Documento de transferência
+                    </BtnLink>
+                  </>
+                ) : (
+                  <>
+                    <Badge label={`NF-e nº ${vendaNfe.numero_nfe}`} bg={COM_C.verdeLt} cor={COM_C.verde} />
+                    <BtnLink
+                      variante="cinza"
+                      icone="ti-printer"
+                      href={vendaNfe.xml_nfe ? vendaNfe.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '-nfe.pdf') : '#'}
+                    >
+                      DANFE
+                    </BtnLink>
+                    <BtnLink variante="cinza" icone="ti-file-invoice" href="/comercializacao/fiscal">
+                      Notas fiscais
+                    </BtnLink>
+                  </>
+                )}
                 {vendaNfe?.status === 'confirmada' && (
                   <Btn variante="verde" onClick={handleMarcarEntregue} disabled={processandoEntrega}>
                     {processandoEntrega ? 'Processando...' : 'Marcar entregue'}
@@ -171,7 +203,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
               </>
             ) : (
               <Btn variante="verde" onClick={() => setMostrarVenda(true)}>
-                Emitir NF-e de saída
+                Registrar venda
               </Btn>
             )
           )}
@@ -200,23 +232,53 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
       {mostrarVenda && (
         <div style={{ marginBottom: 24 }}>
         <ContentCard title="Registrar venda">
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <Field label="Comprador">
-              <Select value={compradorId} onChange={e => setCompradorId(e.target.value)} style={{ minWidth: 220 }}>
-                <option value="">Selecione...</option>
-                {compradores.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </Select>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Field label="Tipo de documento">
+              <div style={{ display: 'flex', gap: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="tipoDocumento"
+                    checked={tipoDocumento === 'nfe_saida'}
+                    onChange={() => setTipoDocumento('nfe_saida')}
+                    style={{ accentColor: COM_C.marrom }}
+                  />
+                  NF-e de Saída
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="tipoDocumento"
+                    checked={tipoDocumento === 'transferencia_interna'}
+                    onChange={() => setTipoDocumento('transferencia_interna')}
+                    style={{ accentColor: COM_C.marrom }}
+                  />
+                  Transferência interna — sem NF-e (comprador emite a NF-e por fora)
+                </label>
+              </div>
             </Field>
-            <Field label="Valor negociado (R$/kg)">
-              <Input type="number" step="0.01" value={precoKg} onChange={e => setPrecoKg(e.target.value)} placeholder="0,00" style={{ width: 130 }} />
-            </Field>
-            <Btn
-              variante="marrom"
-              onClick={handleCriarVenda}
-              disabled={salvando || !compradorId || !precoKg}
-            >
-              {salvando ? 'Criando...' : 'Avançar para NF-e →'}
-            </Btn>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <Field label="Comprador">
+                <Select value={compradorId} onChange={e => setCompradorId(e.target.value)} style={{ minWidth: 220 }}>
+                  <option value="">Selecione...</option>
+                  {compradores.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </Select>
+              </Field>
+              <Field label="Valor negociado (R$/kg)">
+                <Input type="number" step="0.01" value={precoKg} onChange={e => setPrecoKg(e.target.value)} placeholder="0,00" style={{ width: 130 }} />
+              </Field>
+              <Btn
+                variante="marrom"
+                onClick={handleCriarVenda}
+                disabled={salvando || !compradorId || !precoKg}
+              >
+                {salvando
+                  ? 'Salvando...'
+                  : tipoDocumento === 'nfe_saida'
+                    ? 'Avançar para NF-e →'
+                    : 'Registrar transferência'}
+              </Btn>
+            </div>
           </div>
         </ContentCard>
         </div>

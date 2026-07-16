@@ -234,7 +234,7 @@ export async function buscarLote(loteId: string) {
       *,
       safras(ano, descricao),
       lote_itens(produto_id, peso_kg, produtos(nome, unidade, fator_saca, ncm, cfop_saida_interna, cfop_saida_interestadual, cst_icms, cst_pis, cst_cofins)),
-      vendas_externas(id, status, status_nfe, chave_nfe, numero_nfe, serie_nfe, xml_nfe, quantidade_kg, valor_bruto)
+      vendas_externas(id, status, status_nfe, chave_nfe, numero_nfe, serie_nfe, xml_nfe, quantidade_kg, valor_bruto, tipo_documento)
     `)
     .eq('id', loteId)
     .eq('organizacao_id', orgId)
@@ -266,13 +266,15 @@ export async function criarVendaExterna(input: {
   quantidadeKg: number
   precoKg: number
   observacoes?: string
+  tipoDocumento?: 'nfe_saida' | 'transferencia_interna'
 }) {
   const orgId = await getOrganizacaoId()
+  const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
 
   const { data: lote } = await supabase
     .from('lotes')
-    .select('safra_id')
+    .select('safra_id, codigo')
     .eq('id', input.loteId)
     .single()
 
@@ -285,6 +287,7 @@ export async function criarVendaExterna(input: {
     .maybeSingle()
 
   const taxa = (org as any)?.taxa_comercializacao ?? 3
+  const tipoDocumento = input.tipoDocumento ?? 'nfe_saida'
 
   const { data, error } = await supabase
     .from('vendas_externas')
@@ -299,13 +302,62 @@ export async function criarVendaExterna(input: {
       taxa_comercializacao_pct: taxa,
       status:                   'rascunho',
       observacoes:              input.observacoes ?? null,
+      tipo_documento:           tipoDocumento,
     } as any)
     .select()
     .single()
 
   if (error) throw new Error(error.message)
+
+  // Transferência interna: o comprador é a empresa do próprio cooperado e emite
+  // a NF-e por fora. Não há fluxo Focus NFe nem espera de autorização — cria o
+  // lançamento financeiro na hora e avança o status direto para 'confirmada'
+  // (mesmo estado alcançado pelo fluxo de NF-e após autorização, ver
+  // lib/focusnfe/emitir-nfe-saida.ts).
+  if (tipoDocumento === 'transferencia_interna') {
+    const valorTotal = Number((input.quantidadeKg * input.precoKg).toFixed(2))
+
+    try {
+      const { data: comprador } = await supabase
+        .from('compradores')
+        .select('nome')
+        .eq('id', input.compradorId)
+        .maybeSingle()
+
+      const { criarLancamento } = await import('@/lib/financeiro/actions')
+      const lancamento = await criarLancamento({
+        organizacao_id:   orgId,
+        tipo:             'receita' as any,
+        status:           'pendente' as any,
+        descricao:        `Transferência interna — ${comprador?.nome ?? 'Comprador'} — Lote ${lote.codigo}`,
+        valor:            valorTotal,
+        data_competencia: input.dataVenda,
+        numero_documento: `TRANSF-${data.id.slice(0, 8)}`,
+        observacoes:      'Venda sem emissão de NF-e pela cooperativa — comprador emite a NF-e por fora.',
+        usuario_id:       usuario.id,
+        usuario_email:    usuario.email ?? undefined,
+      })
+
+      await supabase
+        .from('vendas_externas')
+        .update({ lancamento_id: lancamento.id, status: 'confirmada' } as any)
+        .eq('id', data.id)
+        .eq('status', 'rascunho')
+    } catch (e) {
+      console.error('[comercializacao] Erro ao criar lançamento de transferência interna:', e)
+      throw new Error('Venda registrada, mas houve erro ao criar o lançamento financeiro. Contate o suporte.')
+    }
+  }
+
   revalidatePath(`/comercializacao/lotes/${input.loteId}`)
-  return data
+
+  const { data: vendaFinal } = await supabase
+    .from('vendas_externas')
+    .select('*')
+    .eq('id', data.id)
+    .single()
+
+  return vendaFinal ?? data
 }
 
 export async function adicionarEntregaAoLote(loteId: string, movimentacaoId: string, cotacaoValor: number) {

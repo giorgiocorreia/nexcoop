@@ -1057,6 +1057,8 @@ export interface VendaExterna {
   quantidade_kg_original:  number | null
   quantidade_kg_devolvida: number
   valor_bruto_original:    number | null
+  // migration 067
+  tipo_documento: 'nfe_saida' | 'transferencia_interna'
 }
 
 export interface VendaExternaDevolucao {

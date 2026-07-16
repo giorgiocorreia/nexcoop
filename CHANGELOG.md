@@ -1,5 +1,15 @@
 # NexCoop — Changelog
 
+## 2026-07-16
+
+### feat(comercializacao): transferência interna de lote sem NF-e (comprador é empresa do próprio cooperado)
+- Migration 067: `vendas_externas` +`tipo_documento` CHECK (`nfe_saida`|`transferencia_interna`), default `nfe_saida`
+- Migration 068: fix `fn_atualizar_resultado_safra_snapshot` — `status_nfe NOT IN (...)` nunca era TRUE com `status_nfe` NULL (regra do SQL), então vendas `transferencia_interna` (status_nfe sempre NULL) nunca entravam na receita/taxa/funrural do snapshot mesmo com dinheiro real mudando de mãos
+- Cobre o caso do comprador ser uma empresa do próprio produtor cooperado, que emite a NF-e de venda por fora do NexCoop — a cooperativa não emite NF-e nessa operação, só um documento interno sem valor fiscal
+- `criarVendaExterna` (lotes/actions.ts): quando `tipo_documento='transferencia_interna'`, pula o fluxo Focus NFe, cria o lançamento financeiro na hora e avança `status` direto para `confirmada` (mesmo estado pós-autorização do fluxo NF-e)
+- `LoteDetalhe.tsx`: seletor NF-e de Saída vs. Transferência interna no painel "Registrar venda"; link de download do documento de transferência (PDF pdf-lib) no lugar do DANFE quando aplicável
+- Nova rota `app/api/comercializacao/documento-transferencia/[id]/route.ts` — PDF de controle interno (sem valor fiscal), dados via `lib/comercializacao/documento-transferencia.ts`
+
 ## 2026-07-14 / 2026-07-15
 
 ### feat(comercializacao): venda antecipada — saldo negativo em produto, nunca em R$

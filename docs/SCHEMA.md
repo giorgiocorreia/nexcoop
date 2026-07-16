@@ -41,8 +41,10 @@
 | 064 | fix recompute de saldos_produto: trigger passa a RECALCULAR (SUM da ledger) em vez de incremental, cobre INSERT/UPDATE/DELETE |
 | 065 | contas_produtor: +CHECK saldo_financeiro >= 0 (venda antecipada — saldo de produto pode ficar negativo, saldo em R$ nunca) |
 | 066 | propriedades_rurais (NOVA) — lista de propriedades por cooperado (0..N), substitui os campos soltos em cooperados |
+| 067 | vendas_externas: +tipo_documento CHECK ('nfe_saida'\|'transferencia_interna') default 'nfe_saida' — venda de lote para empresa do próprio cooperado, sem NF-e da cooperativa (comprador emite por fora) |
+| 068 | fix fn_atualizar_resultado_safra_snapshot: `status_nfe NOT IN (...)` nunca é TRUE quando status_nfe é NULL (SQL) — vendas tipo_documento='transferencia_interna' (status_nfe sempre NULL) agora contam em receita_bruta_rs/taxa_cooperativa_rs/funrural_rs/total_kg_vendido |
 
-**Próxima migration:** 067
+**Próxima migration:** 069
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -78,7 +80,7 @@
 - `lotes` — codigo, peso_total_kg, status (aberto|em_venda|entregue), produto_descricao, data_fechamento, safra_id (nullable), produto_id (nullable)
 - `movimentacoes_conta` — tipo='entrega' vincula ao lote via lote_id; campos +chave_nfe_entrada, +xml_nfe_entrada
 - `compradores` — +ie, +logradouro, +numero, +complemento, +bairro, +cep, +municipio, +uf
-- `vendas_externas` — +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe
+- `vendas_externas` — +chave_nfe, +numero_nfe, +serie_nfe, +status_nfe, +xml_nfe, +data_emissao_nfe, +tipo_documento (migration 067)
 - `cotacoes` — (org, produto, vigente_a_partir_de timestamptz, preco_externo, preco_cooperado)
   - SEM campo `data` — removido na migration 052
   - Cotação ativa: WHERE vigente_a_partir_de <= now() ORDER BY vigente_a_partir_de DESC LIMIT 1
@@ -117,6 +119,11 @@
 - `loja_estoque_movimentos`
 - `loja_notas_fiscais`
 - `loja_unidades` — unidades dinâmicas por org
+
+### Comercialização — transferência interna sem NF-e (migration 067)
+- `vendas_externas.tipo_documento` TEXT NOT NULL DEFAULT 'nfe_saida', CHECK ('nfe_saida'|'transferencia_interna')
+  - `nfe_saida` (padrão): fluxo atual, cooperativa emite NF-e de saída via Focus NFe
+  - `transferencia_interna`: comprador é empresa do próprio cooperado, emite a NF-e de venda por fora do NexCoop. Cooperativa não emite NF-e nessa operação — só gera documento interno sem valor fiscal (rota `app/api/comercializacao/documento-transferencia/[id]/route.ts`). Campos fiscais (chave_nfe, status_nfe etc.) ficam NULL nesse caso.
 
 ### Cooperados — Propriedades
 - `propriedades_rurais` (NOVA — migration 066) — cooperado_id FK, 0..N por cooperado. nome, area_total_ha, latitude, longitude, caf_numero, caf_situacao, caf_validade, dap_numero. Substitui os campos soltos que existiam em `cooperados` (nome_propriedade, area_total_ha etc. — mantidos na tabela por compatibilidade, não usados pela UI a partir da 066)
