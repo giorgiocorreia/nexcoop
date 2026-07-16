@@ -1,4 +1,4 @@
-# Contexto NexCoop — 04/07/2026
+# Contexto NexCoop — 16/07/2026
 
 > Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
 
@@ -44,6 +44,13 @@ Kit `components/nexcoop/ui/` aplicado em todos os módulos que ainda usavam head
 - CTA "Começar grátis" → `/cadastro`
 - WhatsApp unificado
 
+### 14–16/07/2026 — Comercialização, propriedades rurais e segurança
+- Venda antecipada — saldo negativo em produto, nunca em R$ (migration 065)
+- Propriedades rurais: lista completa no perfil do cooperado + botão Salvar em toda aba (migrations 066)
+- Transferência interna sem NF-e — comprador é empresa do próprio cooperado (migrations 067/068)
+- Quebra de peso em vendas — comprador paga peso recebido (migration 069)
+- Auditoria de segurança: itens 1/3/4 corrigidos (IDOR em vendas/lotes, `/api/nfe/sincronizar` sem auth, rota de debug pública removida)
+
 ## UI kit — uso obrigatório em telas novas
 
 ```ts
@@ -54,9 +61,9 @@ import {
 ```
 
 ## Pendências imediatas
-- [ ] Verificar KPIs comercialização com dados reais (fuso Brasília)
-- [ ] Gestão de caixa físico com origem/destino (cofre, banco, transferências)
-- [ ] Marcos (Contabahia): CSC NFC-e, NCMs, CSTs para emissão fiscal loja
+- [ ] Segurança — auditoria: item #2 (escopo de módulo do parceiro contábil por request) e #5 (assinatura do webhook WhatsApp)
+- [ ] Smoke test dos fluxos novos (venda antecipada, transferência interna, quebra de peso)
+- [ ] Marcos (Contabahia): dados fiscais da loja (NCMs, CSTs, CSC NFC-e)
 
 
 ## IDs críticos

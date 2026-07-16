@@ -12,7 +12,7 @@
 | Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | 04/07/2026 — UI redesign |
 | Contábil (migrations 015–024, 061; 13 telas) | ✅ Completo | 04/07/2026 — UI + classificação automática |
 | Comercialização / Caixa Cacau | ✅ Completo | 04/07/2026 — UI redesign |
-| NF-e entrada via Focus NFe | ✅ Homologação | 04/07/2026 — cônjuge como destinatário |
+| NF-e entrada via Focus NFe | ✅ Produção | 16/07/2026 — emitindo em produção (não homologação) |
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
 | Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
 | Gestão de usuários | ✅ Completo | 04/07/2026 — UI redesign |
@@ -20,8 +20,8 @@
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
 | Escritório (portal contador) | ✅ Completo | 04/07/2026 — UI redesign |
 | Landing page | ✅ Completo | 04/07/2026 |
-| Portal do Filiado | ❌ Planejado | — |
-| Fluxo de Saque / Vendas Comercialização | ❌ Planejado | — |
+| Portal do Filiado | ✅ MVP | 16/07/2026 — `/filiado`: saldo + extrato PDF; cotas/documentos/assembleias pendentes |
+| Fluxo de Saque / Vendas Comercialização | ✅ Completo | 16/07/2026 — `registrarConversaoESaque` + `/comercializacao/vendas` |
 
 ## UI — Design System (jul/2026)
 
@@ -90,7 +90,7 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - De/Para continua exclusivo para exportação SPED (não classifica lançamentos)
 
 ## Comercialização 🔄
-Última atualização: 26/06/2026
+Última atualização: 16/07/2026
 
 ### ✅ Concluído
 - Cadastro produtores e compradores (com campos fiscais)
@@ -119,17 +119,18 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - Dashboard com dados reais: `movimentacoes_conta` (tipo='entrega'), saldo correto, lotes filtrados por status válido (26/06/2026)
 - Saldo atual no header: `saldo_especie_calculado - total_saidas_especie` (26/06/2026)
 - Filtros de "hoje" no dashboard: fuso Brasília UTC-3 (26/06/2026)
+- Safra obrigatória em `iniciarLote` (16/07/2026)
+- Módulo Resultado por Safra (`/comercializacao/resultado`) — receita − custo − taxa − FUNRURAL (16/07/2026)
+- Tela de vendas lote → comprador (`/comercializacao/vendas`) (16/07/2026)
+- Separação `FOCUSNFE_AMBIENTE_LOJA` / `FOCUSNFE_AMBIENTE_COMERCIALIZACAO` por módulo (16/07/2026)
+- `vw_saldos_produtor`: view PostgreSQL saldo_kg por produtor/produto (migration 052) (16/07/2026)
+- Venda de lote como transferência interna sem NF-e — comprador é empresa do próprio cooperado (migrations 067/068, 16/07/2026)
+- Quebra de peso em vendas — comprador paga peso recebido, reduz valor a receber (migration 069, 16/07/2026)
+- Consulta de NF-e em status "processando" religada na UI fiscal (16/07/2026)
 
 ### ❌ Pendente
-- iniciarLote: seleção de safra obrigatória
 - saldo_kg em contas_produtor (estoque à ordem)
 - KPI Custo total: quantidade × cotação (não soma valor_pago)
-- Módulo resultado por safra (receita - custo - taxa)
-- Tela Vender produto (cooperado vende X kg no dia)
-- Dashboard resultado (total vendas, pago, estoque, resultado)
-- Separação FOCUSNFE_AMBIENTE por módulo (loja vs comercialização)
-- vw_saldos_produtor: view PostgreSQL saldo_kg por produtor/produto (migration 052) — próximo chat
-- Módulo resultado por safra: receita − custo − taxa − FUNRURAL — próximo chat
 - DRE integrado (comercialização + loja + custos operacionais) — chat dedicado com Marcos
 
 ## Cooperados — Fluxos implementados
@@ -143,14 +144,15 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 
 **Matrículas:** formato AANNNN, sequencial por org. COOPAIBI: 26001–26014 manuais, próxima automática 26015.
 
-## Agente WhatsApp (planejado)
+## Agente WhatsApp — Mariana ✅ Implementado
+Última atualização: 16/07/2026
 
-- **Status:** não iniciado
+- **Status:** no ar em produção
 - **Descrição:** bot de primeiro atendimento via WhatsApp com IA (Claude Haiku), qualificação de leads e transferência para humano
-- **Stack:** Evolution API (Railway) + /api/whatsapp/webhook (Next.js) + Claude Haiku
+- **Stack:** Evolution API (Railway) + `/api/whatsapp/webhook` (Next.js) + Claude Haiku
 - **Número:** 73999693548
 - **Script definido:** 3 opções de menu (conhecer sistema / ver planos / falar com equipe)
-- **Próxima ação:** chat dedicado "NexCoop — Agente WhatsApp Evolution API"
+- **Pendência:** falta validação de assinatura/origem do webhook (item #5 da auditoria de segurança)
 
 ## API Routes planejadas
 
@@ -165,9 +167,9 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 ## Roadmap crítico
 
 1. **Migração multi-org** (ANTES do segundo cliente): `usuarios.organizacao_id` (1:1) → `usuario_organizacoes` (many-to-many). ~70 arquivos, RLS completa. Abrir chat dedicado.
-2. **Portal do Filiado**: /filiado mobile-first, login CPF+senha. Abrir chat dedicado.
-3. **Fluxo de saque** Comercialização: chat dedicado.
-4. **NF-e/NFC-e emissão**: desbloquear quando contador responder.
+2. **Portal do Filiado**: ✅ MVP entregue (`/filiado`, 16/07/2026) — falta cotas/documentos/assembleias.
+3. **Fluxo de saque** Comercialização: ✅ entregue (`registrarConversaoESaque`, 16/07/2026).
+4. **NF-e/NFC-e emissão da Loja**: desbloquear quando contador (Marcos) responder — comercialização já emite em produção, o bloqueio é só da Loja.
 5. Hotmail/Outlook DMARC
 6. Sidebar: remover Mensalidades para cooperativas
 7. Renomear cooperados → membros (futuro)

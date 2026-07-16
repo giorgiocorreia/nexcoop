@@ -151,4 +151,6 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
   fix 064.
 - `movimentacoes_conta` tem FK para `contas_produtor`, não direto para produtor —
   o filtro é sempre por `conta_id`.
-- Migrations só via SQL Editor do Supabase Dashboard. Próxima disponível: **065**.
+- Migrations só via SQL Editor do Supabase Dashboard. Próxima disponível: **070**
+  — conferir sempre em `docs/SCHEMA.md` antes de criar, este número fica
+  desatualizado com frequência.
