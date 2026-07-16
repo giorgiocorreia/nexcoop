@@ -24,6 +24,24 @@ apontando pra essa instância, derruba o webhook da Mariana em produção sem
 querer. Antes de rodar esse setup em QUALQUER um dos dois projetos, confirmar
 com o Giorgio qual instância/número está ativo no momento.
 
+Nota: o NexCore documenta uma org "NexCoop" interna com agente renomeado
+Mariana→Corina (13/07/2026) — NÃO é a Mariana de produção (essa é 100% o
+código deste repo, `app/api/whatsapp/`). Aquela instância está sendo
+remodelada pra outra finalidade (confirmado com o Giorgio, 2026-07-16); não é
+um duplicado ativo a se preocupar hoje, mas não presumir que sumiu de vez.
+
+**Melhoria de comportamento do agente (evolution.ts, prompt, formatação de
+mensagem) deve ser avaliada pros dois lados.** Ex: "digitando", split por
+parágrafo, retry de envio, remoção de travessão (portados do NexCore em
+2026-07-16, commit `27ae21d`) — o NexCore está mais maduro nessa camada por
+ser multi-tenant desde o início. Ao mexer em `app/api/whatsapp/_lib/
+evolution.ts` aqui, checar se o equivalente em
+`Documents/nexcore/app/api/whatsapp/_lib/evolution.ts` já resolveu o mesmo
+problema (ou vice-versa) antes de implementar do zero — perguntar ao Giorgio
+se a melhoria vale portar pro outro lado, não portar sozinho sem confirmar
+(personas/contexto de negócio são diferentes: Mariana é SDR de cooperativa,
+Marianna/Humani é recepção clínica).
+
 ---
 
 ## Regras críticas — NUNCA violar em nenhum arquivo
