@@ -79,13 +79,13 @@ function formatarKg(v: number): { inteiro: string; decimal: string } {
   return { inteiro: int, decimal: dec ? `,${dec}` : '' }
 }
 
-function KgDisplay({ valor, fontSize = 16, cor = '#92400e' }: { valor: number; fontSize?: number; cor?: string }) {
+function KgDisplay({ valor, fontSize = 16, cor = '#92400e', unidade = 'kg' }: { valor: number; fontSize?: number; cor?: string; unidade?: string }) {
   const { inteiro, decimal } = formatarKg(valor)
   return (
     <span style={{ color: cor }}>
       <span style={{ fontSize, fontWeight: 600 }}>{inteiro}</span>
       <span style={{ fontSize: fontSize * 0.6, fontWeight: 600 }}>{decimal}</span>
-      <span style={{ fontSize: fontSize * 0.55, fontWeight: 400, marginLeft: 2 }}> kg</span>
+      <span style={{ fontSize: fontSize * 0.55, fontWeight: 400, marginLeft: 2 }}> {unidade}</span>
     </span>
   )
 }
@@ -1155,7 +1155,7 @@ export default function CaixaPage() {
       {modalRateio && (
         <Modal
           titulo="Rateio de entrega"
-          subtitulo={`${formEntrega.quantidade} kg · ${produtos.find(p => p.id === formEntrega.produto_id)?.nome}`}
+          subtitulo={`${formEntrega.quantidade} ${unidadeEntregaSelecionada} · ${produtos.find(p => p.id === formEntrega.produto_id)?.nome}`}
           onClose={() => setModalRateio(false)}
           largura={560}
           footer={
@@ -1175,7 +1175,7 @@ export default function CaixaPage() {
                     {p.nome}
                     {i === 0 && <span style={{ marginLeft: 6 }}><Badge label="principal" bg={COM_C.marromLt} cor={COM_C.marrom} /></span>}
                   </div>
-                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{p.quantidade_rateada.toFixed(3)} kg</div>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{p.quantidade_rateada.toFixed(3)} {unidadeEntregaSelecionada}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Input type="number" step="0.01" min="0.01" max="100" value={p.percentual}
@@ -1312,7 +1312,7 @@ export default function CaixaPage() {
                         <td style={{ color: COM_C.txtSub }}>{TIPO_LABEL[op.tipo] ?? op.tipo}</td>
                         <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
                           {op.quantidade_produto
-                            ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} kg` })()
+                            ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} ${op.produtos?.unidade ?? 'kg'}` })()
                             : '—'}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (TIPOS_ENTRADA.has(op.tipo) ? COM_C.verde : COM_C.txt) : COM_C.txt }}>
@@ -1350,8 +1350,8 @@ export default function CaixaPage() {
                       borderRadius: 8, padding: '8px 14px', textAlign: 'center'
                     }}>
                       {s.quantidade < 0
-                        ? <div style={{ fontSize: 16, fontWeight: 700, color: COM_C.vermelho }}>−<KgDisplay valor={Math.abs(s.quantidade)} fontSize={16} cor={COM_C.vermelho} /></div>
-                        : <KgDisplay valor={s.quantidade} fontSize={16} cor={COM_C.marrom} />}
+                        ? <div style={{ fontSize: 16, fontWeight: 700, color: COM_C.vermelho }}>−<KgDisplay valor={Math.abs(s.quantidade)} fontSize={16} cor={COM_C.vermelho} unidade={s.produtos.unidade} /></div>
+                        : <KgDisplay valor={s.quantidade} fontSize={16} cor={COM_C.marrom} unidade={s.produtos.unidade} />}
                       <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: 2 }}>{s.produtos.nome}{s.quantidade < 0 ? ' (devendo)' : ''}</div>
                     </div>
                   ))}
