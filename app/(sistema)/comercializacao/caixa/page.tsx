@@ -15,7 +15,7 @@ import {
   criarCategoriaDesp, getSaldosProdutoParaSelecao,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
-import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
+import { listarProdutos, criarProduto } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
 import { BotaoComprovantePagamento } from '@/components/comercializacao/BotaoComprovantePagamento'
@@ -179,6 +179,10 @@ export default function CaixaPage() {
   const [formReceber, setFormReceber] = useState({ produto_id: '', quantidade: '', preco_kg: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
   const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '', produto_id: '', preco_kg: '' })
   const [saldosSelecao, setSaldosSelecao] = useState<{ produto_id: string; nome: string; unidade: string; saldo: number }[]>([])
+  const [modalNovoProduto, setModalNovoProduto] = useState(false)
+  const [formNovoProduto, setFormNovoProduto] = useState({ nome: '', categoria: '', unidade: 'kg' })
+  const [salvandoNovoProduto, setSalvandoNovoProduto] = useState(false)
+  const [erroNovoProduto, setErroNovoProduto] = useState('')
   const [confirmarAntecipacao, setConfirmarAntecipacao] = useState<{ tipo: 'receber' | 'saque'; mensagem: string } | null>(null)
   const [statusOp, setStatusOp] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
@@ -290,6 +294,28 @@ export default function CaixaPage() {
     if (acao) setOperacao(acao)
     if (acao === 'receber' && p.chave_pix) {
       setFormReceber(f => ({ ...f, chave_pix: p.chave_pix ?? '' }))
+    }
+  }
+
+  // Cadastro rápido de produto direto do formulário de entrada, pro caso do
+  // produto que o produtor está trazendo ainda não existir na lista (evita
+  // ter que sair da tela de caixa e ir em Comercialização → Produtos).
+  async function handleCriarProdutoInline() {
+    if (!formNovoProduto.nome) return
+    setSalvandoNovoProduto(true)
+    setErroNovoProduto('')
+    try {
+      const novo = await criarProduto(formNovoProduto)
+      const lista = await listarProdutos()
+      const ativos = (lista as Produto[]).filter((pr) => (pr as any).ativo !== false)
+      setProdutos(ativos)
+      if (novo) setFormEntrega(f => ({ ...f, produto_id: novo.id }))
+      setFormNovoProduto({ nome: '', categoria: '', unidade: 'kg' })
+      setModalNovoProduto(false)
+    } catch (e: any) {
+      setErroNovoProduto(e.message)
+    } finally {
+      setSalvandoNovoProduto(false)
     }
   }
 
@@ -915,6 +941,56 @@ export default function CaixaPage() {
         </Modal>
       )}
 
+      {modalNovoProduto && (
+        <Modal
+          titulo="Cadastrar novo produto"
+          subtitulo="O produto entra direto no catálogo e já fica selecionado na entrega"
+          onClose={() => setModalNovoProduto(false)}
+          largura={400}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setModalNovoProduto(false)}>Cancelar</Btn>
+              <Btn variante="marrom" icone="ti-check" disabled={salvandoNovoProduto || !formNovoProduto.nome} onClick={handleCriarProdutoInline}>
+                {salvandoNovoProduto ? 'Salvando...' : 'Cadastrar e selecionar'}
+              </Btn>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="Nome *">
+              <Input
+                placeholder="Nome do produto"
+                value={formNovoProduto.nome}
+                onChange={e => setFormNovoProduto(f => ({ ...f, nome: e.target.value }))}
+              />
+            </Field>
+            <Field label="Categoria">
+              <Input
+                placeholder="Opcional"
+                value={formNovoProduto.categoria}
+                onChange={e => setFormNovoProduto(f => ({ ...f, categoria: e.target.value }))}
+              />
+            </Field>
+            <Field label="Unidade">
+              <Select
+                value={formNovoProduto.unidade}
+                onChange={e => setFormNovoProduto(f => ({ ...f, unidade: e.target.value }))}
+              >
+                <option value="kg">kg</option>
+                <option value="unidade">unidade</option>
+                <option value="litro">litro</option>
+                <option value="caixa">caixa</option>
+              </Select>
+            </Field>
+          </div>
+          {erroNovoProduto && (
+            <div style={{ marginTop: 12, background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: COM_C.vermelho }}>
+              {erroNovoProduto}
+            </div>
+          )}
+        </Modal>
+      )}
+
       {modalSaida && (
         <Modal
           titulo="Saída avulsa de caixa"
@@ -1333,6 +1409,13 @@ export default function CaixaPage() {
                       <Select value={formEntrega.produto_id} onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}>
                         {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
                       </Select>
+                      <button
+                        type="button"
+                        onClick={() => setModalNovoProduto(true)}
+                        style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', fontSize: 12, color: COM_C.marrom, textDecoration: 'underline' }}
+                      >
+                        Produto não está na lista? Cadastrar novo
+                      </button>
                     </Field>
                     <Field label="Quantidade (kg)">
                       <Input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}

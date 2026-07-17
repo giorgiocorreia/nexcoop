@@ -28,10 +28,13 @@ export async function criarProduto(form: {
   const orgId = usuario.organizacao_id
   if (!orgId) throw new Error('Usuário sem organização')
   const supabase = createAdminClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('produtos')
     .insert({ ...form, unidade: form.unidade as TipoProdutoUnidade, organizacao_id: orgId })
+    .select()
+    .single()
   if (error) throw new Error(error.message)
+  return data
 }
 
 export async function editarProduto(id: string, form: {
