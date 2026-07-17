@@ -277,6 +277,8 @@ export default function CaixaPage() {
       setConta(c as unknown as Conta)
       const ext = await getExtrato((c as any).id)
       setExtrato((ext ?? []) as unknown as Movimentacao[])
+      const saldos = await getSaldosProdutoParaSelecao((c as any).id)
+      setSaldosSelecao(saldos)
     } else {
       const prod = await getProdutorPorId(produtorId)
       if (!prod) return
@@ -290,6 +292,7 @@ export default function CaixaPage() {
       }
       setConta(null)
       setExtrato([])
+      setSaldosSelecao([])
     }
     setProdutorSelecionado(p)
     if (acao) setOperacao(acao)
