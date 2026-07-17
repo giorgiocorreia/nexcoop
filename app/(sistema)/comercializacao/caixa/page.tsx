@@ -1412,7 +1412,7 @@ export default function CaixaPage() {
 
               {operacao === 'entrega' && (
                 <ContentCard title="Registrar entrega">
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                     <Field label="Produto">
                       <Select
                         value={formEntrega.produto_id}
