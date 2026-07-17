@@ -175,7 +175,7 @@ export default function CaixaPage() {
   const [extrato, setExtrato] = useState<Movimentacao[]>([])
   const [operacao, setOperacao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '' })
+  const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '', preco_custo: '' })
   const [formReceber, setFormReceber] = useState({ produto_id: '', quantidade: '', preco_kg: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
   const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '', produto_id: '', preco_kg: '' })
   const [saldosSelecao, setSaldosSelecao] = useState<{ produto_id: string; nome: string; unidade: string; saldo: number }[]>([])
@@ -558,9 +558,10 @@ export default function CaixaPage() {
       const result = await registrarEntrega({
         sessao_id: sessao.id, produtor_id: produtorSelecionado!.id,
         conta_id: conta.id, produto_id: formEntrega.produto_id,
-        quantidade_produto: parseFloat(formEntrega.quantidade), observacoes: formEntrega.observacoes
+        quantidade_produto: parseFloat(formEntrega.quantidade), observacoes: formEntrega.observacoes,
+        preco_unitario: formEntrega.preco_custo ? parseFloat(formEntrega.preco_custo.replace(',', '.')) : undefined,
       })
-      setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
+      setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '', preco_custo: '' }))
       setUltimaMovimentacaoId(result.id)
       setModalNfe(result.id)
       await recarregarConta(); await recarregarSessao()
@@ -1420,6 +1421,11 @@ export default function CaixaPage() {
                     <Field label="Quantidade (kg)">
                       <Input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}
                         onChange={e => setFormEntrega(f => ({ ...f, quantidade: e.target.value }))}
+                        style={{ width: 120 }} />
+                    </Field>
+                    <Field label="Preço de custo (R$/unidade)" hint="Opcional — só se esse produto não seguir a cotação diária">
+                      <Input type="text" inputMode="decimal" placeholder="0,00" value={formEntrega.preco_custo}
+                        onChange={e => setFormEntrega(f => ({ ...f, preco_custo: e.target.value }))}
                         style={{ width: 120 }} />
                     </Field>
                     <Field label="Observações">
