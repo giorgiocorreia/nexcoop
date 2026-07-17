@@ -604,6 +604,12 @@ export default function CaixaPage() {
   const totalPercentual = participantes.reduce((acc, p) => acc + p.percentual, 0)
   const percentualOk = Math.abs(totalPercentual - 100) <= 0.01
 
+  // Unidade do produto selecionado no formulário de entrega — o campo de
+  // quantidade e o de custo precisam mostrar a unidade certa (kg, unidade,
+  // litro, caixa), não sempre "kg" fixo.
+  const unidadeEntregaSelecionada = produtos.find(p => p.id === formEntrega.produto_id)?.unidade ?? 'kg'
+  const quantidadeFracionada = unidadeEntregaSelecionada === 'kg' || unidadeEntregaSelecionada === 'litro'
+
   async function confirmarRateio() {
     if (!sessao || !percentualOk) return
     setSalvandoRateio(true); setErroRateio('')
@@ -1408,23 +1414,31 @@ export default function CaixaPage() {
                 <ContentCard title="Registrar entrega">
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <Field label="Produto">
-                      <Select value={formEntrega.produto_id} onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}>
-                        {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                      </Select>
-                      <button
-                        type="button"
-                        onClick={() => setModalNovoProduto(true)}
-                        style={{ background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', fontSize: 12, color: COM_C.marrom, textDecoration: 'underline' }}
-                      >
-                        Produto não está na lista? Cadastrar novo
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <Select
+                          value={formEntrega.produto_id}
+                          onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}
+                          style={{ flex: 1, minWidth: 160 }}
+                        >
+                          {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                        </Select>
+                        <Btn
+                          variante="marrom-outline"
+                          tamanho="sm"
+                          icone="ti-plus"
+                          onClick={() => setModalNovoProduto(true)}
+                          title="Cadastrar um produto que ainda não está na lista"
+                        >
+                          Novo
+                        </Btn>
+                      </div>
                     </Field>
-                    <Field label="Quantidade (kg)">
-                      <Input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}
+                    <Field label={`Quantidade (${unidadeEntregaSelecionada})`}>
+                      <Input type="number" step={quantidadeFracionada ? '0.001' : '1'} placeholder={quantidadeFracionada ? '0,000' : '0'} value={formEntrega.quantidade}
                         onChange={e => setFormEntrega(f => ({ ...f, quantidade: e.target.value }))}
                         style={{ width: 120 }} />
                     </Field>
-                    <Field label="Preço de custo (R$/unidade)" hint="Opcional — só se esse produto não seguir a cotação diária">
+                    <Field label={`Preço de custo (R$/${unidadeEntregaSelecionada})`} hint="Opcional — só se esse produto não seguir a cotação diária">
                       <Input type="text" inputMode="decimal" placeholder="0,00" value={formEntrega.preco_custo}
                         onChange={e => setFormEntrega(f => ({ ...f, preco_custo: e.target.value }))}
                         style={{ width: 120 }} />
