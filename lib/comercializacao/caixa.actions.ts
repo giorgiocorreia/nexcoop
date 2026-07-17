@@ -3,6 +3,26 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUsuarioLogado } from '@/lib/auth'
 import { calcularSaldoEspecieNoFechamento } from './caixa-utils'
+import { getSaldoResponsabilidadeComercializacao, getSaldoResponsabilidadeLoja } from '@/lib/tesouraria/saldo-responsabilidade'
+
+// Saldo pra pré-preencher a abertura de caixa do usuário logado — "saldo inicial = saldo final
+// do caixa anterior" (continuidade entre sessões, ver plano de tesouraria).
+export async function getMeuSaldoResponsabilidadeComercializacao() {
+  const usuario = await getUsuarioLogado()
+  return getSaldoResponsabilidadeComercializacao(usuario.organizacao_id as string, usuario.id)
+}
+
+// Wrappers pra ponte com a Loja — evitam o cliente precisar saber o orgId.
+export async function listarAtendentesLojaParaTransferencia() {
+  const usuario = await getUsuarioLogado()
+  const { listarAtendentesComCaixaLoja } = await import('@/lib/loja/actions')
+  return listarAtendentesComCaixaLoja(usuario.organizacao_id as string)
+}
+
+export async function getSaldoLojaDoAtendente(atendenteId: string) {
+  const usuario = await getUsuarioLogado()
+  return getSaldoResponsabilidadeLoja(usuario.organizacao_id as string, atendenteId)
+}
 
 export async function getSessaoAberta() {
   const usuario = await getUsuarioLogado()
@@ -718,6 +738,10 @@ export async function registrarAporteSangria(params: {
   admin_email: string
   admin_senha: string
   observacoes?: string
+  // Transferência: em vez de aporte em dinheiro solto, puxa de um caixa da Loja
+  // (do próprio usuário logado ou de outro atendente — ver regra de autorização
+  // abaixo). Só válido com tipo='aporte'.
+  origem?: { modulo: 'loja'; atendente_origem_id: string }
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
@@ -741,7 +765,60 @@ export async function registrarAporteSangria(params: {
 
   if (!adminUser) throw new Error('Usuário não encontrado.')
   if (adminUser.organizacao_id !== usuario.organizacao_id) throw new Error('Admin de outra organização.')
-  if (!adminUser.funcoes?.includes('admin')) throw new Error('Usuário não tem permissão de admin.')
+
+  if (params.origem) {
+    // Transferência entre caixas: se o dono da origem é o próprio usuário
+    // logado, a senha dele mesmo já basta (é dinheiro sob responsabilidade
+    // dele pra ele mesmo). Se for de outro atendente, só admin ou a senha do
+    // próprio dono da origem autorizam — nunca um terceiro qualquer.
+    const isMesmoUsuario = params.origem.atendente_origem_id === usuario.id
+    if (isMesmoUsuario) {
+      if (adminUser.id !== usuario.id) {
+        throw new Error('Pra transferir do seu próprio caixa da Loja, confirme com a sua própria senha.')
+      }
+    } else {
+      const isAdmin = !!adminUser.funcoes?.includes('admin')
+      const isDonoOrigem = adminUser.id === params.origem.atendente_origem_id
+      if (!isAdmin && !isDonoOrigem) {
+        throw new Error('Autorização precisa ser de um admin ou do próprio atendente dono do caixa de origem.')
+      }
+    }
+  } else {
+    if (!adminUser.funcoes?.includes('admin')) throw new Error('Usuário não tem permissão de admin.')
+  }
+
+  let referenciaTransferenciaId: string | null = null
+
+  if (params.origem && params.tipo === 'aporte') {
+    const { getSaldoResponsabilidadeLoja } = await import('@/lib/tesouraria/saldo-responsabilidade')
+    const saldoOrigem = await getSaldoResponsabilidadeLoja(
+      usuario.organizacao_id as string,
+      params.origem.atendente_origem_id
+    )
+    if (!saldoOrigem.caixa_id) {
+      throw new Error('Esse atendente não tem caixa aberto nem fechado na Loja.')
+    }
+    if (saldoOrigem.saldo_atual_especie < params.valor) {
+      throw new Error(`Saldo insuficiente no caixa da Loja desse atendente (disponível: R$ ${saldoOrigem.saldo_atual_especie.toFixed(2)}).`)
+    }
+
+    referenciaTransferenciaId = crypto.randomUUID()
+
+    const { error: errSangriaLoja } = await (supabase as any)
+      .from('loja_sangrias')
+      .insert({
+        org_id: usuario.organizacao_id as string,
+        caixa_id: saldoOrigem.caixa_id,
+        tipo: 'sangria',
+        valor: params.valor,
+        autorizado_por: adminUser.id,
+        executado_por: usuario.id,
+        observacoes: params.observacoes ?? 'Transferência para o caixa da Comercialização',
+        origem_transferencia: 'comercializacao',
+        referencia_transferencia_id: referenciaTransferenciaId,
+      })
+    if (errSangriaLoja) throw new Error('Erro ao debitar o caixa da Loja: ' + errSangriaLoja.message)
+  }
 
   const { error: insertError } = await supabase
     .from('aportes_sangrias')
@@ -752,9 +829,22 @@ export async function registrarAporteSangria(params: {
       valor: params.valor,
       autorizado_por: adminUser.id,
       executado_por: usuario.id,
-      observacoes: params.observacoes
-    })
-  if (insertError) throw new Error(insertError.message)
+      observacoes: params.observacoes,
+      ...(referenciaTransferenciaId
+        ? { origem_transferencia: 'loja', referencia_transferencia_id: referenciaTransferenciaId }
+        : {}),
+    } as any)
+  if (insertError) {
+    // Rollback manual: se a ponta de entrada falhar depois da saída já ter sido
+    // debitada do caixa da Loja, desfaz a sangria pra não perder dinheiro "no ar".
+    if (referenciaTransferenciaId) {
+      await (supabase as any)
+        .from('loja_sangrias')
+        .delete()
+        .eq('referencia_transferencia_id', referenciaTransferenciaId)
+    }
+    throw new Error(insertError.message)
+  }
 
   const { data: sessao } = await supabase
     .from('sessoes_caixa')
@@ -772,4 +862,29 @@ export async function registrarAporteSangria(params: {
       .update({ saldo_especie_calculado: novoSaldo })
       .eq('id', params.sessao_id)
   }
+}
+
+// Lista, por usuário da org, o caixa aberto (se houver) ou o fechado mais
+// recente — popula o seletor "de qual atendente" na transferência da Loja
+// pra Comercialização.
+export async function listarAtendentesComSessaoCaixa(orgId: string) {
+  const supabase = createAdminClient()
+  const { data: sessoes } = await supabase
+    .from('sessoes_caixa')
+    .select('id, usuario_id, status, usuarios!sessoes_caixa_usuario_id_fkey(nome_completo)')
+    .eq('organizacao_id', orgId)
+    .order('created_at', { ascending: false })
+
+  const porUsuario = new Map<string, { usuario_id: string; nome: string; sessao_id: string; status: 'aberta' | 'fechada' }>()
+  for (const s of sessoes ?? []) {
+    if (porUsuario.has(s.usuario_id)) continue
+    const nome = (s as any).usuarios?.nome_completo ?? '—'
+    porUsuario.set(s.usuario_id, {
+      usuario_id: s.usuario_id,
+      nome,
+      sessao_id: s.id,
+      status: s.status === 'aberta' ? 'aberta' : 'fechada',
+    })
+  }
+  return Array.from(porUsuario.values())
 }

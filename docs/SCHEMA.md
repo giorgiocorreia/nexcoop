@@ -16,7 +16,7 @@
 | 034/035 | drop tabela membros (criada e revertida) |
 | 036 | perfil de usuário |
 | 037 | loja_compras expandida |
-| 038 | loja_sangrias |
+| 038 | loja_sangrias — **nota (17/07/2026): nenhum arquivo `038_*.sql` existe no repo; tabela foi criada direto em produção (schema drift), formalizada retroativamente pela migration 073** |
 | 039 | vw_estoque_loja |
 | 040 | NCM/CFOP em loja_produtos, colunas fiscais em organizacoes, loja_notas_fiscais |
 | 041 | cartao_nsu, cartao_autorizacao, pix_identificador, desconto_total, pago_saldo em loja_vendas |
@@ -47,8 +47,9 @@
 | 070 | fix vendas_externas.status_nfe: DEFAULT 'pendente' (migration 048) nunca foi atualizado quando a 054 dropou 'pendente' do CHECK — todo INSERT sem status_nfe explícito quebrava desde 25/06/2026; corrige DEFAULT para 'rascunho' e inclui 'erro' no CHECK (usado por emitir-nfe-saida.ts em falha de emissão) |
 | 071 | fix vendas_externas_status_check (026 tinha 'paga', código sempre grava 'pago' — quebra ao "Confirmar pagamento") e lotes_status_check (049 nunca incluiu 'pago', mas trigger da 054c e devolucao.ts já gravam 'pago' no lote) — recria ambos os CHECKs com 'pago' |
 | 072 | produtos: +loja_produto_id (FK nullable para loja_produtos, ON DELETE SET NULL) — ponte Comercialização → Loja Agropecuária, permite mapear qual produto da Loja recebe o estoque quando uma entrega for enviada pra lá ("Enviar para a Loja") |
+| 073 | loja_sangrias (formalização de schema drift — tabela já existia em produção desde jul/2026, nunca versionada em migration; RLS + índices seguindo padrão de 012/028); aportes_sangrias e loja_sangrias: +origem_transferencia ('comercializacao'\|'loja'), +referencia_transferencia_id (uuid não-FK, gerado em código para linkar as duas pontas de uma transferência entre módulos) |
 
-**Próxima migration:** 073
+**Próxima migration:** 074
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

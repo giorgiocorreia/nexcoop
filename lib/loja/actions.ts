@@ -1147,6 +1147,44 @@ export async function cancelarVenda(
   return { ok: true }
 }
 
+// ── 4b. Validar senha pra transferência entre caixas ────────────────────────
+// Mesmo mecanismo de validarSenhaAutorizador (tenta a senha contra candidatos
+// até achar quem bate), mas a lista de candidatos inclui também o atendente
+// dono do caixa de origem — mesmo que ele não seja admin/gerente_loja. Se o
+// dono da origem for o próprio usuário logado, a própria senha dele já cai
+// nessa lista, sem precisar de admin (regra confirmada com o Giorgio).
+export async function validarSenhaParaTransferencia(
+  orgId: string,
+  senha: string,
+  atendenteOrigemId: string
+): Promise<ResultadoValidarSenha> {
+  const admin = createAdminClient()
+
+  const { data: usuariosOrg } = await admin
+    .from('usuarios')
+    .select('id, nome_completo, funcoes, role')
+    .eq('organizacao_id', orgId)
+    .eq('ativo', true)
+
+  if (!usuariosOrg) return { valido: false }
+
+  const candidatos = usuariosOrg.filter(u =>
+    podeAutorizarDescontoExtra({ role: u.role ?? '', funcoes: u.funcoes ?? [] }) || u.id === atendenteOrigemId
+  )
+
+  for (const candidato of candidatos) {
+    const { data: authData } = await admin.auth.admin.getUserById(candidato.id)
+    if (!authData?.user?.email) continue
+
+    const { error } = await admin.auth.signInWithPassword({ email: authData.user.email, password: senha })
+    if (!error) {
+      return { valido: true, autorizador_id: candidato.id, nome: candidato.nome_completo ?? '' }
+    }
+  }
+
+  return { valido: false }
+}
+
 // ── 6. Registrar Sangria ─────────────────────────────────────────────────────
 
 export async function registrarSangriaLoja(
@@ -1156,9 +1194,44 @@ export async function registrarSangriaLoja(
   valor: number,
   autorizado_por: string,
   executado_por: string,
-  observacoes?: string
+  observacoes?: string,
+  // Transferência: em vez de aporte em dinheiro solto, puxa de uma sessão de
+  // caixa da Comercialização (do próprio usuário logado ou de outro
+  // atendente — autorização já validada pelo chamador via
+  // validarSenhaParaTransferencia). Só válido com tipo='aporte'.
+  origem?: { modulo: 'comercializacao'; atendente_origem_id: string }
 ): Promise<{ ok: boolean } | { error: string }> {
   const admin = createAdminClient()
+
+  let referenciaTransferenciaId: string | null = null
+
+  if (origem && tipo === 'aporte') {
+    const { getSaldoResponsabilidadeComercializacao } = await import('@/lib/tesouraria/saldo-responsabilidade')
+    const saldoOrigem = await getSaldoResponsabilidadeComercializacao(orgId, origem.atendente_origem_id)
+    if (!saldoOrigem.sessao_id) {
+      return { error: 'Esse atendente não tem caixa aberto nem fechado na Comercialização.' }
+    }
+    if (saldoOrigem.saldo_atual_especie < valor) {
+      return { error: `Saldo insuficiente no caixa da Comercialização desse atendente (disponível: R$ ${saldoOrigem.saldo_atual_especie.toFixed(2)}).` }
+    }
+
+    referenciaTransferenciaId = crypto.randomUUID()
+
+    const { error: errSangriaComercial } = await admin
+      .from('aportes_sangrias')
+      .insert({
+        organizacao_id: orgId,
+        sessao_caixa_id: saldoOrigem.sessao_id,
+        tipo: 'sangria',
+        valor,
+        autorizado_por,
+        executado_por,
+        observacoes: observacoes ?? 'Transferência para o caixa da Loja',
+        origem_transferencia: 'loja',
+        referencia_transferencia_id: referenciaTransferenciaId,
+      } as any)
+    if (errSangriaComercial) return { error: 'Erro ao debitar o caixa da Comercialização: ' + errSangriaComercial.message }
+  }
 
   const { error } = await (admin as any).from('loja_sangrias').insert({
     org_id: orgId,
@@ -1169,13 +1242,46 @@ export async function registrarSangriaLoja(
     executado_por,
     observacoes: observacoes ?? null,
     created_at: new Date().toISOString(),
+    ...(referenciaTransferenciaId
+      ? { origem_transferencia: 'comercializacao', referencia_transferencia_id: referenciaTransferenciaId }
+      : {}),
   })
 
-  if (error) return { error: 'Erro ao registrar sangria.' }
+  if (error) {
+    if (referenciaTransferenciaId) {
+      await admin.from('aportes_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+    }
+    return { error: 'Erro ao registrar sangria.' }
+  }
 
   await registrarLog({ org_id: orgId, usuario_id:executado_por, modulo: 'loja', acao: 'loja_sangria', dados_depois: { tipo, valor, caixa_id: caixaId, autorizado_por } })
 
   return { ok: true }
+}
+
+// Lista, por usuário da org, o caixa aberto (se houver) ou o fechado mais
+// recente — popula o seletor "de qual atendente" na transferência da
+// Comercialização pra Loja.
+export async function listarAtendentesComCaixaLoja(orgId: string) {
+  const admin = createAdminClient()
+  const { data: caixas } = await admin
+    .from('loja_caixas')
+    .select('id, usuario_id, status, usuarios!loja_caixas_usuario_id_fkey(nome_completo)')
+    .eq('org_id', orgId)
+    .order('aberto_em', { ascending: false })
+
+  const porUsuario = new Map<string, { usuario_id: string; nome: string; caixa_id: string; status: 'aberto' | 'fechado' }>()
+  for (const c of caixas ?? []) {
+    if (porUsuario.has(c.usuario_id)) continue
+    const nome = (c as any).usuarios?.nome_completo ?? '—'
+    porUsuario.set(c.usuario_id, {
+      usuario_id: c.usuario_id,
+      nome,
+      caixa_id: c.id,
+      status: c.status === 'aberto' ? 'aberto' : 'fechado',
+    })
+  }
+  return Array.from(porUsuario.values())
 }
 
 // ── 7. Fechar Caixa ──────────────────────────────────────────────────────────

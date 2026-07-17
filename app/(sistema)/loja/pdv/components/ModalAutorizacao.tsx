@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { validarSenhaAutorizador } from '@/lib/loja/actions'
+import type { ResultadoValidarSenha } from '@/lib/loja/types'
 import { Btn } from '@/components/ui/Btn'
 
 interface Props {
@@ -10,9 +11,12 @@ interface Props {
   descricao: string
   onAutorizado: (autorizadorId: string, nome: string) => void
   onCancelar: () => void
+  // Transferência entre caixas: valida contra o dono do caixa de origem
+  // também (não só admin/gerente_loja). Se omitido, usa validarSenhaAutorizador.
+  validarSenha?: (orgId: string, senha: string) => Promise<ResultadoValidarSenha>
 }
 
-export default function ModalAutorizacao({ orgId, titulo, descricao, onAutorizado, onCancelar }: Props) {
+export default function ModalAutorizacao({ orgId, titulo, descricao, onAutorizado, onCancelar, validarSenha }: Props) {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -20,7 +24,7 @@ export default function ModalAutorizacao({ orgId, titulo, descricao, onAutorizad
   async function handleAutorizar() {
     if (!senha.trim()) { setErro('Digite a senha do autorizador.'); return }
     setCarregando(true); setErro('')
-    const res = await validarSenhaAutorizador(orgId, senha)
+    const res = await (validarSenha ?? validarSenhaAutorizador)(orgId, senha)
     setCarregando(false)
     if (res.valido && res.autorizador_id) {
       onAutorizado(res.autorizador_id, res.nome ?? '')

@@ -13,6 +13,8 @@ import {
   registrarAporteSangria, getAportesESangriasDaSessao,
   getProdutorPorId, listarCategoriasDesp, registrarSaidaAvulsa,
   criarCategoriaDesp, getSaldosProdutoParaSelecao,
+  getMeuSaldoResponsabilidadeComercializacao,
+  listarAtendentesLojaParaTransferencia, getSaldoLojaDoAtendente,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos, criarProduto } from '@/lib/comercializacao/produtos.actions'
@@ -168,6 +170,7 @@ export default function CaixaPage() {
   const [modalFechar, setModalFechar] = useState(false)
   const [aba, setAba] = useState<'buscar' | 'solicitacoes' | 'operacoes' | 'fechar'>('buscar')
   const [saldoInicial, setSaldoInicial] = useState('')
+  const [saldoHerdado, setSaldoHerdado] = useState<number | null>(null)
   const [abrindo, setAbrindo] = useState(false)
   const [termoBusca, setTermoBusca] = useState('')
   const [resultadosBusca, setResultadosBusca] = useState<ProdutorBusca[]>([])
@@ -202,7 +205,12 @@ export default function CaixaPage() {
   const [erroRateio, setErroRateio] = useState('')
   const [modalAporte, setModalAporte] = useState(false)
   const [admins, setAdmins] = useState<AdminOrg[]>([])
-  const [formAporte, setFormAporte] = useState({ tipo: 'aporte' as 'aporte' | 'sangria', valor: '', admin_id: '', admin_senha: '', observacoes: '' })
+  const [formAporte, setFormAporte] = useState({
+    tipo: 'aporte' as 'aporte' | 'sangria', valor: '', admin_id: '', admin_senha: '', observacoes: '',
+    origemModulo: 'dinheiro' as 'dinheiro' | 'loja', origemAtendenteId: '', origemEmail: '',
+  })
+  const [atendentesLoja, setAtendentesLoja] = useState<{ usuario_id: string; nome: string; caixa_id: string; status: 'aberto' | 'fechado' }[]>([])
+  const [saldoOrigemLoja, setSaldoOrigemLoja] = useState<number | null>(null)
   const [salvandoAporte, setSalvandoAporte] = useState(false)
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
@@ -338,6 +346,14 @@ export default function CaixaPage() {
     if (s) {
       const sols = await listarSolicitacoesPendentes()
       setSolicitacoes((sols ?? []) as unknown as Solicitacao[])
+    } else {
+      // Continuidade: sugere como saldo inicial o saldo sob responsabilidade do
+      // atendente no fechamento anterior (ou o que já se acumulou depois dele).
+      const resp = await getMeuSaldoResponsabilidadeComercializacao()
+      if (resp.sessao_id && resp.saldo_atual_especie > 0) {
+        setSaldoHerdado(resp.saldo_atual_especie)
+        setSaldoInicial(resp.saldo_atual_especie.toFixed(2))
+      }
     }
     if (user) {
       const { data: usuarioData } = await supabase
@@ -381,15 +397,39 @@ export default function CaixaPage() {
   async function abrirModalAporte() {
     const lista = await listarAdminsDaOrg()
     setAdmins((lista ?? []) as unknown as AdminOrg[])
-    setFormAporte({ tipo: 'aporte', valor: '', admin_id: '', admin_senha: '', observacoes: '' })
+    setFormAporte({ tipo: 'aporte', valor: '', admin_id: '', admin_senha: '', observacoes: '', origemModulo: 'dinheiro', origemAtendenteId: '', origemEmail: '' })
+    setAtendentesLoja([])
+    setSaldoOrigemLoja(null)
     setErroAporte('')
     setModalAporte(true)
   }
 
+  async function selecionarOrigemLoja() {
+    setFormAporte(f => ({ ...f, origemModulo: 'loja' }))
+    if (atendentesLoja.length === 0) {
+      const lista = await listarAtendentesLojaParaTransferencia()
+      setAtendentesLoja(lista ?? [])
+    }
+  }
+
+  async function selecionarAtendenteOrigem(atendenteId: string) {
+    setFormAporte(f => ({ ...f, origemAtendenteId: atendenteId }))
+    setSaldoOrigemLoja(null)
+    if (!atendenteId) return
+    const resp = await getSaldoLojaDoAtendente(atendenteId)
+    setSaldoOrigemLoja(resp.saldo_atual_especie)
+  }
+
   async function handleAporteSangria() {
-    if (!sessao || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha) return
+    if (!sessao || !formAporte.valor) return
+    const transferencia = formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja'
+    if (transferencia) {
+      if (!formAporte.origemAtendenteId || !formAporte.origemEmail || !formAporte.admin_senha) return
+    } else {
+      if (!formAporte.admin_id || !formAporte.admin_senha) return
+    }
     const admin = admins.find(a => a.id === formAporte.admin_id)
-    if (!admin) return
+    if (!transferencia && !admin) return
     setSalvandoAporte(true)
     setErroAporte('')
     try {
@@ -397,9 +437,10 @@ export default function CaixaPage() {
         sessao_id: sessao.id,
         tipo: formAporte.tipo,
         valor: parseFloat(formAporte.valor),
-        admin_email: admin.email,
+        admin_email: transferencia ? formAporte.origemEmail : admin!.email,
         admin_senha: formAporte.admin_senha,
-        observacoes: formAporte.observacoes || undefined
+        observacoes: formAporte.observacoes || undefined,
+        ...(transferencia ? { origem: { modulo: 'loja' as const, atendente_origem_id: formAporte.origemAtendenteId } } : {}),
       })
       setModalAporte(false)
       await recarregarSessao()
@@ -866,6 +907,11 @@ export default function CaixaPage() {
               <Input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
                 onChange={e => setSaldoInicial(e.target.value)} />
             </Field>
+            {saldoHerdado !== null && (
+              <div style={{ fontSize: 12, color: COM_C.txtSub }}>
+                Saldo herdado do fechamento anterior: {fmtReal(saldoHerdado)} — ajuste se necessário.
+              </div>
+            )}
             <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo || !saldoInicial} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
               {abrindo ? 'Abrindo...' : 'Abrir caixa'}
             </Btn>
@@ -908,7 +954,12 @@ export default function CaixaPage() {
           footer={
             <>
               <Btn variante="cinza" onClick={() => setModalAporte(false)}>Cancelar</Btn>
-              <Btn variante="marrom" icone="ti-check" disabled={salvandoAporte || !formAporte.valor || !formAporte.admin_id || !formAporte.admin_senha} onClick={handleAporteSangria}>
+              <Btn variante="marrom" icone="ti-check" disabled={
+                salvandoAporte || !formAporte.valor || !formAporte.admin_senha ||
+                (formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja'
+                  ? !formAporte.origemAtendenteId || !formAporte.origemEmail
+                  : !formAporte.admin_id)
+              } onClick={handleAporteSangria}>
                 {salvandoAporte ? 'Processando...' : 'Confirmar'}
               </Btn>
             </>
@@ -916,7 +967,7 @@ export default function CaixaPage() {
         >
           <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
             {(['aporte', 'sangria'] as const).map(t => (
-              <button key={t} onClick={() => setFormAporte(f => ({ ...f, tipo: t }))} style={{
+              <button key={t} onClick={() => setFormAporte(f => ({ ...f, tipo: t, origemModulo: 'dinheiro' }))} style={{
                 flex: 1, padding: 10, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 border: `2px solid ${formAporte.tipo === t ? (t === 'aporte' ? COM_C.verde : COM_C.vermelho) : COM_C.borda}`,
                 background: formAporte.tipo === t ? (t === 'aporte' ? COM_C.verdeLt : COM_C.vermelhoLt) : '#fff',
@@ -931,16 +982,54 @@ export default function CaixaPage() {
               <Input type="number" step="0.01" placeholder="0,00" value={formAporte.valor}
                 onChange={e => setFormAporte(f => ({ ...f, valor: e.target.value }))} />
             </Field>
-            <Field label="Admin autorizador *">
-              <Select value={formAporte.admin_id} onChange={e => setFormAporte(f => ({ ...f, admin_id: e.target.value }))}>
-                <option value="">Selecionar admin...</option>
-                {admins.map(a => <option key={a.id} value={a.id}>{a.nome_completo}</option>)}
-              </Select>
-            </Field>
-            <Field label="Senha do admin *">
-              <Input type="password" placeholder="••••••••" value={formAporte.admin_senha}
-                onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))} />
-            </Field>
+            {formAporte.tipo === 'aporte' && (
+              <Field label="Origem">
+                <Select value={formAporte.origemModulo} onChange={e => e.target.value === 'loja' ? selecionarOrigemLoja() : setFormAporte(f => ({ ...f, origemModulo: 'dinheiro' }))}>
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="loja">Caixa da Loja</option>
+                </Select>
+              </Field>
+            )}
+            {formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja' ? (
+              <>
+                <Field label="De qual atendente (Loja) *">
+                  <Select value={formAporte.origemAtendenteId} onChange={e => selecionarAtendenteOrigem(e.target.value)}>
+                    <option value="">Selecionar atendente...</option>
+                    {atendentesLoja.map(a => (
+                      <option key={a.usuario_id} value={a.usuario_id}>
+                        {a.nome} {a.status === 'aberto' ? '(caixa aberto)' : '(caixa fechado)'}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                {saldoOrigemLoja !== null && (
+                  <div style={{ fontSize: 12, color: parseFloat(formAporte.valor || '0') > saldoOrigemLoja ? COM_C.vermelho : COM_C.txtSub }}>
+                    Saldo disponível nesse caixa: {fmtReal(saldoOrigemLoja)}
+                  </div>
+                )}
+                <Field label="E-mail de quem autoriza *" hint="O próprio atendente de origem ou um admin">
+                  <Input type="email" placeholder="nome@exemplo.com" value={formAporte.origemEmail}
+                    onChange={e => setFormAporte(f => ({ ...f, origemEmail: e.target.value }))} />
+                </Field>
+                <Field label="Senha *">
+                  <Input type="password" placeholder="••••••••" value={formAporte.admin_senha}
+                    onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))} />
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Admin autorizador *">
+                  <Select value={formAporte.admin_id} onChange={e => setFormAporte(f => ({ ...f, admin_id: e.target.value }))}>
+                    <option value="">Selecionar admin...</option>
+                    {admins.map(a => <option key={a.id} value={a.id}>{a.nome_completo}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Senha do admin *">
+                  <Input type="password" placeholder="••••••••" value={formAporte.admin_senha}
+                    onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))} />
+                </Field>
+              </>
+            )}
             <Field label="Observações">
               <Input placeholder="Opcional" value={formAporte.observacoes}
                 onChange={e => setFormAporte(f => ({ ...f, observacoes: e.target.value }))} />

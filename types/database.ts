@@ -499,6 +499,20 @@ export interface LojaLote {
   criado_em:          string
 }
 
+export interface LojaSangria {
+  id:               string
+  org_id:           string
+  caixa_id:         string
+  tipo:             'aporte' | 'sangria'
+  valor:            number
+  autorizado_por:   string
+  executado_por:    string
+  observacoes:      string | null
+  created_at:       string
+  origem_transferencia?:        'comercializacao' | 'loja' | null
+  referencia_transferencia_id?: string | null
+}
+
 export interface LojaCaixa {
   id:               string
   org_id:           string
@@ -1160,6 +1174,8 @@ export interface AporteSangria {
   executado_por:    string
   observacoes:      string | null
   created_at:       string
+  origem_transferencia?:        'comercializacao' | 'loja' | null
+  referencia_transferencia_id?: string | null
 }
 
 export interface ComprovantePagamento {
@@ -1340,6 +1356,7 @@ export type Database = {
       loja_produtos:             TableDef<LojaProduto>
       loja_lotes:                TableDef<LojaLote>
       loja_caixas:               TableDef<LojaCaixa>
+      loja_sangrias:             TableDef<LojaSangria>
       loja_vendas:               TableDef<LojaVenda>
       loja_venda_itens:          TableDef<LojaVendaItem>
       loja_compras:              TableDef<LojaCompra>

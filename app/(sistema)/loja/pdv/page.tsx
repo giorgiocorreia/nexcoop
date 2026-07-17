@@ -8,9 +8,12 @@ import {
   finalizarVenda,
   registrarSangriaLoja,
   fecharCaixaLoja,
+  validarSenhaParaTransferencia,
 } from '@/lib/loja/actions'
 import type { ResumoFechamento } from '@/lib/loja/actions'
 import { getDetalhesSessao } from '@/lib/loja/caixa-relatorio-actions'
+import { getSaldoResponsabilidadeLoja, getSaldoResponsabilidadeComercializacao } from '@/lib/tesouraria/saldo-responsabilidade'
+import { listarAtendentesComSessaoCaixa } from '@/lib/comercializacao/caixa.actions'
 import { podeVenderLoja, orgTemModulo } from '@/lib/permissoes'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn } from '@/components/ui/Btn'
@@ -52,6 +55,7 @@ export default function PDVPage() {
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoLoja | null>(null)
   const [modal, setModal] = useState<'quantidade' | 'autorizacao' | 'pagamento' | 'comprovante' | 'sangria' | 'fechamento' | null>(null)
   const [pendencia, setPendencia] = useState<PendenciaAutorizacao | null>(null)
+  const [pendenciaOrigemAtendenteId, setPendenciaOrigemAtendenteId] = useState<string | null>(null)
   const [vendaIdFinalizada, setVendaIdFinalizada] = useState<string | null>(null)
   const [resumoFechamento, setResumoFechamento] = useState<ResumoFechamento | null>(null)
   const [fechandoCaixa, setFechandoCaixa] = useState(false)
@@ -64,11 +68,16 @@ export default function PDVPage() {
   const [mostrarDropdown, setMostrarDropdown] = useState(false)
 
   const [valorAbertura, setValorAbertura] = useState('')
+  const [saldoHerdadoLoja, setSaldoHerdadoLoja] = useState<number | null>(null)
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
 
   const [sangriaValor, setSangriaValor] = useState('')
   const [sangriaTipo, setSangriaTipo] = useState<'aporte' | 'sangria'>('sangria')
   const [sangriaObs, setSangriaObs] = useState('')
+  const [sangriaOrigemModulo, setSangriaOrigemModulo] = useState<'dinheiro' | 'comercializacao'>('dinheiro')
+  const [sangriaOrigemAtendenteId, setSangriaOrigemAtendenteId] = useState('')
+  const [atendentesComercial, setAtendentesComercial] = useState<{ usuario_id: string; nome: string; sessao_id: string; status: 'aberta' | 'fechada' }[]>([])
+  const [saldoOrigemComercial, setSaldoOrigemComercial] = useState<number | null>(null)
 
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
@@ -122,7 +131,17 @@ export default function PDVPage() {
         .eq('status', 'aberto')
         .maybeSingle()
 
-      if (caixaAberto) setCaixa(caixaAberto as EstadoCaixa)
+      if (caixaAberto) {
+        setCaixa(caixaAberto as EstadoCaixa)
+      } else {
+        // Continuidade: sugere como valor de abertura o saldo sob responsabilidade
+        // do atendente no fechamento anterior (ou o que já se acumulou depois dele).
+        const resp = await getSaldoResponsabilidadeLoja(oid as string, user.id)
+        if (resp.caixa_id && resp.saldo_atual_especie > 0) {
+          setSaldoHerdadoLoja(resp.saldo_atual_especie)
+          setValorAbertura(resp.saldo_atual_especie.toFixed(2))
+        }
+      }
 
       const { data: prods } = await supabase
         .from('loja_produtos')
@@ -264,15 +283,37 @@ export default function PDVPage() {
     }))
   }
 
+  async function selecionarOrigemComercial() {
+    setSangriaOrigemModulo('comercializacao')
+    if (atendentesComercial.length === 0 && orgId) {
+      const lista = await listarAtendentesComSessaoCaixa(orgId)
+      setAtendentesComercial(lista ?? [])
+    }
+  }
+
+  async function selecionarAtendenteOrigemComercial(atendenteId: string) {
+    setSangriaOrigemAtendenteId(atendenteId)
+    setSaldoOrigemComercial(null)
+    if (!atendenteId || !orgId) return
+    const resp = await getSaldoResponsabilidadeComercializacao(orgId, atendenteId)
+    setSaldoOrigemComercial(resp.saldo_atual_especie)
+  }
+
   function handleSangriaClick() {
     const valor = parseFloat(sangriaValor.replace(',', '.')) || 0
+    const transferencia = sangriaTipo === 'aporte' && sangriaOrigemModulo === 'comercializacao' && sangriaOrigemAtendenteId
+    setPendenciaOrigemAtendenteId(transferencia ? sangriaOrigemAtendenteId : null)
     setPendencia({
       tipo: 'sangria',
       descricao: `${sangriaTipo === 'sangria' ? 'Sangria' : 'Aporte'} de ${fmtReal(valor)} solicitado.`,
       onAutorizado: async (autId) => {
         if (!orgId || !usuarioId || !caixa) return
-        await registrarSangriaLoja(orgId, caixa.id, sangriaTipo, valor, autId, usuarioId, sangriaObs || undefined)
-        setSangriaValor(''); setSangriaObs(''); setModal(null); setPendencia(null)
+        await registrarSangriaLoja(
+          orgId, caixa.id, sangriaTipo, valor, autId, usuarioId, sangriaObs || undefined,
+          transferencia ? { modulo: 'comercializacao' as const, atendente_origem_id: sangriaOrigemAtendenteId } : undefined
+        )
+        setSangriaValor(''); setSangriaObs(''); setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId(''); setSaldoOrigemComercial(null)
+        setModal(null); setPendencia(null)
       },
     })
     setModal('autorizacao')
@@ -320,8 +361,13 @@ export default function PDVPage() {
         <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', textAlign: 'left', marginBottom: 6 }}>Valor de abertura (R$)</label>
         <input type="text" value={valorAbertura} onChange={e => setValorAbertura(e.target.value)} placeholder="0,00" autoFocus
           onKeyDown={e => e.key === 'Enter' && handleAbrirCaixa()}
-          style={{ width: '100%', padding: '10px 12px', border: `1.5px solid #E5E3DC`, borderRadius: 8, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 16 }}
+          style={{ width: '100%', padding: '10px 12px', border: `1.5px solid #E5E3DC`, borderRadius: 8, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: saldoHerdadoLoja !== null ? 6 : 16 }}
         />
+        {saldoHerdadoLoja !== null && (
+          <div style={{ fontSize: 12, color: '#78716C', textAlign: 'left', marginBottom: 16 }}>
+            Saldo herdado do fechamento anterior: {fmtReal(saldoHerdadoLoja)} — ajuste se necessário.
+          </div>
+        )}
         <Btn onClick={handleAbrirCaixa} disabled={abrindoCaixa}
           style={{ width: '100%', justifyContent: 'center', background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
           {abrindoCaixa ? 'Abrindo...' : 'Abrir Caixa'}
@@ -538,7 +584,10 @@ export default function PDVPage() {
           titulo={pendencia.tipo === 'desconto_extra' ? 'Autorizar Desconto Extra' : 'Autorizar Sangria'}
           descricao={pendencia.descricao}
           onAutorizado={pendencia.onAutorizado}
-          onCancelar={() => { setModal(null); setPendencia(null) }}
+          onCancelar={() => { setModal(null); setPendencia(null); setPendenciaOrigemAtendenteId(null) }}
+          validarSenha={pendenciaOrigemAtendenteId
+            ? (org, senha) => validarSenhaParaTransferencia(org, senha, pendenciaOrigemAtendenteId)
+            : undefined}
         />
       )}
 
@@ -567,7 +616,7 @@ export default function PDVPage() {
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 20, color: '#1C1917' }}>Sangria / Aporte</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               {(['sangria', 'aporte'] as const).map(t => (
-                <button key={t} onClick={() => setSangriaTipo(t)}
+                <button key={t} onClick={() => { setSangriaTipo(t); setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId('') }}
                   style={{ flex: 1, padding: '8px', borderRadius: 8, border: `2px solid ${sangriaTipo === t ? '#E07B30' : '#E5E3DC'}`, background: sangriaTipo === t ? '#FFF7ED' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: sangriaTipo === t ? 700 : 400, color: sangriaTipo === t ? '#92400e' : '#78716C', textTransform: 'capitalize' }}>
                   {t}
                 </button>
@@ -577,13 +626,48 @@ export default function PDVPage() {
             <input type="text" value={sangriaValor} onChange={e => setSangriaValor(e.target.value)} placeholder="0,00"
               style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
             />
+            {sangriaTipo === 'aporte' && (
+              <>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>Origem</label>
+                <select
+                  value={sangriaOrigemModulo}
+                  onChange={e => e.target.value === 'comercializacao' ? selecionarOrigemComercial() : (setSangriaOrigemModulo('dinheiro'), setSangriaOrigemAtendenteId(''))}
+                  style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+                >
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="comercializacao">Caixa da Comercialização</option>
+                </select>
+                {sangriaOrigemModulo === 'comercializacao' && (
+                  <>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>De qual atendente</label>
+                    <select
+                      value={sangriaOrigemAtendenteId}
+                      onChange={e => selecionarAtendenteOrigemComercial(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+                    >
+                      <option value="">Selecionar atendente...</option>
+                      {atendentesComercial.map(a => (
+                        <option key={a.usuario_id} value={a.usuario_id}>
+                          {a.nome} {a.status === 'aberta' ? '(caixa aberto)' : '(caixa fechado)'}
+                        </option>
+                      ))}
+                    </select>
+                    {saldoOrigemComercial !== null && (
+                      <div style={{ fontSize: 12, color: '#78716C', marginBottom: 12 }}>
+                        Saldo disponível nesse caixa: {fmtReal(saldoOrigemComercial)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
             <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>Observações (opcional)</label>
             <input type="text" value={sangriaObs} onChange={e => setSangriaObs(e.target.value)} placeholder="Motivo..."
               style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 20 }}
             />
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Btn variante="cinza" onClick={() => setModal(null)}>Cancelar</Btn>
-              <Btn onClick={handleSangriaClick} disabled={!sangriaValor}
+              <Btn onClick={handleSangriaClick} disabled={!sangriaValor || (sangriaOrigemModulo === 'comercializacao' && !sangriaOrigemAtendenteId)}
                 style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
                 Solicitar autorização
               </Btn>
