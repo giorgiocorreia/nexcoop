@@ -612,6 +612,8 @@ export default function CaixaPage() {
   // litro, caixa), não sempre "kg" fixo.
   const unidadeEntregaSelecionada = produtos.find(p => p.id === formEntrega.produto_id)?.unidade ?? 'kg'
   const quantidadeFracionada = unidadeEntregaSelecionada === 'kg' || unidadeEntregaSelecionada === 'litro'
+  const unidadeReceberSelecionada = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.unidade ?? 'kg'
+  const unidadeSaqueSelecionada = saldosSelecao.find(s => s.produto_id === formSaque.produto_id)?.unidade ?? 'kg'
 
   async function confirmarRateio() {
     if (!sessao || !percentualOk) return
@@ -1461,19 +1463,22 @@ export default function CaixaPage() {
                       <Select value={formReceber.produto_id}
                         onChange={e => { setFormReceber(f => ({ ...f, produto_id: e.target.value })); carregarCotacao(e.target.value) }}>
                         <option value="">Selecionar...</option>
-                        {saldosSelecao.map(s => (
-                          <option key={s.produto_id} value={s.produto_id}>
-                            {s.nome} (saldo: {s.saldo.toFixed(3)}{s.unidade})
-                          </option>
-                        ))}
+                        {saldosSelecao.map(s => {
+                          const { inteiro, decimal } = formatarKg(s.saldo)
+                          return (
+                            <option key={s.produto_id} value={s.produto_id}>
+                              {s.nome} (saldo: {inteiro}{decimal} {s.unidade})
+                            </option>
+                          )
+                        })}
                       </Select>
                     </Field>
-                    <Field label="Quantidade (kg)">
+                    <Field label={`Quantidade (${unidadeReceberSelecionada})`}>
                       <Input type="number" step="0.001" placeholder="0,000" value={formReceber.quantidade}
                         onChange={e => setFormReceber(f => ({ ...f, quantidade: e.target.value }))}
                         style={{ width: 110 }} />
                     </Field>
-                    <Field label="Preço/kg (R$)">
+                    <Field label={`Preço/${unidadeReceberSelecionada} (R$)`}>
                       <Input type="number" step="0.01" placeholder="0,00" value={formReceber.preco_kg}
                         onChange={e => setFormReceber(f => ({ ...f, preco_kg: e.target.value }))}
                         style={{ width: 100 }} />
@@ -1533,12 +1538,15 @@ export default function CaixaPage() {
                       <Field label="Produto (venda antecipada)">
                         <Select value={formSaque.produto_id} onChange={e => setFormSaque(f => ({ ...f, produto_id: e.target.value }))}>
                           <option value="">Selecionar...</option>
-                          {saldosSelecao.map(s => (
-                            <option key={s.produto_id} value={s.produto_id}>{s.nome} (saldo: {s.saldo.toFixed(3)}{s.unidade})</option>
-                          ))}
+                          {saldosSelecao.map(s => {
+                            const { inteiro, decimal } = formatarKg(s.saldo)
+                            return (
+                              <option key={s.produto_id} value={s.produto_id}>{s.nome} (saldo: {inteiro}{decimal} {s.unidade})</option>
+                            )
+                          })}
                         </Select>
                       </Field>
-                      <Field label="Preço/kg (R$)">
+                      <Field label={`Preço/${unidadeSaqueSelecionada} (R$)`}>
                         <Input type="number" step="0.01" placeholder="0,00" value={formSaque.preco_kg}
                           onChange={e => setFormSaque(f => ({ ...f, preco_kg: e.target.value }))}
                           style={{ width: 100 }} />
