@@ -15,12 +15,15 @@ interface Props {
   orgId: string
   onClose: () => void
   onSuccess: () => void
+  /** Transferência interna não tem NF-e de saída emitida pela cooperativa —
+   *  não existe devolução via XML/chave de NF-e nesse fluxo, só confirma o pagamento. */
+  permiteDevolucao?: boolean
 }
 
-type Etapa = "pergunta" | "upload" | "confirmar" | "processando" | "concluido"
+type Etapa = "pergunta" | "confirmar-simples" | "upload" | "confirmar" | "processando" | "concluido"
 
-export default function ModalInformarPagamento({ venda, orgId, onClose, onSuccess }: Props) {
-  const [etapa, setEtapa]       = useState<Etapa>("pergunta")
+export default function ModalInformarPagamento({ venda, orgId, onClose, onSuccess, permiteDevolucao = true }: Props) {
+  const [etapa, setEtapa]       = useState<Etapa>(permiteDevolucao ? "pergunta" : "confirmar-simples")
   const [dadosDev, setDadosDev] = useState<DadosDevolucao | null>(null)
   const [xmlRaw, setXmlRaw]     = useState("")
   const [chaveManual, setChaveManual] = useState("")
@@ -89,7 +92,7 @@ export default function ModalInformarPagamento({ venda, orgId, onClose, onSucces
       setTimeout(onSuccess, 1500)
     } else {
       setErro(result.error ?? "Erro ao processar")
-      setEtapa("pergunta")
+      setEtapa(permiteDevolucao ? "pergunta" : "confirmar-simples")
     }
   }
 
@@ -124,6 +127,18 @@ export default function ModalInformarPagamento({ venda, orgId, onClose, onSucces
             <div style={{ display: "flex", gap: 10 }}>
               {btn("Sim, houve devolução", () => setEtapa("upload"), true)}
               {btn("Não, pagamento integral", handleSemDevolucao)}
+            </div>
+            {erro && <div style={{ marginTop: 12, color: "#DC2626", fontSize: 12 }}>{erro}</div>}
+          </div>
+        )}
+
+        {etapa === "confirmar-simples" && (
+          <div>
+            <div style={{ fontSize: 13, color: "#78716C", marginBottom: 20 }}>
+              Transferência interna — sem NF-e de saída da cooperativa. Confirme o recebimento do pagamento.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {btn("Confirmar pagamento", handleSemDevolucao, true)}
             </div>
             {erro && <div style={{ marginTop: 12, color: "#DC2626", fontSize: 12 }}>{erro}</div>}
           </div>

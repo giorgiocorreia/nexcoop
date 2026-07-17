@@ -435,6 +435,7 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
           orgId={lote.organizacao_id}
           onClose={() => setShowModalPagamento(false)}
           onSuccess={() => { setShowModalPagamento(false); router.refresh() }}
+          permiteDevolucao={!isTransferencia}
         />
       )}
 
