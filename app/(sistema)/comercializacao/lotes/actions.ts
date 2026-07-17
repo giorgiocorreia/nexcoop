@@ -301,6 +301,9 @@ export async function criarVendaExterna(input: {
       preco_kg:                 input.precoKg,
       taxa_comercializacao_pct: taxa,
       status:                   'rascunho',
+      // status_nfe explícito — nunca depender do DEFAULT da coluna (histórico:
+      // migration 054 mudou o CHECK e quebrou o default antigo 'pendente', ver migration 070).
+      status_nfe:               tipoDocumento === 'transferencia_interna' ? null : 'rascunho',
       observacoes:              input.observacoes ?? null,
       tipo_documento:           tipoDocumento,
     } as any)

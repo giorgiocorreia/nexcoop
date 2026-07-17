@@ -44,8 +44,9 @@
 | 067 | vendas_externas: +tipo_documento CHECK ('nfe_saida'\|'transferencia_interna') default 'nfe_saida' — venda de lote para empresa do próprio cooperado, sem NF-e da cooperativa (comprador emite por fora) |
 | 068 | fix fn_atualizar_resultado_safra_snapshot: `status_nfe NOT IN (...)` nunca é TRUE quando status_nfe é NULL (SQL) — vendas tipo_documento='transferencia_interna' (status_nfe sempre NULL) agora contam em receita_bruta_rs/taxa_cooperativa_rs/funrural_rs/total_kg_vendido |
 | 069 | vendas_quebras_peso (NOVA) — quebra de peso no destino (cacau quente); comprador paga o peso recebido, aplicação reduz o valor a receber do lançamento; cooperativa absorve. Não altera NF-e, valor_bruto nem resultado_safra_snapshot |
+| 070 | fix vendas_externas.status_nfe: DEFAULT 'pendente' (migration 048) nunca foi atualizado quando a 054 dropou 'pendente' do CHECK — todo INSERT sem status_nfe explícito quebrava desde 25/06/2026; corrige DEFAULT para 'rascunho' e inclui 'erro' no CHECK (usado por emitir-nfe-saida.ts em falha de emissão) |
 
-**Próxima migration:** 070
+**Próxima migration:** 071
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

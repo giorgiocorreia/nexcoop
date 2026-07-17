@@ -1050,7 +1050,10 @@ export interface VendaExterna {
   chave_nfe:        string | null
   numero_nfe:       string | null
   serie_nfe:        string | null
-  status_nfe:       'pendente' | 'autorizada' | 'rejeitada' | 'cancelada' | 'devolvida' | null
+  // valores conforme CHECK vendas_externas_status_nfe_check (migration 070) —
+  // 'pendente' foi removido do CHECK na migration 054 mas o DEFAULT da coluna
+  // só foi corrigido na 070 (era 'pendente', virou 'rascunho')
+  status_nfe:       'rascunho' | 'processando' | 'autorizada' | 'rejeitada' | 'cancelada' | 'devolvida' | 'erro' | null
   xml_nfe:          string | null
   data_emissao_nfe: string | null
   // migration 054
