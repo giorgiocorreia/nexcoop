@@ -9,6 +9,8 @@ import {
   registrarSangriaLoja,
   fecharCaixaLoja,
   validarSenhaParaTransferencia,
+  registrarContagemFisicaLoja,
+  listarAtendentesComCaixaLoja,
 } from '@/lib/loja/actions'
 import type { ResumoFechamento } from '@/lib/loja/actions'
 import { getDetalhesSessao } from '@/lib/loja/caixa-relatorio-actions'
@@ -67,16 +69,16 @@ export default function PDVPage() {
   const [resultadosBusca, setResultadosBusca] = useState<CooperadoIdentificado[]>([])
   const [mostrarDropdown, setMostrarDropdown] = useState(false)
 
-  const [valorAbertura, setValorAbertura] = useState('')
   const [saldoHerdadoLoja, setSaldoHerdadoLoja] = useState<number | null>(null)
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
 
   const [sangriaValor, setSangriaValor] = useState('')
   const [sangriaTipo, setSangriaTipo] = useState<'aporte' | 'sangria'>('sangria')
   const [sangriaObs, setSangriaObs] = useState('')
-  const [sangriaOrigemModulo, setSangriaOrigemModulo] = useState<'dinheiro' | 'comercializacao'>('dinheiro')
+  const [sangriaOrigemModulo, setSangriaOrigemModulo] = useState<'dinheiro' | 'comercializacao' | 'loja'>('dinheiro')
   const [sangriaOrigemAtendenteId, setSangriaOrigemAtendenteId] = useState('')
   const [atendentesComercial, setAtendentesComercial] = useState<{ usuario_id: string; nome: string; sessao_id: string; status: 'aberta' | 'fechada' }[]>([])
+  const [atendentesLojaOutros, setAtendentesLojaOutros] = useState<{ usuario_id: string; nome: string; caixa_id: string; status: 'aberto' | 'fechado' }[]>([])
   const [saldoOrigemComercial, setSaldoOrigemComercial] = useState<number | null>(null)
 
   const [erro, setErro] = useState('')
@@ -137,10 +139,7 @@ export default function PDVPage() {
         // Continuidade: sugere como valor de abertura o saldo sob responsabilidade
         // do atendente no fechamento anterior (ou o que já se acumulou depois dele).
         const resp = await getSaldoResponsabilidadeLoja(oid as string, user.id)
-        if (resp.caixa_id && resp.saldo_atual_especie > 0) {
-          setSaldoHerdadoLoja(resp.saldo_atual_especie)
-          setValorAbertura(resp.saldo_atual_especie.toFixed(2))
-        }
+        setSaldoHerdadoLoja(resp.saldo_atual_especie)
       }
 
       const { data: prods } = await supabase
@@ -237,11 +236,10 @@ export default function PDVPage() {
   async function handleAbrirCaixa() {
     if (!orgId || !usuarioId) return
     setAbrindoCaixa(true)
-    const res = await abrirCaixaLoja(orgId, usuarioId, parseFloat(valorAbertura.replace(',', '.')) || 0)
+    const res = await abrirCaixaLoja(orgId, usuarioId)
     setAbrindoCaixa(false)
     if ('error' in res) { toast('error', res.error); return }
-    setCaixa({ id: res.caixaId, usuario_id: usuarioId, valor_abertura: parseFloat(valorAbertura) || 0, aberto_em: new Date().toISOString(), status: 'aberto' })
-    setValorAbertura('')
+    setCaixa({ id: res.caixaId, usuario_id: usuarioId, valor_abertura: res.valorAbertura, aberto_em: new Date().toISOString(), status: 'aberto' })
     toast('info', 'Caixa aberto com sucesso.')
   }
 
@@ -291,17 +289,29 @@ export default function PDVPage() {
     }
   }
 
+  async function selecionarOrigemLojaOutro() {
+    setSangriaOrigemModulo('loja')
+    setSangriaOrigemAtendenteId('')
+    setSaldoOrigemComercial(null)
+    if (atendentesLojaOutros.length === 0 && orgId) {
+      const lista = await listarAtendentesComCaixaLoja(orgId)
+      setAtendentesLojaOutros((lista ?? []).filter(a => a.usuario_id !== usuarioId))
+    }
+  }
+
   async function selecionarAtendenteOrigemComercial(atendenteId: string) {
     setSangriaOrigemAtendenteId(atendenteId)
     setSaldoOrigemComercial(null)
     if (!atendenteId || !orgId) return
-    const resp = await getSaldoResponsabilidadeComercializacao(orgId, atendenteId)
+    const resp = sangriaOrigemModulo === 'loja'
+      ? await getSaldoResponsabilidadeLoja(orgId, atendenteId)
+      : await getSaldoResponsabilidadeComercializacao(orgId, atendenteId)
     setSaldoOrigemComercial(resp.saldo_atual_especie)
   }
 
   function handleSangriaClick() {
     const valor = parseFloat(sangriaValor.replace(',', '.')) || 0
-    const transferencia = sangriaTipo === 'aporte' && sangriaOrigemModulo === 'comercializacao' && sangriaOrigemAtendenteId
+    const transferencia = sangriaTipo === 'aporte' && sangriaOrigemModulo !== 'dinheiro' && sangriaOrigemAtendenteId
     setPendenciaOrigemAtendenteId(transferencia ? sangriaOrigemAtendenteId : null)
     setPendencia({
       tipo: 'sangria',
@@ -310,7 +320,7 @@ export default function PDVPage() {
         if (!orgId || !usuarioId || !caixa) return
         await registrarSangriaLoja(
           orgId, caixa.id, sangriaTipo, valor, autId, usuarioId, sangriaObs || undefined,
-          transferencia ? { modulo: 'comercializacao' as const, atendente_origem_id: sangriaOrigemAtendenteId } : undefined
+          transferencia ? { modulo: sangriaOrigemModulo as 'comercializacao' | 'loja', atendente_origem_id: sangriaOrigemAtendenteId } : undefined
         )
         setSangriaValor(''); setSangriaObs(''); setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId(''); setSaldoOrigemComercial(null)
         setModal(null); setPendencia(null)
@@ -357,17 +367,11 @@ export default function PDVPage() {
           <i className="ti ti-cash-register" style={{ fontSize: 28, color: '#E07B30' }} />
         </div>
         <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, color: '#1C1917' }}>Abrir Caixa</div>
-        <div style={{ fontSize: 13, color: '#78716C', marginBottom: 20 }}>Informe o fundo de troco inicial</div>
-        <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', textAlign: 'left', marginBottom: 6 }}>Valor de abertura (R$)</label>
-        <input type="text" value={valorAbertura} onChange={e => setValorAbertura(e.target.value)} placeholder="0,00" autoFocus
-          onKeyDown={e => e.key === 'Enter' && handleAbrirCaixa()}
-          style={{ width: '100%', padding: '10px 12px', border: `1.5px solid #E5E3DC`, borderRadius: 8, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: saldoHerdadoLoja !== null ? 6 : 16 }}
-        />
-        {saldoHerdadoLoja !== null && (
-          <div style={{ fontSize: 12, color: '#78716C', textAlign: 'left', marginBottom: 16 }}>
-            Saldo herdado do fechamento anterior: {fmtReal(saldoHerdadoLoja)} — ajuste se necessário.
-          </div>
-        )}
+        <div style={{ fontSize: 13, color: '#78716C', marginBottom: 20 }}>Saldo calculado automaticamente pelo sistema</div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', textAlign: 'left', marginBottom: 6 }}>Saldo anterior</label>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#E07B30', textAlign: 'left', marginBottom: 20 }}>
+          {saldoHerdadoLoja === null ? fmtReal(0) : fmtReal(saldoHerdadoLoja)}
+        </div>
         <Btn onClick={handleAbrirCaixa} disabled={abrindoCaixa}
           style={{ width: '100%', justifyContent: 'center', background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
           {abrindoCaixa ? 'Abrindo...' : 'Abrir Caixa'}
@@ -631,13 +635,18 @@ export default function PDVPage() {
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>Origem</label>
                 <select
                   value={sangriaOrigemModulo}
-                  onChange={e => e.target.value === 'comercializacao' ? selecionarOrigemComercial() : (setSangriaOrigemModulo('dinheiro'), setSangriaOrigemAtendenteId(''))}
+                  onChange={e => {
+                    if (e.target.value === 'comercializacao') selecionarOrigemComercial()
+                    else if (e.target.value === 'loja') selecionarOrigemLojaOutro()
+                    else { setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId(''); setSaldoOrigemComercial(null) }
+                  }}
                   style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
                 >
                   <option value="dinheiro">Dinheiro</option>
                   <option value="comercializacao">Caixa da Comercialização</option>
+                  <option value="loja">Caixa de outro atendente (Loja)</option>
                 </select>
-                {sangriaOrigemModulo === 'comercializacao' && (
+                {(sangriaOrigemModulo === 'comercializacao' || sangriaOrigemModulo === 'loja') && (
                   <>
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#78716C', display: 'block', marginBottom: 6 }}>De qual atendente</label>
                     <select
@@ -646,9 +655,9 @@ export default function PDVPage() {
                       style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E3DC', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
                     >
                       <option value="">Selecionar atendente...</option>
-                      {atendentesComercial.map(a => (
+                      {(sangriaOrigemModulo === 'loja' ? atendentesLojaOutros : atendentesComercial).map(a => (
                         <option key={a.usuario_id} value={a.usuario_id}>
-                          {a.nome} {a.status === 'aberta' ? '(caixa aberto)' : '(caixa fechado)'}
+                          {a.nome} {(a.status === 'aberta' || a.status === 'aberto') ? '(caixa aberto)' : '(caixa fechado)'}
                         </option>
                       ))}
                     </select>
@@ -667,7 +676,7 @@ export default function PDVPage() {
             />
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Btn variante="cinza" onClick={() => setModal(null)}>Cancelar</Btn>
-              <Btn onClick={handleSangriaClick} disabled={!sangriaValor || (sangriaOrigemModulo === 'comercializacao' && !sangriaOrigemAtendenteId)}
+              <Btn onClick={handleSangriaClick} disabled={!sangriaValor || (sangriaOrigemModulo !== 'dinheiro' && !sangriaOrigemAtendenteId)}
                 style={{ background: '#E07B30', color: '#fff', border: '1.5px solid #E07B30' }}>
                 Solicitar autorização
               </Btn>
@@ -683,7 +692,10 @@ export default function PDVPage() {
           onImprimir={() => window.open(`/api/loja/fechamento/${resumoFechamento.caixa_id}`, '_blank')}
           onConfirmar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
           onCancelar={() => { setModal(null); setResumoFechamento(null); setCaixa(null) }}
-          onFechar={dados => setDadosConferencia(dados)}
+          onFechar={dados => {
+            setDadosConferencia(dados)
+            registrarContagemFisicaLoja(resumoFechamento.caixa_id, dados)
+          }}
         />
       )}
     </div>

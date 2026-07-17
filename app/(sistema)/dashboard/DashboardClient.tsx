@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   HubStyles, KpiCard, LinkCard, ContentCard, COM_C, HERO,
 } from '@/components/nexcoop/ui'
+import type { CustodiaUsuario } from '@/lib/tesouraria/saldo-responsabilidade'
 
 interface LancamentoResumo {
   descricao: string
@@ -44,6 +46,7 @@ interface Props {
   resumoCotas: ResumoCotas | null
   orgTipo: string | undefined
   indiceNex?: React.ReactNode
+  custodia?: CustodiaUsuario[]
 }
 
 const BRL = (v: number) =>
@@ -77,7 +80,9 @@ export default function DashboardClient({
   resumoCotas,
   orgTipo,
   indiceNex,
+  custodia,
 }: Props) {
+  const router = useRouter()
   return (
     <>
       <HubStyles />
@@ -127,6 +132,70 @@ export default function DashboardClient({
                 ? resumoCotas.inadimplentes.slice(0, 2).map(c => c.nome_completo.split(' ').slice(0, 2).join(' ')).join(', ')
                 : 'Nenhum cooperado inadimplente'}
               icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+          </div>
+        )}
+
+        {custodia && custodia.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+          <ContentCard
+            title="Custódia de caixa"
+            subtitle="Quanto cada atendente tem sob responsabilidade agora, aberto ou fechado"
+            action={
+              <button
+                onClick={() => router.refresh()}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 12, color: COM_C.marcaMd, fontWeight: 600, padding: 0,
+                }}
+              >
+                <i className="ti ti-refresh" style={{ fontSize: 13 }} /> Atualizar
+              </button>
+            }
+          >
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', color: COM_C.txtSub, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Atendente</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Comercialização</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600 }}>Loja</th>
+                    <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Total sob custódia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {custodia.map((c, i) => (
+                    <tr key={c.usuario_id} style={{ borderTop: i > 0 ? `1px solid ${COM_C.borda}` : 'none' }}>
+                      <td style={{ padding: '10px 8px', fontWeight: 600, color: COM_C.txt }}>{c.nome}</td>
+                      <td style={{ padding: '10px 8px' }}>
+                        {c.comercializacao.status_sessao ? (
+                          <>
+                            {BRL(c.comercializacao.saldo_atual_especie)}{' '}
+                            <span style={{ fontSize: 11, color: c.comercializacao.status_sessao === 'aberta' ? COM_C.verdeTxt : COM_C.txtSub }}>
+                              ({c.comercializacao.status_sessao === 'aberta' ? 'caixa aberto' : 'caixa fechado'})
+                            </span>
+                          </>
+                        ) : <span style={{ color: COM_C.txtSub }}>—</span>}
+                      </td>
+                      <td style={{ padding: '10px 8px' }}>
+                        {c.loja.status_caixa ? (
+                          <>
+                            {BRL(c.loja.saldo_atual_especie)}{' '}
+                            <span style={{ fontSize: 11, color: c.loja.status_caixa === 'aberto' ? COM_C.verdeTxt : COM_C.txtSub }}>
+                              ({c.loja.status_caixa === 'aberto' ? 'caixa aberto' : 'caixa fechado'})
+                            </span>
+                          </>
+                        ) : <span style={{ color: COM_C.txtSub }}>—</span>}
+                      </td>
+                      <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: COM_C.txt }}>
+                        {BRL(c.total)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ContentCard>
           </div>
         )}
 

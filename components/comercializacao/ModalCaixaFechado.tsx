@@ -1,9 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
+import { abrirCaixa, getMeuSaldoResponsabilidadeComercializacao } from '@/lib/comercializacao/caixa.actions'
 import { Btn } from '@/components/ui/Btn'
+
+function fmtReal(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 interface Props {
   aberto: boolean
@@ -21,39 +25,29 @@ const ACAO_LABEL: Record<Props['acao'], string> = {
 export default function ModalCaixaFechado({ aberto, onClose, produtorId, acao }: Props) {
   const router = useRouter()
   const [etapa, setEtapa] = useState<'aviso' | 'campos'>('aviso')
-  const [saldoInicial, setSaldoInicial] = useState('0,00')
+  const [saldoHerdado, setSaldoHerdado] = useState<number | null>(null)
   const [erro, setErro] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    if (etapa === 'campos' && saldoHerdado === null) {
+      getMeuSaldoResponsabilidadeComercializacao().then(r => setSaldoHerdado(r.saldo_atual_especie))
+    }
+  }, [etapa, saldoHerdado])
 
   if (!aberto) return null
 
   function handleFechar() {
     setEtapa('aviso')
-    setSaldoInicial('0,00')
+    setSaldoHerdado(null)
     setErro('')
     onClose()
-  }
-
-  function parseSaldo(v: string): number {
-    return parseFloat(v.replace(/\./g, '').replace(',', '.')) || 0
-  }
-
-  function mascararMoeda(input: string): string {
-    const raw = input.replace(/\D/g, '').replace(/^0+/, '') || '0'
-    const padded = raw.padStart(3, '0')
-    const cents = padded.slice(-2)
-    const reais = padded.slice(0, -2) || '0'
-    return reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + cents
-  }
-
-  function handleSaldoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSaldoInicial(mascararMoeda(e.target.value))
   }
 
   function handleSubmit() {
     setErro('')
     startTransition(async () => {
-      const result = await abrirCaixa(parseSaldo(saldoInicial))
+      const result = await abrirCaixa()
       if (!result.success) {
         setErro(result.error ?? 'Erro ao abrir caixa.')
         return
@@ -105,25 +99,11 @@ export default function ModalCaixaFechado({ aberto, onClose, produtorId, acao }:
         }}>
           <div style={{ borderTop: '1px solid #f0ede8', paddingTop: '16px', marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '12px', color: '#6b6b6b', marginBottom: '6px', fontWeight: 500 }}>
-              Saldo inicial em espécie (R$)
+              Saldo anterior (calculado automaticamente)
             </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={saldoInicial}
-              onChange={handleSaldoChange}
-              onFocus={e => e.target.select()}
-              placeholder="0,00"
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #e5e3dc',
-                borderRadius: '8px',
-                fontSize: '14px',
-                width: '100%',
-                boxSizing: 'border-box',
-                fontFamily: 'inherit',
-              }}
-            />
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#1a1a1a' }}>
+              {saldoHerdado === null ? '...' : fmtReal(saldoHerdado)}
+            </div>
           </div>
         </div>
 

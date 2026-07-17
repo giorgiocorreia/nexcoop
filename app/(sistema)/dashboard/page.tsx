@@ -16,6 +16,8 @@ import {
   verificarInadimplencia,
   buscarResumoCotasDashboard,
 } from '@/app/(sistema)/cooperados/[id]/pagamentos-actions'
+import { isAdmin } from '@/lib/permissoes'
+import { getResumoCustodiaOrg } from '@/lib/tesouraria/saldo-responsabilidade'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -25,7 +27,7 @@ export default async function DashboardPage() {
   // Redireciona super_admin para /admin; busca tipo da org em um único select
   const { data: usuarioData } = await supabase
     .from('usuarios')
-    .select('role, funcoes, organizacoes(tipo)')
+    .select('role, funcoes, organizacao_id, organizacoes(tipo, modulos_ativos)')
     .eq('id', user.id)
     .single()
   if (usuarioData?.role === 'super_admin') redirect('/admin')
@@ -56,6 +58,16 @@ export default async function DashboardPage() {
       resumoCotas = await buscarResumoCotasDashboard(usuarioOrg.organizacao_id)
     }
   }
+
+  // Custódia de caixa (Comercialização + Loja) — só admin, só se algum dos módulos estiver ativo
+  const modulosAtivos = (usuarioData?.organizacoes as unknown as { modulos_ativos?: string[] } | null)?.modulos_ativos ?? []
+  const mostraCustodia =
+    usuarioData?.organizacao_id &&
+    isAdmin({ role: usuarioData.role, funcoes: (usuarioData.funcoes ?? []) as string[] }) &&
+    (modulosAtivos.includes('loja') || modulosAtivos.includes('comercializacao'))
+  const custodia = mostraCustodia
+    ? await getResumoCustodiaOrg(usuarioData!.organizacao_id as string)
+    : []
 
   // Índice Nex — só para cooperativas
   const [snapshot, sinaisNex, cotacoesMoageiras, precoBahia, usdBrl, iceNy, ultimasCotacoesOrg] =
@@ -129,6 +141,7 @@ export default async function DashboardPage() {
       proximaAssembleia={proximaAssembleia?.[0] ?? null}
       resumoCotas={resumoCotas}
       orgTipo={orgTipo}
+      custodia={custodia}
       indiceNex={orgTipo === 'cooperativa' ? (
         <IndiceNex
           snapshot={snapshot}

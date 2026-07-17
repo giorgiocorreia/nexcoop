@@ -126,3 +126,41 @@ export async function getSaldoResponsabilidadeLoja(
     saldo_atual_especie: Number(saldoAtual.toFixed(2)),
   }
 }
+
+export interface CustodiaUsuario {
+  usuario_id: string
+  nome: string
+  comercializacao: Awaited<ReturnType<typeof getSaldoResponsabilidadeComercializacao>>
+  loja: Awaited<ReturnType<typeof getSaldoResponsabilidadeLoja>>
+  total: number
+}
+
+// Lista, para cada usuário da org que já teve caixa em algum dos dois módulos, quanto
+// tem sob custódia agora — usado no card "Custódia de caixa" do dashboard (só admin).
+export async function getResumoCustodiaOrg(organizacaoId: string): Promise<CustodiaUsuario[]> {
+  const supabase = createAdminClient()
+
+  const { data: usuarios } = await supabase
+    .from('usuarios')
+    .select('id, nome_completo')
+    .eq('organizacao_id', organizacaoId)
+    .eq('ativo', true)
+
+  const resultados = await Promise.all(
+    (usuarios ?? []).map(async u => {
+      const [comercializacao, loja] = await Promise.all([
+        getSaldoResponsabilidadeComercializacao(organizacaoId, u.id),
+        getSaldoResponsabilidadeLoja(organizacaoId, u.id),
+      ])
+      return {
+        usuario_id: u.id,
+        nome: u.nome_completo,
+        comercializacao,
+        loja,
+        total: Number((comercializacao.saldo_atual_especie + loja.saldo_atual_especie).toFixed(2)),
+      }
+    })
+  )
+
+  return resultados.filter(r => r.comercializacao.status_sessao !== null || r.loja.status_caixa !== null)
+}

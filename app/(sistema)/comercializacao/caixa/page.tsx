@@ -15,6 +15,7 @@ import {
   criarCategoriaDesp, getSaldosProdutoParaSelecao,
   getMeuSaldoResponsabilidadeComercializacao,
   listarAtendentesLojaParaTransferencia, getSaldoLojaDoAtendente,
+  listarOutrosAtendentesComercializacao, getSaldoComercializacaoDoAtendente,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
 import { listarProdutos, criarProduto } from '@/lib/comercializacao/produtos.actions'
@@ -207,10 +208,11 @@ export default function CaixaPage() {
   const [admins, setAdmins] = useState<AdminOrg[]>([])
   const [formAporte, setFormAporte] = useState({
     tipo: 'aporte' as 'aporte' | 'sangria', valor: '', admin_id: '', admin_senha: '', observacoes: '',
-    origemModulo: 'dinheiro' as 'dinheiro' | 'loja', origemAtendenteId: '', origemEmail: '',
+    origemModulo: 'dinheiro' as 'dinheiro' | 'loja' | 'comercializacao', origemAtendenteId: '', origemEmail: '',
   })
   const [atendentesLoja, setAtendentesLoja] = useState<{ usuario_id: string; nome: string; caixa_id: string; status: 'aberto' | 'fechado' }[]>([])
   const [saldoOrigemLoja, setSaldoOrigemLoja] = useState<number | null>(null)
+  const [atendentesComercial, setAtendentesComercial] = useState<{ usuario_id: string; nome: string; sessao_id: string; status: 'aberta' | 'fechada' }[]>([])
   const [salvandoAporte, setSalvandoAporte] = useState(false)
   const [erroAporte, setErroAporte] = useState('')
   const [aportesDia, setAportesDia] = useState<AporteSangria[]>([])
@@ -399,16 +401,27 @@ export default function CaixaPage() {
     setAdmins((lista ?? []) as unknown as AdminOrg[])
     setFormAporte({ tipo: 'aporte', valor: '', admin_id: '', admin_senha: '', observacoes: '', origemModulo: 'dinheiro', origemAtendenteId: '', origemEmail: '' })
     setAtendentesLoja([])
+    setAtendentesComercial([])
     setSaldoOrigemLoja(null)
     setErroAporte('')
     setModalAporte(true)
   }
 
   async function selecionarOrigemLoja() {
-    setFormAporte(f => ({ ...f, origemModulo: 'loja' }))
+    setFormAporte(f => ({ ...f, origemModulo: 'loja', origemAtendenteId: '' }))
+    setSaldoOrigemLoja(null)
     if (atendentesLoja.length === 0) {
       const lista = await listarAtendentesLojaParaTransferencia()
       setAtendentesLoja(lista ?? [])
+    }
+  }
+
+  async function selecionarOrigemComercial() {
+    setFormAporte(f => ({ ...f, origemModulo: 'comercializacao', origemAtendenteId: '' }))
+    setSaldoOrigemLoja(null)
+    if (atendentesComercial.length === 0) {
+      const lista = await listarOutrosAtendentesComercializacao()
+      setAtendentesComercial(lista ?? [])
     }
   }
 
@@ -416,13 +429,15 @@ export default function CaixaPage() {
     setFormAporte(f => ({ ...f, origemAtendenteId: atendenteId }))
     setSaldoOrigemLoja(null)
     if (!atendenteId) return
-    const resp = await getSaldoLojaDoAtendente(atendenteId)
+    const resp = formAporte.origemModulo === 'loja'
+      ? await getSaldoLojaDoAtendente(atendenteId)
+      : await getSaldoComercializacaoDoAtendente(atendenteId)
     setSaldoOrigemLoja(resp.saldo_atual_especie)
   }
 
   async function handleAporteSangria() {
     if (!sessao || !formAporte.valor) return
-    const transferencia = formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja'
+    const transferencia = formAporte.tipo === 'aporte' && (formAporte.origemModulo === 'loja' || formAporte.origemModulo === 'comercializacao')
     if (transferencia) {
       if (!formAporte.origemAtendenteId || !formAporte.origemEmail || !formAporte.admin_senha) return
     } else {
@@ -440,7 +455,9 @@ export default function CaixaPage() {
         admin_email: transferencia ? formAporte.origemEmail : admin!.email,
         admin_senha: formAporte.admin_senha,
         observacoes: formAporte.observacoes || undefined,
-        ...(transferencia ? { origem: { modulo: 'loja' as const, atendente_origem_id: formAporte.origemAtendenteId } } : {}),
+        ...(transferencia
+          ? { origem: { modulo: formAporte.origemModulo as 'loja' | 'comercializacao', atendente_origem_id: formAporte.origemAtendenteId } }
+          : {}),
       })
       setModalAporte(false)
       await recarregarSessao()
@@ -557,10 +574,9 @@ export default function CaixaPage() {
   }
 
   async function handleAbrirCaixa() {
-    if (!saldoInicial) return
     setAbrindo(true)
     try {
-      const result = await abrirCaixa(parseFloat(saldoInicial))
+      const result = await abrirCaixa()
       if (result.success) await init()
     } finally { setAbrindo(false) }
   }
@@ -756,16 +772,11 @@ export default function CaixaPage() {
   async function handleFecharCaixa() {
     if (!sessao) return
     setFechando(true)
-    // Só espécie afeta a gaveta física — aporte de cota via Pix/cartão fica de fora
-    // dessa conta (some/some no dinheiro em papel, mas não conta pra conferência
-    // de saldo físico). Ver total_entradas_pix/cartao pra esses valores.
-    const aportesEspecie = aportesDia.filter(a => a.forma_pagamento === 'especie')
-    const totalAp = aportesEspecie.filter(a => a.tipo === 'aporte').reduce((acc, a) => acc + a.valor, 0)
-    const totalSang = aportesEspecie.filter(a => a.tipo === 'sangria').reduce((acc, a) => acc + a.valor, 0)
-    const saldoCalculado = sessao.saldo_inicial_especie + totalAp - totalSang - (sessao.total_saidas_especie ?? 0)
-    const saldoParaSalvar = saldoFinal ? parseFloat(saldoFinal) : saldoCalculado
     try {
-      await fecharCaixa(sessao.id, saldoParaSalvar, obsFechamento)
+      // saldo_final_especie é sempre calculado pelo próprio fecharCaixa — o
+      // valor contado (se preenchido) vai só como log de auditoria, nunca
+      // sobrescreve o saldo oficial.
+      await fecharCaixa(sessao.id, saldoFinal ? parseFloat(saldoFinal) : undefined, obsFechamento)
       if (operacoesDia.length === 0) {
         const ops = await getOperacoesHoje(sessao.id)
         setOperacoesDia((ops ?? []) as unknown as OperacaoDia[])
@@ -901,18 +912,13 @@ export default function CaixaPage() {
       }
     >
       <div style={{ maxWidth: 420 }}>
-        <ContentCard title="Abrir caixa" subtitle="Informe o saldo inicial em espécie para iniciar o dia">
+        <ContentCard title="Abrir caixa" subtitle="Saldo calculado automaticamente pelo sistema">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Field label="Saldo inicial em espécie (R$)">
-              <Input type="number" step="0.01" placeholder="0,00" value={saldoInicial}
-                onChange={e => setSaldoInicial(e.target.value)} />
-            </Field>
-            {saldoHerdado !== null && (
-              <div style={{ fontSize: 12, color: COM_C.txtSub }}>
-                Saldo herdado do fechamento anterior: {fmtReal(saldoHerdado)} — ajuste se necessário.
-              </div>
-            )}
-            <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo || !saldoInicial} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
+            <div style={{ background: COM_C.marromLt, borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ fontSize: 12, color: COM_C.txtSub, marginBottom: 4 }}>Saldo anterior</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: COM_C.marrom }}>{fmtReal(saldoHerdado ?? 0)}</div>
+            </div>
+            <Btn variante="marrom" icone="ti-lock-open" disabled={abrindo} onClick={handleAbrirCaixa} style={{ width: '100%', justifyContent: 'center' }}>
               {abrindo ? 'Abrindo...' : 'Abrir caixa'}
             </Btn>
           </div>
@@ -956,7 +962,7 @@ export default function CaixaPage() {
               <Btn variante="cinza" onClick={() => setModalAporte(false)}>Cancelar</Btn>
               <Btn variante="marrom" icone="ti-check" disabled={
                 salvandoAporte || !formAporte.valor || !formAporte.admin_senha ||
-                (formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja'
+                (formAporte.tipo === 'aporte' && formAporte.origemModulo !== 'dinheiro'
                   ? !formAporte.origemAtendenteId || !formAporte.origemEmail
                   : !formAporte.admin_id)
               } onClick={handleAporteSangria}>
@@ -984,20 +990,25 @@ export default function CaixaPage() {
             </Field>
             {formAporte.tipo === 'aporte' && (
               <Field label="Origem">
-                <Select value={formAporte.origemModulo} onChange={e => e.target.value === 'loja' ? selecionarOrigemLoja() : setFormAporte(f => ({ ...f, origemModulo: 'dinheiro' }))}>
+                <Select value={formAporte.origemModulo} onChange={e => {
+                  if (e.target.value === 'loja') selecionarOrigemLoja()
+                  else if (e.target.value === 'comercializacao') selecionarOrigemComercial()
+                  else setFormAporte(f => ({ ...f, origemModulo: 'dinheiro', origemAtendenteId: '' }))
+                }}>
                   <option value="dinheiro">Dinheiro</option>
                   <option value="loja">Caixa da Loja</option>
+                  <option value="comercializacao">Caixa de outro atendente (Comercialização)</option>
                 </Select>
               </Field>
             )}
-            {formAporte.tipo === 'aporte' && formAporte.origemModulo === 'loja' ? (
+            {formAporte.tipo === 'aporte' && formAporte.origemModulo !== 'dinheiro' ? (
               <>
-                <Field label="De qual atendente (Loja) *">
+                <Field label={`De qual atendente (${formAporte.origemModulo === 'loja' ? 'Loja' : 'Comercialização'}) *`}>
                   <Select value={formAporte.origemAtendenteId} onChange={e => selecionarAtendenteOrigem(e.target.value)}>
                     <option value="">Selecionar atendente...</option>
-                    {atendentesLoja.map(a => (
+                    {(formAporte.origemModulo === 'loja' ? atendentesLoja : atendentesComercial).map(a => (
                       <option key={a.usuario_id} value={a.usuario_id}>
-                        {a.nome} {a.status === 'aberto' ? '(caixa aberto)' : '(caixa fechado)'}
+                        {a.nome} {(a.status === 'aberto' || a.status === 'aberta') ? '(caixa aberto)' : '(caixa fechado)'}
                       </option>
                     ))}
                   </Select>

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { getDashboardComercializacao } from '@/lib/comercializacao/dashboard'
 import type { getCacauAOrdem } from '@/lib/comercializacao/cacau-a-ordem'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
-import { abrirCaixa } from '@/lib/comercializacao/caixa.actions'
+import { abrirCaixa, getMeuSaldoResponsabilidadeComercializacao } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
 import { Btn, BtnLink } from '@/components/ui/Btn'
 import { COM_C, HERO } from '@/components/comercializacao/ui/tokens'
@@ -55,7 +55,7 @@ export default function DashboardComercializacao({
   const router = useRouter()
   const cacauAreaRef = useRef<HTMLDivElement>(null)
   const [modalAbrirCaixa, setModalAbrirCaixa] = useState(false)
-  const [saldoInicial, setSaldoInicial] = useState('')
+  const [saldoHerdado, setSaldoHerdado] = useState<number | null>(null)
   const [abrindoCaixa, setAbrindoCaixa] = useState(false)
   const [modalAporte, setModalAporte] = useState(false)
   const [valorAporte, setValorAporte] = useState('')
@@ -96,13 +96,18 @@ export default function DashboardComercializacao({
     { href: '/comercializacao/boletim-preview', label: 'Boletim Cacau (prévia)', desc: 'Modelo visual do boletim ANPC — temporário.', icon: 'ti-report-analytics', cor: COM_C.verde, corLt: COM_C.verdeLt },
   ]
 
+  async function abrirModalAbrirCaixa() {
+    setModalAbrirCaixa(true)
+    const resp = await getMeuSaldoResponsabilidadeComercializacao()
+    setSaldoHerdado(resp.saldo_atual_especie)
+  }
+
   async function handleAbrirCaixa() {
-    if (!saldoInicial) return
     setAbrindoCaixa(true)
     try {
-      await abrirCaixa(parseFloat(saldoInicial))
+      await abrirCaixa()
       setModalAbrirCaixa(false)
-      setSaldoInicial('')
+      setSaldoHerdado(null)
       router.refresh()
     } catch (e: any) {
       alert(e.message)
@@ -132,7 +137,7 @@ export default function DashboardComercializacao({
           ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}`
           : 'Nenhum fechamento registrado',
         extra: !caixaAberto ? (
-          <Btn variante="marrom" tamanho="sm" icone="ti-lock-open" onClick={() => setModalAbrirCaixa(true)}>
+          <Btn variante="marrom" tamanho="sm" icone="ti-lock-open" onClick={() => abrirModalAbrirCaixa()}>
             Abrir caixa
           </Btn>
         ) : undefined,
@@ -304,7 +309,7 @@ export default function DashboardComercializacao({
               <div style={{ textAlign: 'center', padding: '2rem 0' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
                 <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 14px' }}>Nenhuma sessão aberta para você</p>
-                <Btn variante="marrom" icone="ti-lock-open" onClick={() => setModalAbrirCaixa(true)}>Abrir caixa</Btn>
+                <Btn variante="marrom" icone="ti-lock-open" onClick={() => abrirModalAbrirCaixa()}>Abrir caixa</Btn>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -501,14 +506,14 @@ export default function DashboardComercializacao({
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 6px', color: COM_C.txt }}>Abrir caixa</h2>
-            <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 20px' }}>Informe o saldo inicial em espécie para iniciar o dia.</p>
-            <label style={{ fontSize: 12, color: COM_C.txtSub, display: 'block', marginBottom: 6 }}>Saldo inicial (R$)</label>
-            <input type="number" step="0.01" min="0" placeholder="0,00" value={saldoInicial}
-              onChange={(e) => setSaldoInicial(e.target.value)} autoFocus
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${COM_C.borda}`, fontSize: 14, boxSizing: 'border-box', marginBottom: 20 }} />
+            <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 20px' }}>Saldo calculado automaticamente pelo sistema.</p>
+            <label style={{ fontSize: 12, color: COM_C.txtSub, display: 'block', marginBottom: 6 }}>Saldo anterior</label>
+            <div style={{ fontSize: 20, fontWeight: 700, color: COM_C.marrom, marginBottom: 20 }}>
+              {saldoHerdado === null ? '...' : fmtReal(saldoHerdado)}
+            </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <Btn variante="cinza" onClick={() => { setModalAbrirCaixa(false); setSaldoInicial('') }}>Cancelar</Btn>
-              <Btn variante="marrom" icone="ti-check" disabled={!saldoInicial || abrindoCaixa} onClick={handleAbrirCaixa}>
+              <Btn variante="cinza" onClick={() => { setModalAbrirCaixa(false); setSaldoHerdado(null) }}>Cancelar</Btn>
+              <Btn variante="marrom" icone="ti-check" disabled={abrindoCaixa} onClick={handleAbrirCaixa}>
                 {abrindoCaixa ? 'Abrindo...' : 'Confirmar'}
               </Btn>
             </div>

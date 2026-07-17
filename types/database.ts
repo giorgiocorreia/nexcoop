@@ -912,6 +912,7 @@ export interface SessaoCaixa {
   hora_fechamento:        string | null
   saldo_inicial_especie:  number
   saldo_final_especie:    number | null
+  valor_contado_especie:  number | null
   saldo_especie_calculado: number
   total_entradas_especie: number
   total_saidas_especie:   number

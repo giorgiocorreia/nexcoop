@@ -710,9 +710,8 @@ import type {
 
 export async function abrirCaixaLoja(
   orgId: string,
-  usuarioId: string,
-  valorAbertura: number
-): Promise<{ caixaId: string } | { error: string }> {
+  usuarioId: string
+): Promise<{ caixaId: string; valorAbertura: number } | { error: string }> {
   const admin = createAdminClient()
 
   const { data: aberto } = await admin
@@ -725,6 +724,13 @@ export async function abrirCaixaLoja(
 
   if (aberto) return { error: 'Você já possui um caixa aberto.' }
 
+  // Continuidade travada: valor de abertura nunca é digitado — é sempre o
+  // saldo sob responsabilidade do usuário calculado pelo sistema (herda do
+  // fechamento anterior + qualquer aporte/sangria/transferência posterior).
+  const { getSaldoResponsabilidadeLoja } = await import('@/lib/tesouraria/saldo-responsabilidade')
+  const resp = await getSaldoResponsabilidadeLoja(orgId, usuarioId)
+  const valorAbertura = resp.saldo_atual_especie
+
   const { data, error } = await admin
     .from('loja_caixas')
     .insert({ org_id: orgId, usuario_id: usuarioId, valor_abertura: valorAbertura, status: 'aberto', aberto_em: new Date().toISOString() })
@@ -735,7 +741,7 @@ export async function abrirCaixaLoja(
 
   await registrarLog({ org_id: orgId, usuario_id: usuarioId, modulo: 'loja', acao: 'loja_caixa_aberto', dados_depois: { caixa_id: data.id, valor_abertura: valorAbertura } })
 
-  return { caixaId: data.id }
+  return { caixaId: data.id, valorAbertura }
 }
 
 // ── 2. Buscar Cooperado por CPF ──────────────────────────────────────────────
@@ -1196,16 +1202,20 @@ export async function registrarSangriaLoja(
   executado_por: string,
   observacoes?: string,
   // Transferência: em vez de aporte em dinheiro solto, puxa de uma sessão de
-  // caixa da Comercialização (do próprio usuário logado ou de outro
-  // atendente — autorização já validada pelo chamador via
-  // validarSenhaParaTransferencia). Só válido com tipo='aporte'.
-  origem?: { modulo: 'comercializacao'; atendente_origem_id: string }
+  // caixa da Comercialização OU de outro caixa da própria Loja (outro
+  // atendente) — autorização já validada pelo chamador via
+  // validarSenhaParaTransferencia. Só válido com tipo='aporte'.
+  origem?: { modulo: 'comercializacao' | 'loja'; atendente_origem_id: string }
 ): Promise<{ ok: boolean } | { error: string }> {
   const admin = createAdminClient()
 
+  if (origem?.modulo === 'loja' && origem.atendente_origem_id === executado_por) {
+    return { error: 'Não é possível transferir do seu próprio caixa da Loja pra ele mesmo.' }
+  }
+
   let referenciaTransferenciaId: string | null = null
 
-  if (origem && tipo === 'aporte') {
+  if (origem && tipo === 'aporte' && origem.modulo === 'comercializacao') {
     const { getSaldoResponsabilidadeComercializacao } = await import('@/lib/tesouraria/saldo-responsabilidade')
     const saldoOrigem = await getSaldoResponsabilidadeComercializacao(orgId, origem.atendente_origem_id)
     if (!saldoOrigem.sessao_id) {
@@ -1231,6 +1241,33 @@ export async function registrarSangriaLoja(
         referencia_transferencia_id: referenciaTransferenciaId,
       } as any)
     if (errSangriaComercial) return { error: 'Erro ao debitar o caixa da Comercialização: ' + errSangriaComercial.message }
+  } else if (origem && tipo === 'aporte' && origem.modulo === 'loja') {
+    // Mesmo módulo: puxa de outro caixa da própria Loja (outro atendente).
+    const { getSaldoResponsabilidadeLoja } = await import('@/lib/tesouraria/saldo-responsabilidade')
+    const saldoOrigem = await getSaldoResponsabilidadeLoja(orgId, origem.atendente_origem_id)
+    if (!saldoOrigem.caixa_id) {
+      return { error: 'Esse atendente não tem caixa aberto nem fechado na Loja.' }
+    }
+    if (saldoOrigem.saldo_atual_especie < valor) {
+      return { error: `Saldo insuficiente no caixa desse atendente (disponível: R$ ${saldoOrigem.saldo_atual_especie.toFixed(2)}).` }
+    }
+
+    referenciaTransferenciaId = crypto.randomUUID()
+
+    const { error: errSangriaOutroCaixa } = await (admin as any)
+      .from('loja_sangrias')
+      .insert({
+        org_id: orgId,
+        caixa_id: saldoOrigem.caixa_id,
+        tipo: 'sangria',
+        valor,
+        autorizado_por,
+        executado_por,
+        observacoes: observacoes ?? 'Transferência entre atendentes da Loja',
+        origem_transferencia: 'loja',
+        referencia_transferencia_id: referenciaTransferenciaId,
+      })
+    if (errSangriaOutroCaixa) return { error: 'Erro ao debitar o caixa do outro atendente: ' + errSangriaOutroCaixa.message }
   }
 
   const { error } = await (admin as any).from('loja_sangrias').insert({
@@ -1243,13 +1280,17 @@ export async function registrarSangriaLoja(
     observacoes: observacoes ?? null,
     created_at: new Date().toISOString(),
     ...(referenciaTransferenciaId
-      ? { origem_transferencia: 'comercializacao', referencia_transferencia_id: referenciaTransferenciaId }
+      ? { origem_transferencia: origem?.modulo, referencia_transferencia_id: referenciaTransferenciaId }
       : {}),
   })
 
   if (error) {
     if (referenciaTransferenciaId) {
-      await admin.from('aportes_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+      if (origem?.modulo === 'comercializacao') {
+        await admin.from('aportes_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+      } else if (origem?.modulo === 'loja') {
+        await admin.from('loja_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+      }
     }
     return { error: 'Erro ao registrar sangria.' }
   }
@@ -1409,6 +1450,27 @@ export async function fecharCaixaLoja(
   })
 
   return { ok: true, resumo }
+}
+
+// Registro de auditoria da contagem física — chamado pelo modal de fechamento
+// DEPOIS que o caixa já foi fechado (fecharCaixaLoja já calculou e persistiu
+// saldo_final_especie; isso aqui só anota o que o operador contou de verdade,
+// pra o admin comparar depois na conferência). Nunca recalcula nada.
+export async function registrarContagemFisicaLoja(
+  caixaId: string,
+  dados: { valor_fisico_especie: number; valor_fisico_debito: number; valor_fisico_credito: number }
+): Promise<{ ok: boolean } | { error: string }> {
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('loja_caixas')
+    .update({
+      valor_fisico_especie: dados.valor_fisico_especie,
+      valor_fisico_debito: dados.valor_fisico_debito,
+      valor_fisico_credito: dados.valor_fisico_credito,
+    })
+    .eq('id', caixaId)
+  if (error) return { error: error.message }
+  return { ok: true }
 }
 
 // ── 8. Conferir Caixa ────────────────────────────────────────────────────────

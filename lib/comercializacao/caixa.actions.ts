@@ -24,6 +24,20 @@ export async function getSaldoLojaDoAtendente(atendenteId: string) {
   return getSaldoResponsabilidadeLoja(usuario.organizacao_id as string, atendenteId)
 }
 
+export async function getSaldoComercializacaoDoAtendente(atendenteId: string) {
+  const usuario = await getUsuarioLogado()
+  return getSaldoResponsabilidadeComercializacao(usuario.organizacao_id as string, atendenteId)
+}
+
+// Lista outros atendentes com sessão na própria Comercialização (exclui o
+// usuário logado — não faz sentido transferir do seu próprio caixa aberto
+// pra ele mesmo). Usado na transferência "mesmo módulo, outro atendente".
+export async function listarOutrosAtendentesComercializacao() {
+  const usuario = await getUsuarioLogado()
+  const lista = await listarAtendentesComSessaoCaixa(usuario.organizacao_id as string)
+  return lista.filter(a => a.usuario_id !== usuario.id)
+}
+
 export async function getSessaoAberta() {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
@@ -39,12 +53,16 @@ export async function getSessaoAberta() {
   return data
 }
 
-export async function abrirCaixa(
-  saldo_inicial_especie: number
-): Promise<{ success: boolean; error?: string }> {
+export async function abrirCaixa(): Promise<{ success: boolean; error?: string }> {
   try {
     const usuario = await getUsuarioLogado()
     const supabase = createAdminClient()
+
+    // Continuidade travada: o saldo inicial nunca é digitado — é sempre o
+    // saldo sob responsabilidade do usuário calculado pelo sistema (herda do
+    // fechamento anterior + qualquer aporte/sangria/transferência posterior).
+    const resp = await getSaldoResponsabilidadeComercializacao(usuario.organizacao_id as string, usuario.id)
+    const saldo_inicial_especie = resp.saldo_atual_especie
 
     const { data: estoqueAtual } = await supabase
       .from('estoque_fisico')
@@ -76,7 +94,7 @@ export async function abrirCaixa(
   }
 }
 
-export async function fecharCaixa(sessao_id: string, saldo_final_especie: number, observacoes?: string) {
+export async function fecharCaixa(sessao_id: string, valor_contado_especie?: number, observacoes?: string) {
   const supabase = createAdminClient()
   const { data: movs } = await supabase
     .from('movimentacoes_conta')
@@ -116,17 +134,21 @@ export async function fecharCaixa(sessao_id: string, saldo_final_especie: number
     totalSaidasEspecie: totalEspecie,
   })
 
+  // saldo_final_especie é SEMPRE o valor calculado pelo sistema — nunca mais
+  // recebido do cliente. valor_contado_especie (opcional) é só um registro de
+  // auditoria da contagem física do operador; nunca afeta saldo/continuidade.
   const { error } = await supabase
     .from('sessoes_caixa')
     .update({
       hora_fechamento: new Date().toISOString(),
-      saldo_final_especie,
+      saldo_final_especie: saldoEspecieCalculado,
+      valor_contado_especie: valor_contado_especie ?? null,
       total_saidas_especie: totalEspecie,
       total_pix: totalPix,
       saldo_especie_calculado: saldoEspecieCalculado,
       status: 'fechada',
       observacoes_fechamento: observacoes
-    })
+    } as any)
     .eq('id', sessao_id)
   if (error) throw new Error(error.message)
 }
@@ -738,10 +760,11 @@ export async function registrarAporteSangria(params: {
   admin_email: string
   admin_senha: string
   observacoes?: string
-  // Transferência: em vez de aporte em dinheiro solto, puxa de um caixa da Loja
-  // (do próprio usuário logado ou de outro atendente — ver regra de autorização
-  // abaixo). Só válido com tipo='aporte'.
-  origem?: { modulo: 'loja'; atendente_origem_id: string }
+  // Transferência: em vez de aporte em dinheiro solto, puxa de um caixa da
+  // Loja OU de outra sessão da própria Comercialização (outro atendente) —
+  // do próprio usuário logado ou de outro atendente, ver regra de autorização
+  // abaixo. Só válido com tipo='aporte'.
+  origem?: { modulo: 'loja' | 'comercializacao'; atendente_origem_id: string }
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
@@ -767,10 +790,14 @@ export async function registrarAporteSangria(params: {
   if (adminUser.organizacao_id !== usuario.organizacao_id) throw new Error('Admin de outra organização.')
 
   if (params.origem) {
+    if (params.origem.modulo === 'comercializacao' && params.origem.atendente_origem_id === usuario.id) {
+      throw new Error('Não é possível transferir do seu próprio caixa da Comercialização pra ele mesmo.')
+    }
     // Transferência entre caixas: se o dono da origem é o próprio usuário
-    // logado, a senha dele mesmo já basta (é dinheiro sob responsabilidade
-    // dele pra ele mesmo). Se for de outro atendente, só admin ou a senha do
-    // próprio dono da origem autorizam — nunca um terceiro qualquer.
+    // logado (só possível no caso cross-módulo, Loja → Comercialização), a
+    // senha dele mesmo já basta — é dinheiro sob responsabilidade dele pra
+    // ele mesmo. Se for de outro atendente, só admin ou a senha do próprio
+    // dono da origem autorizam — nunca um terceiro qualquer.
     const isMesmoUsuario = params.origem.atendente_origem_id === usuario.id
     if (isMesmoUsuario) {
       if (adminUser.id !== usuario.id) {
@@ -789,7 +816,7 @@ export async function registrarAporteSangria(params: {
 
   let referenciaTransferenciaId: string | null = null
 
-  if (params.origem && params.tipo === 'aporte') {
+  if (params.origem && params.tipo === 'aporte' && params.origem.modulo === 'loja') {
     const { getSaldoResponsabilidadeLoja } = await import('@/lib/tesouraria/saldo-responsabilidade')
     const saldoOrigem = await getSaldoResponsabilidadeLoja(
       usuario.organizacao_id as string,
@@ -818,6 +845,52 @@ export async function registrarAporteSangria(params: {
         referencia_transferencia_id: referenciaTransferenciaId,
       })
     if (errSangriaLoja) throw new Error('Erro ao debitar o caixa da Loja: ' + errSangriaLoja.message)
+  } else if (params.origem && params.tipo === 'aporte' && params.origem.modulo === 'comercializacao') {
+    // Mesmo módulo: puxa de outra sessão de Comercialização (outro atendente).
+    const saldoOrigem = await getSaldoResponsabilidadeComercializacao(
+      usuario.organizacao_id as string,
+      params.origem.atendente_origem_id
+    )
+    if (!saldoOrigem.sessao_id) {
+      throw new Error('Esse atendente não tem caixa aberto nem fechado na Comercialização.')
+    }
+    if (saldoOrigem.saldo_atual_especie < params.valor) {
+      throw new Error(`Saldo insuficiente no caixa desse atendente (disponível: R$ ${saldoOrigem.saldo_atual_especie.toFixed(2)}).`)
+    }
+
+    referenciaTransferenciaId = crypto.randomUUID()
+
+    const { error: errSangriaOutraSessao } = await supabase
+      .from('aportes_sangrias')
+      .insert({
+        organizacao_id: usuario.organizacao_id as string,
+        sessao_caixa_id: saldoOrigem.sessao_id,
+        tipo: 'sangria',
+        valor: params.valor,
+        autorizado_por: adminUser.id,
+        executado_por: usuario.id,
+        observacoes: params.observacoes ?? 'Transferência entre atendentes da Comercialização',
+        origem_transferencia: 'comercializacao',
+        referencia_transferencia_id: referenciaTransferenciaId,
+      } as any)
+    if (errSangriaOutraSessao) throw new Error('Erro ao debitar o caixa do outro atendente: ' + errSangriaOutraSessao.message)
+
+    // Se a sessão de origem estiver aberta, decrementa seu saldo_especie_calculado
+    // (mesmo comportamento que já existe pra sangria normal). Sessão fechada não
+    // é tocada — a leitura de saldo por responsabilidade já soma essa sangria.
+    if (saldoOrigem.status_sessao === 'aberta') {
+      const { data: sessaoOrigemAtual } = await supabase
+        .from('sessoes_caixa')
+        .select('saldo_especie_calculado')
+        .eq('id', saldoOrigem.sessao_id)
+        .single()
+      if (sessaoOrigemAtual) {
+        await supabase
+          .from('sessoes_caixa')
+          .update({ saldo_especie_calculado: (sessaoOrigemAtual.saldo_especie_calculado ?? 0) - params.valor })
+          .eq('id', saldoOrigem.sessao_id)
+      }
+    }
   }
 
   const { error: insertError } = await supabase
@@ -831,17 +904,18 @@ export async function registrarAporteSangria(params: {
       executado_por: usuario.id,
       observacoes: params.observacoes,
       ...(referenciaTransferenciaId
-        ? { origem_transferencia: 'loja', referencia_transferencia_id: referenciaTransferenciaId }
+        ? { origem_transferencia: params.origem?.modulo, referencia_transferencia_id: referenciaTransferenciaId }
         : {}),
     } as any)
   if (insertError) {
     // Rollback manual: se a ponta de entrada falhar depois da saída já ter sido
-    // debitada do caixa da Loja, desfaz a sangria pra não perder dinheiro "no ar".
+    // debitada da origem, desfaz a sangria pra não perder dinheiro "no ar".
     if (referenciaTransferenciaId) {
-      await (supabase as any)
-        .from('loja_sangrias')
-        .delete()
-        .eq('referencia_transferencia_id', referenciaTransferenciaId)
+      if (params.origem?.modulo === 'loja') {
+        await (supabase as any).from('loja_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+      } else if (params.origem?.modulo === 'comercializacao') {
+        await supabase.from('aportes_sangrias').delete().eq('referencia_transferencia_id', referenciaTransferenciaId)
+      }
     }
     throw new Error(insertError.message)
   }
