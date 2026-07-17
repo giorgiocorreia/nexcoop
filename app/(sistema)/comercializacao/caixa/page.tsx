@@ -1414,24 +1414,13 @@ export default function CaixaPage() {
                 <ContentCard title="Registrar entrega">
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <Field label="Produto">
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <Select
-                          value={formEntrega.produto_id}
-                          onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}
-                          style={{ flex: 1, minWidth: 160 }}
-                        >
-                          {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                        </Select>
-                        <Btn
-                          variante="marrom-outline"
-                          tamanho="sm"
-                          icone="ti-plus"
-                          onClick={() => setModalNovoProduto(true)}
-                          title="Cadastrar um produto que ainda não está na lista"
-                        >
-                          Novo
-                        </Btn>
-                      </div>
+                      <Select
+                        value={formEntrega.produto_id}
+                        onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}
+                        style={{ minWidth: 160 }}
+                      >
+                        {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                      </Select>
                     </Field>
                     <Field label={`Quantidade (${unidadeEntregaSelecionada})`}>
                       <Input type="number" step={quantidadeFracionada ? '0.001' : '1'} placeholder={quantidadeFracionada ? '0,000' : '0'} value={formEntrega.quantidade}
@@ -1453,6 +1442,9 @@ export default function CaixaPage() {
                     </Btn>
                     <Btn variante="marrom-outline" disabled={!formEntrega.quantidade || !formEntrega.produto_id} onClick={abrirModalRateio}>
                       Rateio →
+                    </Btn>
+                    <Btn variante="cinza" icone="ti-plus" onClick={() => setModalNovoProduto(true)}>
+                      Inserir produto
                     </Btn>
                   </div>
                 </ContentCard>
