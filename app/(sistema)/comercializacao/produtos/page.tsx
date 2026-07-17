@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { listarProdutos, criarProduto, editarProduto } from '@/lib/comercializacao/produtos.actions'
+import { listarProdutos, criarProduto, editarProduto, listarProdutosLojaParaVinculo } from '@/lib/comercializacao/produtos.actions'
 import { Btn } from '@/components/ui/Btn'
 import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
 import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
@@ -17,16 +17,20 @@ type Produto = {
   categoria: string | null
   unidade: string
   ativo: boolean
+  loja_produto_id?: string | null
 }
+
+type ProdutoLoja = { id: string; nome: string }
 
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [form, setForm] = useState({ nome: '', categoria: '', unidade: 'kg' })
+  const [produtosLoja, setProdutosLoja] = useState<ProdutoLoja[]>([])
+  const [form, setForm] = useState({ nome: '', categoria: '', unidade: 'kg', loja_produto_id: '' })
   const [editando, setEditando] = useState<Produto | null>(null)
   const [status, setStatus] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar(); listarProdutosLojaParaVinculo().then(setProdutosLoja) }, [])
 
   async function carregar() {
     const data = await listarProdutos()
@@ -37,8 +41,8 @@ export default function ProdutosPage() {
     if (!form.nome) return
     setStatus('salvando')
     try {
-      await criarProduto(form)
-      setForm({ nome: '', categoria: '', unidade: 'kg' })
+      await criarProduto({ ...form, loja_produto_id: form.loja_produto_id || null })
+      setForm({ nome: '', categoria: '', unidade: 'kg', loja_produto_id: '' })
       await carregar()
       setStatus('sucesso')
       setTimeout(() => setStatus('idle'), 3000)
@@ -56,7 +60,8 @@ export default function ProdutosPage() {
         nome: editando.nome,
         categoria: editando.categoria ?? '',
         unidade: editando.unidade,
-        ativo: editando.ativo
+        ativo: editando.ativo,
+        loja_produto_id: editando.loja_produto_id || null
       })
       setEditando(null)
       await carregar()
@@ -121,9 +126,22 @@ export default function ProdutosPage() {
               </Select>
             </Field>
           </div>
-          <Btn variante="marrom" icone="ti-plus" onClick={handleCriar} disabled={status === 'salvando' || !form.nome}>
-            {status === 'salvando' ? 'Salvando...' : 'Adicionar'}
-          </Btn>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 12 }}>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <Field label="Produto correspondente na Loja" hint="Opcional — usado quando entregas desse produto forem enviadas pra virar estoque da Loja Agropecuária">
+                <Select
+                  value={form.loja_produto_id}
+                  onChange={e => setForm(f => ({ ...f, loja_produto_id: e.target.value }))}
+                >
+                  <option value="">Nenhum (cria automaticamente ao enviar)</option>
+                  {produtosLoja.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                </Select>
+              </Field>
+            </div>
+            <Btn variante="marrom" icone="ti-plus" onClick={handleCriar} disabled={status === 'salvando' || !form.nome}>
+              {status === 'salvando' ? 'Salvando...' : 'Adicionar'}
+            </Btn>
+          </div>
         </div>
         {status === 'sucesso' && (
           <div style={{ marginTop: 12, color: COM_C.verde, fontSize: 13, fontWeight: 600 }}>
@@ -217,6 +235,15 @@ export default function ProdutosPage() {
                 <option value="unidade">unidade</option>
                 <option value="litro">litro</option>
                 <option value="caixa">caixa</option>
+              </Select>
+            </Field>
+            <Field label="Produto correspondente na Loja" hint="Opcional — usado quando entregas desse produto forem enviadas pra virar estoque da Loja Agropecuária">
+              <Select
+                value={editando.loja_produto_id ?? ''}
+                onChange={e => setEditando(p => p && ({ ...p, loja_produto_id: e.target.value || null }))}
+              >
+                <option value="">Nenhum (cria automaticamente ao enviar)</option>
+                {produtosLoja.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </Select>
             </Field>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: COM_C.txt, cursor: 'pointer' }}>

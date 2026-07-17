@@ -18,6 +18,7 @@ import {
 import { listarProdutos, criarProduto } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
+import { BotaoEnviarLoja } from '@/components/comercializacao/BotaoEnviarLoja'
 import { BotaoComprovantePagamento } from '@/components/comercializacao/BotaoComprovantePagamento'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
@@ -42,7 +43,7 @@ type Conta = { id: string; saldo_financeiro: number; saldos_produto: SaldoProdut
 type Movimentacao = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; created_at: string; produtos: { nome: string; unidade: string } | null }
 type Produto = { id: string; nome: string; unidade: string }
 type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; forma_pagamento: string; chave_pix: string | null; produtores: { nome: string; telefone: string | null }; produtos: { nome: string; unidade: string }; cotacoes: { preco_cooperado: number } }
-type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
+type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; preco_unitario: number | null; referencia_tipo: string | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string; loja_produto_id?: string | null } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
 type AdminOrg = { id: string; nome_completo: string; email: string }
 type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; forma_pagamento: 'especie' | 'pix' | 'cartao'; origem: 'manual' | 'cota_cooperado'; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
 
@@ -1639,9 +1640,12 @@ export default function CaixaPage() {
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           {op.tipo === 'entrega' && (
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
                               <BotaoComprovante movimentacao_id={op.id} />
                               <BotaoNfe movimentacao_id={op.id} />
+                              {op.preco_unitario ? (
+                                <BotaoEnviarLoja movimentacao_id={op.id} ja_enviado={op.referencia_tipo === 'loja_compra'} />
+                              ) : null}
                             </div>
                           )}
                           {(op.tipo === 'saque_especie' || op.tipo === 'saque_pix') && (

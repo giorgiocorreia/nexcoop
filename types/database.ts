@@ -815,6 +815,8 @@ export interface Produto {
   cst_pis:                  string | null
   cst_cofins:               string | null
   fator_saca:               number | null
+  // migration 072 — ponte Comercialização -> Loja Agropecuária
+  loja_produto_id:          string | null
 }
 
 export interface Cotacao {
