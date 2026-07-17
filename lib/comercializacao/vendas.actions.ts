@@ -34,7 +34,7 @@ export async function criarVenda(form: {
   if (error) throw new Error(error.message)
 }
 
-export async function atualizarStatusVenda(id: string, novoStatus: 'rascunho' | 'confirmada' | 'entregue' | 'paga') {
+export async function atualizarStatusVenda(id: string, novoStatus: 'rascunho' | 'confirmada' | 'entregue' | 'pago') {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { error } = await supabase

@@ -19,7 +19,7 @@ type Venda = {
   id: string; safra_id: string; lote_id: string; comprador_id: string
   data_venda: string; quantidade_kg: number; preco_kg: number; valor_bruto: number
   taxa_comercializacao_pct: number; valor_taxa: number | null; custos_logistica: number
-  valor_liquido: number | null; status: 'rascunho' | 'confirmada' | 'entregue' | 'paga'
+  valor_liquido: number | null; status: 'rascunho' | 'confirmada' | 'entregue' | 'pago'
   observacoes: string | null
   safras: { ano: number; descricao: string | null } | null
   lotes: { codigo: string } | null
@@ -31,18 +31,18 @@ type Lote = { id: string; codigo: string; safra_id: string; status: string }
 type Comprador = { id: string; nome: string; tipo: string; ativo: boolean }
 
 const STATUS_LABEL: Record<string, string> = {
-  rascunho: 'Rascunho', confirmada: 'Confirmada', entregue: 'Entregue', paga: 'Paga'
+  rascunho: 'Rascunho', confirmada: 'Confirmada', entregue: 'Entregue', pago: 'Paga'
 }
 
 const STATUS_CORES: Record<string, { bg: string; cor: string }> = {
   rascunho:  { bg: '#F1F0EB', cor: '#78716C' },
   confirmada: { bg: '#DBEAFE', cor: '#1E40AF' },
   entregue:  { bg: '#FEF3C7', cor: '#92400E' },
-  paga:      { bg: '#DCFCE7', cor: '#166534' }
+  pago:      { bg: '#DCFCE7', cor: '#166534' }
 }
 
 const PROXIMO_STATUS: Record<string, string> = {
-  rascunho: 'Confirmar venda', confirmada: 'Marcar entregue', entregue: 'Marcar paga', paga: ''
+  rascunho: 'Confirmar venda', confirmada: 'Marcar entregue', entregue: 'Marcar paga', pago: ''
 }
 
 const formVazio = {
@@ -57,7 +57,7 @@ const FILTRO_TABS = [
   { id: 'rascunho', label: 'Rascunho' },
   { id: 'confirmada', label: 'Confirmada' },
   { id: 'entregue', label: 'Entregue' },
-  { id: 'paga', label: 'Paga' },
+  { id: 'pago', label: 'Paga' },
 ]
 
 export default function VendasPage() {
@@ -118,7 +118,7 @@ export default function VendasPage() {
   }
 
   async function handleAvancarStatus(venda: Venda) {
-    const proximo: Record<string, 'rascunho' | 'confirmada' | 'entregue' | 'paga'> = { rascunho: 'confirmada', confirmada: 'entregue', entregue: 'paga' }
+    const proximo: Record<string, 'rascunho' | 'confirmada' | 'entregue' | 'pago'> = { rascunho: 'confirmada', confirmada: 'entregue', entregue: 'pago' }
     const novoStatus = proximo[venda.status]
     if (!novoStatus) return
     try { await atualizarStatusVenda(venda.id, novoStatus); await carregar() }
@@ -177,7 +177,7 @@ export default function VendasPage() {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    {v.status !== 'paga' && (
+                    {v.status !== 'pago' && (
                       <Btn variante="cinza" tamanho="sm" onClick={() => handleAvancarStatus(v)} style={{ color: COM_C.azul, border: 'none', background: 'none', boxShadow: 'none' }}>
                         {PROXIMO_STATUS[v.status]}
                       </Btn>

@@ -173,7 +173,7 @@ export async function listarVendasPagas() {
     .from('vendas_externas')
     .select('id, data_venda, valor_liquido, lotes(codigo), compradores(nome)')
     .eq('organizacao_id', usuario.organizacao_id as string)
-    .in('status', ['paga', 'entregue', 'confirmada'])
+    .in('status', ['pago', 'entregue', 'confirmada'])
     .order('data_venda', { ascending: false })
   if (error) throw new Error(error.message)
   return data

@@ -792,8 +792,11 @@ export type StatusSessaoCaixa      = 'aberta' | 'fechada'
 export type StatusSolicitacaoVenda = 'pendente' | 'em_analise' | 'executada' | 'recusada'
 export type StatusSafra            = 'planejamento' | 'em_andamento' | 'encerrada'
 export type TipoComprador          = 'exportador' | 'industria' | 'trader' | 'outro'
-export type StatusLote             = 'rascunho' | 'aberto' | 'em_venda' | 'entregue'
-export type StatusVendaExterna     = 'rascunho' | 'confirmada' | 'entregue' | 'paga'
+// 'pago' (masculino) conforme CHECK lotes_status_check e
+// vendas_externas_status_check (migration 071) — CHECKs originais (049 e 026)
+// usavam 'paga'/omitiam 'pago', mas o código sempre gravou 'pago'
+export type StatusLote             = 'rascunho' | 'aberto' | 'em_venda' | 'entregue' | 'pago'
+export type StatusVendaExterna     = 'rascunho' | 'confirmada' | 'entregue' | 'pago'
 export type StatusDistribuicao     = 'calculado' | 'pago'
 
 export interface Produto {
