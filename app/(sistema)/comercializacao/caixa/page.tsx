@@ -65,8 +65,12 @@ const TIPO_LABEL: Record<string, string> = {
   ajuste_produto: 'Ajuste produto',
   ajuste_financeiro: 'Ajuste financeiro',
   estorno: 'Estorno',
-  compra_loja: 'Compra loja'
+  compra_loja: 'Compra loja',
+  aporte: 'Aporte',
+  sangria: 'Sangria',
 }
+
+const TIPOS_ENTRADA = new Set(['conversao', 'aporte'])
 
 function formatarKg(v: number): { inteiro: string; decimal: string } {
   const s = v.toFixed(3).replace(/\.?0+$/, '')
@@ -1227,7 +1231,7 @@ export default function CaixaPage() {
                             ? (() => { const { inteiro, decimal } = formatarKg(op.quantidade_produto); return `${inteiro}${decimal} kg` })()
                             : '—'}
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (op.tipo === 'conversao' ? COM_C.verde : COM_C.txt) : COM_C.txt }}>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (TIPOS_ENTRADA.has(op.tipo) ? COM_C.verde : COM_C.txt) : COM_C.txt }}>
                           {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
                         </td>
                       </tr>
@@ -1460,7 +1464,7 @@ export default function CaixaPage() {
                             <td style={{ color: COM_C.txtSub }}>
                               {m.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(m.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {m.produtos?.unidade ?? 'kg'}</span> })() : ''}
                             </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: m.valor_financeiro ? (m.tipo === 'conversao' ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: m.valor_financeiro ? (TIPOS_ENTRADA.has(m.tipo) ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
                               {m.valor_financeiro ? fmtReal(Math.abs(m.valor_financeiro)) : ''}
                             </td>
                           </tr>
@@ -1541,7 +1545,7 @@ export default function CaixaPage() {
                         <td style={{ textAlign: 'right', color: COM_C.txtSub }}>
                           {op.quantidade_produto ? (() => { const {inteiro, decimal} = formatarKg(op.quantidade_produto); return <span>{inteiro}<span style={{fontSize:'0.8em'}}>{decimal}</span> {op.produtos?.unidade ?? 'kg'}</span> })() : '—'}
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (op.tipo === 'conversao' ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: op.valor_financeiro ? (TIPOS_ENTRADA.has(op.tipo) ? COM_C.verde : COM_C.vermelho) : COM_C.txt }}>
                           {op.valor_financeiro ? fmtReal(Math.abs(op.valor_financeiro)) : '—'}
                         </td>
                         <td style={{ textAlign: 'center' }}>

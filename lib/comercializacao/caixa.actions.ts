@@ -225,7 +225,32 @@ export async function getOperacoesHoje(sessao_id: string) {
     .eq('sessao_caixa_id', sessao_id)
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
-  return data
+
+  // Aportes/sangrias (ex.: integralização de cota paga no cadastro do
+  // cooperado, ver lib/comercializacao/aportes.ts) entram no saldo da sessão
+  // mas vêm de uma tabela separada (aportes_sangrias) — sem isso, ficavam
+  // visíveis só na aba "Fechar caixa" e o operador achava que o dinheiro
+  // tinha sumido da lista de operações do dia.
+  const { data: aportes, error: errAportes } = await supabase
+    .from('aportes_sangrias')
+    .select('id, tipo, valor, forma_pagamento, observacoes, created_at')
+    .eq('sessao_caixa_id', sessao_id)
+  if (errAportes) throw new Error(errAportes.message)
+
+  const aportesComoOperacoes = (aportes ?? []).map(a => ({
+    id: a.id,
+    tipo: a.tipo, // 'aporte' | 'sangria'
+    quantidade_produto: null,
+    valor_financeiro: a.tipo === 'sangria' ? -Number(a.valor) : Number(a.valor),
+    forma_pagamento: a.forma_pagamento,
+    observacoes: a.observacoes,
+    created_at: a.created_at,
+    produtos: null,
+    contas_produtor: a.observacoes ? { produtor_id: '', produtores: { nome: a.observacoes } } : null,
+  }))
+
+  return [...(data ?? []), ...aportesComoOperacoes]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
 export async function registrarEntrega(params: {
