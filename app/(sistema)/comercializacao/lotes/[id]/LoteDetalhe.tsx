@@ -138,13 +138,20 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     finally { setInserindo(null) }
   }
 
-  const resultadoBruto = mostrarVenda && precoKg && !isNaN(parseFloat(precoKg))
+  // Enquanto o formulário de venda está aberto, mostra o resultado bruto
+  // projetado com o preço digitado ao vivo. Depois que a venda é confirmada,
+  // o KPI passa a refletir o valor efetivamente negociado (vendaNfe), não
+  // mais a cotação de referência das entregas — senão parece que o lote foi
+  // vendido pela cotação em vez do preço combinado com o comprador.
+  const precoNegociadoLive = mostrarVenda && precoKg && !isNaN(parseFloat(precoKg)) ? parseFloat(precoKg) : null
+  const vendaFechada = !mostrarVenda && !!vendaNfe
 
   const kpiItems = [
     { label: 'Peso total', icon: 'ti-weight', cor: '#185FA5', corLt: '#EFF6FF', valor: fmt.peso(kpis.pesoTotal), sub: `${kpis.sacas} sacas${kpis.resto > 0.001 ? ` + ${fmt.peso(kpis.resto)}` : ''}` },
     { label: 'Entregas', icon: 'ti-package', cor: COM_C.marrom, corLt: COM_C.marromLt, valor: String(kpis.qtd), sub: 'registros selecionados' },
     { label: 'Custo ref. cotação', icon: 'ti-coin', cor: COM_C.verde, corLt: COM_C.verdeLt, valor: fmt.moeda(kpis.valorTotal), sub: `médio ${fmt.moeda(kpis.precoMedio)}/kg` },
-    ...(resultadoBruto ? [{ label: 'Resultado bruto', icon: 'ti-trending-up', cor: '#0F766E', corLt: '#F0FDFA', valor: fmt.moeda((parseFloat(precoKg) * kpis.pesoTotal) - kpis.valorTotal), sub: `${fmt.moeda(parseFloat(precoKg))}/kg negociado` }] : []),
+    ...(precoNegociadoLive !== null ? [{ label: 'Resultado bruto', icon: 'ti-trending-up', cor: '#0F766E', corLt: '#F0FDFA', valor: fmt.moeda((precoNegociadoLive * kpis.pesoTotal) - kpis.valorTotal), sub: `${fmt.moeda(precoNegociadoLive)}/kg negociado` }] : []),
+    ...(vendaFechada ? [{ label: 'Valor negociado', icon: 'ti-trending-up', cor: '#0F766E', corLt: '#F0FDFA', valor: fmt.moeda(valorBrutoEfetivo), sub: `${fmt.moeda(Number(vendaNfe.preco_kg))}/kg negociado` }] : []),
   ]
 
   return (
@@ -237,8 +244,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     >
       {/* KPIs */}
       <div
-        className={resultadoBruto ? 'com-kpi-grid-4' : undefined}
-        style={!resultadoBruto ? { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 } : { marginBottom: 24 }}
+        className={kpiItems.length > 3 ? 'com-kpi-grid-4' : undefined}
+        style={kpiItems.length <= 3 ? { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 } : { marginBottom: 24 }}
       >
         {kpiItems.map(k => (
           <KpiCard
