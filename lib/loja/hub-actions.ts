@@ -36,8 +36,22 @@ export async function getHubKpis(orgId: string) {
   );
 
   const totalAbertura = (caixasAbertos ?? []).reduce((s, c) => s + Number(c.valor_abertura), 0);
+
+  // Aportes e sangrias dos caixas abertos (inclui transferências entre caixas) —
+  // sem isso o KPI não reflete dinheiro que entrou/saiu fora de venda.
+  const caixaAbertoIds = (caixasAbertos ?? []).map(c => c.id);
+  let saldoAportesSangrias = 0;
+  if (caixaAbertoIds.length > 0) {
+    const { data: sangrias } = await (admin as any)
+      .from("loja_sangrias")
+      .select("tipo, valor")
+      .in("caixa_id", caixaAbertoIds);
+    saldoAportesSangrias = ((sangrias ?? []) as { tipo: string; valor: number | null }[])
+      .reduce((s, m) => s + (m.tipo === "aporte" ? Number(m.valor ?? 0) : -Number(m.valor ?? 0)), 0);
+  }
+
   const saldoCaixa = (caixasAbertos ?? []).length > 0
-    ? totalAbertura + vendasDinheiroHoje
+    ? totalAbertura + vendasDinheiroHoje + saldoAportesSangrias
     : 0;
 
   const operadores = (caixasAbertos ?? []).map(c =>

@@ -1509,6 +1509,9 @@ export async function registrarSangriaLoja(
   }
 
   let referenciaTransferenciaId: string | null = null
+  // Sessão aberta da Comercialização debitada na transferência — precisa ter o
+  // saldo_especie_calculado decrementado (a tela do Caixa lê esse campo).
+  let sessaoComercialAbertaId: string | null = null
 
   if (origem && tipo === 'aporte' && origem.modulo === 'comercializacao') {
     const { getSaldoResponsabilidadeComercializacao } = await import('@/lib/tesouraria/saldo-responsabilidade')
@@ -1536,6 +1539,7 @@ export async function registrarSangriaLoja(
         referencia_transferencia_id: referenciaTransferenciaId,
       } as any)
     if (errSangriaComercial) return { error: 'Erro ao debitar o caixa da Comercialização: ' + errSangriaComercial.message }
+    if (saldoOrigem.status_sessao === 'aberta') sessaoComercialAbertaId = saldoOrigem.sessao_id
   } else if (origem && tipo === 'aporte' && origem.modulo === 'loja') {
     // Mesmo módulo: puxa de outro caixa da própria Loja (outro atendente).
     const { getSaldoResponsabilidadeLoja } = await import('@/lib/tesouraria/saldo-responsabilidade')
@@ -1588,6 +1592,23 @@ export async function registrarSangriaLoja(
       }
     }
     return { error: 'Erro ao registrar sangria.' }
+  }
+
+  // Sessão de origem aberta na Comercialização: decrementa o saldo_especie_calculado
+  // (mesmo comportamento da sangria nativa em registrarAporteSangria). Sessão fechada
+  // não é tocada — a leitura por responsabilidade já soma essa sangria.
+  if (sessaoComercialAbertaId) {
+    const { data: sessaoOrigemAtual } = await admin
+      .from('sessoes_caixa')
+      .select('saldo_especie_calculado')
+      .eq('id', sessaoComercialAbertaId)
+      .single()
+    if (sessaoOrigemAtual) {
+      await admin
+        .from('sessoes_caixa')
+        .update({ saldo_especie_calculado: Number(sessaoOrigemAtual.saldo_especie_calculado ?? 0) - valor })
+        .eq('id', sessaoComercialAbertaId)
+    }
   }
 
   await registrarLog({ org_id: orgId, usuario_id:executado_por, modulo: 'loja', acao: 'loja_sangria', dados_depois: { tipo, valor, caixa_id: caixaId, autorizado_por } })
