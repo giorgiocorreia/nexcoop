@@ -1,0 +1,78 @@
+-- Migration 081: restaura EXECUTE para authenticated em funções usadas por RLS
+-- Aplicar via: Supabase Dashboard → SQL Editor
+-- Data: 2026-07-18
+
+-- BUG DE PRODUÇÃO causado pelas migrations 076/077 — correção.
+--
+-- O que aconteceu:
+-- As migrations 076 (20260717000007) e 077 (20260717000008) revogaram
+-- EXECUTE de `anon`, `authenticated` e `PUBLIC` nas funções
+-- public.get_org_id(), public.get_user_role() e public.handle_new_user(),
+-- com o objetivo de silenciar os warnings do Security Advisor sobre funções
+-- SECURITY DEFINER acessíveis via API pública (/rest/v1/rpc/<nome>).
+--
+-- O que a análise da 077 não considerou:
+-- public.get_org_id() e public.get_user_role() são chamadas DENTRO de RLS
+-- policies (não só via RPC direto). No Postgres, uma função chamada dentro
+-- de uma policy de RLS executa com o privilégio de EXECUTE do role que está
+-- rodando a query original — isto é, o role `authenticated` quando o pedido
+-- vem do client Supabase autenticado. Ao revogar EXECUTE de `authenticated`
+-- nessas duas funções, toda policy que as chama passou a falhar com
+-- permission denied para qualquer usuário comum, porque o Postgres nem
+-- consegue avaliar a condição da policy.
+--
+-- Erro observado em produção (reproduzido com usuário comum, não
+-- service_role):
+--   SELECT * FROM cooperados;
+--   ERROR: 42501: permission denied for function get_org_id
+--
+-- Isto quebrou TODA query feita via client RLS (createClient(), não
+-- createAdminClient()) em qualquer tabela cuja policy chame get_org_id()
+-- e/ou get_user_role(). Apenas queries feitas com service_role
+-- (createAdminClient(), que faz bypass de RLS) continuaram funcionando —
+-- por isso o bug não apareceu nos fluxos que usam admin client, só nos que
+-- dependem de RLS com o usuário logado.
+--
+-- Por que o GRANT só para `authenticated` resolve e é suficiente:
+-- RLS só entra em jogo para roles que efetivamente fazem SELECT/INSERT/
+-- UPDATE/DELETE nas tabelas protegidas via client autenticado — isto é
+-- exatamente o role `authenticated`. Devolver EXECUTE para esse role
+-- restaura a avaliação das policies sem reabrir a superfície de ataque que
+-- a 077 fechou: `anon` (usuário não logado) e `PUBLIC` continuam sem
+-- EXECUTE, então a função continua inacessível via chamada RPC anônima
+-- (/rest/v1/rpc/get_org_id sem sessão) — que era o vetor real que o
+-- Security Advisor apontava.
+--
+-- public.handle_new_user() NÃO recebe grant de volta: é usada apenas como
+-- função de trigger (AFTER INSERT ON auth.users → on_auth_user_created,
+-- ver supabase/migrations/001_schema_mvp.sql:315). Execução via trigger é
+-- interna ao motor do Postgres e não passa pelo mecanismo de permissão de
+-- role de API — GRANT/REVOKE de EXECUTE não afeta triggers, então essa
+-- função continua funcionando revogada, como corretamente estabelecido
+-- pela 077.
+--
+-- Trade-off aceito conscientemente:
+-- Com este GRANT, o Security Advisor volta a acusar warning de "função
+-- SECURITY DEFINER acessível para authenticated" nas duas funções
+-- (get_org_id, get_user_role). Isso é aceito porque é exatamente a
+-- finalidade dessas funções — são helpers de RLS chamados pelo próprio
+-- role authenticated dentro de policy, não um acesso indevido. Silenciar
+-- esse warning específico é responsabilidade de reescrever as policies
+-- para não depender de função alguma, usando subquery inline (padrão
+-- oficial do projeto, regra 1 do CLAUDE.md):
+--   organizacao_id = (select organizacao_id from usuarios where id = auth.uid())
+-- Essa reescrita é maior (precisa mapear toda policy que chama
+-- get_org_id()/get_user_role() em todo o schema) e fica para uma migration
+-- futura dedicada — não faz parte desta correção emergencial.
+--
+-- ATENÇÃO: mesma ressalva das migrations 076/077 — get_org_id() e
+-- get_user_role() são schema drift (não existem em nenhuma migration deste
+-- repo, foram criadas direto no Supabase Dashboard). Assinatura SEM
+-- ARGUMENTOS abaixo, mesma usada com sucesso nas migrations 076/077/078.
+
+GRANT EXECUTE ON FUNCTION public.get_org_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated;
+
+-- Rollback (comentado):
+-- REVOKE EXECUTE ON FUNCTION public.get_org_id() FROM authenticated;
+-- REVOKE EXECUTE ON FUNCTION public.get_user_role() FROM authenticated;
