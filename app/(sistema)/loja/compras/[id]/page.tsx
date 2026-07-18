@@ -5,6 +5,7 @@ import { temModulo } from '@/lib/org'
 import { podeGerenciarLoja } from '@/lib/permissoes'
 import { getCompra } from '@/lib/loja/actions'
 import BotaoCancelarCompra from './BotaoCancelarCompra'
+import PainelParcelas from './PainelParcelas'
 
 export const metadata = { title: 'Detalhe da Compra — Loja | NexCoop' }
 
@@ -140,6 +141,9 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
               </span>
             </div>
           </div>
+
+          {/* Parcelas */}
+          <PainelParcelas compraId={compra.id} orgId={orgId} usuarioId={user.id} />
 
           {/* Itens */}
           <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '20px 24px' }}>

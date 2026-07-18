@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { registrarCompra, criarFornecedor } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
 import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
+import ModalAutorizacao from '@/app/(sistema)/loja/pdv/components/ModalAutorizacao'
 
 interface Produto { id: string; nome: string; unidade: string }
 interface Fornecedor { id: string; nome: string }
@@ -89,6 +90,13 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   const [itens, setItens]   = useState<ItemLinha[]>([])
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState<string | null>(null)
+
+  const [pagamentoTipo, setPagamentoTipo]       = useState<'a_vista' | 'a_prazo'>('a_vista')
+  const [formaPagamentoVista, setFormaPagamentoVista] = useState<'dinheiro' | 'pix' | 'cartao'>('dinheiro')
+  const [numParcelas, setNumParcelas]           = useState(3)
+  const [diasEntreParcelas, setDiasEntreParcelas] = useState(30)
+  const [parcelas, setParcelas]                 = useState<{ valor: number; data_vencimento: string }[]>([])
+  const [mostrarAutorizacao, setMostrarAutorizacao] = useState(false)
 
   const freteNum   = parseReais(frete)
   const outrosNum  = parseReais(outrosCustos)
@@ -188,9 +196,27 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
     setNovoFornNome(''); setNovoFornCnpj(''); setNovoFornEmail(''); setNovoFornTelefone('')
   }
 
-  async function handleSubmit() {
-    if (!fornecedorId)     { setErro('Selecione um fornecedor.'); return }
-    if (itens.length === 0) { setErro('Adicione ao menos um item.'); return }
+  function gerarParcelas() {
+    const valorBase = Math.floor((totalGeral / numParcelas) * 100) / 100
+    const novas = Array.from({ length: numParcelas }, (_, i) => {
+      const dt = new Date(dataCompra + 'T00:00:00')
+      dt.setDate(dt.getDate() + diasEntreParcelas * (i + 1))
+      const valor = i === numParcelas - 1
+        ? Number((totalGeral - valorBase * (numParcelas - 1)).toFixed(2))
+        : valorBase
+      return { valor, data_vencimento: dt.toISOString().split('T')[0] }
+    })
+    setParcelas(novas)
+  }
+
+  function atualizarParcela(idx: number, campo: 'valor' | 'data_vencimento', valor: string) {
+    setParcelas(prev => prev.map((p, i) => i === idx
+      ? { ...p, [campo]: campo === 'valor' ? (parseFloat(valor.replace(',', '.')) || 0) : valor }
+      : p
+    ))
+  }
+
+  async function executarCompra(autorizadoPor?: string) {
     setSalvando(true)
     setErro(null)
     const result = await registrarCompra(orgId, usuarioId, {
@@ -202,6 +228,9 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       outros_custos_descricao: outrosDesc || undefined,
       observacoes:             observacoes || undefined,
       status_nfe:              statusNfe,
+      pagamento: pagamentoTipo === 'a_vista'
+        ? { tipo: 'a_vista', forma_pagamento: formaPagamentoVista, autorizado_por: autorizadoPor! }
+        : { tipo: 'a_prazo', parcelas },
       itens: itens.map(i => ({
         produto_id:     i.produto_id,
         quantidade:     i.quantidade,
@@ -211,8 +240,21 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
       })),
     })
     setSalvando(false)
+    setMostrarAutorizacao(false)
     if (result.error) { setErro(result.error); return }
     router.push('/loja/compras?sucesso=compra')
+  }
+
+  function handleSubmit() {
+    if (!fornecedorId)      { setErro('Selecione um fornecedor.'); return }
+    if (itens.length === 0) { setErro('Adicione ao menos um item.'); return }
+    if (pagamentoTipo === 'a_prazo' && parcelas.length === 0) { setErro('Gere as parcelas do pagamento a prazo.'); return }
+    setErro(null)
+    if (pagamentoTipo === 'a_vista') {
+      setMostrarAutorizacao(true)
+    } else {
+      executarCompra()
+    }
   }
 
   return (
@@ -506,6 +548,88 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
             </div>
           )}
 
+          {/* Forma de pagamento */}
+          {itens.length > 0 && (
+            <div style={cardStyle}>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700' }}>Forma de pagamento</h2>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {([
+                  { value: 'a_vista', label: 'À vista' },
+                  { value: 'a_prazo', label: 'A prazo' },
+                ] as const).map(op => (
+                  <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, padding: '6px 14px', border: `0.5px solid ${pagamentoTipo === op.value ? COM_C.laranja : COM_C.borda}`, borderRadius: 8, background: pagamentoTipo === op.value ? '#FEF3EA' : 'transparent', color: pagamentoTipo === op.value ? COM_C.laranja : COM_C.txt }}>
+                    <input type="radio" name="pagamento_tipo" value={op.value} checked={pagamentoTipo === op.value}
+                      onChange={() => { setPagamentoTipo(op.value); setParcelas([]) }} style={{ display: 'none' }} />
+                    {op.label}
+                  </label>
+                ))}
+              </div>
+
+              {pagamentoTipo === 'a_vista' ? (
+                <div style={{ maxWidth: 240 }}>
+                  <label style={labelStyle}>Forma de pagamento</label>
+                  <select value={formaPagamentoVista} onChange={e => setFormaPagamentoVista(e.target.value as any)} style={inputStyle}>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">Pix</option>
+                    <option value="cartao">Cartão</option>
+                  </select>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 8 }}>
+                    Debita na hora do caixa da Loja aberto — vai pedir senha de gerente/admin pra autorizar.
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'end', marginBottom: 14 }}>
+                    <div>
+                      <label style={labelStyle}>Nº de parcelas</label>
+                      <input type="number" min={1} value={numParcelas} onChange={e => setNumParcelas(Math.max(1, parseInt(e.target.value) || 1))} style={{ ...inputStyle, width: 100 }} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Dias entre parcelas</label>
+                      <input type="number" min={1} value={diasEntreParcelas} onChange={e => setDiasEntreParcelas(Math.max(1, parseInt(e.target.value) || 1))} style={{ ...inputStyle, width: 140 }} />
+                    </div>
+                    <button type="button" onClick={gerarParcelas}
+                      style={{ padding: '9px 16px', background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      Gerar parcelas
+                    </button>
+                  </div>
+
+                  {parcelas.length > 0 && (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: `2px solid ${COM_C.borda}` }}>
+                          {['Parcela', 'Valor', 'Vencimento'].map(h => (
+                            <th key={h} style={{ padding: '7px 8px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: COM_C.txtSub }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parcelas.map((p, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f0ede8' }}>
+                            <td style={{ padding: '8px' }}>{idx + 1}/{parcelas.length}</td>
+                            <td style={{ padding: '8px' }}>
+                              <input type="text" inputMode="decimal" value={p.valor.toFixed(2).replace('.', ',')}
+                                onChange={e => atualizarParcela(idx, 'valor', e.target.value)}
+                                style={{ ...inputStyle, width: 120, padding: '6px 10px' }} />
+                            </td>
+                            <td style={{ padding: '8px' }}>
+                              <input type="date" value={p.data_vencimento}
+                                onChange={e => atualizarParcela(idx, 'data_vencimento', e.target.value)}
+                                style={{ ...inputStyle, width: 160, padding: '6px 10px' }} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 8 }}>
+                    Nenhum dinheiro sai do caixa agora — cada parcela fica pendente até a baixa em Loja → Contas a pagar.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Botão confirmar */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
             <Link href="/loja/compras" style={{ padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', border: `1px solid ${COM_C.borda}`, color: COM_C.txtSub, textDecoration: 'none', background: '#fff' }}>
@@ -516,6 +640,16 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
             </Btn>
           </div>
         </div>
+
+        {mostrarAutorizacao && (
+          <ModalAutorizacao
+            orgId={orgId}
+            titulo="Confirmar pagamento à vista"
+            descricao={`Debitar ${fmtReal(totalGeral)} do caixa da Loja (${formaPagamentoVista}).`}
+            onAutorizado={(autId) => executarCompra(autId)}
+            onCancelar={() => setMostrarAutorizacao(false)}
+          />
+        )}
     </PageLayout>
   )
 }

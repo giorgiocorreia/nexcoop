@@ -333,6 +333,81 @@ async function verificarPermissaoGerente(supabase: ReturnType<typeof createAdmin
   return null
 }
 
+// Pagamento da compra: à vista dá baixa na hora (debita o caixa aberto do
+// operador e já cria o lançamento pago); a prazo só grava as parcelas como
+// pendentes — nenhum dinheiro sai do caixa nem lançamento é criado até a
+// baixa individual de cada parcela (ver quitarParcelaCompra).
+export type PagamentoCompra =
+  | { tipo: 'a_vista'; forma_pagamento: 'dinheiro' | 'pix' | 'cartao'; autorizado_por: string }
+  | { tipo: 'a_prazo'; parcelas: { valor: number; data_vencimento: string }[] }
+
+// Sem caixa aberto do operador não tem de onde debitar o pagamento — mesma
+// trava de exigirSessaoCaixaAberta (Comercialização), aqui contra o caixa
+// próprio da Loja. Bloqueia antes de qualquer gravação de parcela/lançamento.
+async function exigirCaixaLojaAberto(supabase: ReturnType<typeof createAdminClient>, orgId: string, usuarioId: string): Promise<string> {
+  const { data: caixa } = await supabase
+    .from('loja_caixas')
+    .select('id')
+    .eq('org_id', orgId)
+    .eq('usuario_id', usuarioId)
+    .eq('status', 'aberto')
+    .maybeSingle()
+  if (!caixa) throw new Error('Não há caixa aberto na Loja pra você. Abra um caixa antes de pagar esta parcela.')
+  return caixa.id
+}
+
+// Baixa efetiva de uma parcela: debita o caixa da Loja do operador via
+// registrarSangriaLoja (já existente) e cria o lançamento pago no
+// Financeiro. Compartilhada entre a baixa "à vista" (dentro de
+// registrarCompra) e quitarParcelaCompra (baixa manual de parcela a prazo).
+async function baixarParcelaCompra(params: {
+  supabase: ReturnType<typeof createAdminClient>
+  orgId: string
+  parcelaId: string
+  compraId: string
+  fornecedorNome: string
+  numeroNf?: string | null
+  valor: number
+  formaPagamento: 'dinheiro' | 'pix' | 'cartao'
+  autorizadoPor: string
+  executadoPor: string
+  dataPagamento: string
+}) {
+  const { supabase, orgId, parcelaId, compraId, fornecedorNome, numeroNf, valor, formaPagamento, autorizadoPor, executadoPor, dataPagamento } = params
+
+  const caixaId = await exigirCaixaLojaAberto(supabase, orgId, executadoPor)
+
+  const sangria = await registrarSangriaLoja(
+    orgId, caixaId, 'sangria', valor, autorizadoPor, executadoPor,
+    `Pagamento — Compra ${numeroNf ? `NF ${numeroNf}` : `#${compraId.slice(0, 8)}`} — ${fornecedorNome}`
+  )
+  if ('error' in sangria) throw new Error(sangria.error)
+
+  const { error: errParcela } = await supabase
+    .from('loja_compra_parcelas')
+    .update({ status: 'pago', forma_pagamento: formaPagamento, data_pagamento: dataPagamento, registrado_por: executadoPor })
+    .eq('id', parcelaId)
+  if (errParcela) throw new Error(traduzirErro(errParcela.message))
+
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    await criarLancamento({
+      organizacao_id: orgId,
+      tipo: 'despesa',
+      status: 'pago',
+      descricao: `Compra Loja — ${fornecedorNome}${numeroNf ? ` — NF ${numeroNf}` : ''}`,
+      valor,
+      data_competencia: dataPagamento,
+      data_pagamento: dataPagamento,
+      numero_documento: compraId.slice(0, 8),
+      observacoes: `Baixa de parcela — compra #${compraId.slice(0, 8)}`,
+      usuario_id: executadoPor,
+    })
+  } catch (e) {
+    console.error('[financeiro] Erro ao criar lançamento na baixa da parcela:', e)
+  }
+}
+
 export async function registrarCompra(
   orgId: string,
   operadorId: string,
@@ -345,6 +420,7 @@ export async function registrarCompra(
     outros_custos_descricao?: string
     observacoes?: string
     status_nfe?: 'sem_chave' | 'sem_nota'
+    pagamento: PagamentoCompra
     itens: {
       produto_id: string
       quantidade: number
@@ -450,28 +526,56 @@ export async function registrarCompra(
       if (errProd) return { error: traduzirErro(errProd.message) }
     }
 
-    try {
-      const { data: fornecedor } = await admin
-        .from('loja_fornecedores')
-        .select('nome')
-        .eq('id', compra.fornecedor_id)
-        .single()
+    const { data: fornecedor } = await admin
+      .from('loja_fornecedores')
+      .select('nome')
+      .eq('id', compra.fornecedor_id)
+      .single()
+    const fornecedorNome = fornecedor?.nome ?? 'Fornecedor'
 
-      const { criarLancamento } = await import('@/lib/financeiro/actions')
-      await criarLancamento({
-        organizacao_id: orgId,
-        tipo: 'despesa',
-        status: 'pago',
-        descricao: `Compra Loja — ${fornecedor?.nome ?? 'Fornecedor'}${compra.numero_nf ? ` — NF ${compra.numero_nf}` : ''}`,
-        valor: total_geral,
-        data_competencia: compra.data_compra,
-        data_pagamento: compra.data_compra,
-        numero_documento: compra_id.slice(0, 8),
-        observacoes: compra.observacoes ?? `Entrada de estoque — compra #${compra_id.slice(0, 8)}`,
-        usuario_id: operadorId,
-      })
-    } catch (e) {
-      console.error('[financeiro] Erro ao criar lançamento compra loja:', e)
+    if (compra.pagamento.tipo === 'a_vista') {
+      const hoje = new Date().toISOString().split('T')[0]
+      const { data: parcela, error: errParcela } = await admin
+        .from('loja_compra_parcelas')
+        .insert({
+          compra_id, org_id: orgId,
+          numero_parcela: 1, total_parcelas: 1,
+          valor: total_geral,
+          status: 'pendente',
+          data_vencimento: compra.data_compra,
+        })
+        .select('id')
+        .single()
+      if (errParcela || !parcela) return { error: traduzirErro(errParcela?.message ?? 'Erro ao criar parcela.') }
+
+      try {
+        await baixarParcelaCompra({
+          supabase: admin, orgId, parcelaId: parcela.id, compraId: compra_id,
+          fornecedorNome, numeroNf: compra.numero_nf,
+          valor: total_geral,
+          formaPagamento: compra.pagamento.forma_pagamento,
+          autorizadoPor: compra.pagamento.autorizado_por,
+          executadoPor: operadorId,
+          dataPagamento: hoje,
+        })
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : String(e) }
+      }
+    } else {
+      const totalParcelas = compra.pagamento.parcelas.length
+      for (let i = 0; i < totalParcelas; i++) {
+        const p = compra.pagamento.parcelas[i]
+        const { error: errParcela } = await admin
+          .from('loja_compra_parcelas')
+          .insert({
+            compra_id, org_id: orgId,
+            numero_parcela: i + 1, total_parcelas: totalParcelas,
+            valor: p.valor,
+            status: 'pendente',
+            data_vencimento: p.data_vencimento,
+          })
+        if (errParcela) return { error: traduzirErro(errParcela.message) }
+      }
     }
 
     revalidatePath('/loja/compras')
@@ -481,6 +585,99 @@ export async function registrarCompra(
     return { data: { id: compra_id } }
   } catch (e) {
     return { error: String(e) }
+  }
+}
+
+export async function listarParcelasDaCompra(compraId: string) {
+  try {
+    const { supabase, orgId } = await getCtx()
+    const { data, error } = await supabase
+      .from('loja_compra_parcelas')
+      .select('*')
+      .eq('compra_id', compraId)
+      .eq('org_id', orgId)
+      .order('numero_parcela')
+    if (error) return { error: traduzirErro(error.message) }
+    return { data }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+// Marca como vencidas as parcelas pendentes cuja data passou — mesmo padrão
+// de verificarInadimplencia (cota_pagamentos), rodado antes de listar
+// pendências pra manter o status em dia sem precisar de cron.
+async function verificarParcelasCompraVencidas(supabase: ReturnType<typeof createAdminClient>, orgId: string) {
+  const hoje = new Date().toISOString().split('T')[0]
+  await supabase
+    .from('loja_compra_parcelas')
+    .update({ status: 'vencido' })
+    .eq('org_id', orgId)
+    .eq('status', 'pendente')
+    .lt('data_vencimento', hoje)
+}
+
+export async function listarContasAPagarLoja(orgId: string) {
+  try {
+    const { supabase, orgId: ctxOrgId } = await getCtx()
+    if (ctxOrgId !== orgId) return { error: 'Sem permissão.' }
+
+    await verificarParcelasCompraVencidas(supabase, orgId)
+
+    const { data, error } = await supabase
+      .from('loja_compra_parcelas')
+      .select('*, loja_compras(numero_nf, data_compra, loja_fornecedores(nome))')
+      .eq('org_id', orgId)
+      .in('status', ['pendente', 'vencido'])
+      .order('data_vencimento')
+    if (error) return { error: traduzirErro(error.message) }
+    return { data }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
+export async function quitarParcelaCompra(
+  orgId: string,
+  operadorId: string,
+  parcelaId: string,
+  formaPagamento: 'dinheiro' | 'pix' | 'cartao',
+  autorizadoPor: string
+) {
+  try {
+    const { supabase, orgId: ctxOrgId, usuarioId } = await getCtx()
+    if (ctxOrgId !== orgId || usuarioId !== operadorId) return { error: 'Sem permissão.' }
+
+    const { data: parcela, error: errParcela } = await supabase
+      .from('loja_compra_parcelas')
+      .select('id, compra_id, valor, status, loja_compras(numero_nf, loja_fornecedores(nome))')
+      .eq('id', parcelaId)
+      .eq('org_id', orgId)
+      .single()
+    if (errParcela || !parcela) return { error: 'Parcela não encontrada.' }
+    if (parcela.status === 'pago') return { error: 'Parcela já está paga.' }
+
+    const compraRaw = (parcela as any).loja_compras
+    const compraInfo = Array.isArray(compraRaw) ? compraRaw[0] : compraRaw
+    const fornecedorRaw = compraInfo?.loja_fornecedores
+    const fornecedor = Array.isArray(fornecedorRaw) ? fornecedorRaw[0] : fornecedorRaw
+
+    const hoje = new Date().toISOString().split('T')[0]
+    await baixarParcelaCompra({
+      supabase, orgId, parcelaId, compraId: parcela.compra_id,
+      fornecedorNome: fornecedor?.nome ?? 'Fornecedor',
+      numeroNf: compraInfo?.numero_nf ?? null,
+      valor: Number(parcela.valor),
+      formaPagamento, autorizadoPor, executadoPor: operadorId,
+      dataPagamento: hoje,
+    })
+
+    revalidatePath('/loja/compras')
+    revalidatePath('/loja/contas-a-pagar')
+    revalidatePath('/financeiro')
+    return { data: { ok: true } }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) }
   }
 }
 

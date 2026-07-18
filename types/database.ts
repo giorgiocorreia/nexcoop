@@ -605,6 +605,22 @@ export interface LojaCompraItem {
   subtotal:      number
 }
 
+export interface LojaCompraParcela {
+  id:              string
+  compra_id:       string
+  org_id:          string
+  numero_parcela:  number
+  total_parcelas:  number
+  valor:           number
+  forma_pagamento: 'dinheiro' | 'pix' | 'cartao' | null
+  status:          'pago' | 'pendente' | 'vencido'
+  data_vencimento: string
+  data_pagamento:  string | null
+  registrado_por:  string | null
+  observacoes:     string | null
+  criado_em:       string
+}
+
 export interface LojaEstoqueMovimento {
   id:            string
   org_id:        string
@@ -1361,6 +1377,7 @@ export type Database = {
       loja_vendas:               TableDef<LojaVenda>
       loja_venda_itens:          TableDef<LojaVendaItem>
       loja_compras:              TableDef<LojaCompra>
+      loja_compra_parcelas:      TableDef<LojaCompraParcela>
       loja_compra_itens:         TableDef<LojaCompraItem>
       loja_estoque_movimentos:   TableDef<LojaEstoqueMovimento>
       loja_pedidos_online:       TableDef<LojaPedidoOnline>

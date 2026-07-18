@@ -134,6 +134,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     if (isAdmin || isGerenteLoja || isEstoquistaLoja)
       lojaChildren.push({ label: 'Compras', href: '/loja/compras', icone: '🛒' })
 
+    // Contas a pagar — gerente, admin (mesma permissão de dar baixa em caixa)
+    if (isAdmin || isGerenteLoja)
+      lojaChildren.push({ label: 'Contas a pagar', href: '/loja/contas-a-pagar', icone: '💸' })
+
     if (isAdmin || isGerenteLoja || isEstoquistaLoja)
       lojaChildren.push({ label: 'Fornecedores', href: '/loja/fornecedores', icone: '🏭' })
 
