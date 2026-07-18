@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { getResumoPagamentosMes } from './pagamentos-produtores'
+import { getResumoPagamentosMes } from './saidas-caixa'
 
 export async function getDashboardComercializacao(organizacaoId: string) {
   const supabase = await createClient()
@@ -175,8 +175,8 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   }
 
   // Total pago a produtores no mês corrente (saques em espécie/Pix no caixa —
-  // ver critério completo em pagamentos-produtores.ts) para o KPI clicável do
-  // dashboard, que leva ao relatório detalhado.
+  // ver critério completo em saidas-caixa.ts) para o KPI clicável do
+  // dashboard, que leva ao relatório de Saídas de Caixa (mais abrangente).
   let pagamentosProdutoresMes = { total: 0, totalEspecie: 0, totalPix: 0, count: 0 }
   try {
     // Mês/ano com base em inicioDiaBrasilia (já calculado acima) — evita virar

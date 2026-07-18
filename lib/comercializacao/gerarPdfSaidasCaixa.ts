@@ -1,13 +1,14 @@
 'use client'
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
-import type { PagamentoProdutorLinha } from './pagamentos-produtores-utils'
+import { labelTipoSaida, type SaidaCaixaLinha } from './saidas-caixa-utils'
 
-export interface DadosPagamentosProdutoresPdf {
+export interface DadosSaidasCaixaPdf {
   orgNome: string
   orgCnpj: string
   mesLabel: string
-  linhas: PagamentoProdutorLinha[]
+  filtrosLabel?: string
+  linhas: SaidaCaixaLinha[]
   total: number
   totalEspecie: number
   totalPix: number
@@ -28,7 +29,7 @@ function fmtData(iso: string) {
 // pdf-lib (não pdfkit — pdfkit é incompatível com o runtime serverless da
 // Vercel). Layout espelha gerarPdfFechamentoCaixa (mesma paleta, mesma
 // paginação A4) por consistência visual entre os relatórios do módulo.
-export async function gerarPdfPagamentosProdutores(dados: DadosPagamentosProdutoresPdf): Promise<Uint8Array> {
+export async function gerarPdfSaidasCaixa(dados: DadosSaidasCaixaPdf): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const fontR = await doc.embedFont(StandardFonts.Helvetica)
   const fontB = await doc.embedFont(StandardFonts.HelveticaBold)
@@ -45,7 +46,7 @@ export async function gerarPdfPagamentosProdutores(dados: DadosPagamentosProduto
   }
 
   function drawHeader() {
-    page.drawText('NexCoop — Pagamentos a Produtores', {
+    page.drawText('NexCoop — Saídas de Caixa', {
       x: MARGIN, y: y - 2,
       size: 9, font: fontR,
       color: rgb(0.5, 0.5, 0.5)
@@ -98,21 +99,26 @@ export async function gerarPdfPagamentosProdutores(dados: DadosPagamentosProduto
   }
 
   // ── CABEÇALHO ──────────────────────────────────────────────
-  text('PAGAMENTOS A PRODUTORES', MARGIN, 16, true, rgb(0.2, 0.2, 0.2))
+  text('SAÍDAS DE CAIXA — COMERCIALIZAÇÃO', MARGIN, 16, true, rgb(0.2, 0.2, 0.2))
   y -= 20
   text(dados.orgNome, MARGIN, 10, true)
   y -= 14
   text(`CNPJ: ${dados.orgCnpj}`, MARGIN, 8)
   y -= 12
   text(`Período: ${dados.mesLabel}`, MARGIN, 8)
-  y -= 16
+  y -= 12
+  if (dados.filtrosLabel) {
+    text(`Filtros aplicados: ${dados.filtrosLabel}`, MARGIN, 8, false, rgb(0.4, 0.4, 0.4))
+    y -= 12
+  }
+  y -= 4
   divider()
 
   // ── RESUMO DO PERÍODO ──────────────────────────────────────
-  sectionTitle('Resumo do Período')
+  sectionTitle('Resumo do Período (filtrado)')
   row('Total pago em espécie', fmt(dados.totalEspecie))
   row('Total pago via Pix', fmt(dados.totalPix))
-  row('Quantidade de pagamentos', String(dados.linhas.length))
+  row('Quantidade de saídas', String(dados.linhas.length))
   y -= 4; divider()
   row('Total do período', fmt(dados.total), true)
   y -= 4
@@ -121,7 +127,7 @@ export async function gerarPdfPagamentosProdutores(dados: DadosPagamentosProduto
   sectionTitle('Detalhamento')
   if (dados.linhas.length === 0) {
     checkPage()
-    text('Nenhum pagamento registrado no período.', MARGIN, 9, false, rgb(0.5, 0.5, 0.5))
+    text('Nenhuma saída de caixa registrada no período com os filtros aplicados.', MARGIN, 9, false, rgb(0.5, 0.5, 0.5))
     y -= LINE_H
   } else {
     checkPage()
@@ -131,17 +137,19 @@ export async function gerarPdfPagamentosProdutores(dados: DadosPagamentosProduto
       color: rgb(0.88, 0.88, 0.88)
     })
     text('Data', MARGIN, 8, true)
-    text('Produtor', MARGIN + 70, 8, true)
-    text('CPF', MARGIN + 300, 8, true)
+    text('Tipo', MARGIN + 60, 8, true)
+    text('Descrição', MARGIN + 175, 8, true)
     text('Forma', MARGIN + 400, 8, true)
     text('Valor', MARGIN + 460, 8, true)
     y -= 16
     for (const l of dados.linhas) {
       checkPage(LINE_H + 2)
-      const nome = l.produtor_nome.length > 34 ? l.produtor_nome.slice(0, 33) + '…' : l.produtor_nome
+      const tipo = labelTipoSaida(l.tipo)
+      const tipoCurto = tipo.length > 22 ? tipo.slice(0, 21) + '…' : tipo
+      const descricao = l.descricao.length > 32 ? l.descricao.slice(0, 31) + '…' : l.descricao
       text(fmtData(l.data), MARGIN, 8)
-      text(nome, MARGIN + 70, 8)
-      text(l.produtor_cpf ?? '—', MARGIN + 300, 8)
+      text(tipoCurto, MARGIN + 60, 8)
+      text(descricao, MARGIN + 175, 8)
       text(l.forma_pagamento === 'pix' ? 'Pix' : 'Espécie', MARGIN + 400, 8)
       text(fmt(l.valor), MARGIN + 460, 8)
       y -= LINE_H

@@ -8,7 +8,7 @@ import type { getCacauAOrdem } from '@/lib/comercializacao/cacau-a-ordem'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa, getMeuSaldoResponsabilidadeComercializacao } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
-import { mesLabel } from '@/lib/comercializacao/pagamentos-produtores-utils'
+import { mesLabel } from '@/lib/comercializacao/saidas-caixa-utils'
 import { Btn, BtnLink } from '@/components/ui/Btn'
 import { COM_C, HERO } from '@/components/comercializacao/ui/tokens'
 import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
@@ -252,7 +252,7 @@ export default function DashboardComercializacao({
           <KpiCard label="Pagamentos a produtores" value={fmtReal(d.pagamentosProdutoresMes.total)}
             sub={`${mesLabel(agora.getMonth() + 1, agora.getFullYear())} · ${d.pagamentosProdutoresMes.count} pagamento${d.pagamentosProdutoresMes.count === 1 ? '' : 's'}`}
             icon="ti-report-money" cor={COM_C.azul} corLt={COM_C.azulLt}
-            onClick={() => router.push('/comercializacao/relatorios/pagamentos-produtores')} />
+            onClick={() => router.push('/comercializacao/relatorios/saidas-caixa')} />
           <KpiCard label="Qtd. Cacau à ordem" value={fmtKgExato(cacauAOrdem.saldo_total_kg)}
             sub={cacauAOrdem.produtores.length > 0 ? `${fmt(cacauAOrdem.produtores.length)} produtor${cacauAOrdem.produtores.length > 1 ? 'es' : ''} · ver detalhe` : 'aguardando conversão'}
             icon="ti-basket" cor={COM_C.marrom} corLt={COM_C.marromLt}
