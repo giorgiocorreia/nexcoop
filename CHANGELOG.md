@@ -1,5 +1,58 @@
 # NexCoop — Changelog
 
+## 2026-07-18
+
+### fix(rls): migration 081 — pagamentos/consultas de usuário comum quebrados pelas 076/077
+- As migrations 076/077 revogaram EXECUTE de `get_org_id()`/`get_user_role()` também do role `authenticated`, mas essas funções são chamadas DENTRO de RLS policies — que executam com o role do usuário da query. Resultado: `42501 permission denied for function get_org_id` em toda query via client RLS (ex.: lista de cooperados vazia pra função Técnico). Só service_role (admin client) passava, por isso o bug ficou invisível pra admins
+- Migration 081: GRANT de volta só pra `authenticated`; `anon`/`PUBLIC` continuam revogados (mantém o ganho contra RPC anônimo). Correção definitiva (policies com subquery inline, regra 1) fica pra migration futura
+
+### fix(cooperados): trava de saldo a pagar + guard de permissão server-side
+- `registrarPagamentos` bloqueia registro quando a cota já está completa (paga + promessas) ou quando as novas parcelas excedem o saldo restante — caso real: cota da Edneia Calheira registrada 2x em 18/07 (duplicata e rastros — lançamento de receita e aporte PIX no caixa — removidos manualmente do banco)
+- `/cooperados` e `/cooperados/[id]` validam `admin`/`tecnico` no servidor (antes o menu escondia o link mas a URL direta abria pra qualquer logado); na ficha, o guard roda antes de carregar dados. Atenção: outras telas (ex.: Financeiro) ainda têm o mesmo padrão sem guard — varredura pendente
+
+### feat(comercializacao): relatório Saídas de Caixa com filtros aditivos + KPI no dashboard
+- Nova rota `/comercializacao/relatorios/saidas-caixa` (nasceu como pagamentos-produtores e foi ampliada/renomeada na mesma data): cobre TODA saída de dinheiro do caixa — saque produtor (espécie/PIX), saída avulsa, sangria (inclui transferências pra Loja) e ajuste financeiro de débito (cobertura futura)
+- Filtros aditivos estilo "+ Filtro" (chips removíveis, combináveis): tipo de saída (multi), forma de pagamento, produtor; mês/ano fixo. KPIs → filtros/Gerar PDF → detalhamento, nessa ordem
+- PDF A4 via pdf-lib refletindo os filtros; KPI "Pagamentos a produtores" no dashboard (substituiu "Kg na semana") continua contando SÓ saques de produtor e clica pro relatório
+- Fonte de "pagamento a produtor": `movimentacoes_conta` tipo `saque_especie`/`saque_pix` (momento em que dinheiro sai da cooperativa); créditos de distribuição NÃO contam (virariam contagem dupla no saque)
+- `lib/comercializacao/saidas-caixa{,-utils}.ts`, `gerarPdfSaidasCaixa.ts`, `usePdfSaidasCaixa.ts`
+
+### fix(comercializacao): data de saída avulsa recuava um dia + sumia das operações do dia
+- `fmtDataSaida`: coluna `date` pura ('YYYY-MM-DD') não passa mais por `new Date()` (virava meia-noite UTC → 21h do dia anterior em Brasília); formata direto da string. PDF usa o mesmo formatador
+- `getOperacoesHoje` agora inclui saídas avulsas (lancamentos da sessão) na lista de operações do caixa — antes o saldo descontava mas a operação não aparecia (mesmo sintoma já corrigido pra aportes em 17/07)
+
+### fix(loja): transferência entre caixas não refletia nos saldos exibidos
+- `registrarSangriaLoja` (transferência Comercialização → Loja) inseria a sangria mas não decrementava `saldo_especie_calculado` da sessão aberta de origem — a tela do Caixa lê esse campo, então o valor "continuava lá". Agora decrementa igual à sangria nativa
+- KPI "Saldo em caixa" do hub da Loja passou a somar aportes e subtrair sangrias dos caixas abertos (antes: só abertura + vendas do dia — transferência recebida não aparecia)
+
+### fix(loja): pagamento de compra em pix/cartão não gera sangria no caixa
+- `baixarParcelaCompra`: só `dinheiro` debita a gaveta do operador (e exige caixa aberto); pix/cartão saem da conta bancária — antes toda forma gerava sangria em espécie e distorcia a contagem física no fechamento
+
+## 2026-07-17
+
+### feat(tesouraria): continuidade de caixa + transferências entre caixas + custódia
+- Continuidade travada: valor de abertura de caixa (Loja e Comercialização) deixa de ser digitado — é sempre o saldo sob responsabilidade do operador calculado do zero pelas tabelas brutas (`lib/tesouraria/saldo-responsabilidade.ts`); `valor_contado_especie` no fechamento é só auditoria (migration 074)
+- Transferência entre caixas: Loja pode puxar aporte de uma sessão da Comercialização ou de outro caixa da Loja (e vice-versa na Comercialização), com autorização por senha (`validarSenhaParaTransferencia` — dono da origem também pode autorizar); as duas pontas linkadas por `referencia_transferencia_id` (migration 073, que também formaliza o schema drift de `loja_sangrias`)
+- Card "Custódia de caixa" no dashboard (admin): quanto cada usuário tem sob responsabilidade agora, por módulo
+- Revert da ponte Comercialização→Loja em "Registrar entrega" (7f1e427) — enviada cedo demais, volta ao estado anterior
+
+### feat(loja): contas a pagar com parcelas para compras de fornecedor
+- Migrations 079/080: `loja_compra_parcelas` (+`lancamento_id` por parcela)
+- Compra a prazo gera parcelas com vencimento; cada parcela nasce com lançamento pendente no Financeiro (competência); baixa (à vista ou manual) marca lançamento pago e dispara escrituração
+- Tela de contas a pagar da Loja com status pendente/vencido automático
+- Atalho de transferência da Comercialização na compra à vista (4d36c0b)
+
+### fix(comercializacao): lote de melhorias no Caixa (17/07, manhã/tarde)
+- Aportes/sangrias (ex.: cota de cooperado) visíveis em "Operações do dia" (7976687)
+- Cadastro rápido de produto no form de entrada + preço de custo opcional na entrega + unidade dinâmica nos saldos/modais (f00960e, b5c5cfd, deb650c, 34a72a9)
+- Ponte "Enviar para a Loja" nas entregas (migration 072, 14e07c4)
+- Status de venda/lote unificado em 'pago' (migration 071); DEFAULT de `vendas_externas.status_nfe` corrigido (migration 070); transferência interna pula pergunta de devolução por NF-e (267941f)
+- KPI do lote mostra valor negociado após venda confirmada (786c1f7); botão Aporte/Sangria visível no cabeçalho (c90778a)
+
+### fix(security): migrations 075–078 — Security Advisor (com efeito colateral)
+- 075: views com `security_invoker`; 076/077: REVOKE EXECUTE em funções SECURITY DEFINER; 078: `SET search_path` em 22 funções
+- ⚠️ As 076/077 causaram o bug de RLS corrigido pela 081 em 18/07 (ver acima)
+
 ## 2026-07-16
 
 ### feat(comercializacao): transferência interna de lote sem NF-e (comprador é empresa do próprio cooperado)

@@ -1,6 +1,6 @@
 # Módulo Comercialização — documento de continuidade
 
-Handoff para retomar o módulo em outro chat. Atualizado em 2026-07-10.
+Handoff para retomar o módulo em outro chat. Atualizado em 2026-07-18.
 Foca no que é carga-pesada para continuar: modelo de dados, mecânica de saldo,
 pipeline de cotações/Índice Nex e pendências abertas. Para status macro do
 produto, ver `docs/MODULOS.md`; para schema completo, `docs/SCHEMA.md`.
@@ -151,6 +151,25 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
   fix 064.
 - `movimentacoes_conta` tem FK para `contas_produtor`, não direto para produtor —
   o filtro é sempre por `conta_id`.
-- Migrations só via SQL Editor do Supabase Dashboard. Próxima disponível: **070**
-  — conferir sempre em `docs/SCHEMA.md` antes de criar, este número fica
-  desatualizado com frequência.
+- Migrations só via SQL Editor do Supabase Dashboard. Conferir SEMPRE o número em
+  `docs/SCHEMA.md` + `ls supabase/migrations/` antes de criar — qualquer número
+  escrito em doc (inclusive este) fica desatualizado com frequência.
+- **Sinal de `ajuste_produto` é DÉBITO** (trigger faz `-quantidade_produto`).
+  Pra creditar produto via ajuste (ex.: entrada retroativa sem tocar estoque
+  físico nem entrar em lote — casos Cristiano/Zenildo 18/07), insere-se
+  quantidade NEGATIVA. Lote só puxa tipo `entrega` com `lote_id` null; ajuste
+  nunca entra em composição de lote.
+- **Coluna `date` pura nunca passa por `new Date()`** pra exibição — vira
+  meia-noite UTC e recua um dia em Brasília. Usar `fmtDataSaida`
+  (`saidas-caixa-utils.ts`) ou formatar direto da string.
+- **`getOperacoesHoje` agrega 3 fontes** (movimentacoes_conta + aportes_sangrias
+  + lancamentos da sessão) — nova fonte de dinheiro no caixa precisa entrar lá,
+  senão "o dinheiro some" da lista de operações do dia.
+- **Funções chamadas dentro de RLS policy (`get_org_id`/`get_user_role`)
+  precisam de EXECUTE pro role `authenticated`** — revogar quebra toda query de
+  usuário comum com `42501` (incidente 076/077→081, 17–18/07). Security Advisor
+  vai acusar warning nelas; é o uso legítimo.
+- Relatório de saídas de caixa: `lib/comercializacao/saidas-caixa{,-utils}.ts` +
+  `/comercializacao/relatorios/saidas-caixa`. O KPI do dashboard
+  (`getResumoPagamentosMes`) conta SÓ saques de produtor — semântica diferente
+  do relatório, de propósito.

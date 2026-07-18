@@ -5,18 +5,19 @@
 | Módulo | Status | Última atualização |
 |---|---|---|
 | Autenticação / Onboarding | ✅ Completo | — |
-| Cooperados / Filiados | ✅ Completo | 04/07/2026 — UI + cônjuge |
+| Cooperados / Filiados | ✅ Completo | 18/07/2026 — trava de saldo em pagamento de cota + guard admin/tecnico nas páginas |
+| Tesouraria (continuidade + transferência entre caixas + custódia) | ✅ Completo | 18/07/2026 — migrations 073/074; saldos exibidos corrigidos |
 | Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | 04/07/2026 — UI redesign |
 | Stripe (modo teste) | ✅ Completo | — |
 | Super Admin | ✅ Completo | 04/07/2026 — UI redesign |
 | Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | 04/07/2026 — UI redesign |
 | Contábil (migrations 015–024, 061; 13 telas) | ✅ Completo | 04/07/2026 — UI + classificação automática |
-| Comercialização / Caixa Cacau | ✅ Completo | 04/07/2026 — UI redesign |
+| Comercialização / Caixa Cacau | ✅ Completo | 18/07/2026 — relatório Saídas de Caixa com filtros + PDF |
 | NF-e entrada via Focus NFe | ✅ Produção | 16/07/2026 — emitindo em produção (não homologação) |
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
 | Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
 | Gestão de usuários | ✅ Completo | 04/07/2026 — UI redesign |
-| Loja Agropecuária Fases 0–5 | ✅ Completo | 04/07/2026 — UI redesign + integração financeiro |
+| Loja Agropecuária Fases 0–5 | ✅ Completo | 18/07/2026 — contas a pagar com parcelas (079/080) + transferência entre caixas |
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
 | Escritório (portal contador) | ✅ Completo | 04/07/2026 — UI redesign |
 | Landing page | ✅ Completo | 04/07/2026 |
@@ -90,7 +91,7 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - De/Para continua exclusivo para exportação SPED (não classifica lançamentos)
 
 ## Comercialização 🔄
-Última atualização: 16/07/2026
+Última atualização: 18/07/2026
 
 ### ✅ Concluído
 - Cadastro produtores e compradores (com campos fiscais)
@@ -127,6 +128,10 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - Venda de lote como transferência interna sem NF-e — comprador é empresa do próprio cooperado (migrations 067/068, 16/07/2026)
 - Quebra de peso em vendas — comprador paga peso recebido, reduz valor a receber (migration 069, 16/07/2026)
 - Consulta de NF-e em status "processando" religada na UI fiscal (16/07/2026)
+- Continuidade de caixa + transferência entre caixas (Comercialização↔Loja e same-module) + custódia no dashboard (migrations 073/074, 17/07/2026)
+- Cadastro rápido de produto, preço de custo opcional e unidade dinâmica no fluxo de entrega (17/07/2026)
+- Relatório Saídas de Caixa (`/comercializacao/relatorios/saidas-caixa`): filtros aditivos combináveis (tipo/forma/produtor + mês/ano), PDF A4, cobre saques/avulsas/sangrias/ajustes; KPI "Pagamentos a produtores" no dashboard (18/07/2026)
+- Saídas avulsas visíveis em Operações do dia + fix de data (coluna `date` não recua mais um dia por fuso) (18/07/2026)
 
 ### ❌ Pendente
 - saldo_kg em contas_produtor (estoque à ordem)

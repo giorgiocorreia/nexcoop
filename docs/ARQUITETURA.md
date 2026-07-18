@@ -179,6 +179,9 @@ Cor de destaque por módulo (ícone do header + KPIs):
 
 | Data | Decisão | Motivo |
 |---|---|---|
+| 2026-07-18 | Helpers de RLS (`get_org_id`/`get_user_role`) mantêm GRANT EXECUTE pra `authenticated` (migration 081), aceitando o warning do Security Advisor | Função chamada dentro de policy executa com o role do usuário da query — o REVOKE das 076/077 quebrou toda RLS de usuário comum (42501). Correção definitiva: policies com subquery inline (regra 1), migration futura |
+| 2026-07-17 | Continuidade de caixa travada: abertura nunca é digitada, sempre o saldo sob responsabilidade recalculado das tabelas brutas (`lib/tesouraria/saldo-responsabilidade.ts`) | Elimina digitação errada/fraude na abertura; `valor_contado_especie` vira só auditoria (migration 074) |
+| 2026-07-17 | Transferência entre caixas com dupla ponta linkada por `referencia_transferencia_id` (uuid gerado em código, não-FK) | As duas pontas vivem em tabelas diferentes (`aportes_sangrias` × `loja_sangrias`); rollback da segunda ponta deleta a primeira pelo mesmo id (migration 073) |
 | 2026-07-04 | Redesign UI completo: Captação, Loja, Contábil, Configurações, Escritório, Perfil, Admin | Kit `components/nexcoop/ui` com `PageLayout` + `COM_C` em 52 arquivos |
 | 2026-07-04 | Classificação automática escrituração + integração financeiro (mensalidades, cotas, loja) | Financeiro → Contábil em 2 camadas; migration 061 |
 | 2026-07-04 | Cônjuge em produtor/cooperado + NF-e entrada em nome do cônjuge | Migration 060 |
