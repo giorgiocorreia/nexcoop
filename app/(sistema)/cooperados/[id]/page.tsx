@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
-import { isAdmin } from '@/lib/permissoes'
+import { isAdmin, temAlgumaFuncao } from '@/lib/permissoes'
 import CooperadoPerfil from './CooperadoPerfil'
 
 export type AcessoCooperado =
@@ -32,6 +32,15 @@ export default async function CooperadoPage({ params }: Props) {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Mesmo guard da lista (/cooperados): admin ou tecnico — antes de carregar
+  // qualquer dado do cooperado, pra URL direta não vazar ficha de terceiro.
+  const { data: usuarioAtual } = await supabase
+    .from('usuarios')
+    .select('role, funcoes')
+    .eq('id', user.id)
+    .single()
+  if (!usuarioAtual || !temAlgumaFuncao(usuarioAtual as any, ['admin', 'tecnico'])) redirect('/dashboard')
+
   const { data: cooperado, error } = await supabase
     .from('cooperados')
     .select('*')
@@ -52,13 +61,8 @@ export default async function CooperadoPage({ params }: Props) {
     .eq('cooperado_id', id)
     .order('criado_em', { ascending: true })
 
-  // Permissão de admin do usuário logado
-  const { data: usuarioAtual } = await supabase
-    .from('usuarios')
-    .select('role, funcoes')
-    .eq('id', user.id)
-    .single()
-  const ehAdmin = usuarioAtual ? isAdmin(usuarioAtual as any) : false
+  // Permissão de admin do usuário logado (já carregado no guard acima)
+  const ehAdmin = isAdmin(usuarioAtual as any)
 
   // Estado do acesso ao sistema (login) deste cooperado
   let acesso: AcessoCooperado = { temAcesso: false }

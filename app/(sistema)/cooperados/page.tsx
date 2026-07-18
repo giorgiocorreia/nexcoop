@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
+import { temAlgumaFuncao } from '@/lib/permissoes'
 import CooperadosLista from './CooperadosLista'
 
 export const dynamic = 'force-dynamic'
@@ -21,6 +22,15 @@ export default async function CooperadosPage() {
 
   const ctx = await getOrgContext()
   if (!ctx) redirect('/login')
+
+  // Mesmas funções que exibem o item "Cooperados" no menu (Sidebar) — sem
+  // isso a página ficava acessível por URL direta pra qualquer usuário logado.
+  const { data: usuarioAtual } = await supabaseAuth
+    .from('usuarios')
+    .select('role, funcoes')
+    .eq('id', user.id)
+    .single()
+  if (!usuarioAtual || !temAlgumaFuncao(usuarioAtual as any, ['admin', 'tecnico'])) redirect('/dashboard')
 
   const { data: org } = await ctx.supabase
     .from('organizacoes')
