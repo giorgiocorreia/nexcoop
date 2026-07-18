@@ -21,6 +21,11 @@ export async function criarLancamento(data: {
   observacoes?: string | null
   usuario_id: string
   usuario_email?: string
+  // false adia a escrituração contábil: um lançamento pendente ainda não
+  // movimentou disponibilidade (caixa/banco), então as partidas só devem
+  // nascer na baixa — o chamador roda classificarLancamentoExistente ao
+  // marcar como pago. Default true preserva os fluxos existentes.
+  classificar?: boolean
 }) {
   const supabase = createAdminClient()
   const { data: novo, error } = await supabase
@@ -55,21 +60,23 @@ export async function criarLancamento(data: {
     dados_depois: { id: novo.id, tipo: data.tipo, descricao: data.descricao, valor: data.valor },
   }).catch(e => console.error('[audit]', e))
 
-  try {
-    const { tentarClassificarAutomaticamente } = await import('@/lib/contabil/classificacao-automatica')
-    await tentarClassificarAutomaticamente({
-      org_id: data.organizacao_id,
-      lancamento_id: novo.id,
-      tipo: data.tipo,
-      status: data.status,
-      descricao: data.descricao,
-      valor: data.valor,
-      data_competencia: data.data_competencia,
-      observacoes: data.observacoes,
-      usuario_id: data.usuario_id,
-    })
-  } catch (e) {
-    console.error('[contabil] Erro na classificação automática:', e)
+  if (data.classificar !== false) {
+    try {
+      const { tentarClassificarAutomaticamente } = await import('@/lib/contabil/classificacao-automatica')
+      await tentarClassificarAutomaticamente({
+        org_id: data.organizacao_id,
+        lancamento_id: novo.id,
+        tipo: data.tipo,
+        status: data.status,
+        descricao: data.descricao,
+        valor: data.valor,
+        data_competencia: data.data_competencia,
+        observacoes: data.observacoes,
+        usuario_id: data.usuario_id,
+      })
+    } catch (e) {
+      console.error('[contabil] Erro na classificação automática:', e)
+    }
   }
 
   revalidatePath('/financeiro')

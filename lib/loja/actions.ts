@@ -334,9 +334,11 @@ async function verificarPermissaoGerente(supabase: ReturnType<typeof createAdmin
 }
 
 // Pagamento da compra: à vista dá baixa na hora (debita o caixa aberto do
-// operador e já cria o lançamento pago); a prazo só grava as parcelas como
-// pendentes — nenhum dinheiro sai do caixa nem lançamento é criado até a
-// baixa individual de cada parcela (ver quitarParcelaCompra).
+// operador e o lançamento já sai pago); a prazo grava as parcelas pendentes
+// e cria um lançamento 'pendente' por parcela (regime de competência — a
+// obrigação aparece no Financeiro desde o registro da compra), mas sem
+// escrituração contábil ainda: as partidas só nascem na baixa, quando o
+// dinheiro de fato sai do caixa (ver baixarParcelaCompra).
 export type PagamentoCompra =
   | { tipo: 'a_vista'; forma_pagamento: 'dinheiro' | 'pix' | 'cartao'; autorizado_por: string }
   | { tipo: 'a_prazo'; parcelas: { valor: number; data_vencimento: string }[] }
@@ -356,10 +358,56 @@ async function exigirCaixaLojaAberto(supabase: ReturnType<typeof createAdminClie
   return caixa.id
 }
 
+// Cria o lançamento financeiro de uma parcela no ato do registro da compra
+// (status 'pendente' pra prazo, competência = data da compra, vencimento = o
+// da parcela) SEM escrituração — as partidas contábeis creditariam
+// disponibilidade (caixa) antes de o dinheiro sair, então só nascem na baixa.
+// Falha aqui não bloqueia a compra: a baixa tem fallback que cria o
+// lançamento na hora se a parcela estiver sem vínculo.
+async function criarLancamentoParcela(params: {
+  orgId: string
+  parcelaId: string
+  compraId: string
+  fornecedorNome: string
+  numeroNf?: string | null
+  valor: number
+  dataCompra: string
+  dataVencimento: string
+  numeroParcela: number
+  totalParcelas: number
+  usuarioId: string
+  supabase: ReturnType<typeof createAdminClient>
+}) {
+  try {
+    const { criarLancamento } = await import('@/lib/financeiro/actions')
+    const sufixoParcela = params.totalParcelas > 1 ? ` (parcela ${params.numeroParcela}/${params.totalParcelas})` : ''
+    const lanc = await criarLancamento({
+      organizacao_id: params.orgId,
+      tipo: 'despesa',
+      status: 'pendente',
+      descricao: `Compra Loja — ${params.fornecedorNome}${params.numeroNf ? ` — NF ${params.numeroNf}` : ''}${sufixoParcela}`,
+      valor: params.valor,
+      data_competencia: params.dataCompra,
+      data_vencimento: params.dataVencimento,
+      numero_documento: params.compraId.slice(0, 8),
+      observacoes: `Compra a pagar — compra #${params.compraId.slice(0, 8)}`,
+      usuario_id: params.usuarioId,
+      classificar: false,
+    })
+    await params.supabase
+      .from('loja_compra_parcelas')
+      .update({ lancamento_id: lanc.id })
+      .eq('id', params.parcelaId)
+  } catch (e) {
+    console.error('[financeiro] Erro ao criar lançamento pendente da parcela:', e)
+  }
+}
+
 // Baixa efetiva de uma parcela: debita o caixa da Loja do operador via
-// registrarSangriaLoja (já existente) e cria o lançamento pago no
-// Financeiro. Compartilhada entre a baixa "à vista" (dentro de
-// registrarCompra) e quitarParcelaCompra (baixa manual de parcela a prazo).
+// registrarSangriaLoja (já existente) e marca o lançamento vinculado como
+// pago, disparando a escrituração contábil nesse momento. Compartilhada
+// entre a baixa "à vista" (dentro de registrarCompra) e quitarParcelaCompra
+// (baixa manual de parcela a prazo).
 async function baixarParcelaCompra(params: {
   supabase: ReturnType<typeof createAdminClient>
   orgId: string
@@ -383,28 +431,43 @@ async function baixarParcelaCompra(params: {
   )
   if ('error' in sangria) throw new Error(sangria.error)
 
-  const { error: errParcela } = await supabase
+  const { data: parcelaAtual, error: errParcela } = await supabase
     .from('loja_compra_parcelas')
     .update({ status: 'pago', forma_pagamento: formaPagamento, data_pagamento: dataPagamento, registrado_por: executadoPor })
     .eq('id', parcelaId)
+    .select('lancamento_id')
+    .single()
   if (errParcela) throw new Error(traduzirErro(errParcela.message))
 
   try {
-    const { criarLancamento } = await import('@/lib/financeiro/actions')
-    await criarLancamento({
-      organizacao_id: orgId,
-      tipo: 'despesa',
-      status: 'pago',
-      descricao: `Compra Loja — ${fornecedorNome}${numeroNf ? ` — NF ${numeroNf}` : ''}`,
-      valor,
-      data_competencia: dataPagamento,
-      data_pagamento: dataPagamento,
-      numero_documento: compraId.slice(0, 8),
-      observacoes: `Baixa de parcela — compra #${compraId.slice(0, 8)}`,
-      usuario_id: executadoPor,
-    })
+    const { criarLancamento, classificarLancamentoExistente } = await import('@/lib/financeiro/actions')
+    const lancamentoId = parcelaAtual?.lancamento_id as string | null
+
+    if (lancamentoId) {
+      const { error: errLanc } = await supabase
+        .from('lancamentos')
+        .update({ status: 'pago', data_pagamento: dataPagamento })
+        .eq('id', lancamentoId)
+      if (errLanc) throw new Error(errLanc.message)
+      await classificarLancamentoExistente(lancamentoId)
+    } else {
+      // Fallback: parcela sem lançamento vinculado (criação do pendente
+      // falhou no registro da compra) — cria já como pago.
+      await criarLancamento({
+        organizacao_id: orgId,
+        tipo: 'despesa',
+        status: 'pago',
+        descricao: `Compra Loja — ${fornecedorNome}${numeroNf ? ` — NF ${numeroNf}` : ''}`,
+        valor,
+        data_competencia: dataPagamento,
+        data_pagamento: dataPagamento,
+        numero_documento: compraId.slice(0, 8),
+        observacoes: `Baixa de parcela — compra #${compraId.slice(0, 8)}`,
+        usuario_id: executadoPor,
+      })
+    }
   } catch (e) {
-    console.error('[financeiro] Erro ao criar lançamento na baixa da parcela:', e)
+    console.error('[financeiro] Erro ao atualizar lançamento na baixa da parcela:', e)
   }
 }
 
@@ -548,6 +611,15 @@ export async function registrarCompra(
         .single()
       if (errParcela || !parcela) return { error: traduzirErro(errParcela?.message ?? 'Erro ao criar parcela.') }
 
+      await criarLancamentoParcela({
+        orgId, parcelaId: parcela.id, compraId: compra_id,
+        fornecedorNome, numeroNf: compra.numero_nf,
+        valor: total_geral, dataCompra: compra.data_compra,
+        dataVencimento: compra.data_compra,
+        numeroParcela: 1, totalParcelas: 1,
+        usuarioId: operadorId, supabase: admin,
+      })
+
       try {
         await baixarParcelaCompra({
           supabase: admin, orgId, parcelaId: parcela.id, compraId: compra_id,
@@ -565,7 +637,7 @@ export async function registrarCompra(
       const totalParcelas = compra.pagamento.parcelas.length
       for (let i = 0; i < totalParcelas; i++) {
         const p = compra.pagamento.parcelas[i]
-        const { error: errParcela } = await admin
+        const { data: parcela, error: errParcela } = await admin
           .from('loja_compra_parcelas')
           .insert({
             compra_id, org_id: orgId,
@@ -574,7 +646,18 @@ export async function registrarCompra(
             status: 'pendente',
             data_vencimento: p.data_vencimento,
           })
-        if (errParcela) return { error: traduzirErro(errParcela.message) }
+          .select('id')
+          .single()
+        if (errParcela || !parcela) return { error: traduzirErro(errParcela?.message ?? 'Erro ao criar parcela.') }
+
+        await criarLancamentoParcela({
+          orgId, parcelaId: parcela.id, compraId: compra_id,
+          fornecedorNome, numeroNf: compra.numero_nf,
+          valor: p.valor, dataCompra: compra.data_compra,
+          dataVencimento: p.data_vencimento,
+          numeroParcela: i + 1, totalParcelas,
+          usuarioId: operadorId, supabase: admin,
+        })
       }
     }
 
@@ -1799,6 +1882,26 @@ export async function cancelarCompra(
     .from('loja_compras')
     .update({ observacoes: `[CANCELADA em ${agora}]${obsAnterior}` })
     .eq('id', compraId)
+
+  // Parcelas ainda não pagas saem de Contas a pagar, e os lançamentos
+  // pendentes vinculados são cancelados junto. Parcelas já pagas ficam como
+  // estão — o dinheiro saiu do caixa de verdade e um eventual estorno é
+  // decisão manual, não automática do cancelamento.
+  const { data: parcelasAbertas } = await admin
+    .from('loja_compra_parcelas')
+    .select('id, lancamento_id')
+    .eq('compra_id', compraId)
+    .in('status', ['pendente', 'vencido'])
+
+  for (const parcela of (parcelasAbertas ?? []) as { id: string; lancamento_id: string | null }[]) {
+    await admin.from('loja_compra_parcelas').delete().eq('id', parcela.id)
+    if (parcela.lancamento_id) {
+      await admin
+        .from('lancamentos')
+        .update({ status: 'cancelado' })
+        .eq('id', parcela.lancamento_id)
+    }
+  }
 
   await registrarLog({
     org_id: orgId,

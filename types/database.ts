@@ -618,6 +618,7 @@ export interface LojaCompraParcela {
   data_pagamento:  string | null
   registrado_por:  string | null
   observacoes:     string | null
+  lancamento_id:   string | null
   criado_em:       string
 }
 
