@@ -1249,7 +1249,7 @@ export default function CaixaPage() {
         acoes={
           <>
             <Badge label="Aberto" bg={COM_C.verdeLt} cor={COM_C.verde} dot />
-            <Btn variante="marrom-outline" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
+            <Btn variante="cinza" icone="ti-arrows-up-down" onClick={abrirModalAporte}>
               Aporte / Sangria
             </Btn>
             <Btn variante="cinza" icone="ti-receipt" onClick={abrirModalSaida}>
