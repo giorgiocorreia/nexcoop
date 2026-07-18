@@ -18,10 +18,9 @@ import {
   listarOutrosAtendentesComercializacao, getSaldoComercializacaoDoAtendente,
   type ParticipanteRateio
 } from '@/lib/comercializacao/caixa.actions'
-import { listarProdutos, criarProduto } from '@/lib/comercializacao/produtos.actions'
+import { listarProdutos } from '@/lib/comercializacao/produtos.actions'
 import { getCotacaoHoje } from '@/lib/comercializacao/cotacoes.actions'
 import { BotaoComprovante } from '@/components/comercializacao/BotaoComprovante'
-import { BotaoEnviarLoja } from '@/components/comercializacao/BotaoEnviarLoja'
 import { BotaoComprovantePagamento } from '@/components/comercializacao/BotaoComprovantePagamento'
 import { usePdfFechamento } from '@/lib/comercializacao/usePdfFechamento'
 import { createClient } from '@/lib/supabase/client'
@@ -46,7 +45,7 @@ type Conta = { id: string; saldo_financeiro: number; saldos_produto: SaldoProdut
 type Movimentacao = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; created_at: string; produtos: { nome: string; unidade: string } | null }
 type Produto = { id: string; nome: string; unidade: string }
 type Solicitacao = { id: string; quantidade_kg: number; valor_estimado: number; forma_pagamento: string; chave_pix: string | null; produtores: { nome: string; telefone: string | null }; produtos: { nome: string; unidade: string }; cotacoes: { preco_cooperado: number } }
-type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; preco_unitario: number | null; referencia_tipo: string | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string; loja_produto_id?: string | null } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
+type OperacaoDia = { id: string; tipo: string; quantidade_produto: number | null; valor_financeiro: number | null; forma_pagamento: string | null; observacoes: string | null; created_at: string; produtos: { nome: string; unidade: string } | null; contas_produtor: { produtor_id: string; produtores: { nome: string } | null } | null }
 type AdminOrg = { id: string; nome_completo: string; email: string }
 type AporteSangria = { id: string; tipo: string; valor: number; created_at: string; observacoes: string | null; forma_pagamento: 'especie' | 'pix' | 'cartao'; origem: 'manual' | 'cota_cooperado'; autorizador: { nome_completo: string } | null; executor: { nome_completo: string } | null }
 
@@ -180,14 +179,10 @@ export default function CaixaPage() {
   const [extrato, setExtrato] = useState<Movimentacao[]>([])
   const [operacao, setOperacao] = useState<'entrega' | 'receber' | 'saque' | null>(null)
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '', preco_custo: '' })
+  const [formEntrega, setFormEntrega] = useState({ produto_id: '', quantidade: '', observacoes: '' })
   const [formReceber, setFormReceber] = useState({ produto_id: '', quantidade: '', preco_kg: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
   const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '', produto_id: '', preco_kg: '' })
   const [saldosSelecao, setSaldosSelecao] = useState<{ produto_id: string; nome: string; unidade: string; saldo: number }[]>([])
-  const [modalNovoProduto, setModalNovoProduto] = useState(false)
-  const [formNovoProduto, setFormNovoProduto] = useState({ nome: '', categoria: '', unidade: 'kg' })
-  const [salvandoNovoProduto, setSalvandoNovoProduto] = useState(false)
-  const [erroNovoProduto, setErroNovoProduto] = useState('')
   const [confirmarAntecipacao, setConfirmarAntecipacao] = useState<{ tipo: 'receber' | 'saque'; mensagem: string } | null>(null)
   const [statusOp, setStatusOp] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
@@ -308,28 +303,6 @@ export default function CaixaPage() {
     if (acao) setOperacao(acao)
     if (acao === 'receber' && p.chave_pix) {
       setFormReceber(f => ({ ...f, chave_pix: p.chave_pix ?? '' }))
-    }
-  }
-
-  // Cadastro rápido de produto direto do formulário de entrada, pro caso do
-  // produto que o produtor está trazendo ainda não existir na lista (evita
-  // ter que sair da tela de caixa e ir em Comercialização → Produtos).
-  async function handleCriarProdutoInline() {
-    if (!formNovoProduto.nome) return
-    setSalvandoNovoProduto(true)
-    setErroNovoProduto('')
-    try {
-      const novo = await criarProduto(formNovoProduto)
-      const lista = await listarProdutos()
-      const ativos = (lista as Produto[]).filter((pr) => (pr as any).ativo !== false)
-      setProdutos(ativos)
-      if (novo) setFormEntrega(f => ({ ...f, produto_id: novo.id }))
-      setFormNovoProduto({ nome: '', categoria: '', unidade: 'kg' })
-      setModalNovoProduto(false)
-    } catch (e: any) {
-      setErroNovoProduto(e.message)
-    } finally {
-      setSalvandoNovoProduto(false)
     }
   }
 
@@ -619,10 +592,9 @@ export default function CaixaPage() {
       const result = await registrarEntrega({
         sessao_id: sessao.id, produtor_id: produtorSelecionado!.id,
         conta_id: conta.id, produto_id: formEntrega.produto_id,
-        quantidade_produto: parseFloat(formEntrega.quantidade), observacoes: formEntrega.observacoes,
-        preco_unitario: formEntrega.preco_custo ? parseFloat(formEntrega.preco_custo.replace(',', '.')) : undefined,
+        quantidade_produto: parseFloat(formEntrega.quantidade), observacoes: formEntrega.observacoes
       })
-      setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '', preco_custo: '' }))
+      setFormEntrega(f => ({ ...f, quantidade: '', observacoes: '' }))
       setUltimaMovimentacaoId(result.id)
       setModalNfe(result.id)
       await recarregarConta(); await recarregarSessao()
@@ -664,11 +636,6 @@ export default function CaixaPage() {
   const totalPercentual = participantes.reduce((acc, p) => acc + p.percentual, 0)
   const percentualOk = Math.abs(totalPercentual - 100) <= 0.01
 
-  // Unidade do produto selecionado no formulário de entrega — o campo de
-  // quantidade e o de custo precisam mostrar a unidade certa (kg, unidade,
-  // litro, caixa), não sempre "kg" fixo.
-  const unidadeEntregaSelecionada = produtos.find(p => p.id === formEntrega.produto_id)?.unidade ?? 'kg'
-  const quantidadeFracionada = unidadeEntregaSelecionada === 'kg' || unidadeEntregaSelecionada === 'litro'
   const unidadeReceberSelecionada = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.unidade ?? 'kg'
   const unidadeSaqueSelecionada = saldosSelecao.find(s => s.produto_id === formSaque.produto_id)?.unidade ?? 'kg'
 
@@ -1054,56 +1021,6 @@ export default function CaixaPage() {
         </Modal>
       )}
 
-      {modalNovoProduto && (
-        <Modal
-          titulo="Cadastrar novo produto"
-          subtitulo="O produto entra direto no catálogo e já fica selecionado na entrega"
-          onClose={() => setModalNovoProduto(false)}
-          largura={400}
-          footer={
-            <>
-              <Btn variante="cinza" onClick={() => setModalNovoProduto(false)}>Cancelar</Btn>
-              <Btn variante="marrom" icone="ti-check" disabled={salvandoNovoProduto || !formNovoProduto.nome} onClick={handleCriarProdutoInline}>
-                {salvandoNovoProduto ? 'Salvando...' : 'Cadastrar e selecionar'}
-              </Btn>
-            </>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Field label="Nome *">
-              <Input
-                placeholder="Nome do produto"
-                value={formNovoProduto.nome}
-                onChange={e => setFormNovoProduto(f => ({ ...f, nome: e.target.value }))}
-              />
-            </Field>
-            <Field label="Categoria">
-              <Input
-                placeholder="Opcional"
-                value={formNovoProduto.categoria}
-                onChange={e => setFormNovoProduto(f => ({ ...f, categoria: e.target.value }))}
-              />
-            </Field>
-            <Field label="Unidade">
-              <Select
-                value={formNovoProduto.unidade}
-                onChange={e => setFormNovoProduto(f => ({ ...f, unidade: e.target.value }))}
-              >
-                <option value="kg">kg</option>
-                <option value="unidade">unidade</option>
-                <option value="litro">litro</option>
-                <option value="caixa">caixa</option>
-              </Select>
-            </Field>
-          </div>
-          {erroNovoProduto && (
-            <div style={{ marginTop: 12, background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: COM_C.vermelho }}>
-              {erroNovoProduto}
-            </div>
-          )}
-        </Modal>
-      )}
-
       {modalSaida && (
         <Modal
           titulo="Saída avulsa de caixa"
@@ -1260,7 +1177,7 @@ export default function CaixaPage() {
       {modalRateio && (
         <Modal
           titulo="Rateio de entrega"
-          subtitulo={`${formEntrega.quantidade} ${unidadeEntregaSelecionada} · ${produtos.find(p => p.id === formEntrega.produto_id)?.nome}`}
+          subtitulo={`${formEntrega.quantidade} kg · ${produtos.find(p => p.id === formEntrega.produto_id)?.nome}`}
           onClose={() => setModalRateio(false)}
           largura={560}
           footer={
@@ -1280,7 +1197,7 @@ export default function CaixaPage() {
                     {p.nome}
                     {i === 0 && <span style={{ marginLeft: 6 }}><Badge label="principal" bg={COM_C.marromLt} cor={COM_C.marrom} /></span>}
                   </div>
-                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{p.quantidade_rateada.toFixed(3)} {unidadeEntregaSelecionada}</div>
+                  <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 2 }}>{p.quantidade_rateada.toFixed(3)} kg</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Input type="number" step="0.01" min="0.01" max="100" value={p.percentual}
@@ -1517,24 +1434,15 @@ export default function CaixaPage() {
 
               {operacao === 'entrega' && (
                 <ContentCard title="Registrar entrega">
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <Field label="Produto">
-                      <Select
-                        value={formEntrega.produto_id}
-                        onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}
-                        style={{ minWidth: 160 }}
-                      >
+                      <Select value={formEntrega.produto_id} onChange={e => setFormEntrega(f => ({ ...f, produto_id: e.target.value }))}>
                         {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
                       </Select>
                     </Field>
-                    <Field label={`Quantidade (${unidadeEntregaSelecionada})`}>
-                      <Input type="number" step={quantidadeFracionada ? '0.001' : '1'} placeholder={quantidadeFracionada ? '0,000' : '0'} value={formEntrega.quantidade}
+                    <Field label="Quantidade (kg)">
+                      <Input type="number" step="0.001" placeholder="0,000" value={formEntrega.quantidade}
                         onChange={e => setFormEntrega(f => ({ ...f, quantidade: e.target.value }))}
-                        style={{ width: 120 }} />
-                    </Field>
-                    <Field label={`Preço de custo (R$/${unidadeEntregaSelecionada})`} hint="Opcional — só se esse produto não seguir a cotação diária">
-                      <Input type="text" inputMode="decimal" placeholder="0,00" value={formEntrega.preco_custo}
-                        onChange={e => setFormEntrega(f => ({ ...f, preco_custo: e.target.value }))}
                         style={{ width: 120 }} />
                     </Field>
                     <Field label="Observações">
@@ -1547,9 +1455,6 @@ export default function CaixaPage() {
                     </Btn>
                     <Btn variante="marrom-outline" disabled={!formEntrega.quantidade || !formEntrega.produto_id} onClick={abrirModalRateio}>
                       Rateio →
-                    </Btn>
-                    <Btn variante="cinza" icone="ti-plus" onClick={() => setModalNovoProduto(true)}>
-                      Inserir produto
                     </Btn>
                   </div>
                 </ContentCard>
@@ -1757,12 +1662,9 @@ export default function CaixaPage() {
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           {op.tipo === 'entrega' && (
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                               <BotaoComprovante movimentacao_id={op.id} />
                               <BotaoNfe movimentacao_id={op.id} />
-                              {op.preco_unitario ? (
-                                <BotaoEnviarLoja movimentacao_id={op.id} ja_enviado={op.referencia_tipo === 'loja_compra'} />
-                              ) : null}
                             </div>
                           )}
                           {(op.tipo === 'saque_especie' || op.tipo === 'saque_pix') && (

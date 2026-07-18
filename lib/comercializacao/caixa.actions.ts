@@ -255,12 +255,10 @@ export async function getOperacoesHoje(sessao_id: string) {
       tipo,
       quantidade_produto,
       valor_financeiro,
-      preco_unitario,
-      referencia_tipo,
       forma_pagamento,
       observacoes,
       created_at,
-      produtos(nome, unidade, loja_produto_id),
+      produtos(nome, unidade),
       contas_produtor(
         produtor_id,
         produtores(nome)
@@ -286,8 +284,6 @@ export async function getOperacoesHoje(sessao_id: string) {
     tipo: a.tipo, // 'aporte' | 'sangria'
     quantidade_produto: null,
     valor_financeiro: a.tipo === 'sangria' ? -Number(a.valor) : Number(a.valor),
-    preco_unitario: null,
-    referencia_tipo: null,
     forma_pagamento: a.forma_pagamento,
     observacoes: a.observacoes,
     created_at: a.created_at,
@@ -306,18 +302,9 @@ export async function registrarEntrega(params: {
   produto_id: string
   quantidade_produto: number
   observacoes?: string
-  // Preço de custo por unidade, opcional — para produtos que não seguem a
-  // cotação diária (ex.: manufatura artesanal comprada por encomenda). Grava
-  // em movimentacoes_conta.preco_unitario/valor_financeiro, que já existem na
-  // tabela mas ficavam sempre vazios pra entregas (a valorização normal só
-  // acontece depois, na conversão/saque pela cotação do dia).
-  preco_unitario?: number
 }) {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
-  const valorFinanceiro = params.preco_unitario
-    ? Number((params.preco_unitario * params.quantidade_produto).toFixed(2))
-    : null
   const { data: mov, error: e1 } = await supabase
     .from('movimentacoes_conta')
     .insert({
@@ -328,9 +315,7 @@ export async function registrarEntrega(params: {
       tipo: 'entrega',
       produto_id: params.produto_id,
       quantidade_produto: params.quantidade_produto,
-      observacoes: params.observacoes,
-      preco_unitario: params.preco_unitario ?? null,
-      valor_financeiro: valorFinanceiro,
+      observacoes: params.observacoes
     })
     .select('id')
     .single()
