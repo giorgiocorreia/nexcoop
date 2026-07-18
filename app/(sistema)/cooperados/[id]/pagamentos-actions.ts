@@ -164,6 +164,28 @@ export async function registrarPagamentos(
     ? Number(cota.quantidade) * Number(cota.valor_cota)
     : 0
 
+  // Trava contra duplicidade (caso real: cota da Edneia paga 2x em 18/07/2026):
+  // soma tudo que já está registrado na cota — pago E prometido (pendente/
+  // vencido contam, senão a promessa vira brecha pra registrar de novo) — e
+  // bloqueia se não houver saldo a pagar ou se as novas parcelas excederem.
+  const { data: parcelasExistentes } = await supabase
+    .from('cota_pagamentos')
+    .select('valor_pago')
+    .eq('cota_id', cotaId)
+
+  const totalJaRegistrado = (parcelasExistentes ?? [])
+    .reduce((s, p) => s + Number(p.valor_pago), 0)
+  const saldoAPagar = Number((valorTotalCota - totalJaRegistrado).toFixed(2))
+
+  if (saldoAPagar <= 0) {
+    throw new Error('Esta cota já está totalmente registrada (paga ou com parcelas prometidas) — não há saldo a pagar.')
+  }
+
+  const totalNovasParcelas = parcelas.reduce((s, p) => s + Number(p.valor_pago), 0)
+  if (totalNovasParcelas > saldoAPagar + 0.009) {
+    throw new Error(`Valor excede o saldo a pagar da cota: restam R$ ${saldoAPagar.toFixed(2)} e foram informados R$ ${totalNovasParcelas.toFixed(2)}.`)
+  }
+
   const rows = parcelas.map(p => ({
     cota_id:          cotaId,
     cooperado_id:     cooperadoId,
