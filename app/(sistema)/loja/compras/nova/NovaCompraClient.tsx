@@ -7,6 +7,7 @@ import { registrarCompra, criarFornecedor } from '@/lib/loja/actions'
 import { Btn } from '@/components/ui/Btn'
 import { PageLayout, MODULO_LOJA, COM_C } from '@/components/nexcoop/ui'
 import ModalAutorizacao from '@/app/(sistema)/loja/pdv/components/ModalAutorizacao'
+import ModalTransferenciaComercializacao from '@/components/loja/ModalTransferenciaComercializacao'
 
 interface Produto { id: string; nome: string; unidade: string }
 interface Fornecedor { id: string; nome: string }
@@ -97,6 +98,8 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
   const [diasEntreParcelas, setDiasEntreParcelas] = useState(30)
   const [parcelas, setParcelas]                 = useState<{ valor: number; data_vencimento: string }[]>([])
   const [mostrarAutorizacao, setMostrarAutorizacao] = useState(false)
+  const [mostrarTransferencia, setMostrarTransferencia] = useState(false)
+  const [avisoTransferencia, setAvisoTransferencia] = useState('')
 
   const freteNum   = parseReais(frete)
   const outrosNum  = parseReais(outrosCustos)
@@ -269,6 +272,20 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
           {erro && (
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', fontSize: '13px', color: '#991b1b' }}>
               {erro}
+              {pagamentoTipo === 'a_vista' && /caixa|saldo/i.test(erro) && (
+                <div style={{ marginTop: 10 }}>
+                  <button type="button" onClick={() => setMostrarTransferencia(true)}
+                    style={{ padding: '7px 14px', background: COM_C.laranja, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    Transferir da Comercialização
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {avisoTransferencia && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '12px 16px', marginBottom: '1rem', fontSize: '13px', color: '#166534', fontWeight: 600 }}>
+              {avisoTransferencia}
             </div>
           )}
 
@@ -648,6 +665,20 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
             descricao={`Debitar ${fmtReal(totalGeral)} do caixa da Loja (${formaPagamentoVista}).`}
             onAutorizado={(autId) => executarCompra(autId)}
             onCancelar={() => setMostrarAutorizacao(false)}
+          />
+        )}
+
+        {mostrarTransferencia && (
+          <ModalTransferenciaComercializacao
+            orgId={orgId}
+            usuarioId={usuarioId}
+            valorSugerido={totalGeral}
+            onFechar={() => setMostrarTransferencia(false)}
+            onTransferido={() => {
+              setMostrarTransferencia(false)
+              setErro(null)
+              setAvisoTransferencia('Transferência concluída — seu caixa da Loja recebeu o valor. Confirme a compra novamente.')
+            }}
           />
         )}
     </PageLayout>

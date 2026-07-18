@@ -471,6 +471,21 @@ async function baixarParcelaCompra(params: {
   }
 }
 
+// Estado do caixa da Loja do operador — usado pelo atalho de transferência
+// na tela de Nova Compra pra saber se o aporte tem destino ou se o caixa
+// precisa ser aberto antes.
+export async function getCaixaLojaAbertoDoOperador(orgId: string, usuarioId: string): Promise<{ caixa_id: string | null }> {
+  const admin = createAdminClient()
+  const { data: caixa } = await admin
+    .from('loja_caixas')
+    .select('id')
+    .eq('org_id', orgId)
+    .eq('usuario_id', usuarioId)
+    .eq('status', 'aberto')
+    .maybeSingle()
+  return { caixa_id: caixa?.id ?? null }
+}
+
 export async function registrarCompra(
   orgId: string,
   operadorId: string,
