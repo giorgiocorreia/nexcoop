@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getResumoPagamentosMes } from './pagamentos-produtores'
 
 export async function getDashboardComercializacao(organizacaoId: string) {
   const supabase = await createClient()
@@ -173,6 +174,22 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     // silencioso
   }
 
+  // Total pago a produtores no mês corrente (saques em espécie/Pix no caixa —
+  // ver critério completo em pagamentos-produtores.ts) para o KPI clicável do
+  // dashboard, que leva ao relatório detalhado.
+  let pagamentosProdutoresMes = { total: 0, totalEspecie: 0, totalPix: 0, count: 0 }
+  try {
+    // Mês/ano com base em inicioDiaBrasilia (já calculado acima) — evita virar
+    // o mês antes da hora perto da meia-noite UTC.
+    pagamentosProdutoresMes = await getResumoPagamentosMes(
+      organizacaoId,
+      inicioDiaBrasilia.getUTCMonth() + 1,
+      inicioDiaBrasilia.getUTCFullYear()
+    )
+  } catch {
+    // silencioso
+  }
+
   const { count: totalProdutores } = await supabase
     .from('cooperados')
     .select('id', { count: 'exact', head: true })
@@ -259,5 +276,6 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     totalProdutores: totalProdutores ?? 0,
     lotesAbertos,
     solicitacoesPendentes,
+    pagamentosProdutoresMes,
   }
 }

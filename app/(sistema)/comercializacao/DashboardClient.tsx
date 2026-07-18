@@ -8,6 +8,7 @@ import type { getCacauAOrdem } from '@/lib/comercializacao/cacau-a-ordem'
 import { criarSolicitacaoAporte } from '@/lib/comercializacao/aportes'
 import { abrirCaixa, getMeuSaldoResponsabilidadeComercializacao } from '@/lib/comercializacao/caixa.actions'
 import { fmtReal } from '@/lib/comercializacao/fmt'
+import { mesLabel } from '@/lib/comercializacao/pagamentos-produtores-utils'
 import { Btn, BtnLink } from '@/components/ui/Btn'
 import { COM_C, HERO } from '@/components/comercializacao/ui/tokens'
 import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
@@ -68,7 +69,7 @@ export default function DashboardComercializacao({
   })
   const hojeKey = new Date().toISOString().slice(0, 10)
   const caixaAberto = d.sessoesAbertas.length > 0
-  const kgSemana = d.entregasSemana.reduce((s, e) => s + e.totalKg, 0)
+  const agora = new Date()
 
   const graficoDados = d.entregasSemana.map((e) => ({
     label: e.dia === hojeKey ? 'hj' : DIAS_SEMANA[new Date(e.dia + 'T12:00:00').getDay()],
@@ -248,8 +249,10 @@ export default function DashboardComercializacao({
             icon="ti-users" cor={COM_C.roxo} corLt={COM_C.roxoLt} />
           <KpiCard label="Lotes abertos" value={fmt(d.lotesAbertos)} sub="aguardando venda"
             icon="ti-box" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
-          <KpiCard label="Kg na semana" value={fmtKg(kgSemana)} sub="últimos 7 dias"
-            icon="ti-weight" cor={COM_C.azul} corLt={COM_C.azulLt} />
+          <KpiCard label="Pagamentos a produtores" value={fmtReal(d.pagamentosProdutoresMes.total)}
+            sub={`${mesLabel(agora.getMonth() + 1, agora.getFullYear())} · ${d.pagamentosProdutoresMes.count} pagamento${d.pagamentosProdutoresMes.count === 1 ? '' : 's'}`}
+            icon="ti-report-money" cor={COM_C.azul} corLt={COM_C.azulLt}
+            onClick={() => router.push('/comercializacao/relatorios/pagamentos-produtores')} />
           <KpiCard label="Qtd. Cacau à ordem" value={fmtKgExato(cacauAOrdem.saldo_total_kg)}
             sub={cacauAOrdem.produtores.length > 0 ? `${fmt(cacauAOrdem.produtores.length)} produtor${cacauAOrdem.produtores.length > 1 ? 'es' : ''} · ver detalhe` : 'aguardando conversão'}
             icon="ti-basket" cor={COM_C.marrom} corLt={COM_C.marromLt}
