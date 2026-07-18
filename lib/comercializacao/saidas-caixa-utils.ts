@@ -100,6 +100,11 @@ export function fmtRealSaida(v: number) {
 }
 
 export function fmtDataSaida(iso: string) {
+  // Coluna `date` pura ('YYYY-MM-DD', ex.: data_pagamento de saída avulsa) não
+  // pode passar por new Date(): vira meia-noite UTC e recua um dia ao converter
+  // pra Brasília. Formata direto da string, sem fuso.
+  const soData = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  if (soData) return `${soData[3]}/${soData[2]}/${soData[1]}`
   return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Bahia' })
 }
 

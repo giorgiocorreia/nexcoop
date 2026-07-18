@@ -291,7 +291,29 @@ export async function getOperacoesHoje(sessao_id: string) {
     contas_produtor: a.observacoes ? { produtor_id: '', produtores: { nome: a.observacoes } } : null,
   }))
 
-  return [...(data ?? []), ...aportesComoOperacoes]
+  // Saídas avulsas (lancamentos vinculados à sessão) também entram no saldo da
+  // sessão (total_saidas_especie) mas vivem em outra tabela — sem isso, o
+  // operador registrava a despesa e ela não aparecia na lista de operações,
+  // parecendo que o dinheiro saiu sem registro (mesmo caso dos aportes acima).
+  const { data: avulsas, error: errAvulsas } = await supabase
+    .from('lancamentos')
+    .select('id, descricao, valor, criado_em')
+    .eq('sessao_caixa_id', sessao_id)
+  if (errAvulsas) throw new Error(errAvulsas.message)
+
+  const avulsasComoOperacoes = (avulsas ?? []).map((l: any) => ({
+    id: l.id,
+    tipo: 'saida_avulsa',
+    quantidade_produto: null,
+    valor_financeiro: -Math.abs(Number(l.valor ?? 0)),
+    forma_pagamento: 'especie',
+    observacoes: l.descricao,
+    created_at: l.criado_em,
+    produtos: null,
+    contas_produtor: l.descricao ? { produtor_id: '', produtores: { nome: l.descricao } } : null,
+  }))
+
+  return [...(data ?? []), ...aportesComoOperacoes, ...avulsasComoOperacoes]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 

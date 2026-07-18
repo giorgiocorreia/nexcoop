@@ -1,7 +1,7 @@
 'use client'
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
-import { labelTipoSaida, type SaidaCaixaLinha } from './saidas-caixa-utils'
+import { labelTipoSaida, fmtDataSaida, type SaidaCaixaLinha } from './saidas-caixa-utils'
 
 export interface DadosSaidasCaixaPdf {
   orgNome: string
@@ -22,9 +22,9 @@ const COL_W = A4.width - MARGIN * 2
 function fmt(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
-function fmtData(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Bahia' })
-}
+// Delegado pra fmtDataSaida (utils) — trata coluna `date` pura sem recuar um
+// dia por fuso; ver comentário lá.
+const fmtData = fmtDataSaida
 
 // pdf-lib (não pdfkit — pdfkit é incompatível com o runtime serverless da
 // Vercel). Layout espelha gerarPdfFechamentoCaixa (mesma paleta, mesma

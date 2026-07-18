@@ -71,6 +71,7 @@ const TIPO_LABEL: Record<string, string> = {
   compra_loja: 'Compra loja',
   aporte: 'Aporte',
   sangria: 'Sangria',
+  saida_avulsa: 'Saída avulsa',
 }
 
 const TIPOS_ENTRADA = new Set(['conversao', 'aporte'])
