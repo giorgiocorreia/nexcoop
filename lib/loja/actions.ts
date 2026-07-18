@@ -423,13 +423,17 @@ async function baixarParcelaCompra(params: {
 }) {
   const { supabase, orgId, parcelaId, compraId, fornecedorNome, numeroNf, valor, formaPagamento, autorizadoPor, executadoPor, dataPagamento } = params
 
-  const caixaId = await exigirCaixaLojaAberto(supabase, orgId, executadoPor)
+  // Só dinheiro sai da gaveta — pix/cartão saem da conta bancária, então não
+  // geram sangria nem exigem caixa aberto (regra confirmada com o Giorgio).
+  if (formaPagamento === 'dinheiro') {
+    const caixaId = await exigirCaixaLojaAberto(supabase, orgId, executadoPor)
 
-  const sangria = await registrarSangriaLoja(
-    orgId, caixaId, 'sangria', valor, autorizadoPor, executadoPor,
-    `Pagamento — Compra ${numeroNf ? `NF ${numeroNf}` : `#${compraId.slice(0, 8)}`} — ${fornecedorNome}`
-  )
-  if ('error' in sangria) throw new Error(sangria.error)
+    const sangria = await registrarSangriaLoja(
+      orgId, caixaId, 'sangria', valor, autorizadoPor, executadoPor,
+      `Pagamento — Compra ${numeroNf ? `NF ${numeroNf}` : `#${compraId.slice(0, 8)}`} — ${fornecedorNome}`
+    )
+    if ('error' in sangria) throw new Error(sangria.error)
+  }
 
   const { data: parcelaAtual, error: errParcela } = await supabase
     .from('loja_compra_parcelas')
