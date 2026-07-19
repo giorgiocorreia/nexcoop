@@ -78,6 +78,17 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
   const safraEmAndamento = safras.find(s => s.status === 'em_andamento')
   const [safraId, setSafraId] = useState(safraEmAndamento?.id ?? safras[0]?.id ?? '')
 
+  // Controla se a lista de "Participação por produtor" está expandida ou
+  // recolhida (mostra só os 4 maiores volumes por padrão)
+  const [participacaoExpandida, setParticipacaoExpandida] = useState(false)
+
+  // Troca de safra sempre reseta a lista pra recolhida — evita lista gigante
+  // aberta ao navegar entre safras
+  function handleTrocarSafra(novaSafraId: string) {
+    setSafraId(novaSafraId)
+    setParticipacaoExpandida(false)
+  }
+
   const safraAtual = safras.find(s => s.id === safraId)
   const resultadosFiltrados = resultados.filter(r => r.safra_id === safraId)
   const saldosFiltrados = saldos
@@ -121,7 +132,7 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
       acoes={
         <Select
           value={safraId}
-          onChange={e => setSafraId(e.target.value)}
+          onChange={e => handleTrocarSafra(e.target.value)}
           style={{ width: 'auto', minWidth: 220, fontWeight: 600 }}
         >
           {safras.map(s => (
@@ -285,7 +296,7 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
                   </tr>
                 </thead>
                 <tbody>
-                  {saldosFiltrados.map(s => (
+                  {(participacaoExpandida ? saldosFiltrados : saldosFiltrados.slice(0, 4)).map(s => (
                     <tr key={`${s.produtor_id}-${s.produto_id}`}>
                       <td style={{ fontWeight: 600 }}>{s.produtor_nome}</td>
                       <td style={{ color: COM_C.txtSub }}>{s.produto_nome}</td>
@@ -297,6 +308,20 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
                   ))}
                 </tbody>
               </table>
+              {saldosFiltrados.length > 4 && (
+                <div style={{ padding: '12px 0', textAlign: 'center', borderTop: `1px solid ${COM_C.borda}` }}>
+                  <button
+                    type="button"
+                    onClick={() => setParticipacaoExpandida(v => !v)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      fontSize: 12.5, fontWeight: 600, color: COM_C.marcaMd,
+                    }}
+                  >
+                    {participacaoExpandida ? 'Ver menos' : `Ver todos (${saldosFiltrados.length})`}
+                  </button>
+                </div>
+              )}
             </ContentCard>
           </div>
         )}
