@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import type { Lancamento, Assembleia, Documento } from '@/types/database'
 import { IndiceNex } from '@/components/dashboard/IndiceNex'
@@ -56,6 +57,33 @@ export default async function DashboardPage() {
     if (usuarioOrg?.organizacao_id) {
       await verificarInadimplencia(usuarioOrg.organizacao_id)
       resumoCotas = await buscarResumoCotasDashboard(usuarioOrg.organizacao_id)
+    }
+  }
+
+  // Resultado da Comercialização (realizado + marcação a mercado) — só cooperativa,
+  // lê a MESMA view que a tela /comercializacao/resultado detalha (vw_resultado_comercializacao),
+  // nunca um cálculo paralelo. Consolida a safra em_andamento da org.
+  let resultadoComercializacao: { lucroCorrenteRs: number; lucroRealizadoRs: number } | null = null
+  if (orgTipo === 'cooperativa' && usuarioOrg?.organizacao_id) {
+    const adminClient = createAdminClient()
+    const { data: safraAtiva } = await adminClient
+      .from('safras')
+      .select('id')
+      .eq('organizacao_id', usuarioOrg.organizacao_id)
+      .eq('status', 'em_andamento')
+      .maybeSingle()
+    if (safraAtiva) {
+      const { data: resultados } = await (adminClient as any)
+        .from('vw_resultado_comercializacao')
+        .select('lucro_corrente_rs, lucro_realizado_rs')
+        .eq('organizacao_id', usuarioOrg.organizacao_id)
+        .eq('safra_id', safraAtiva.id)
+      if (resultados && resultados.length > 0) {
+        resultadoComercializacao = {
+          lucroCorrenteRs: resultados.reduce((s: number, r: any) => s + Number(r.lucro_corrente_rs), 0),
+          lucroRealizadoRs: resultados.reduce((s: number, r: any) => s + Number(r.lucro_realizado_rs), 0),
+        }
+      }
     }
   }
 
@@ -142,6 +170,7 @@ export default async function DashboardPage() {
       resumoCotas={resumoCotas}
       orgTipo={orgTipo}
       custodia={custodia}
+      resultadoComercializacao={resultadoComercializacao}
       indiceNex={orgTipo === 'cooperativa' ? (
         <IndiceNex
           snapshot={snapshot}

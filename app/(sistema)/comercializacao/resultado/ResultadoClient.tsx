@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
 import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
 import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
@@ -17,64 +17,76 @@ function fmtPeso(v: number) {
   return v.toLocaleString('pt-BR', { minimumFractionDigits: 3 }) + ' kg'
 }
 
+function fmtData(d: string | null) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 type Safra = { id: string; ano: number; descricao: string | null; status: string }
-type Resultado = {
+
+// Colunas expostas por vw_resultado_comercializacao (migration 082) —
+// realizado (transações consumadas) + marcação a mercado calculada na leitura.
+type ResultadoComercializacao = {
   id: string
   safra_id: string
   produto_id: string
   receita_bruta_rs: number
-  custo_aquisicao_rs: number
   taxa_cooperativa_rs: number
   funrural_rs: number
-  resultado_liquido_rs: number
   total_kg_vendido: number
+  kg_convertido: number
+  custo_convertido_rs: number
+  lucro_realizado_rs: number
+  custo_aquisicao_rs: number    // deprecated — não usado nesta tela
+  resultado_liquido_rs: number  // deprecated — não usado nesta tela
   preco_medio_kg: number
+  kg_entregue_total: number
+  passivo_a_ordem_kg: number
+  estoque_kg: number
+  cotacao_preco_cooperado: number | null
+  cotacao_vigente_a_partir_de: string | null
+  ajuste_mercado_rs: number
+  lucro_corrente_rs: number
+  exposicao_kg: number
   produto_nome: string
   produto_unidade: string
   safra_descricao: string | null
   safra_ano: number
 }
-type Saldo = {
-  produtor_id: string
-  produtor_nome: string
-  produto_id: string
-  produto_nome: string
-  safra_id: string
-  safra_ano: number
-  kg_entregue: number
-  kg_convertido: number
-  saldo_kg: number
-  valor_convertido_rs: number
-}
 
-export default function ResultadoClient({ safras, resultados, saldos, lotesAndamento }: {
+export default function ResultadoClient({ safras, resultados, lotesAndamento }: {
   safras: Safra[]
-  resultados: Resultado[]
-  saldos: Saldo[]
+  resultados: ResultadoComercializacao[]
   lotesAndamento: any[]
 }) {
-  const [safraId, setSafraId] = useState(safras[0]?.id ?? '')
+  const safraEmAndamento = safras.find(s => s.status === 'em_andamento')
+  const [safraId, setSafraId] = useState(safraEmAndamento?.id ?? safras[0]?.id ?? '')
 
   const safraAtual = safras.find(s => s.id === safraId)
   const resultadosFiltrados = resultados.filter(r => r.safra_id === safraId)
-  const saldosFiltrados = saldos.filter(s => s.safra_id === safraId)
   const lotesAndamentoFiltrados = lotesAndamento.filter(l => l.safra_id === safraId)
 
-  const totalReceita    = resultadosFiltrados.reduce((a, r) => a + Number(r.receita_bruta_rs), 0)
-  const totalCusto      = resultadosFiltrados.reduce((a, r) => a + Number(r.custo_aquisicao_rs), 0)
-  const totalTaxa       = resultadosFiltrados.reduce((a, r) => a + Number(r.taxa_cooperativa_rs), 0)
-  const totalFunrural   = resultadosFiltrados.reduce((a, r) => a + Number(r.funrural_rs), 0)
-  const totalResultado  = resultadosFiltrados.reduce((a, r) => a + Number(r.resultado_liquido_rs), 0)
-  const totalKg         = resultadosFiltrados.reduce((a, r) => a + Number(r.total_kg_vendido), 0)
-  const totalSaldoKg    = saldosFiltrados.reduce((a, s) => a + Number(s.saldo_kg), 0)
+  const totalRealizado  = resultadosFiltrados.reduce((a, r) => a + Number(r.lucro_realizado_rs), 0)
+  const totalAjuste     = resultadosFiltrados.reduce((a, r) => a + Number(r.ajuste_mercado_rs), 0)
+  const totalCorrente   = resultadosFiltrados.reduce((a, r) => a + Number(r.lucro_corrente_rs), 0)
+  const totalExposicao  = resultadosFiltrados.reduce((a, r) => a + Number(r.exposicao_kg), 0)
+
+  // Cotação usada na marcação — mesma pra todos os produtos com posição em
+  // aberto (LATERAL na view busca por produto; aqui pegamos a mais recente
+  // pra exibir no rodapé como referência geral da safra).
+  const cotacaoRodape = useMemo(() => {
+    const comCotacao = resultadosFiltrados.filter(r => r.cotacao_vigente_a_partir_de)
+    if (comCotacao.length === 0) return null
+    return comCotacao.reduce((mais, r) =>
+      !mais || (r.cotacao_vigente_a_partir_de! > mais.cotacao_vigente_a_partir_de!) ? r : mais
+    , comCotacao[0])
+  }, [resultadosFiltrados])
 
   const kpis = [
-    { label: 'Receita bruta',      value: fmtReal(totalReceita),   sub: `${fmtPeso(totalKg)} vendidos`,         icon: 'ti-cash',        cor: '#185FA5', corLt: '#E6F1FB' },
-    { label: 'Custo aquisição',    value: fmtReal(totalCusto),     sub: 'Pago aos produtores',                  icon: 'ti-users',       cor: COM_C.marrom, corLt: COM_C.marromLt },
-    { label: 'Taxa cooperativa',   value: fmtReal(totalTaxa),      sub: 'Sobre receita bruta',                  icon: 'ti-percentage',  cor: COM_C.txtSub, corLt: '#F5F5F4' },
-    { label: 'FUNRURAL',           value: fmtReal(totalFunrural),  sub: '1,63% — obrigação cooperativa',        icon: 'ti-receipt-tax', cor: '#854F0B', corLt: '#FAEEDA' },
-    { label: 'Resultado líquido',  value: fmtReal(totalResultado), sub: 'Receita − custo − taxa − FUNRURAL',    icon: 'ti-chart-bar',   cor: '#166534', corLt: '#DCFCE7' },
-    { label: 'Saldo em estoque',   value: fmtPeso(totalSaldoKg),   sub: 'Kg entregues ainda não convertidos',   icon: 'ti-package',     cor: '#7C3AED', corLt: '#F5F3FF' },
+    { label: 'Lucro realizado',    value: fmtReal(totalRealizado), sub: 'Transações consumadas — base p/ sobras', icon: 'ti-cash',        cor: '#166534', corLt: '#DCFCE7' },
+    { label: 'Ajuste a mercado',   value: `${totalAjuste >= 0 ? '+' : ''}${fmtReal(totalAjuste)}`, sub: 'Posição em aberto na cotação atual', icon: 'ti-chart-line', cor: totalAjuste >= 0 ? '#166534' : COM_C.vermelho, corLt: totalAjuste >= 0 ? '#DCFCE7' : COM_C.vermelhoLt },
+    { label: 'Lucro corrente',     value: fmtReal(totalCorrente),  sub: 'Realizado + ajuste a mercado',           icon: 'ti-chart-bar',   cor: COM_C.marrom, corLt: COM_C.marromLt },
+    { label: 'Exposição',          value: fmtPeso(totalExposicao), sub: 'Kg vendidos ainda sem custo fixado',     icon: 'ti-alert-triangle', cor: '#854F0B', corLt: '#FAEEDA' },
   ]
 
   const STEPS = ['rascunho', 'aberto', 'em_venda', 'entregue', 'pago']
@@ -102,8 +114,20 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
       }
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Texto explicativo — fixo, curto */}
+        <div style={{
+          fontSize: 12, color: COM_C.txtSub, background: '#fff', border: `1px solid ${COM_C.borda}`,
+          borderRadius: 10, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 8,
+        }}>
+          <i className="ti ti-info-circle" style={{ fontSize: 15, flexShrink: 0, marginTop: 1, color: COM_C.txtSub }} />
+          <span>
+            <strong>Realizado</strong> = transações consumadas (base p/ sobras). <strong>Ajuste a mercado</strong> = posição
+            em aberto na cotação atual — flutua diariamente.
+          </span>
+        </div>
+
         {/* KPIs */}
-        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {kpis.map(k => (
             <KpiCard
               key={k.label}
@@ -124,27 +148,52 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
               <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Produto', 'Kg vendido', 'Preço médio', 'Receita', 'Custo', 'Taxa + FUNRURAL', 'Resultado líquido'].map(h => (
+                    {['Produto', 'Kg vendido', 'Kg convertido', 'Estoque', 'À ordem', 'Preço médio venda', 'Custo médio convertido', 'Realizado', 'Ajuste', 'Corrente'].map(h => (
                       <th key={h} style={{ textAlign: h === 'Produto' ? 'left' : 'right' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {resultadosFiltrados.map(r => (
-                    <tr key={r.id}>
-                      <td style={{ fontWeight: 600 }}>{r.produto_nome}</td>
-                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(r.total_kg_vendido))}</td>
-                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(Number(r.preco_medio_kg))}/kg</td>
-                      <td style={{ textAlign: 'right', color: '#185FA5', fontWeight: 600 }}>{fmtReal(Number(r.receita_bruta_rs))}</td>
-                      <td style={{ textAlign: 'right', color: COM_C.marrom }}>{fmtReal(Number(r.custo_aquisicao_rs))}</td>
-                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(Number(r.taxa_cooperativa_rs) + Number(r.funrural_rs))}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 800, color: Number(r.resultado_liquido_rs) >= 0 ? '#166534' : COM_C.vermelho }}>
-                        {fmtReal(Number(r.resultado_liquido_rs))}
-                      </td>
-                    </tr>
-                  ))}
+                  {resultadosFiltrados.map(r => {
+                    const custoMedioConvertido = Number(r.kg_convertido) > 0 ? Number(r.custo_convertido_rs) / Number(r.kg_convertido) : 0
+                    return (
+                      <tr key={r.id}>
+                        <td style={{ fontWeight: 600 }}>{r.produto_nome}</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(r.total_kg_vendido))}</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(r.kg_convertido))}</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(r.estoque_kg))}</td>
+                        <td style={{ textAlign: 'right', color: Number(r.passivo_a_ordem_kg) > 0 ? '#7C3AED' : COM_C.txtSub }}>{fmtPeso(Number(r.passivo_a_ordem_kg))}</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(Number(r.preco_medio_kg))}/kg</td>
+                        <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtReal(custoMedioConvertido)}/kg</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: Number(r.lucro_realizado_rs) >= 0 ? '#166534' : COM_C.vermelho }}>
+                          {fmtReal(Number(r.lucro_realizado_rs))}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: Number(r.ajuste_mercado_rs) >= 0 ? '#166534' : COM_C.vermelho }}>
+                          {Number(r.ajuste_mercado_rs) >= 0 ? '+' : ''}{fmtReal(Number(r.ajuste_mercado_rs))}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 800, color: Number(r.lucro_corrente_rs) >= 0 ? '#166534' : COM_C.vermelho }}>
+                          {fmtReal(Number(r.lucro_corrente_rs))}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
+              {/* Rodapé — cotação usada na marcação a mercado */}
+              <div style={{
+                padding: '12px 22px', borderTop: `1px solid ${COM_C.borda}`, background: '#FAFAF8',
+                fontSize: 12, color: COM_C.txtSub, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <i className="ti ti-calculator" style={{ fontSize: 14 }} />
+                {cotacaoRodape ? (
+                  <span>
+                    Cotação usada na marcação: <strong style={{ color: COM_C.txt }}>{fmtReal(Number(cotacaoRodape.cotacao_preco_cooperado))}/kg</strong>
+                    {' '}(preço cooperado) · vigente desde {fmtData(cotacaoRodape.cotacao_vigente_a_partir_de)}
+                  </span>
+                ) : (
+                  <span>Nenhuma cotação vigente encontrada para os produtos desta safra.</span>
+                )}
+              </div>
             </ContentCard>
           </div>
         )}
@@ -201,33 +250,6 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
               </div>
             </ContentCard>
           </div>
-        )}
-
-        {/* Saldos por produtor */}
-        {saldosFiltrados.length > 0 && (
-          <ContentCard title="Participação por produtor" noPadding>
-            <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  {['Produtor', 'Produto', 'Kg entregue', 'Kg convertido', 'Saldo kg', 'Valor convertido'].map(h => (
-                    <th key={h} style={{ textAlign: h === 'Produtor' || h === 'Produto' ? 'left' : 'right' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {saldosFiltrados.map(s => (
-                  <tr key={`${s.produtor_id}-${s.produto_id}`}>
-                    <td style={{ fontWeight: 600 }}>{s.produtor_nome}</td>
-                    <td style={{ color: COM_C.txtSub }}>{s.produto_nome}</td>
-                    <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_entregue))}</td>
-                    <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_convertido))}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, color: Number(s.saldo_kg) > 0 ? '#7C3AED' : COM_C.txtSub }}>{fmtPeso(Number(s.saldo_kg))}</td>
-                    <td style={{ textAlign: 'right', color: COM_C.marrom, fontWeight: 600 }}>{fmtReal(Number(s.valor_convertido_rs))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </ContentCard>
         )}
 
         {resultadosFiltrados.length === 0 && (

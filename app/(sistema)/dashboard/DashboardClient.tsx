@@ -34,6 +34,11 @@ interface ResumoCotas {
   inadimplentes: { nome_completo: string }[]
 }
 
+interface ResultadoComercializacao {
+  lucroCorrenteRs: number
+  lucroRealizadoRs: number
+}
+
 interface Props {
   hoje: string
   totalCooperados: number
@@ -47,6 +52,7 @@ interface Props {
   orgTipo: string | undefined
   indiceNex?: React.ReactNode
   custodia?: CustodiaUsuario[]
+  resultadoComercializacao?: ResultadoComercializacao | null
 }
 
 const BRL = (v: number) =>
@@ -81,6 +87,7 @@ export default function DashboardClient({
   orgTipo,
   indiceNex,
   custodia,
+  resultadoComercializacao,
 }: Props) {
   const router = useRouter()
   return (
@@ -126,21 +133,36 @@ export default function DashboardClient({
             onClick={() => router.push('/documentos?vencendo=30')} />
         </div>
 
-        {resumoCotas && (
+        {(resumoCotas || resultadoComercializacao) && (
           <div className="com-kpi-grid-4" style={{ marginBottom: 24 }}>
-            {/* "Capital a receber" fica sem link: soma cota_pagamentos pendentes/vencidos
-                de TODOS os cooperados, mas não existe tela que liste isso de forma
-                agregada — cotas só são visualizadas por cooperado individual
-                (app/(sistema)/cooperados/[id]/CotasSection.tsx). Ver relatório. */}
-            <KpiCard label="Capital a receber" value={BRL(resumoCotas.totalAReceber)}
-              sub={resumoCotas.totalVencido > 0 ? `Vencido: ${BRL(resumoCotas.totalVencido)}` : 'Parcelas de cotas pendentes'}
-              icon="ti-pig-money" cor={COM_C.azul} corLt={COM_C.azulLt} />
-            <KpiCard label="Inadimplentes" value={String(resumoCotas.totalInadimplentes)}
-              sub={resumoCotas.inadimplentes.length > 0
-                ? resumoCotas.inadimplentes.slice(0, 2).map(c => c.nome_completo.split(' ').slice(0, 2).join(' ')).join(', ')
-                : 'Nenhum cooperado inadimplente'}
-              icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
-              onClick={() => router.push('/cooperados?status=inadimplente')} />
+            {resumoCotas && (
+              <>
+                {/* "Capital a receber" fica sem link: soma cota_pagamentos pendentes/vencidos
+                    de TODOS os cooperados, mas não existe tela que liste isso de forma
+                    agregada — cotas só são visualizadas por cooperado individual
+                    (app/(sistema)/cooperados/[id]/CotasSection.tsx). Ver relatório. */}
+                <KpiCard label="Capital a receber" value={BRL(resumoCotas.totalAReceber)}
+                  sub={resumoCotas.totalVencido > 0 ? `Vencido: ${BRL(resumoCotas.totalVencido)}` : 'Parcelas de cotas pendentes'}
+                  icon="ti-pig-money" cor={COM_C.azul} corLt={COM_C.azulLt} />
+                <KpiCard label="Inadimplentes" value={String(resumoCotas.totalInadimplentes)}
+                  sub={resumoCotas.inadimplentes.length > 0
+                    ? resumoCotas.inadimplentes.slice(0, 2).map(c => c.nome_completo.split(' ').slice(0, 2).join(' ')).join(', ')
+                    : 'Nenhum cooperado inadimplente'}
+                  icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+                  onClick={() => router.push('/cooperados?status=inadimplente')} />
+              </>
+            )}
+            {resultadoComercializacao && (
+              // Número idêntico ao total de "Lucro corrente" da tela /comercializacao/resultado
+              // (soma de vw_resultado_comercializacao.lucro_corrente_rs da safra em_andamento) —
+              // mesma view, sem cálculo paralelo.
+              <KpiCard label="Resultado Comercialização" value={BRL(resultadoComercializacao.lucroCorrenteRs)}
+                sub={`Realizado: ${BRL(resultadoComercializacao.lucroRealizadoRs)}`}
+                icon="ti-plant-2"
+                cor={resultadoComercializacao.lucroCorrenteRs >= 0 ? COM_C.verde : COM_C.vermelho}
+                corLt={resultadoComercializacao.lucroCorrenteRs >= 0 ? COM_C.verdeLt : COM_C.vermelhoLt}
+                onClick={() => router.push('/comercializacao/resultado')} />
+            )}
           </div>
         )}
 

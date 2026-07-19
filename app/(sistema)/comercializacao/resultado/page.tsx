@@ -13,16 +13,15 @@ export default async function ResultadoPage() {
     .eq('organizacao_id', orgId)
     .order('ano', { ascending: false })
 
+  // Fonte única do resultado: vw_resultado_comercializacao (migration 082) —
+  // realizado (transações consumadas) + marcação a mercado (posição em aberto
+  // precificada na cotação vigente). Substitui a leitura antiga de
+  // vw_resultado_safra (campos deprecated custo_aquisicao_rs/resultado_liquido_rs).
   const { data: resultados } = await (supabase as any)
-    .from('vw_resultado_safra')
+    .from('vw_resultado_comercializacao')
     .select('*')
     .eq('organizacao_id', orgId)
     .order('safra_ano', { ascending: false })
-
-  const { data: saldos } = await (supabase as any)
-    .from('vw_saldos_produtor')
-    .select('*')
-    .eq('organizacao_id', orgId)
 
   const { data: lotesAndamento } = await supabase
     .from('lotes')
@@ -40,7 +39,6 @@ export default async function ResultadoPage() {
     <ResultadoClient
       safras={safras ?? []}
       resultados={resultados ?? []}
-      saldos={saldos ?? []}
       lotesAndamento={(lotesAndamento ?? []) as any[]}
     />
   )
