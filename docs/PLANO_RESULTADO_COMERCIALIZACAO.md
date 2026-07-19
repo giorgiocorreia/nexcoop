@@ -1,7 +1,15 @@
 # Desenho técnico: Resultado da Comercialização — realizado + marcação a mercado
 
-**Status:** Aprovação de desenho pendente — nada implementado
+**Status:** Implementado — migrations 082/083 aplicadas em produção, tela e KPI no ar (19/07/2026)
 **Criado em:** 19/07/2026
+
+**Decisão de política (Giorgio, 19/07/2026):** a cotação de conversão NÃO será
+travada na venda do lote. A possibilidade do produtor esperar a alta pra
+converter é um benefício intencional ao cooperado; a cooperativa aceita o risco
+de preço conscientemente. Consequência: o lucro realizado pode ser negativo em
+períodos de queda (ex.: safra 2026, custo médio convertido R$ 20,93/kg vs venda
+líquida R$ 19,70/kg) — o papel do sistema é dar visibilidade (realizado +
+exposição), não eliminar o risco.
 **Contexto:** conversa Giorgio × Claude sobre acompanhamento de lucro da org.
 Decisão de produto já tomada: decompor o resultado em **realizado** (transações
 consumadas, base pra divisão de sobras no fim do exercício) e **ajuste a
