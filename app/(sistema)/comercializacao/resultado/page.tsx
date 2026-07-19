@@ -23,6 +23,13 @@ export default async function ResultadoPage() {
     .eq('organizacao_id', orgId)
     .order('safra_ano', { ascending: false })
 
+  // Saldos por produtor — participação individual na safra (snapshot mantido
+  // por trigger; ver docs/CLAUDE.md sobre migration 083 em andamento).
+  const { data: saldos } = await (supabase as any)
+    .from('vw_saldos_produtor')
+    .select('*')
+    .eq('organizacao_id', orgId)
+
   const { data: lotesAndamento } = await supabase
     .from('lotes')
     .select(`
@@ -39,6 +46,7 @@ export default async function ResultadoPage() {
     <ResultadoClient
       safras={safras ?? []}
       resultados={resultados ?? []}
+      saldos={saldos ?? []}
       lotesAndamento={(lotesAndamento ?? []) as any[]}
     />
   )

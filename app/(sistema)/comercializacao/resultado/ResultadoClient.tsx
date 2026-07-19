@@ -54,9 +54,25 @@ type ResultadoComercializacao = {
   safra_ano: number
 }
 
-export default function ResultadoClient({ safras, resultados, lotesAndamento }: {
+// Participação por produtor — leitura direta de vw_saldos_produtor (snapshot
+// mantido por trigger, não por esta tela).
+type Saldo = {
+  produtor_id: string
+  produtor_nome: string
+  produto_id: string
+  produto_nome: string
+  safra_id: string
+  safra_ano: number
+  kg_entregue: number
+  kg_convertido: number
+  saldo_kg: number
+  valor_convertido_rs: number
+}
+
+export default function ResultadoClient({ safras, resultados, saldos, lotesAndamento }: {
   safras: Safra[]
   resultados: ResultadoComercializacao[]
+  saldos: Saldo[]
   lotesAndamento: any[]
 }) {
   const safraEmAndamento = safras.find(s => s.status === 'em_andamento')
@@ -64,6 +80,7 @@ export default function ResultadoClient({ safras, resultados, lotesAndamento }: 
 
   const safraAtual = safras.find(s => s.id === safraId)
   const resultadosFiltrados = resultados.filter(r => r.safra_id === safraId)
+  const saldosFiltrados = saldos.filter(s => s.safra_id === safraId)
   const lotesAndamentoFiltrados = lotesAndamento.filter(l => l.safra_id === safraId)
 
   const totalRealizado  = resultadosFiltrados.reduce((a, r) => a + Number(r.lucro_realizado_rs), 0)
@@ -248,6 +265,35 @@ export default function ResultadoClient({ safras, resultados, lotesAndamento }: 
                   )
                 })}
               </div>
+            </ContentCard>
+          </div>
+        )}
+
+        {/* Saldos por produtor */}
+        {saldosFiltrados.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <ContentCard title="Participação por produtor" noPadding>
+              <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Produtor', 'Produto', 'Kg entregue', 'Kg convertido', 'Saldo kg', 'Valor convertido'].map(h => (
+                      <th key={h} style={{ textAlign: h === 'Produtor' || h === 'Produto' ? 'left' : 'right' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {saldosFiltrados.map(s => (
+                    <tr key={`${s.produtor_id}-${s.produto_id}`}>
+                      <td style={{ fontWeight: 600 }}>{s.produtor_nome}</td>
+                      <td style={{ color: COM_C.txtSub }}>{s.produto_nome}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_entregue))}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.txtSub }}>{fmtPeso(Number(s.kg_convertido))}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: Number(s.saldo_kg) > 0 ? '#7C3AED' : COM_C.txtSub }}>{fmtPeso(Number(s.saldo_kg))}</td>
+                      <td style={{ textAlign: 'right', color: COM_C.marrom, fontWeight: 600 }}>{fmtReal(Number(s.valor_convertido_rs))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </ContentCard>
           </div>
         )}
