@@ -58,13 +58,26 @@ function formatarData(d: string | null) {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 }
 
-interface Props { documentos: Documento[] }
+// Mesmo recorte usado no KPI "Docs vencendo" do dashboard: janela FIXA de 30
+// dias, independente do alerta_dias configurado em cada documento (por isso
+// não reaproveita calcStatus/StatusValidade — são critérios diferentes).
+function venceEm30Dias(dataValidade: string | null): boolean {
+  if (!dataValidade) return false
+  const limite = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  return dataValidade <= limite
+}
 
-export default function DocumentosLista({ documentos }: Props) {
+interface Props {
+  documentos: Documento[]
+  filtroInicial?: 'vencendo_30'
+}
+
+export default function DocumentosLista({ documentos, filtroInicial }: Props) {
   const router = useRouter()
   const [busca, setBusca] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState<CategoriaDocumento | 'todas'>('todas')
   const [filtroStatus, setFiltroStatus] = useState<StatusValidade | 'todos'>('todos')
+  const [apenasVencendo30, setApenasVencendo30] = useState(filtroInicial === 'vencendo_30')
   const [hovered, setHovered] = useState<string | null>(null)
 
   const resumo = useMemo(() => ({
@@ -83,11 +96,12 @@ export default function DocumentosLista({ documentos }: Props) {
         (d.orgao_emissor ?? '').toLowerCase().includes(q)
       const matchCat = filtroCategoria === 'todas' || d.categoria === filtroCategoria
       const matchStatus = filtroStatus === 'todos' || calcStatus(d) === filtroStatus
-      return matchBusca && matchCat && matchStatus
+      const matchVencendo30 = !apenasVencendo30 || venceEm30Dias(d.data_validade)
+      return matchBusca && matchCat && matchStatus && matchVencendo30
     })
-  }, [documentos, busca, filtroCategoria, filtroStatus])
+  }, [documentos, busca, filtroCategoria, filtroStatus, apenasVencendo30])
 
-  const temFiltro = busca || filtroCategoria !== 'todas' || filtroStatus !== 'todos'
+  const temFiltro = busca || filtroCategoria !== 'todas' || filtroStatus !== 'todos' || apenasVencendo30
 
   return (
     <PageLayout
@@ -127,8 +141,15 @@ export default function DocumentosLista({ documentos }: Props) {
           <option value="ok">Em dia</option>
           <option value="sem_validade">Sem validade</option>
         </Select>
+        <Btn
+          variante={apenasVencendo30 ? 'roxo' : 'cinza'}
+          tamanho="sm"
+          onClick={() => setApenasVencendo30(v => !v)}
+        >
+          Vencendo em 30 dias
+        </Btn>
         {temFiltro && (
-          <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroCategoria('todas'); setFiltroStatus('todos') }}>
+          <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroCategoria('todas'); setFiltroStatus('todos'); setApenasVencendo30(false) }}>
             Limpar
           </Btn>
         )}

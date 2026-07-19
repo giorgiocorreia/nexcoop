@@ -122,7 +122,8 @@ export default function DashboardClient({
             icon="ti-arrow-up-right" cor={COM_C.vermelho} corLt={COM_C.vermelhoLt}
             onClick={() => router.push('/financeiro?tipo=despesa&status=pendente')} />
           <KpiCard label="Docs vencendo" value={String(documentosVencendo.length)} sub="Próximos 30 dias"
-            icon="ti-alert-triangle" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+            icon="ti-alert-triangle" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+            onClick={() => router.push('/documentos?vencendo=30')} />
         </div>
 
         {resumoCotas && (
