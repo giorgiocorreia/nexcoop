@@ -29,7 +29,15 @@ export async function middleware(request: NextRequest) {
   // partir do path, não do host) e o form do site chama esse endpoint via
   // fetch relativo no MESMO host coopaibi.nexcoop.com.br. Sem esta exceção,
   // /api/site/coopaibi/interesse viraria /coopaibi/api/site/coopaibi/interesse.
-  if (slug && !request.nextUrl.pathname.startsWith('/api')) {
+  //
+  // /sites/* também é excluído — é onde ficam os assets estáticos do porte
+  // fiel da COOPAIBI (public/sites/coopaibi/css, .../img — ver
+  // components/site/custom/coopaibi/pages/*). Sem esta exceção, um visitante
+  // em coopaibi.nexcoop.com.br pedindo /sites/coopaibi/css/style.css seria
+  // reescrito pra /coopaibi/sites/coopaibi/css/style.css (404, quebra o
+  // layout inteiro). .css/.js já não têm extensão isenta no matcher deste
+  // middleware (diferente de imagens, que o matcher já pula por completo).
+  if (slug && !request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/sites/')) {
     const url = request.nextUrl.clone()
     url.pathname = `/${slug}${request.nextUrl.pathname === '/' ? '' : request.nextUrl.pathname}`
     return NextResponse.rewrite(url)
@@ -68,7 +76,11 @@ export async function middleware(request: NextRequest) {
   const isFiliadoLogin = pathname.startsWith('/filiado/login')
   const isFiliadoPublic = pathname === '/filiado' || isFiliadoLogin
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha') || isFiliadoLogin
-  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || isFiliadoPublic
+  // /sites/* é sempre público (assets estáticos do site institucional — ver
+  // nota acima) — sem isto, pedir o asset direto em localhost/dev (sem
+  // ?siteSlug, que só a navegação de página propaga, não os <link>/<img> do
+  // HTML) cai no redirect de auth como qualquer rota interna.
+  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || pathname.startsWith('/sites/') || isFiliadoPublic
   const isOnboarding = pathname.startsWith('/onboarding')
   const isRSC = request.headers.get('rsc') === '1'
 

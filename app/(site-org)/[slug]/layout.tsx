@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Montserrat, Open_Sans } from 'next/font/google'
 import { buscarSiteConfigPorSlug, buscarOrganizacao } from '@/lib/site/queries'
 import { resolverTema } from '@/lib/site/site-utils'
+import { temCustomizacao } from '@/lib/site/custom'
 import SiteNavbar from '@/components/site/SiteNavbar'
 import SiteFooter from '@/components/site/SiteFooter'
 import { PreviewBanner, WhatsappFloat } from '@/components/site/SiteUi'
@@ -52,6 +53,23 @@ export default async function SiteOrgLayout({
   if (!org) notFound()
 
   const tema = resolverTema(config, org.nome)
+
+  // Orgs com customização "porte fiel" (hoje só a COOPAIBI, ver
+  // lib/site/custom.ts) trazem o próprio nav/topbar/footer/WhatsApp float
+  // dentro do HTML portado de cada página — usar também o chrome genérico
+  // do template duplicaria navbar/rodapé/botão flutuante. O banner de
+  // pré-visualização e o noindex (generateMetadata acima) continuam valendo
+  // pros dois modos.
+  const custom = temCustomizacao(slug)
+
+  if (custom) {
+    return (
+      <div className={`${montserrat.variable} ${openSans.variable}`}>
+        {!config.publicado && <PreviewBanner />}
+        {children}
+      </div>
+    )
+  }
 
   return (
     <div className={`${montserrat.variable} ${openSans.variable}`} style={{ fontFamily: 'var(--font-site-body)' }}>

@@ -1,0 +1,153 @@
+/* =============================================
+   COOPAIBI — parceiro.css | Seja Parceiro
+   Projeto Cacau que Refloresta (2026)
+   ============================================= */
+
+/* ── HERO ── */
+.parc-hero {
+  background: linear-gradient(140deg, #081a08 0%, #0f3a1a 40%, #1a5c1a 70%, #1a4a40 100%);
+  padding: 80px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.parc-hero::before { content:''; position:absolute; left:-120px; top:-120px; width:440px; height:440px; border-radius:50%; background:rgba(126,217,74,.06); pointer-events:none; }
+.parc-hero::after  { content:''; position:absolute; right:-80px; bottom:-60px; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,.03); pointer-events:none; }
+.parc-hero-inner { max-width:760px; margin:0 auto; position:relative; z-index:2; }
+.parc-pill { display:inline-block; background:rgba(126,217,74,.18); border:1px solid rgba(126,217,74,.35); border-radius:20px; padding:7px 18px; font-size:12px; color:#b0f070; font-weight:700; letter-spacing:.6px; text-transform:uppercase; margin-bottom:20px; font-family:'Montserrat',sans-serif; }
+.parc-hero h1 { font-size:44px; font-weight:900; color:#fff; line-height:1.12; margin-bottom:18px; font-family:'Montserrat',sans-serif; }
+.parc-hero h1 em { color:var(--glt); font-style:normal; }
+.parc-hero p { font-size:16px; color:rgba(255,255,255,.78); line-height:1.7; max-width:640px; margin:0 auto 30px; }
+.parc-hero-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+/* ── STATS ── */
+.parc-stats { background:var(--g2); padding:0; }
+.parc-stats-inner { display:grid; grid-template-columns:repeat(5,1fr); }
+.pstat { text-align:center; padding:20px 10px; border-right:1px solid rgba(255,255,255,.18); }
+.pstat:last-child { border-right:none; }
+.pstat-val { font-size:24px; font-weight:900; color:#fff; font-family:'Montserrat',sans-serif; }
+.pstat-label { font-size:11px; color:rgba(255,255,255,.72); text-transform:uppercase; letter-spacing:.5px; margin-top:3px; font-family:'Montserrat',sans-serif; }
+
+/* ── POR QUE PARCEIRO ── */
+.pq-grid { display:grid; grid-template-columns:1fr 380px; gap:64px; align-items:start; }
+.pq-list { display:flex; flex-direction:column; gap:20px; margin-top:30px; }
+.pq-item { display:flex; gap:14px; align-items:flex-start; padding:18px 20px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); transition:.2s; }
+.pq-item:hover { border-color:var(--g2); background:#f5faf0; }
+.pq-icon { font-size:26px; flex-shrink:0; }
+.pq-item h4 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; font-family:'Montserrat',sans-serif; }
+.pq-item p { font-size:13px; color:var(--muted); line-height:1.55; }
+.pq-highlight { background:var(--g1); border-radius:16px; padding:36px 28px; color:#fff; display:flex; flex-direction:column; gap:18px; position:sticky; top:90px; }
+.pq-hl-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.6); font-family:'Montserrat',sans-serif; margin-bottom:4px; }
+.pq-hl-sub { font-size:13px; color:rgba(255,255,255,.65); margin-top:-12px; }
+.pq-big { font-size:36px; font-weight:900; color:var(--glt); font-family:'Montserrat',sans-serif; line-height:1.1; }
+.pq-big-label { font-size:12px; color:rgba(255,255,255,.6); margin-top:3px; }
+.pq-divider { height:1px; background:rgba(255,255,255,.15); }
+
+/* ── COTAS ── */
+.cotas-section { background:var(--light-bg); }
+.cotas-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:52px; }
+.cota-card { background:#fff; border:1px solid var(--border); border-radius:16px; padding:30px 22px; display:flex; flex-direction:column; gap:0; transition:all .25s; opacity:0; transform:translateY(16px); position:relative; }
+.cota-card.visible { opacity:1; transform:translateY(0); transition:opacity .4s ease, transform .4s ease; }
+.cota-card:hover { box-shadow:0 8px 32px rgba(26,92,26,.13); transform:translateY(-4px); }
+.cota-card.visible:hover { opacity:1; }
+
+.cota-ouro { border:2.5px solid var(--gold); }
+.cota-prata { border:2px solid #aab8c2; }
+.cota-bronze { border:1px solid #c8a060; }
+.cota-apoio { border:1px solid var(--border); }
+
+.cota-destaque-label { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--gold); color:#fff; font-size:11px; font-weight:800; padding:4px 16px; border-radius:20px; font-family:'Montserrat',sans-serif; letter-spacing:.5px; white-space:nowrap; }
+.cota-icon { font-size:38px; margin-bottom:12px; display:block; text-align:center; }
+.cota-nome { font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:1.2px; font-family:'Montserrat',sans-serif; text-align:center; margin-bottom:8px; }
+.cota-ouro .cota-nome { color:var(--gold); }
+.cota-prata .cota-nome { color:#5a7080; }
+.cota-bronze .cota-nome { color:#8a5a20; }
+.cota-apoio .cota-nome { color:var(--g1); }
+.cota-val { font-size:20px; font-weight:900; color:var(--text); font-family:'Montserrat',sans-serif; text-align:center; margin-bottom:4px; }
+.cota-usd { font-size:12px; color:var(--muted); text-align:center; margin-bottom:16px; }
+.cota-beneficios { list-style:none; display:flex; flex-direction:column; gap:8px; flex:1; margin-bottom:20px; }
+.cota-beneficios li { font-size:12.5px; color:var(--muted); padding-left:18px; position:relative; line-height:1.45; }
+.cota-beneficios li::before { content:'✓'; position:absolute; left:0; color:var(--g2); font-weight:700; }
+.cota-beneficios strong { color:var(--text); }
+.cota-btn { display:block; text-align:center; padding:11px 16px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Montserrat',sans-serif; background:var(--g2); color:#fff; transition:.2s; margin-top:auto; }
+.cota-btn:hover { background:var(--g1); }
+.cota-btn-ouro { background:var(--gold); }
+.cota-btn-ouro:hover { background:#a06a00; }
+.cotas-nota { text-align:center; font-size:12px; color:var(--muted); margin-top:24px; }
+
+/* ── GOVERNANÇA ── */
+.gov-section { background:#fff; }
+.gov-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:52px; }
+.gov-card { background:var(--light-bg); border:1px solid var(--border); border-radius:14px; padding:26px 22px; transition:.2s; opacity:0; transform:translateY(12px); }
+.gov-card.visible { opacity:1; transform:translateY(0); transition:opacity .4s ease, transform .4s ease; }
+.gov-card:hover { border-color:var(--g2); background:#f0fae8; }
+.gov-icon { font-size:30px; margin-bottom:14px; display:block; }
+.gov-card h4 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:8px; font-family:'Montserrat',sans-serif; }
+.gov-card p { font-size:13px; color:var(--muted); line-height:1.6; }
+
+/* ── DUE DILIGENCE ── */
+.due-section { background:var(--light-bg); }
+.due-inner { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+.due-list { display:flex; flex-direction:column; gap:10px; margin-top:28px; }
+.due-item { font-size:14px; color:var(--text); padding:10px 16px; background:#fff; border:1px solid var(--border); border-radius:8px; font-weight:600; opacity:0; transform:translateX(-10px); }
+.due-item.visible { opacity:1; transform:translateX(0); transition:opacity .4s ease, transform .4s ease; }
+.due-frameworks { background:var(--dark); border-radius:16px; padding:32px 28px; }
+.due-frameworks h3 { font-size:16px; font-weight:800; color:#fff; margin-bottom:20px; font-family:'Montserrat',sans-serif; }
+.fw-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.fw-item { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:14px 16px; opacity:0; transform:translateY(8px); }
+.fw-item.visible { opacity:1; transform:translateY(0); transition:opacity .4s ease, transform .4s ease; }
+.fw-sigla { font-size:16px; font-weight:900; color:var(--glt); font-family:'Montserrat',sans-serif; margin-bottom:4px; }
+.fw-nome { font-size:11px; color:rgba(255,255,255,.65); line-height:1.35; }
+
+/* ── FORMULÁRIO DE PARCERIA ── */
+.form-parc-section { background:#fff; }
+.form-parc-inner { display:grid; grid-template-columns:1fr 480px; gap:60px; align-items:start; }
+.parc-aside { display:flex; flex-direction:column; gap:18px; margin-top:32px; }
+.parc-aside-item { display:flex; gap:14px; align-items:flex-start; padding:16px 18px; background:var(--light-bg); border:1px solid var(--border); border-radius:var(--radius); }
+.parc-aside-item span { font-size:22px; flex-shrink:0; }
+.parc-aside-item strong { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--g1); font-family:'Montserrat',sans-serif; margin-bottom:3px; }
+.parc-aside-item a, .parc-aside-item span.val { font-size:14px; color:var(--text); }
+.parc-aside-item a:hover { color:var(--g2); }
+
+.form-card-parc { background:#f5faf0; border:1px solid var(--border); border-radius:16px; padding:38px 34px; }
+.form-card-parc h2 { font-size:22px; font-weight:800; color:var(--text); margin-bottom:6px; font-family:'Montserrat',sans-serif; }
+.form-card-parc > p { font-size:14px; color:var(--muted); margin-bottom:26px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.form-group label { font-size:11px; font-weight:700; color:var(--g1); text-transform:uppercase; letter-spacing:.7px; font-family:'Montserrat',sans-serif; }
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:10px 14px; border:1.5px solid #c4ddb8; border-radius:8px; font-size:14px; color:var(--text); background:#fff; outline:none; font-family:'Open Sans',sans-serif; transition:border-color .2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--g2); background:#fafff7; }
+.form-group textarea { resize:vertical; min-height:100px; }
+.check-row { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; }
+.check-row input { width:16px; height:16px; margin-top:3px; accent-color:var(--g2); flex-shrink:0; cursor:pointer; }
+.check-row label { font-size:13px; color:#444; line-height:1.5; cursor:pointer; }
+.btn-enviar-parc { width:100%; padding:14px; background:var(--g2); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; transition:all .2s; letter-spacing:.3px; font-family:'Montserrat',sans-serif; }
+.btn-enviar-parc:hover { background:var(--g1); }
+.btn-enviar-parc:disabled { background:#888; cursor:default; }
+.form-note { text-align:center; font-size:12px; color:#999; margin-top:12px; }
+.success-box-parc { display:none; background:#e8f5e9; border:2px solid var(--g2); border-radius:12px; padding:24px; text-align:center; margin-top:16px; }
+.success-box-parc.show { display:block; }
+.success-icon { font-size:32px; margin-bottom:8px; }
+.success-box-parc h3 { font-size:18px; font-weight:700; color:var(--g1); margin-bottom:6px; font-family:'Montserrat',sans-serif; }
+.success-box-parc p { font-size:14px; color:#2e5c1a; }
+
+/* ── RESPONSIVO ── */
+@media (max-width:1000px) {
+  .pq-grid { grid-template-columns:1fr; }
+  .pq-highlight { position:static; }
+  .cotas-grid { grid-template-columns:1fr 1fr; }
+  .gov-grid { grid-template-columns:1fr 1fr; }
+  .due-inner { grid-template-columns:1fr; }
+  .form-parc-inner { grid-template-columns:1fr; }
+  .parc-stats-inner { grid-template-columns:repeat(3,1fr); }
+  .parc-hero h1 { font-size:32px; }
+}
+@media (max-width:600px) {
+  .cotas-grid { grid-template-columns:1fr; }
+  .gov-grid { grid-template-columns:1fr; }
+  .fw-grid { grid-template-columns:1fr; }
+  .parc-stats-inner { grid-template-columns:1fr 1fr; }
+  .parc-hero h1 { font-size:26px; }
+  .form-row { grid-template-columns:1fr; }
+  .form-card-parc { padding:24px 18px; }
+}

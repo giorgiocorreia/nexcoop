@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import { buscarSiteConfigPorSlug, buscarOrganizacao } from '@/lib/site/queries'
 import { conteudoOuPadrao, resolverTema } from '@/lib/site/site-utils'
+import { temCustomizacao } from '@/lib/site/custom'
 import { SecTag, SecTitle, SecSub, Section, BtnPrimary, BtnOutline } from '@/components/site/SiteUi'
 import CotacaoWidget from '@/components/site/CotacaoWidget'
 import ProdutosWidget from '@/components/site/ProdutosWidget'
 import ConteudosWidget from '@/components/site/ConteudosWidget'
+import CoopaibiHome from '@/components/site/custom/coopaibi/pages/CoopaibiHome'
 
 // Cotação/produtos são "dados vivos" — cachear por 5 min evita bater no
 // banco a cada visita, sem deixar o preço visivelmente desatualizado
@@ -34,6 +36,12 @@ export default async function SiteHomePage({ params }: { params: Promise<{ slug:
   const org = await buscarOrganizacao(config.organizacao_id)
   if (!org) notFound()
   const tema = resolverTema(config, org.nome)
+
+  // Customização "porte fiel" (ver lib/site/custom.ts) — convive com o
+  // template padrão abaixo, que continua servindo orgs sem customização.
+  if (temCustomizacao(slug)) {
+    return <CoopaibiHome orgId={config.organizacao_id} />
+  }
 
   return (
     <>

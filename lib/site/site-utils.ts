@@ -83,6 +83,19 @@ export interface DadosInteresse {
   mensagem?: string
   perfil?:   string
   honeypot?: string // campo escondido — se vier preenchido, é bot
+  // Campos extras dos formulários originais da COOPAIBI (cooperado.html /
+  // parceiro.html) — mais ricos que o formulário genérico do template do
+  // módulo Site. Opcionais e sem validação própria: guardados como estão no
+  // JSON do lead (ver app/api/site/[slug]/interesse) pra não quebrar a
+  // validação existente de nome/telefone/email.
+  cpf?:        string
+  localidade?: string
+  area?:       string
+  atividade?:  string
+  empresa?:    string
+  cargo?:      string
+  segmento?:   string
+  cota?:       string
 }
 
 export interface ValidacaoInteresse {

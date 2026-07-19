@@ -47,12 +47,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   }
 
   const registro = {
-    nome:      body.nome.trim(),
-    telefone:  body.telefone.trim(),
-    email:     body.email?.trim() || null,
-    perfil:    body.perfil ?? null,
-    mensagem:  body.mensagem?.trim() || null,
-    origem:    body.origem ?? 'site',
+    nome:        body.nome.trim(),
+    telefone:    body.telefone.trim(),
+    email:       body.email?.trim() || null,
+    perfil:      body.perfil ?? null,
+    mensagem:    body.mensagem?.trim() || null,
+    origem:      body.origem ?? 'site',
+    // Campos extras dos formulários fiéis da COOPAIBI (cooperado/parceiro) —
+    // opcionais, sem validação própria (ver DadosInteresse em site-utils.ts).
+    cpf:         body.cpf?.trim() || null,
+    localidade:  body.localidade?.trim() || null,
+    area:        body.area?.trim() || null,
+    atividade:   body.atividade?.trim() || null,
+    empresa:     body.empresa?.trim() || null,
+    cargo:       body.cargo?.trim() || null,
+    segmento:    body.segmento?.trim() || null,
+    cota:        body.cota?.trim() || null,
     recebido_em: new Date().toISOString(),
   }
 

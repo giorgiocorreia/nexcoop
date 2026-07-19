@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation'
 import { buscarSiteConfigPorSlug, buscarOrganizacao } from '@/lib/site/queries'
 import { resolverTema } from '@/lib/site/site-utils'
+import { temCustomizacao } from '@/lib/site/custom'
 import { SecTag, SecTitle, SecSub, Section, BtnPrimary } from '@/components/site/SiteUi'
 import ConteudosWidget from '@/components/site/ConteudosWidget'
+import CoopaibiAcoes from '@/components/site/custom/coopaibi/pages/CoopaibiAcoes'
 
 export const revalidate = 300
 
@@ -13,6 +15,10 @@ export default async function AcoesPage({ params }: { params: Promise<{ slug: st
   const org = await buscarOrganizacao(config.organizacao_id)
   if (!org) notFound()
   const tema = resolverTema(config, org.nome)
+
+  if (temCustomizacao(slug)) {
+    return <CoopaibiAcoes />
+  }
 
   return (
     <>

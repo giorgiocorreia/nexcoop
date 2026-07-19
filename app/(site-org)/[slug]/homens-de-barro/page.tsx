@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import { buscarSiteConfigPorSlug, buscarOrganizacao } from '@/lib/site/queries'
 import { resolverTema } from '@/lib/site/site-utils'
+import { temCustomizacao } from '@/lib/site/custom'
 import { SecTag, SecTitle, Section, BtnPrimary } from '@/components/site/SiteUi'
+import CoopaibiHomensDeBarro from '@/components/site/custom/coopaibi/pages/CoopaibiHomensDeBarro'
 
 export const metadata = { title: 'Na Casa dos Homens de Barro' }
 
@@ -21,6 +23,10 @@ export default async function HomensDeBarroPage({ params }: { params: Promise<{ 
   const org = await buscarOrganizacao(config.organizacao_id)
   if (!org) notFound()
   const tema = resolverTema(config, org.nome)
+
+  if (temCustomizacao(slug)) {
+    return <CoopaibiHomensDeBarro />
+  }
 
   return (
     <>

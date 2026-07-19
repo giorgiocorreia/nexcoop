@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation'
 import { buscarSiteConfigPorSlug, buscarOrganizacao } from '@/lib/site/queries'
 import { resolverTema } from '@/lib/site/site-utils'
+import { temCustomizacao } from '@/lib/site/custom'
 import { SecTag, SecTitle, SecSub, Section } from '@/components/site/SiteUi'
 import FormularioInteresse from '@/components/site/FormularioInteresse'
+import CoopaibiCooperado from '@/components/site/custom/coopaibi/pages/CoopaibiCooperado'
 
 export const metadata = { title: 'Seja Cooperado' }
 
@@ -35,6 +37,10 @@ export default async function CooperadoPage({ params }: { params: Promise<{ slug
   const org = await buscarOrganizacao(config.organizacao_id)
   if (!org) notFound()
   const tema = resolverTema(config, org.nome)
+
+  if (temCustomizacao(slug)) {
+    return <CoopaibiCooperado />
+  }
 
   return (
     <>
