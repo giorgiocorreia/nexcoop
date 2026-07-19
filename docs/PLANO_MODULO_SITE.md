@@ -101,6 +101,29 @@ NÃO é site estático — é um mini-CMS PHP + MySQL feito pelo Giorgio:
 
 ---
 
+## Implementado em 19/07/2026 — template × customização
+
+Motor no ar (migrations 085 + commits 33e3749/28a5437/3e6974b), validação em
+coopaibi-site.vercel.app (subdomínio definitivo aguarda vaga/upgrade Vercel):
+
+- **Template padrão**: app/(site-org)/[slug]/* — o que qualquer org recebe ao
+  ativar o módulo. Design próprio do NexCoop, seções com dados vivos.
+- **Customização por org** (premium): componentes em
+  components/site/custom/<slug>/; registro em lib/site/custom.ts
+  (temCustomizacao). Rotas ramificam no início; rotas exclusivas da custom
+  (loja, videos, relatorio-compradores) dão 404 pra slugs sem custom.
+- **COOPAIBI**: porte FIEL do site original (HTML/CSS/imagens da pasta do
+  Dropbox, interações reimplementadas em CoopaibiInteractions.tsx), único
+  acréscimo: faixa de cotação do dia na home. Formulários postam em
+  /api/site/[slug]/interesse com os campos ricos originais.
+- Banner de pré-visualização (publicado=false) e noindex (indexavel=false)
+  valem nos dois modos.
+
+Pendências: importar eventos/vídeos/promoções do dump MySQL; migration
+site_leads + tela (leads hoje em site_conteudos inativo — paliativo);
+painel de edição; tradução PT/EN (translate.php não portado); publicação e
+virada de DNS (checklist MX).
+
 ## Fora de escopo (por enquanto)
 - Editor visual arrastar-e-soltar — template com seções ligáveis basta.
 - Blog/notícias — avaliar depois do piloto.
