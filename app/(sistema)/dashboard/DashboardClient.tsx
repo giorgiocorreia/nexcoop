@@ -113,12 +113,14 @@ export default function DashboardClient({
       <div className="com-hub-content">
         <div className="com-kpi-grid-4" style={{ marginBottom: resumoCotas ? 16 : 24 }}>
           <KpiCard label="Filiados" value={String(totalCooperados)} sub={`${cooperadosAtivos} ativos`}
-            icon="ti-users" cor={COM_C.marca} corLt={COM_C.marcaLt} />
+            icon="ti-users" cor={COM_C.marca} corLt={COM_C.marcaLt}
+            onClick={() => router.push('/cooperados')} />
           <KpiCard label="A receber" value={BRL(totalReceber)} sub="Lançamentos pendentes"
             icon="ti-arrow-down-left" cor={COM_C.azul} corLt={COM_C.azulLt}
             onClick={() => router.push('/financeiro?tipo=receita&status=pendente')} />
           <KpiCard label="A pagar" value={BRL(totalPagar)} sub="Lançamentos pendentes"
-            icon="ti-arrow-up-right" cor={COM_C.vermelho} corLt={COM_C.vermelhoLt} />
+            icon="ti-arrow-up-right" cor={COM_C.vermelho} corLt={COM_C.vermelhoLt}
+            onClick={() => router.push('/financeiro?tipo=despesa&status=pendente')} />
           <KpiCard label="Docs vencendo" value={String(documentosVencendo.length)} sub="Próximos 30 dias"
             icon="ti-alert-triangle" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
         </div>
