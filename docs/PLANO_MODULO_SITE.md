@@ -19,13 +19,27 @@ construtor genérico (Wix etc.) replica.
 
 ---
 
-## Estado atual do coopaibi.com.br
+## Estado atual do coopaibi.com.br (auditado em 19/07/2026)
 
-- Site estático feito à mão pelo Giorgio; upload via FileZilla (FTP).
-- Hospedagem cPanel; registro do domínio em nome do Giorgio.
-- Sem CMS, sem banco. **Verificar antes de mexer em DNS: se o e-mail da
-  COOPAIBI roda nesse cPanel** (registros MX) — se sim, preservar MX na
-  migração.
+Fonte: `C:\Users\Lenovo\Dropbox\Giorgio\COOPAIBI_Drop\Site\coopaibi-site`.
+NÃO é site estático — é um mini-CMS PHP + MySQL feito pelo Giorgio:
+
+- **Banco próprio** (`coopaibi_loja`, MySQL/phpMyAdmin): usuarios (admin do
+  site), categorias, produtos (preço, foto, destaque), promocoes; v2 adiciona
+  eventos/vídeos/perfis.
+- **Painel admin** (`/admin`, login próprio): produtos, categorias, promoções,
+  eventos, vídeos, usuários — **cadastro de produtos DUPLICADO com a Loja do
+  NexCoop** (`loja_produtos`), mantidos à mão em dois lugares.
+- **Páginas**: index, ações, cooperado, parceiro, homens-de-barro,
+  relatório-compradores, loja.php (lê do MySQL), videos.php; tradução via
+  google-translate-php.
+- **Formulários** (`enviar-cooperado.php`, `enviar-parceria.php`): só enviam
+  e-mail via `mail()` pra `contato@coopaibi.com.br` — lead não entra em
+  sistema nenhum, morre na caixa de entrada.
+- **E-mail confirmado no domínio** (`contato@coopaibi.com.br`, provavelmente
+  no próprio cPanel): na migração de DNS é OBRIGATÓRIO preservar os registros
+  MX (ou migrar o e-mail antes).
+- Upload via FileZilla; registro do domínio em nome do Giorgio.
 
 ---
 
@@ -38,9 +52,15 @@ construtor genérico (Wix etc.) replica.
 2. **Endpoint de captação**: `POST /api/publico/[slug-org]/interesse` — nome,
    telefone, mensagem → cai na Captação/leads da org (e futuramente aciona a
    Mariana pra qualificar via WhatsApp).
-3. Site atual ganha um `<script>` de fetch do boletim + form apontando pro
-   endpoint + botão "Área do cooperado" → login do NexCoop.
-4. Uma última atualização via FileZilla e o site para de ficar desatualizado.
+3. **Endpoint público de produtos da Loja**: `GET /api/publico/[slug-org]/produtos`
+   — lista de `loja_produtos` ativos (nome, preço, foto, categoria) pra
+   `loja.php` do site consumir em vez do MySQL próprio. **Mata a duplicação de
+   cadastro**: produto passa a ser mantido só no NexCoop; o admin PHP do site
+   pode ser aposentado gradualmente (fotos: servir das URLs do NexCoop).
+4. Formulários passam a postar no endpoint de captação (mantendo o e-mail
+   como notificação — lead entra no sistema E avisa a caixa de entrada).
+5. Site atual ganha os fetches + form apontado; uma última rodada de
+   FileZilla e o site para de ficar desatualizado.
 
 ## Fase 2 — Módulo Site multi-tenant (o produto)
 
