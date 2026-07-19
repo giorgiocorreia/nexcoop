@@ -80,7 +80,9 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
 
   const safraAtual = safras.find(s => s.id === safraId)
   const resultadosFiltrados = resultados.filter(r => r.safra_id === safraId)
-  const saldosFiltrados = saldos.filter(s => s.safra_id === safraId)
+  const saldosFiltrados = saldos
+    .filter(s => s.safra_id === safraId)
+    .sort((a, b) => Number(b.kg_entregue) - Number(a.kg_entregue))
   const lotesAndamentoFiltrados = lotesAndamento.filter(l => l.safra_id === safraId)
 
   const totalRealizado  = resultadosFiltrados.reduce((a, r) => a + Number(r.lucro_realizado_rs), 0)
@@ -143,8 +145,9 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
           </span>
         </div>
 
-        {/* KPIs */}
-        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {/* KPIs — usa com-kpi-grid-4 (colunas com minmax(0,1fr), permite encolher sem
+            estourar a largura da página com valores longos tipo "+R$ 10.982,02") */}
+        <div className="com-kpi-grid-4">
           {kpis.map(k => (
             <KpiCard
               key={k.label}
