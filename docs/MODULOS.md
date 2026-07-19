@@ -12,7 +12,7 @@
 | Super Admin | ✅ Completo | 04/07/2026 — UI redesign |
 | Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | 04/07/2026 — UI redesign |
 | Contábil (migrations 015–024, 061; 13 telas) | ✅ Completo | 04/07/2026 — UI + classificação automática |
-| Comercialização / Caixa Cacau | ✅ Completo | 18/07/2026 — relatório Saídas de Caixa com filtros + PDF |
+| Comercialização / Caixa Cacau | ✅ Completo | 19/07/2026 — resultado por safra reescrito (realizado + marcação a mercado, migrations 082/083/084) |
 | NF-e entrada via Focus NFe | ✅ Produção | 16/07/2026 — emitindo em produção (não homologação) |
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
 | Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
@@ -91,7 +91,37 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - De/Para continua exclusivo para exportação SPED (não classifica lançamentos)
 
 ## Comercialização 🔄
-Última atualização: 18/07/2026
+Última atualização: 19/07/2026
+
+### Resultado por safra — realizado + marcação a mercado (19/07/2026)
+
+A tela `/comercializacao/resultado` e o KPI "Resultado Comercialização" do
+dashboard (só cooperativa) leem `vw_resultado_comercializacao` (migration 082),
+que decompõe o lucro em duas pontas:
+
+- **Realizado** — só transações consumadas (kg vendido × custo já convertido
+  pelo produtor), armazenado em `resultado_safra_snapshot.lucro_realizado_rs`
+  (coluna GENERATED, mantida por trigger). Nunca muda retroativamente — é a
+  base pra apuração e divisão de sobras no fim do exercício.
+- **Ajuste a mercado** — posição em aberto (estoque físico − passivo à ordem)
+  avaliada à cotação vigente, calculada **na leitura** pela view, sem trigger
+  nem job. Flutua a cada mudança de cotação; não entra na divisão de sobras.
+- **Lucro corrente** = realizado + ajuste a mercado (número do card do
+  dashboard). **Exposição** = kg vendidos ainda sem custo fixado.
+
+Decisão de produto (Giorgio): a cotação de conversão não é travada na venda do
+lote — o produtor pode esperar a alta pra converter, risco de preço aceito
+conscientemente pela cooperativa. O papel da tela é dar visibilidade
+(realizado + exposição), não eliminar o risco.
+
+Duas correções de dados na mesma leva (migrations 083/084, achadas com dados
+reais da COOPAIBI): `saldos_produtor_snapshot` estava congelado desde a
+migration 052 (trigger só resolvia `safra_id` via `lote_id`, que
+`entrega`/`conversao`/`ajuste_produto` raramente têm); e `lote_itens` nunca
+era gravado pelo código de aplicação desde a 052, deixando lotes de fora do
+resultado (fallback via `movimentacoes_conta` pra lote mono-produto + backfill
+corrigem o histórico). Detalhe técnico completo em `docs/comercializacao.md`
+e `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`.
 
 ### ✅ Concluído
 - Cadastro produtores e compradores (com campos fiscais)
@@ -132,6 +162,7 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 - Cadastro rápido de produto, preço de custo opcional e unidade dinâmica no fluxo de entrega (17/07/2026)
 - Relatório Saídas de Caixa (`/comercializacao/relatorios/saidas-caixa`): filtros aditivos combináveis (tipo/forma/produtor + mês/ano), PDF A4, cobre saques/avulsas/sangrias/ajustes; KPI "Pagamentos a produtores" no dashboard (18/07/2026)
 - Saídas avulsas visíveis em Operações do dia + fix de data (coluna `date` não recua mais um dia por fuso) (18/07/2026)
+- Resultado por safra reescrito (realizado + marcação a mercado, `vw_resultado_comercializacao`) + KPI "Resultado Comercialização" no dashboard; fix `saldos_produtor_snapshot` congelado desde a 052; fix FUNRURAL indevido em transferência interna; fix composição de lote sem gravar `lote_itens` (migrations 082/083/084, 19/07/2026)
 
 ### ❌ Pendente
 - saldo_kg em contas_produtor (estoque à ordem)

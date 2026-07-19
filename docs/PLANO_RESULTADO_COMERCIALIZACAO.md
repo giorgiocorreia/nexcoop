@@ -1,6 +1,12 @@
 # Desenho técnico: Resultado da Comercialização — realizado + marcação a mercado
 
-**Status:** Implementado — migrations 082/083 aplicadas em produção, tela e KPI no ar (19/07/2026)
+**Status:** Implementado — migrations 082/083/084 aplicadas em produção, tela e
+KPI no ar (19/07/2026). Migration 084 corrigiu dois bugs achados na validação
+com dados reais da COOPAIBI (FUNRURAL indevido em transferência interna e
+`lote_itens` nunca gravado pelo código de aplicação desde a 052 — ver
+`docs/comercializacao.md` §1.1). Números finais validados (safra em
+andamento): 1.804,7 kg vendidos, receita bruta R$ 40.454,17, lucro realizado
++R$ 867,54, exposição ~569 kg.
 **Criado em:** 19/07/2026
 
 **Decisão de política (Giorgio, 19/07/2026):** a cotação de conversão NÃO será

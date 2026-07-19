@@ -1,6 +1,6 @@
 # Módulo Comercialização — documento de continuidade
 
-Handoff para retomar o módulo em outro chat. Atualizado em 2026-07-18.
+Handoff para retomar o módulo em outro chat. Atualizado em 2026-07-19.
 Foca no que é carga-pesada para continuar: modelo de dados, mecânica de saldo,
 pipeline de cotações/Índice Nex e pendências abertas. Para status macro do
 produto, ver `docs/MODULOS.md`; para schema completo, `docs/SCHEMA.md`.
@@ -67,6 +67,76 @@ financeiro continua incremental (INSERT-only), inalterado.
 `produtores.actions.ts`, `caixa.actions.ts`, `extrato-produtor.ts`, `notas.ts`.
 
 ---
+
+## 1.1. Resultado por safra — modelo realizado + marcação a mercado (082/083/084, 2026-07-19)
+
+`/comercializacao/resultado` e o KPI "Resultado Comercialização" do dashboard
+leem `vw_resultado_comercializacao` (migration 082), não mais o
+`resultado_safra_snapshot` cru. A view decompõe o lucro em duas pontas —
+plano técnico completo em `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`:
+
+```
+REALIZADO  (armazenado, coluna GENERATED em resultado_safra_snapshot,
+            nunca muda retroativamente — base p/ divisão de sobras)
+  = LEAST(kg_vendido, kg_convertido) × (preço médio venda líquido − custo médio convertido)
+
+AJUSTE A MERCADO  (calculado na leitura, não armazenado)
+  = estoque_kg × cotação_vigente         (ativo: entregue e não vendido)
+  − passivo_a_ordem_kg × cotação_vigente (passivo: entregue e não convertido)
+
+LUCRO CORRENTE = REALIZADO + AJUSTE A MERCADO   (número do card do dashboard)
+EXPOSIÇÃO = GREATEST(kg_vendido − kg_convertido, 0)
+```
+
+**Decisão de política (Giorgio, 19/07):** a cotação de conversão não é
+travada na venda do lote — o produtor pode esperar a alta pra converter, é
+um benefício intencional ao cooperado, e a cooperativa aceita o risco de
+preço conscientemente. Lucro realizado pode ficar negativo em queda de
+mercado; o papel da tela é dar visibilidade (realizado + exposição), não
+eliminar o risco.
+
+**Validado com dados reais da COOPAIBI** (safra em_andamento, 19/07): 1.804,7
+kg vendidos, receita bruta R$ 40.454,17, lucro realizado +R$ 867,54,
+exposição ~569 kg.
+
+### Armadilhas descobertas nesta sessão
+
+- **`saldos_produtor_snapshot` estava congelado desde a migration 052.** O
+  trigger antigo só resolvia `safra_id` a partir de `lote_id` presente no
+  INSERT — mas `entrega`, `conversao` e `ajuste_produto` raramente (ou só
+  depois) têm `lote_id`. Resultado: o snapshot nunca atualizava ao vivo, só o
+  backfill único da 052 ficava parado no tempo. Migration 083 generaliza a
+  estampa de `safra_id` pra `entrega`/`ajuste_produto`, recria o trigger com
+  recálculo do zero direto de `movimentacoes_conta` e refaz o backfill
+  completo. Se `vw_saldos_produtor` parecer "travado" de novo no futuro,
+  conferir primeiro se algum tipo novo de movimentação ficou sem estampa de
+  safra no INSERT.
+- **`lote_itens` nunca era gravado pelo código de aplicação desde a 052** —
+  só o backfill único daquela migration populou os lotes existentes na
+  época; nenhuma action de composição de lote gravava `lote_itens` depois
+  disso (bug, não decisão). Todo lote criado após 24/06/2026 ficava sem
+  itens, e por consequência de fora do rateio de resultado por produto
+  (`fn_produto_lote`, migration 084, retornava vazio). Corrigido em dois
+  lugares: `criarLoteComComposicao`/composição em
+  `app/(sistema)/comercializacao/lotes/actions.ts` passa a gravar
+  `lote_itens` de fato; e a 084 adiciona fallback em `fn_produto_lote(lote_id)`
+  (usa `movimentacoes_conta` vinculadas — tipo `entrega`/`ajuste_produto` —
+  quando o lote é mono-produto e não tem `lote_itens`) + backfill pra cobrir o
+  histórico. **Se criar uma nova rota de composição de lote, confirmar que
+  ela grava `lote_itens` — não existe mais nenhuma garantia automática disso.**
+- **Convenção de sinal diverge entre a ledger (`movimentacoes_conta`) e o
+  snapshot de saldo (`saldos_produto`/`saldos_produtor_snapshot`).** Na
+  ledger, `quantidade_produto` é sempre positivo e o `tipo` define o sinal
+  (ver §5); no agregado de saldo, `ajuste_produto` já entra com sinal
+  negativo aplicado (é DÉBITO — ver armadilha existente abaixo). Ao ler os
+  dois lados pra conferir consistência, não assumir que o mesmo campo tem a
+  mesma convenção nas duas tabelas.
+- **Transferência interna não recolhe FUNRURAL, mas paga a taxa de
+  administração.** Migration 084 zera `funrural_rs` no trigger quando
+  `vendas_externas.tipo_documento = 'transferencia_interna'` (confirmado com
+  o Giorgio — não há substituição tributária nesse tipo de operação, já que
+  não sai NF-e de venda da cooperativa). A taxa de administração continua
+  sendo cobrada normalmente nos dois tipos de documento.
 
 ## 2. Pipeline de cotações e Índice Nex
 

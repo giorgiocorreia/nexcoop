@@ -1,5 +1,29 @@
 # NexCoop — Changelog
 
+## 2026-07-19
+
+### feat(dashboard): KPIs clicáveis — A receber, Filiados, A pagar, Docs vencendo, Inadimplentes
+- Financeiro, Documentos e Cooperados passam a aceitar filtro inicial via query string (tipo/status, `?vencendo=30`, `?status=inadimplente`); cada tela reaproveita o Select/filtro que já existia, sem duplicar lógica de recorte
+- KPI "A receber" leva ao Financeiro filtrado; "A pagar" e "Filiados" reaproveitam o mesmo suporte; "Docs vencendo" usa o MESMO critério fixo do KPI (data_validade ≤ hoje+30), separado do filtro de status "Vencendo" que a tela já tinha (calcStatus usa `alerta_dias` configurável — critérios propositalmente diferentes); "Inadimplentes" usa `cooperados.status = 'inadimplente'` nos dois lados
+- `KpiCard` clicável ganha affordance de hover (elevação); "Capital a receber" ficou sem link — não existe tela que agregue `cota_pagamentos` pendentes de todos os cooperados (documentado em comentário no `DashboardClient.tsx`)
+
+### fix(financeiro): dropdown de status cortado na ficha do lançamento
+- O menu de status abria com `right:0` relativo ao badge (que fica na esquerda do card), estendendo-se pra fora da borda esquerda; o `overflow:hidden` do `ContentCard` cortava o que vazava. Menu agora abre alinhado à esquerda do badge; `ContentCard` ganhou prop `allowOverflow`, usada no card do cabeçalho
+
+### feat(comercializacao): resultado da safra — modelo realizado + marcação a mercado (migrations 082/083/084)
+- **Migration 082**: `resultado_safra_snapshot` ganha `kg_convertido`, `custo_convertido_rs` e `lucro_realizado_rs` (GENERATED, `LEAST(kg_vendido, kg_convertido) × diferença de médias`); `organizacoes.aliquota_funrural` parametrizável (default 0,0163); novo trigger `trg_atualizar_custo_convertido` em `movimentacoes_conta` (tipo='conversao'); fix do trigger de vendas restaurando o rateio multi-produto por `lote_itens` (eliminado o `LIMIT 1` introduzido nas 055/068); view `vw_resultado_comercializacao` calcula a marcação a mercado (estoque − passivo à ordem, à cotação vigente) na leitura, sem armazenar
+- Decisão de produto (Giorgio, 19/07): a cotação de conversão NÃO é travada na venda do lote — o produtor pode esperar a alta pra converter, risco de preço aceito conscientemente pela cooperativa. Lucro realizado pode ficar negativo em queda de mercado; o papel da tela é dar visibilidade (realizado + exposição), não eliminar o risco
+- **Migration 083** (bug crítico): `saldos_produtor_snapshot` estava congelado desde a migration 052 — o trigger antigo só resolvia `safra_id` a partir de `lote_id` no INSERT, mas `entrega`/`conversao`/`ajuste_produto` raramente (ou só depois) têm `lote_id`, então o snapshot nunca atualizava ao vivo, só o backfill único da 052 ficava parado. Generaliza a estampa de `safra_id` pra `entrega`/`ajuste_produto`, recria o trigger com recálculo do zero direto de `movimentacoes_conta` e refaz o backfill completo
+- **Migration 084** (bugs achados com dados reais da COOPAIBI): FUNRURAL zerado quando `tipo_documento = 'transferencia_interna'` (confirmado com o Giorgio — não há FUNRURAL nesse tipo de operação, só a taxa de administração); nova `fn_produto_lote(lote_id)` resolve produto/fator com fallback (`lote_itens` quando existe, senão `movimentacoes_conta` vinculada se o lote for mono-produto) — causa raiz: nenhum código de aplicação gravava `lote_itens` desde a 052 (só o backfill único daquela migration), afetando qualquer lote criado depois de 24/06/2026, não só transferência interna; backfill de `lote_itens` cobre os lotes existentes sem itens
+- `app/(sistema)/comercializacao/lotes/actions.ts`: composição de lote passa a gravar `lote_itens` de fato (bug que originou a 084)
+- Tela `/comercializacao/resultado` reescrita para ler `vw_resultado_comercializacao`: KPIs de lucro realizado / ajuste a mercado / lucro corrente / exposição, tabela por produto (kg vendido/convertido/estoque/à ordem, médias reais, realizado/ajuste/corrente) e rodapé com a cotação usada na marcação; seção "Participação por produtor" (leitura de `vw_saldos_produtor`) restaurada e ordenada por kg entregue decrescente; fix de overflow dos KPIs em telas ~1366px (troca pra classe `com-kpi-grid-4` com `minmax(0,1fr)`)
+- Novo KPI clicável "Resultado Comercialização" no dashboard principal (só cooperativa), consolidado da MESMA view (safra em_andamento), sem cálculo paralelo
+- Validado com dados reais da COOPAIBI (safra em_andamento): 1.804,7 kg vendidos, receita bruta R$ 40.454,17, lucro realizado +R$ 867,54, exposição ~569 kg
+- Documento técnico: `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`
+
+### docs: plano de integração bancária e verificação de Pix recebidos
+- `docs/PLANO_INTEGRACAO_BANCARIA.md` — documento de referência (não iniciado): candidatos de API Pix com webhook (Sicoob/Sicredi, Banco Inter, Efí, Asaas/Cora/Mercado Pago) pra baixa automática de cobrança e conciliação de extrato bancário com o Financeiro
+
 ## 2026-07-18
 
 ### fix(rls): migration 081 — pagamentos/consultas de usuário comum quebrados pelas 076/077
