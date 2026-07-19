@@ -1,7 +1,40 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { extrairSlugDoHost } from '@/lib/site/site-utils'
+
+// Domínio raiz do produto — subdomínios diferentes disso (exceto os
+// reservados em extrairSlugDoHost: www/app/api) viram site público de org.
+const DOMINIO_BASE = 'nexcoop.com.br'
 
 export async function middleware(request: NextRequest) {
+  // ── Módulo Site: resolução por Host ──────────────────────────────────
+  // Roda ANTES de qualquer coisa de auth — o site público é servido pro
+  // visitante anônimo, não deve nem tentar carregar sessão. Só intercepta
+  // aqui e devolve early; qualquer host que não seja subdomínio de site
+  // (nexcoop.com.br, www.nexcoop.com.br, localhost, previews da Vercel)
+  // segue pro fluxo normal do app logo abaixo, sem alteração de
+  // comportamento.
+  const hostname = (request.headers.get('host') ?? '').split(':')[0]
+  const slugSite = extrairSlugDoHost(hostname, DOMINIO_BASE)
+  // Atalho de desenvolvimento: em localhost/127.0.0.1, sem precisar editar
+  // o arquivo hosts, usar ?siteSlug=coopaibi na URL pra pré-visualizar o
+  // site de uma org (ver relatório da tarefa pra instruções completas).
+  const slugDev = (hostname === 'localhost' || hostname === '127.0.0.1')
+    ? request.nextUrl.searchParams.get('siteSlug')
+    : null
+  const slug = slugSite ?? slugDev
+
+  // /api/* nunca é reescrito pro namespace do site — as rotas de API já são
+  // globais (ex.: app/api/site/[slug]/interesse resolve o slug sozinho a
+  // partir do path, não do host) e o form do site chama esse endpoint via
+  // fetch relativo no MESMO host coopaibi.nexcoop.com.br. Sem esta exceção,
+  // /api/site/coopaibi/interesse viraria /coopaibi/api/site/coopaibi/interesse.
+  if (slug && !request.nextUrl.pathname.startsWith('/api')) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${slug}${request.nextUrl.pathname === '/' ? '' : request.nextUrl.pathname}`
+    return NextResponse.rewrite(url)
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -31,6 +64,7 @@ export async function middleware(request: NextRequest) {
   const isApiCron = pathname.startsWith('/api/cron')
   const isApiWhatsApp = pathname.startsWith('/api/whatsapp')
   const isApiNfe = pathname.startsWith('/api/nfe')
+  const isApiSite = pathname.startsWith('/api/site')
   const isFiliadoLogin = pathname.startsWith('/filiado/login')
   const isFiliadoPublic = pathname === '/filiado' || isFiliadoLogin
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha') || isFiliadoLogin
@@ -39,7 +73,7 @@ export async function middleware(request: NextRequest) {
   const isRSC = request.headers.get('rsc') === '1'
 
   // Não autenticado — redireciona para login
-  if (!user && !isAuthPage && !isPublicPage && !isApiCron && !isApiWhatsApp && !isApiNfe) {
+  if (!user && !isAuthPage && !isPublicPage && !isApiCron && !isApiWhatsApp && !isApiNfe && !isApiSite) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
