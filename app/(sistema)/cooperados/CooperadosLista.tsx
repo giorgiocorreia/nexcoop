@@ -46,14 +46,15 @@ function getNomenclatura(tipoOrg: string) {
 interface Props {
   cooperados: Cooperado[]
   tipoOrg: string
+  statusInicial?: StatusCooperado
 }
 
-export default function CooperadosLista({ cooperados, tipoOrg }: Props) {
+export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: Props) {
   const n = getNomenclatura(tipoOrg)
   const router = useRouter()
   const [lista] = useState(cooperados)
   const [busca, setBusca] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<StatusCooperado | 'todos'>('todos')
+  const [filtroStatus, setFiltroStatus] = useState<StatusCooperado | 'todos'>(statusInicial ?? 'todos')
   const [hovered, setHovered] = useState<string | null>(null)
 
   const resumo = useMemo(() => ({

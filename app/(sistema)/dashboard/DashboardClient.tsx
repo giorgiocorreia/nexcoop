@@ -128,6 +128,10 @@ export default function DashboardClient({
 
         {resumoCotas && (
           <div className="com-kpi-grid-4" style={{ marginBottom: 24 }}>
+            {/* "Capital a receber" fica sem link: soma cota_pagamentos pendentes/vencidos
+                de TODOS os cooperados, mas não existe tela que liste isso de forma
+                agregada — cotas só são visualizadas por cooperado individual
+                (app/(sistema)/cooperados/[id]/CotasSection.tsx). Ver relatório. */}
             <KpiCard label="Capital a receber" value={BRL(resumoCotas.totalAReceber)}
               sub={resumoCotas.totalVencido > 0 ? `Vencido: ${BRL(resumoCotas.totalVencido)}` : 'Parcelas de cotas pendentes'}
               icon="ti-pig-money" cor={COM_C.azul} corLt={COM_C.azulLt} />
@@ -135,7 +139,8 @@ export default function DashboardClient({
               sub={resumoCotas.inadimplentes.length > 0
                 ? resumoCotas.inadimplentes.slice(0, 2).map(c => c.nome_completo.split(' ').slice(0, 2).join(' ')).join(', ')
                 : 'Nenhum cooperado inadimplente'}
-              icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+              icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+              onClick={() => router.push('/cooperados?status=inadimplente')} />
           </div>
         )}
 

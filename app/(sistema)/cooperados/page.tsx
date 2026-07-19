@@ -3,8 +3,13 @@ import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import { temAlgumaFuncao } from '@/lib/permissoes'
 import CooperadosLista from './CooperadosLista'
+import type { StatusCooperado } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
+
+const STATUS_VALIDOS: StatusCooperado[] = [
+  'proposta', 'probatorio', 'ativo', 'inadimplente', 'suspenso', 'demitido', 'excluido',
+]
 
 export async function generateMetadata() {
   const ctx = await getOrgContext()
@@ -15,7 +20,11 @@ export async function generateMetadata() {
   return { title: `${label} — NexCoop` }
 }
 
-export default async function CooperadosPage() {
+export default async function CooperadosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>
+}) {
   const supabaseAuth = await createClient()
   const { data: { user } } = await supabaseAuth.auth.getUser()
   if (!user) redirect('/login')
@@ -50,5 +59,9 @@ export default async function CooperadosPage() {
     console.error('Erro ao buscar cooperados:', error.message)
   }
 
-  return <CooperadosLista cooperados={cooperados ?? []} tipoOrg={tipoOrg} />
+  // filtro inicial vindo da URL (ex.: clique no KPI "Inadimplentes" do dashboard)
+  const params = await searchParams
+  const statusInicial = STATUS_VALIDOS.find(s => s === params.status)
+
+  return <CooperadosLista cooperados={cooperados ?? []} tipoOrg={tipoOrg} statusInicial={statusInicial} />
 }
