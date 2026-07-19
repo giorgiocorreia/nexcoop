@@ -139,7 +139,7 @@ export default function ConferenciaClient({ orgId, usuarioId, caixas: inicial }:
                     ) : (
                       <>
                         {/* Comparativo de valores */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 20 }}>
                           {[
                             { label: 'Dinheiro', sistema: c.total_especie, fisico: c.valor_fisico_especie },
                             { label: 'Cartão débito', sistema: 0, fisico: c.valor_fisico_debito },

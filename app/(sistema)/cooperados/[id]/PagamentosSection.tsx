@@ -431,7 +431,7 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
                   </div>
 
                   {parcelas.map((p, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, marginBottom: 10, alignItems: 'flex-end' }}>
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr)) auto', gap: 10, marginBottom: 10, alignItems: 'flex-end' }}>
                       <div>
                         <label style={labelStyle}>Valor (R$)</label>
                         <input

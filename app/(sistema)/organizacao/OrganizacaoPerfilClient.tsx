@@ -79,7 +79,7 @@ export default function OrganizacaoPerfilClient({ org }: { org: Organizacao }) {
               </div>
             </Field>
           </FormGrid>
-          <FormGrid cols="1fr 1fr 1fr">
+          <FormGrid cols="repeat(auto-fit, minmax(160px, 1fr))">
             <Field label="E-mail">
               <InpText type="email" value={form.email} onChange={set('email')} placeholder="contato@org.com.br" />
             </Field>

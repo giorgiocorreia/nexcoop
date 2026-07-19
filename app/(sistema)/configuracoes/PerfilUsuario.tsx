@@ -186,7 +186,7 @@ export default function PerfilUsuario({ usuario: u }: Props) {
       <div style={{ borderTop: '1px solid #f0eeea', marginBottom: '1.25rem' }} />
 
       {/* Dados somente leitura */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
         <ReadField label="Vínculo">
           {u.vinculo ? (VINCULO_LABEL[u.vinculo] ?? u.vinculo) : '—'}
         </ReadField>

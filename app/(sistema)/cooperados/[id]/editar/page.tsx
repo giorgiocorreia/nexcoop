@@ -471,7 +471,7 @@ export default function EditarCooperadoPage() {
 
           {abaAtiva === 'contato' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
                 <Field label="E-mail">
                   <Input type="email" value={form.email} onChange={set('email')} placeholder="nome@email.com" />
                 </Field>

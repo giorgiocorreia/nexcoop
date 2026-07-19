@@ -149,7 +149,7 @@ export default function GerarMensalidadesPage() {
       <div style={{ maxWidth: 820 }}>
 
         <ContentCard title="Parâmetros">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
             <Field label="Mês de referência">
               <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} />
             </Field>

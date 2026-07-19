@@ -554,7 +554,7 @@ function AbaOrganizacao({ org, isSuperAdmin }: { org: Organizacao; isSuperAdmin:
             <InpText value={form.cnpj} onChange={set('cnpj')} placeholder="00.000.000/0001-00" disabled={!isSuperAdmin} />
           </Field>
         </FormGrid>
-        <FormGrid cols="1fr 1fr 1fr">
+        <FormGrid cols="repeat(auto-fit, minmax(160px, 1fr))">
           <Field label="E-mail">
             <InpText type="email" value={form.email} onChange={set('email')} placeholder="contato@org.com.br" />
           </Field>
@@ -893,7 +893,7 @@ function ModalSeletor({ aberto, titulo, opcoes, selecionados, onFechar, onConfir
 
         {/* Grid de opções */}
         <div style={{ overflow: 'auto', padding: '14px 20px', flex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px 12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px 12px' }}>
             {filtradas.map(op => (
               <label key={op} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '13px', color: '#333', cursor: 'pointer', padding: '4px 0' }}>
                 <input
