@@ -186,19 +186,57 @@ export async function confirmarComposicaoLote(
     if (error) throw new Error(error.message)
   }
 
-  // 3. Recalcular peso_total_kg
+  // 3. Buscar as movimentações vinculadas ao lote (produto + quantidade) para
+  // reconstruir os lote_itens — desde a migration 052 (modelo multi-produto)
+  // é essa tabela que o resultado por safra e a NF-e de saída consultam, não
+  // mais lotes.produto_id (removido) nem um SUM direto de movimentacoes_conta.
   const { data: entregas } = await supabase
     .from('movimentacoes_conta')
-    .select('quantidade_produto')
+    .select('produto_id, quantidade_produto')
     .eq('lote_id', loteId)
     .eq('organizacao_id', orgId)
 
-  const pesoTotal = (entregas ?? []).reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
+  // Agrupar por produto_id somando o peso — um lote pode reunir entregas de
+  // vários produtos (ex.: cacau seco + cacau mole).
+  const pesoPorProduto = new Map<string, number>()
+  for (const e of entregas ?? []) {
+    if (!e.produto_id) continue
+    pesoPorProduto.set(e.produto_id, (pesoPorProduto.get(e.produto_id) ?? 0) + (e.quantidade_produto ?? 0))
+  }
 
-  // 4. Atualizar peso e promover status para 'aberto'
+  // 4. Reconstruir lote_itens do zero: apaga os itens atuais e insere os
+  // novos agrupamentos. O trigger trg_sincronizar_peso_lote (migration 052)
+  // recalcula lotes.peso_total_kg automaticamente a cada DELETE/INSERT nessa
+  // tabela — por isso NÃO fazemos mais update manual de peso_total_kg aqui
+  // (evita disputa entre o valor calculado pela action e o valor do
+  // trigger). Se idsIncluidos vier vazio, o Map fica vazio e o lote
+  // permanece sem itens (peso_total_kg zerado pelo próprio trigger).
+  const { error: errDeleteItens } = await supabase
+    .from('lote_itens')
+    .delete()
+    .eq('lote_id', loteId)
+
+  if (errDeleteItens) throw new Error(errDeleteItens.message)
+
+  if (pesoPorProduto.size > 0) {
+    const novosItens = Array.from(pesoPorProduto.entries()).map(([produtoId, pesoKg]) => ({
+      lote_id:    loteId,
+      produto_id: produtoId,
+      peso_kg:    pesoKg,
+    }))
+
+    const { error: errInsertItens } = await supabase
+      .from('lote_itens')
+      .insert(novosItens as any)
+
+    if (errInsertItens) throw new Error(errInsertItens.message)
+  }
+
+  // 5. Promover status para 'aberto' (peso_total_kg já foi sincronizado pelo
+  // trigger no passo anterior).
   const { error: errUpdate } = await supabase
     .from('lotes')
-    .update({ peso_total_kg: pesoTotal, status: 'aberto' } as any)
+    .update({ status: 'aberto' } as any)
     .eq('id', loteId)
     .eq('organizacao_id', orgId)
 
@@ -375,20 +413,46 @@ export async function adicionarEntregaAoLote(loteId: string, movimentacaoId: str
 
   if (error) throw new Error(error.message)
 
-  // Recalcular peso_total_kg do lote
+  // Reconstruir lote_itens a partir de TODAS as movimentações vinculadas ao
+  // lote (mesmo padrão de confirmarComposicaoLote acima) — precisa recontar
+  // do zero porque a movimentação recém-adicionada pode ser de um produto já
+  // presente no lote (soma) ou de um produto novo (novo item).
   const { data: entregas } = await supabase
     .from('movimentacoes_conta')
-    .select('quantidade_produto')
+    .select('produto_id, quantidade_produto')
     .eq('lote_id', loteId)
     .eq('organizacao_id', orgId)
 
-  const pesoTotal = (entregas ?? []).reduce((acc, e) => acc + (e.quantidade_produto ?? 0), 0)
+  const pesoPorProduto = new Map<string, number>()
+  for (const e of entregas ?? []) {
+    if (!e.produto_id) continue
+    pesoPorProduto.set(e.produto_id, (pesoPorProduto.get(e.produto_id) ?? 0) + (e.quantidade_produto ?? 0))
+  }
 
-  await supabase
-    .from('lotes')
-    .update({ peso_total_kg: pesoTotal } as any)
-    .eq('id', loteId)
-    .eq('organizacao_id', orgId)
+  const { error: errDeleteItens } = await supabase
+    .from('lote_itens')
+    .delete()
+    .eq('lote_id', loteId)
+
+  if (errDeleteItens) throw new Error(errDeleteItens.message)
+
+  if (pesoPorProduto.size > 0) {
+    const novosItens = Array.from(pesoPorProduto.entries()).map(([produtoId, pesoKg]) => ({
+      lote_id:    loteId,
+      produto_id: produtoId,
+      peso_kg:    pesoKg,
+    }))
+
+    const { error: errInsertItens } = await supabase
+      .from('lote_itens')
+      .insert(novosItens as any)
+
+    if (errInsertItens) throw new Error(errInsertItens.message)
+  }
+
+  // peso_total_kg é recalculado automaticamente pelo trigger
+  // trg_sincronizar_peso_lote a cada alteração em lote_itens — sem update
+  // manual aqui (mesma decisão de confirmarComposicaoLote).
 
   revalidatePath(`/comercializacao/lotes/${loteId}`)
 }
