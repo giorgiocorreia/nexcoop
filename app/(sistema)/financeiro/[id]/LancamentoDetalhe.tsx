@@ -148,7 +148,7 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
         )}
 
         {/* ── Cabeçalho do card ──────────────────────────────────────────────── */}
-        <ContentCard>
+        <ContentCard allowOverflow>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -196,7 +196,7 @@ export default function LancamentoDetalhe({ lancamento: initial, cooperado }: Pr
 
                   {showStatusMenu && (
                     <div style={{
-                      position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                      position: 'absolute', top: 'calc(100% + 6px)', left: 0,
                       background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: 10,
                       boxShadow: '0 4px 16px rgba(0,0,0,0.10)', zIndex: 50, overflow: 'hidden',
                       minWidth: 160,

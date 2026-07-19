@@ -7,13 +7,15 @@ interface ContentCardProps {
   children: React.ReactNode
   padding?: string
   noPadding?: boolean
+  /** permite dropdowns/popovers internos vazarem o card (desliga o overflow hidden) */
+  allowOverflow?: boolean
 }
 
-export function ContentCard({ title, subtitle, action, children, padding = '20px 22px', noPadding }: ContentCardProps) {
+export function ContentCard({ title, subtitle, action, children, padding = '20px 22px', noPadding, allowOverflow }: ContentCardProps) {
   return (
     <div style={{
       background: '#fff', borderRadius: 14, border: `1px solid ${COM_C.borda}`,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: allowOverflow ? 'visible' : 'hidden',
     }}>
       {(title || action) && (
         <div style={{
