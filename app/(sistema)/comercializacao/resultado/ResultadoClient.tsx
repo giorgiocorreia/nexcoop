@@ -306,7 +306,62 @@ export default function ResultadoClient({ safras, resultados, saldos, lotesAndam
             Nenhum resultado registrado para esta safra.
           </div>
         )}
+
+        {/* Glossário — explica os indicadores exibidos acima, sempre visível
+            independente de ter resultado ou não para a safra selecionada */}
+        <div style={{ marginTop: 24 }}>
+          <ContentCard title="Entendendo os números">
+            <div className="com-glossario-grid" style={{
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px 32px',
+            }}>
+              {GLOSSARIO.map(item => (
+                <div key={item.termo} style={{ fontSize: 12.5, lineHeight: 1.5, color: COM_C.txtSub }}>
+                  <strong style={{ color: COM_C.txt }}>{item.termo}</strong> — {item.descricao}
+                </div>
+              ))}
+            </div>
+            <div style={{
+              marginTop: 16, paddingTop: 12, borderTop: `1px solid ${COM_C.borda}`,
+              fontSize: 11, color: COM_C.txtSub, lineHeight: 1.5,
+            }}>
+              Vendas com NF-e e transferências internas para a Loja contam igualmente como saída; transferência interna
+              não recolhe FUNRURAL, mas paga a taxa de administração.
+            </div>
+          </ContentCard>
+        </div>
       </div>
     </PageLayout>
   )
 }
+
+// Glossário dos indicadores da tela — conteúdo fixo, sem depender de dados
+const GLOSSARIO: { termo: string; descricao: string }[] = [
+  {
+    termo: 'Lucro realizado',
+    descricao: 'resultado das transações já consumadas: kg que foram vendidos e já convertidos (preço fixado) pelo produtor. Calculado sobre valores reais de venda e de conversão. Nunca muda retroativamente — é a base para apuração e divisão de sobras no fim do exercício.',
+  },
+  {
+    termo: 'Ajuste a mercado',
+    descricao: 'valor da posição em aberto na cotação atual: estoque físico (kg entregues e ainda não vendidos, um ativo) menos o passivo à ordem (kg entregues que os produtores ainda não converteram, uma dívida da cooperativa em produto). Flutua a cada mudança de cotação — não entra na divisão de sobras.',
+  },
+  {
+    termo: 'Lucro corrente',
+    descricao: 'realizado + ajuste a mercado. Responde: "se hoje a cooperativa vendesse todo o estoque e pagasse todas as conversões pendentes à cotação atual, quanto a safra teria dado?". É o número exibido no card do dashboard.',
+  },
+  {
+    termo: 'Exposição',
+    descricao: 'kg já vendidos cujo custo ainda não foi fixado (vendido além do convertido). É o tamanho do risco de preço em aberto: se a cotação subir antes dessas conversões, o lucro diminui; se cair, aumenta.',
+  },
+  {
+    termo: 'Estoque',
+    descricao: 'kg entregues pelos produtores e ainda não vendidos, avaliados à cotação vigente (preço cooperado).',
+  },
+  {
+    termo: 'À ordem',
+    descricao: 'kg entregues aguardando o produtor decidir o momento de fixar o preço (converter). Somados, formam o passivo da cooperativa em produto.',
+  },
+  {
+    termo: 'Preço médio de venda / Custo médio convertido',
+    descricao: 'médias reais: receita bruta ÷ kg vendidos e valor convertido ÷ kg convertidos.',
+  },
+]
