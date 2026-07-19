@@ -115,8 +115,18 @@ export const SUBDOMINIOS_RESERVADOS = new Set(['www', 'app', 'api'])
 // Extrai o slug do host (ex.: "coopaibi.nexcoop.com.br" → "coopaibi").
 // Retorna null quando o host não é um subdomínio de site (domínio raiz,
 // reservado ou domínio custom ainda não suportado nesta fase).
+// Também aceita hosts de validação na Vercel no padrão "<slug>-site.vercel.app"
+// (ex.: "coopaibi-site.vercel.app" → "coopaibi") — usado enquanto o
+// subdomínio definitivo não está disponível.
 export function extrairSlugDoHost(hostname: string, dominioBase: string): string | null {
   const host = hostname.toLowerCase()
+
+  const matchVercel = host.match(/^([a-z0-9][a-z0-9-]*)-site\.vercel\.app$/)
+  if (matchVercel) {
+    const slug = matchVercel[1]
+    return SUBDOMINIOS_RESERVADOS.has(slug) ? null : slug
+  }
+
   const base = dominioBase.toLowerCase()
   if (host === base || host === `www.${base}`) return null
   if (!host.endsWith(`.${base}`)) return null
