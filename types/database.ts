@@ -964,9 +964,11 @@ export interface MovimentacaoConta {
   xml_nfe_entrada:  string | null
   // migration 052
   cotacao_id:       string | null
-  // migration 082 — estampado por trigger só em tipo='conversao' (ver
-  // divergência #1 na migration 20260719000001_082_...): resolve a safra
-  // 'em_andamento' da org no momento do INSERT, congelada na própria linha
+  // migration 082 — estampado por trigger (ver divergência #1 na migration
+  // 20260719000001_082_...); migration 083 generalizou a estampa de
+  // tipo='conversao' para também 'entrega' e 'ajuste_produto'
+  // (trg_estampar_safra_movimentacao): resolve a safra 'em_andamento' da
+  // org no momento do INSERT, congelada na própria linha
   safra_id:         string | null
 }
 

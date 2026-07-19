@@ -76,7 +76,7 @@ Marianna/Humani é recepção clínica).
 ---
 
 ## Próxima migration
-A próxima migration disponível é a **083**. Este número fica desatualizado com
+A próxima migration disponível é a **084**. Este número fica desatualizado com
 frequência (já causou colisão de numeração várias vezes) — SEMPRE confirmar o
 número real em `docs/SCHEMA.md` e em `ls supabase/migrations/` antes de criar
 qualquer migration nova, nunca confiar só neste arquivo.
