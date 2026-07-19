@@ -157,6 +157,27 @@ export default async function SistemaLayout({
           </div>
         )}
 
+        {/* Banner de troca de senha obrigatória (user_metadata.trocar_senha,
+            setado pelo admin ao redefinir a senha; limpo no Perfil após a troca) */}
+        {user.user_metadata?.trocar_senha && (
+          <div style={{
+            background: '#FEF2F2', borderBottom: '1px solid #FCA5A5',
+            padding: '10px 24px', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: 12, position: 'sticky', top: 0, zIndex: 50,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#991B1B' }}>
+              🔒 Sua senha foi redefinida pelo administrador. Por segurança, altere-a agora.
+            </span>
+            <a href="/perfil" style={{
+              fontSize: 12, fontWeight: 600, color: '#991B1B',
+              border: '1px solid #DC2626', borderRadius: 6,
+              padding: '4px 14px', textDecoration: 'none', whiteSpace: 'nowrap',
+            }}>
+              Alterar senha
+            </a>
+          </div>
+        )}
+
         {/* Banner de impersonation */}
         {impersonandoOrg && (
           <div style={{

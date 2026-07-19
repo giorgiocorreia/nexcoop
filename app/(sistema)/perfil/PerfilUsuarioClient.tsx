@@ -196,6 +196,9 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
       return
     }
 
+    // Limpa a flag de troca obrigatória (banner do layout) após a troca
+    await supabase.auth.updateUser({ data: { trocar_senha: false } })
+
     setSucessoSenha(true)
     setNovaSenha('')
     setConfirmarSenha('')
