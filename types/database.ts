@@ -624,6 +624,35 @@ export interface LojaCompraParcela {
   criado_em:       string
 }
 
+export interface SiteConfig {
+  id:             string
+  organizacao_id: string
+  slug:           string
+  dominio_custom: string | null
+  publicado:      boolean
+  indexavel:      boolean
+  tema:           Record<string, unknown>
+  conteudo:       Record<string, unknown>
+  secoes_ativas:  string[]
+  criado_em:      string
+  atualizado_em:  string
+}
+
+export interface SiteConteudo {
+  id:             string
+  organizacao_id: string
+  tipo:           'evento' | 'video' | 'promocao' | 'noticia' | 'pagina'
+  titulo:         string
+  descricao:      string | null
+  imagem_url:     string | null
+  url_externa:    string | null
+  data_evento:    string | null
+  ordem:          number
+  ativo:          boolean
+  criado_em:      string
+  atualizado_em:  string
+}
+
 export interface LojaEstoqueMovimento {
   id:            string
   org_id:        string
@@ -1498,6 +1527,9 @@ export type Database = {
         Update: Partial<Omit<IndiceNexAlerta, 'id' | 'criado_em'>> & Record<string, unknown>
         Relationships: never[]
       }
+      // ── Site institucional (085) ─────────────────────────────────────────
+      site_config:                 TableDef<SiteConfig>
+      site_conteudos:              TableDef<SiteConteudo>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }
