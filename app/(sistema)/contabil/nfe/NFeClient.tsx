@@ -66,7 +66,7 @@ export default function NFeClient({ orgId, userId }: Props) {
     >
       {sucesso && <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#166534', fontSize: 13 }}>{sucesso}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="com-kpi-grid-3" style={{ gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total importadas', valor: nfes.length, cor: '#635BFF' },
           { label: 'Pendentes', valor: nfes.filter(n => n.status === 'importada').length, cor: '#f59e0b' },

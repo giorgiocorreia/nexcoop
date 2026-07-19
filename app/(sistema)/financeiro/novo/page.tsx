@@ -180,7 +180,7 @@ export default function NovoLancamentoPage() {
 
             {/* ── Tipo ─────────────────────────────────────────────────────────── */}
             <ContentCard title="Tipo de lançamento">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8 }}>
                 {(Object.entries(TIPO_CONFIG) as [TipoLancamento, typeof TIPO_CONFIG[TipoLancamento]][]).map(([t, cfg]) => (
                   <button
                     key={t}

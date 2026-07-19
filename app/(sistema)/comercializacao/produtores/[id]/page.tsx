@@ -754,7 +754,7 @@ export default function PerfilProdutorPage() {
         {!conta ? (
           <div style={{ fontSize: '13px', color: '#9a9a9a' }}>Sem conta aberta para este produtor.</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div className="com-kpi-grid-3" style={{ gap: '12px' }}>
             {/* Sub-card Produto */}
             <div style={{ background: '#f8f7f4', borderRadius: '10px', padding: '1rem' }}>
               {mainSaldo ? (

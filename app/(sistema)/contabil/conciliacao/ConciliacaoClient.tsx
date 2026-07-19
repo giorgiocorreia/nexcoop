@@ -149,7 +149,7 @@ export default function ConciliacaoClient({ orgId, userId }: { orgId: string; us
       {/* Itens do extrato selecionado */}
       {extratoSel && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 20 }}>
+          <div className="com-kpi-grid-3" style={{ gap: 12, marginBottom: 20 }}>
             {[
               { label: 'Pendentes',    valor: pendentes,   cor: '#f59e0b' },
               { label: 'Conciliados',  valor: conciliados, cor: COM_C.verde },

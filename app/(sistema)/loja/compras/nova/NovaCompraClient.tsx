@@ -525,7 +525,7 @@ export default function NovaCompraClient({ produtos, fornecedores, orgId, usuari
           {itens.length > 0 && (
             <div style={cardStyle}>
               <h2 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700' }}>Resumo da compra</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '16px' }}>
+              <div className="com-kpi-grid-4" style={{ gap: '14px', marginBottom: '16px' }}>
                 {[
                   { label: 'Valor mercadorias', value: fmtReal(totalMercadorias) },
                   { label: 'Frete',             value: fmtReal(freteNum) },

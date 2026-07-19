@@ -310,7 +310,7 @@ export default function SobrasClient({
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 12 }}>
+              <div className="com-kpi-grid-3" style={{ gap: 12, marginBottom: 12 }}>
                 {[
                   ['Fundo de Reserva', fmtPerc(dados.percFundoReserva)],
                   ['REFAC', fmtPerc(dados.percRefac)],

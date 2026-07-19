@@ -193,7 +193,7 @@ export default function CotasSection({ cooperadoId, orgId, onCotaAtualizada }: P
 
       {/* Resumo capital */}
       {(temPlena || temColab) && editando === null && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 18 }}>
+        <div className="com-kpi-grid-3" style={{ gap: 10, marginBottom: 18 }}>
           <div style={summaryCard}>
             <div style={summaryLabel}>Capital social</div>
             <div style={{ ...summaryValue, color: '#166534' }}>{moeda(capitalTotal)}</div>

@@ -137,7 +137,7 @@ export default function DistribuicaoPage() {
               </ContentCard>
 
               {linhas.length > 0 && (
-                <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', margin: '16px 0' }}>
+                <div className="com-kpi-grid-3" style={{ margin: '16px 0' }}>
                   <KpiCard label="Produtores" value={String(linhas.length)} icon="ti-users" cor={COM_C.marrom} corLt={COM_C.marromLt} />
                   <KpiCard label="Pago" value={fmtReal(totalPago)} icon="ti-circle-check" cor={COM_C.verde} corLt={COM_C.verdeLt} />
                   <KpiCard label="Pendente" value={fmtReal(totalPendente)} icon="ti-clock" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />

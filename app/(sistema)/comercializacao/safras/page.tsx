@@ -128,7 +128,7 @@ export default function SafrasPage() {
         </div>
       )}
 
-      <div className="com-kpi-grid-4" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+      <div className="com-kpi-grid-3">
         <KpiCard label="Total de safras" value={String(totais.total)} icon="ti-calendar-stats" cor={COM_C.marrom} corLt={COM_C.marromLt} />
         <KpiCard label="Em andamento" value={String(totais.emAndamento)} icon="ti-plant" cor={COM_C.verde} corLt={COM_C.verdeLt} />
         <KpiCard label="Em planejamento" value={String(totais.planejamento)} icon="ti-clock" cor={COM_C.azul} corLt={COM_C.azulLt} />

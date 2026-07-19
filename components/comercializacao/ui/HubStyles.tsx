@@ -44,6 +44,7 @@ export function HubStyles() {
       .com-venda-row:hover { background: #F7FAF6 !important; }
       .com-list-row:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.06); border-color: #C6D4C4 !important; }
       .com-kpi-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
+      .com-kpi-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
       .com-table th { font-size: 10px; font-weight: 700; color: #515E53; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid #BCC9BA; background: #F7FAF6; }
       .com-table td { padding: 12px 16px; border-bottom: 1px solid #EDF2EC; font-size: 13px; color: #18211A; }
       .com-table tr:hover td { background: #F7FAF6; }
@@ -69,7 +70,11 @@ export function HubStyles() {
         .com-kpi-card { padding: 12px 14px; min-height: 64px; gap: 10px; }
         .com-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-kpi-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .com-kpi-grid-3 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-link-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 1024px) {
+        .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
       }
     `}</style>
   )

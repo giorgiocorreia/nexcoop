@@ -126,7 +126,7 @@ export default function NovaAssembleiaPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <ContentCard title="Tipo de reunião">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
                 {TIPOS.map(t => (
                   <button
                     key={t.valor} type="button" onClick={() => setForm(prev => ({ ...prev, tipo: t.valor }))}

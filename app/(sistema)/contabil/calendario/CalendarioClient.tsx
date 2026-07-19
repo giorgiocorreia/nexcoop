@@ -114,7 +114,7 @@ export default function CalendarioClient({ orgId }: { orgId: string }) {
       {erro    && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: 13 }}>{erro}</div>}
 
       {/* Resumo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="com-kpi-grid-3" style={{ gap: 14, marginBottom: 24 }}>
         {[
           { label: 'Atrasadas', valor: atrasadas.length, cor: '#dc2626', bg: '#fef2f2' },
           { label: 'A vencer',  valor: pendentes.length, cor: '#f59e0b', bg: '#fffbeb' },

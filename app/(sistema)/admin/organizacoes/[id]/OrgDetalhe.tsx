@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Organizacao, Usuario } from '@/types/database'
 import { traduzirErro } from '@/lib/utils/erros'
+import { HubStyles } from '@/components/nexcoop/ui'
 
 const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
@@ -202,6 +203,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <HubStyles />
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1.25rem' }}>
         <button onClick={() => router.push('/admin')}
@@ -269,7 +271,7 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
       )}
 
       {/* Cards de estatísticas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
+      <div className="com-kpi-grid-3" style={{ gap: '12px', marginBottom: '1.5rem' }}>
         {[
           { label: 'Filiados', valor: totalCooperados, cor: '#4840CC', bg: '#EEF0FF' },
           { label: 'Mensalidades', valor: totalMensalidades, cor: '#185FA5', bg: '#E6F1FB' },

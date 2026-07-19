@@ -105,7 +105,7 @@ export default function ProdutosLista({ produtos, fornecedores, produtosComVenci
       </div>
 
       {/* Cards de resumo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.25rem' }}>
+      <div className="com-kpi-grid-4" style={{ gap: '12px', marginBottom: '1.25rem' }}>
         <CardStat label="Total de produtos" valor={produtos.length} />
         <CardStat label="Ativos"             valor={ativos}       cor={VERDE} />
         <CardStat label="Estoque baixo"      valor={estoqueBaixo} cor={estoqueBaixo > 0 ? '#dc2626' : '#888'} bg={estoqueBaixo > 0 ? '#fef2f2' : undefined} />

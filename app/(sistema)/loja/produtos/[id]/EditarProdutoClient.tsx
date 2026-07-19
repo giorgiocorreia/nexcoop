@@ -215,7 +215,7 @@ export default function EditarProdutoClient({ produto, posicaoEstoque, fornecedo
           <div style={{ background: '#fff', border: `1px solid ${COM_C.borda}`, borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
             <h2 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '600', color: COM_C.txt }}>Posição de estoque</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px', marginBottom: '20px' }}>
               <div style={{ textAlign: 'center', padding: '14px', background: eCritico ? COM_C.vermelhoLt : COM_C.bg, borderRadius: '10px' }}>
                 <div style={{ fontSize: '28px', fontWeight: '700', color: eCritico ? COM_C.vermelho : COM_C.txt }}>
                   {estoque_atual.toLocaleString('pt-BR')}

@@ -142,7 +142,10 @@ export default function RetiradasPage() {
       )}
 
       {estoque.length > 0 && (
-        <div className="com-kpi-grid" style={{ gridTemplateColumns: `repeat(${Math.min(estoque.length, 4)}, 1fr)`, marginBottom: 24 }}>
+        <div
+          className="com-kpi-grid"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: 24 }}
+        >
           {estoque.map(e => (
             <KpiCard
               key={e.produto_id}

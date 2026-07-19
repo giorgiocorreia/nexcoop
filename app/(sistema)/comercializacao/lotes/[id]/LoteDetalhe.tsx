@@ -244,8 +244,8 @@ export default function LoteDetalhe({ lote, entregasDoLote, entregasDisponiveis,
     >
       {/* KPIs */}
       <div
-        className={kpiItems.length > 3 ? 'com-kpi-grid-4' : undefined}
-        style={kpiItems.length <= 3 ? { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 } : { marginBottom: 24 }}
+        className={kpiItems.length > 3 ? 'com-kpi-grid-4' : 'com-kpi-grid-3'}
+        style={{ marginBottom: 24 }}
       >
         {kpiItems.map(k => (
           <KpiCard

@@ -146,7 +146,7 @@ export default function SaidasCaixaClient() {
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* KPIs — sempre refletem o resultado já filtrado */}
-        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div className="com-kpi-grid-4">
           {kpis.map((k) => (
             <KpiCard key={k.label} label={k.label} value={k.value} sub={k.sub} icon={k.icon} cor={k.cor} corLt={k.corLt} />
           ))}

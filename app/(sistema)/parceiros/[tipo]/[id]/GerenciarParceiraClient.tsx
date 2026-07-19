@@ -154,7 +154,7 @@ export default function GerenciarParceiraClient({ parceira, orgId }: Props) {
       {/* Dados da empresa */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e3dc', padding: 24, marginBottom: 24 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: '0 0 16px' }}>Dados da empresa</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <div className="com-kpi-grid-3" style={{ gap: 14 }}>
           {[
             ['Razão Social',    parceira.razao_social],
             ['CNPJ',           parceira.cnpj || '—'],

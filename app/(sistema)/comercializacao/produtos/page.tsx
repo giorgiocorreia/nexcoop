@@ -81,7 +81,7 @@ export default function ProdutosPage() {
       breadcrumb={[{ label: 'Produtos' }]}
       icone="ti-leaf"
     >
-      <div className="com-kpi-grid-4" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+      <div className="com-kpi-grid-3">
         <KpiCard label="Total cadastrados" value={String(totais.total)} icon="ti-leaf" cor={COM_C.marrom} corLt={COM_C.marromLt} />
         <KpiCard label="Ativos" value={String(totais.ativos)} icon="ti-circle-check" cor={COM_C.verde} corLt={COM_C.verdeLt} />
         <KpiCard label="Inativos" value={String(totais.inativos)} icon="ti-circle-x" cor={COM_C.txtSub} corLt="#F5F5F4" />

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Organizacao, PlanoOrganizacao, TipoOrganizacao } from '@/types/database'
 import { entrarComoOrg } from '@/app/actions/impersonation'
+import { HubStyles } from '@/components/nexcoop/ui'
 
 const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
@@ -73,6 +74,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
 
   return (
     <div style={{ maxWidth: '1200px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <HubStyles />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -99,7 +101,7 @@ export default function AdminDashboard({ organizacoes, totalUsuarios, totalCoope
       </div>
 
       {/* Cards de resumo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
+      <div className="com-kpi-grid-4" style={{ gap: '12px', marginBottom: '1.5rem' }}>
         {[
           { label: 'Orgs ativas', valor: totalAtivas, cor: '#4840CC', bg: '#EEF0FF', border: '#635BFF33' },
           { label: 'Total usuários', valor: totalUsuarios, cor: '#185FA5', bg: '#E6F1FB', border: '#185FA533' },

@@ -105,7 +105,7 @@ export default function DiarioCaixaPage() {
       }
     >
       {sessoes.length > 0 && (
-        <div className="com-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
+        <div className="com-kpi-grid-3" style={{ marginBottom: 24 }}>
           <KpiCard label="Sessões no período" value={String(sessoes.length)} icon="ti-calendar" cor={COM_C.marrom} corLt={COM_C.marromLt} />
           <KpiCard label="Saídas espécie" value={fmtReal(totalSaidas)} icon="ti-cash" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
           <KpiCard label="Total Pix" value={fmtReal(totalPix)} icon="ti-brand-cashapp" cor={COM_C.verde} corLt={COM_C.verdeLt} />
