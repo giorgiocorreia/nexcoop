@@ -115,7 +115,8 @@ export default function DashboardClient({
           <KpiCard label="Filiados" value={String(totalCooperados)} sub={`${cooperadosAtivos} ativos`}
             icon="ti-users" cor={COM_C.marca} corLt={COM_C.marcaLt} />
           <KpiCard label="A receber" value={BRL(totalReceber)} sub="Lançamentos pendentes"
-            icon="ti-arrow-down-left" cor={COM_C.azul} corLt={COM_C.azulLt} />
+            icon="ti-arrow-down-left" cor={COM_C.azul} corLt={COM_C.azulLt}
+            onClick={() => router.push('/financeiro?tipo=receita&status=pendente')} />
           <KpiCard label="A pagar" value={BRL(totalPagar)} sub="Lançamentos pendentes"
             icon="ti-arrow-up-right" cor={COM_C.vermelho} corLt={COM_C.vermelhoLt} />
           <KpiCard label="Docs vencendo" value={String(documentosVencendo.length)} sub="Próximos 30 dias"

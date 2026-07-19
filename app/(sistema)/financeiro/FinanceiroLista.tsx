@@ -43,13 +43,15 @@ interface Props {
   lancamentos: Lancamento[]
   nomeCooperado: Record<string, string>
   isParceiro?: boolean
+  tipoInicial?: TipoLancamento
+  statusInicial?: StatusLancamento
 }
 
-export default function FinanceiroLista({ lancamentos, nomeCooperado, isParceiro }: Props) {
+export default function FinanceiroLista({ lancamentos, nomeCooperado, isParceiro, tipoInicial, statusInicial }: Props) {
   const router = useRouter()
   const [busca, setBusca] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState<TipoLancamento | 'todos'>('todos')
-  const [filtroStatus, setFiltroStatus] = useState<StatusLancamento | 'todos'>('todos')
+  const [filtroTipo, setFiltroTipo] = useState<TipoLancamento | 'todos'>(tipoInicial ?? 'todos')
+  const [filtroStatus, setFiltroStatus] = useState<StatusLancamento | 'todos'>(statusInicial ?? 'todos')
   const [filtroMes, setFiltroMes] = useState<string>('todos')
   const [hovered, setHovered] = useState<string | null>(null)
 

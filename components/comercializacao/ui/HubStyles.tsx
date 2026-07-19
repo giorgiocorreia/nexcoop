@@ -14,9 +14,10 @@ export function HubStyles() {
         display: flex; align-items: center; gap: 14px;
         border-radius: 12px; border: 1px solid #BCC9BA;
         padding: 14px 16px; min-height: 72px;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
       }
       .com-kpi-card:hover { border-color: #C6D4C4; box-shadow: 0 3px 12px rgba(24,33,26,0.07); }
+      .com-kpi-card[role="button"]:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(24,33,26,0.12); }
       .com-kpi-icon {
         width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center;
