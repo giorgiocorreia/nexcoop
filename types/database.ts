@@ -68,6 +68,8 @@ export interface Organizacao {
   loja_nfce_serie:        string | null
   loja_nfe_saida_serie:   string | null
   ultimo_numero_ficha:    number
+  // migration 082
+  aliquota_funrural: number
   criado_em: string
   atualizado_em: string
 }
@@ -960,6 +962,12 @@ export interface MovimentacaoConta {
   lote_id:          string | null
   chave_nfe_entrada: string | null
   xml_nfe_entrada:  string | null
+  // migration 052
+  cotacao_id:       string | null
+  // migration 082 — estampado por trigger só em tipo='conversao' (ver
+  // divergência #1 na migration 20260719000001_082_...): resolve a safra
+  // 'em_andamento' da org no momento do INSERT, congelada na própria linha
+  safra_id:         string | null
 }
 
 export interface MovimentacaoEstoqueFisico {
@@ -1446,6 +1454,7 @@ export type Database = {
       lotes:                       TableDef<Lote>
       lote_itens:                  TableDef<LoteItem>
       saldos_produtor_snapshot:    TableDef<any>
+      // migration 082: +kg_convertido, +custo_convertido_rs, +lucro_realizado_rs (GENERATED)
       resultado_safra_snapshot:    TableDef<any>
       vendas_externas:             TableDef<VendaExterna>
       vendas_quebras_peso:         TableDef<VendaQuebraPeso>

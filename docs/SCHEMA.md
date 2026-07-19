@@ -56,8 +56,9 @@
 | 079 | loja_compra_parcelas (NOVA) — parcelas de compra a prazo na Loja Agropecuária |
 | 080 | loja_compra_parcelas: +lancamento_id — vínculo com lancamentos (Financeiro) por parcela |
 | 081 | fix bug de produção causado pelas 076/077: GRANT EXECUTE em get_org_id() e get_user_role() de volta para `authenticated` — o REVOKE da 077 quebrou toda RLS policy que chama essas funções (elas rodam com o privilégio do role `authenticated` quando chamadas dentro de policy, não do dono da função), causando `42501 permission denied for function get_org_id` em qualquer query de usuário comum (não service_role) em tabela com policy dependente. `anon`/`PUBLIC` continuam sem EXECUTE (mantém o ganho de segurança da 077 contra RPC anônimo); `handle_new_user()` não recebe grant de volta (trigger, não precisa). Security Advisor volta a acusar warning nas 2 funções para `authenticated` — aceito, é o uso legítimo de RLS; correção definitiva é reescrever as policies com subquery inline (regra 1 do CLAUDE.md), migration futura |
+| 082 | Resultado da Comercialização — realizado + marcação a mercado (docs/PLANO_RESULTADO_COMERCIALIZACAO.md). `resultado_safra_snapshot`: +kg_convertido, +custo_convertido_rs, +lucro_realizado_rs (GENERATED, fórmula do REALIZADO — LEAST(kg_vendido,kg_convertido) × diferença de médias líquidas, protegida contra divisão por zero). `organizacoes`: +aliquota_funrural numeric(6,4) default 0.0163 (substitui o hardcoded no trigger). `movimentacoes_conta`: +safra_id (NOVO — coluna que não existia; ver divergência abaixo) + trigger `trg_estampar_safra_conversao` (BEFORE INSERT, só tipo='conversao') que estampa a safra 'em_andamento' da org. Trigger novo `trg_atualizar_custo_convertido` (AFTER INSERT/UPDATE/DELETE em movimentacoes_conta, tipo='conversao') recalcula do zero kg_convertido/custo_convertido_rs por (org,safra,produto), convive com `trg_atualizar_saldos_produtor_snapshot`. `fn_atualizar_resultado_safra_snapshot` reescrita: restaura rateio multi-produto por `lote_itens` (fator = peso do item ÷ peso do lote, eliminando o `LIMIT 1` que a 055/068 tinham introduzido) e lê FUNRURAL de `organizacoes.aliquota_funrural` em vez de 0.0163 fixo; mantém os filtros NULL-safe de status_nfe da 068. View nova `vw_resultado_comercializacao` (security_invoker=on) — realizado (snapshot) + marcação a mercado calculada na leitura via cotação ativa (LATERAL, preco_cooperado). **Divergência do plano**: `movimentacoes_conta` não tem (nunca teve) vínculo de lote/safra em linhas tipo='conversao' — `registrarConversaoESaque` grava só (conta_id, produto_id, quantidade, valor), sem lote_id; por isso a coluna `safra_id` é nova nesta migration, estampada por heurística (safra 'em_andamento' da org no momento do INSERT) em vez de derivada de um lote como o trigger de vendas faz. Ver comentário completo no topo do arquivo da migration. `custo_aquisicao_rs`/`resultado_liquido_rs` (052): **deprecated** — mantidos só por transição com a tela antiga, não usar em código novo (usar `lucro_realizado_rs`/`custo_convertido_rs`), remoção prevista em migration futura após validação com a COOPAIBI |
 
-**Próxima migration:** 082
+**Próxima migration:** 083
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -82,7 +83,7 @@
 ## Tabelas principais
 
 ### Core
-- `organizacoes` — orgs multi-tenant (modulos_ativos text[])
+- `organizacoes` — orgs multi-tenant (modulos_ativos text[]); +aliquota_funrural numeric(6,4) default 0.0163 (migration 082, usado por fn_atualizar_resultado_safra_snapshot em vez do valor hardcoded)
 - `usuarios` — login, role, funcoes text[], organizacao_id
 - `cooperados` — vínculo societário (CAF, DAP, quota_parte, status, numero_matricula AANNNN)
 - `produtores` — identidade cadastral (CPF, nome, cooperado_id, usuario_id, tipo)
@@ -99,6 +100,7 @@
   - Cotação ativa: WHERE vigente_a_partir_de <= now() ORDER BY vigente_a_partir_de DESC LIMIT 1
   - UNIQUE antigo (org, produto, data) removido — múltiplas cotações no mesmo dia são permitidas
 - `movimentacoes_conta` — +cotacao_id uuid FK → cotacoes (nullable; obrigatório apenas em tipo='conversao', validado na action)
+- `movimentacoes_conta` — +safra_id uuid FK → safras (nullable; migration 082) — NÃO é gravado pela aplicação (nem entrega nem conversao setam isso hoje). Só é estampado automaticamente por trigger `trg_estampar_safra_conversao` (BEFORE INSERT) quando tipo='conversao', usando a safra com status='em_andamento' da org no momento do INSERT. Não confundir com o vínculo lote→safra usado pra 'entrega' (esse continua indireto via lote_id, setado só depois via confirmarComposicaoLote)
 - `contas_produtor` — +CHECK saldo_financeiro >= 0 (migration 065, NOT VALID + validada em produção). `saldos_produto.quantidade` PODE ficar negativo (venda antecipada / débito de produto); saldo_financeiro NUNCA. Cascata em `registrarSaquePorValor` (lib/comercializacao/caixa.actions.ts): cobre o que der do saldo em R$, converte o restante em produto
 - `lotes` — codigo, peso_total_kg (mantido por trigger), status (rascunho|aberto|em_venda|entregue), produto_descricao (legacy, só para NF-es emitidas antes de 052), data_fechamento, safra_id
   - SEM produto_id — removido na migration 052
@@ -110,13 +112,16 @@
   - (org, produtor, produto, safra) UNIQUE
   - kg_entregue, kg_convertido, saldo_kg (GENERATED), valor_convertido_rs
   - Mantida por trigger trg_atualizar_saldos_produtor_snapshot em movimentacoes_conta
-- `resultado_safra_snapshot` (NOVA — migration 052)
+- `resultado_safra_snapshot` (NOVA — migration 052; ganhou colunas na 082)
   - (org, safra, produto) UNIQUE
-  - receita_bruta_rs, custo_aquisicao_rs, taxa_cooperativa_rs, funrural_rs
-  - resultado_liquido_rs (GENERATED), preco_medio_kg (GENERATED), total_kg_vendido
-  - Mantida por trigger trg_atualizar_resultado_safra_snapshot em vendas_externas
+  - receita_bruta_rs, custo_aquisicao_rs (DEPRECATED — 082), taxa_cooperativa_rs, funrural_rs
+  - resultado_liquido_rs (GENERATED, DEPRECATED — 082), preco_medio_kg (GENERATED), total_kg_vendido
+  - kg_convertido, custo_convertido_rs (082) — mantidos por trg_atualizar_custo_convertido em movimentacoes_conta (tipo='conversao'), independente do trigger de vendas
+  - lucro_realizado_rs (GENERATED — 082) — fórmula do REALIZADO (docs/PLANO_RESULTADO_COMERCIALIZACAO.md §2)
+  - Ponta de vendas mantida por trigger trg_atualizar_resultado_safra_snapshot em vendas_externas; ponta de conversão mantida por trg_atualizar_custo_convertido em movimentacoes_conta — cada trigger só escreve nas suas próprias colunas
 - `vw_saldos_produtor` (VIEW) — snapshot + JOIN produtores, produtos, safras
-- `vw_resultado_safra` (VIEW) — snapshot + JOIN produtos, safras
+- `vw_resultado_safra` (VIEW) — snapshot + JOIN produtos, safras (legado — prefira `vw_resultado_comercializacao` em código novo)
+- `vw_resultado_comercializacao` (VIEW — migration 082) — realizado (resultado_safra_snapshot) + marcação a mercado calculada na leitura (cotação ativa via LATERAL, preco_cooperado); expõe estoque_kg, passivo_a_ordem_kg, ajuste_mercado_rs, lucro_corrente_rs, exposicao_kg. security_invoker=on. Marcação nunca é armazenada — reprecifica a cada consulta
 - `produtos` — cacau, agrofloresta; +ncm, +cfop_saida_interna, +cfop_saida_interestadual, +cst_icms, +cst_pis, +cst_cofins, +fator_saca (default 60)
 
 ### Loja Agropecuária
