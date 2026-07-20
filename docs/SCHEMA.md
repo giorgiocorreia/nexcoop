@@ -68,7 +68,7 @@
 
 | 087 | `mensalidades`: baixa com comprovante PIX (feature associação-only). +forma_pagamento text, +comprovante_url text, +comprovante_id_transacao text (EndToEndId, chave de dedup primária), +comprovante_hash text (SHA-256 do arquivo, dedup fallback), +comprovante_pagador text, +comprovante_valor numeric(12,2), +comprovante_data date, +comprovante_dados jsonb (extração completa da IA, auditoria). Todas nullable, tabela já populada. Dois índices únicos parciais por org: `uq_mensalidade_comprovante_e2e` (organizacao_id, comprovante_id_transacao) WHERE NOT NULL e `uq_mensalidade_comprovante_hash` (organizacao_id, comprovante_hash) WHERE NOT NULL — bloqueiam reuso do mesmo comprovante em duas mensalidades da mesma org |
 
-**Próxima migration:** 088
+**Próxima migration:** 089
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
