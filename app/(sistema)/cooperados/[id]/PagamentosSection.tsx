@@ -181,6 +181,13 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
 
       const result = await registrarPagamentos(cotaId, cooperadoId, orgId, usuarioId, rows)
 
+      // Falha esperada (ex.: sem caixa próprio aberto) volta como `erro`, não
+      // como exceção — em produção o Next mascara throw de server action.
+      if (result.erro) {
+        setErroPorCota(prev => ({ ...prev, [cotaId]: result.erro as string }))
+        return
+      }
+
       await carregar()
       setShowForm(prev => ({ ...prev, [cotaId]: false }))
 
@@ -219,6 +226,11 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
     setQuitandoPag(pagId)
     try {
       const result = await quitarParcela(pagId, cooperadoId, cotaId, form.forma_pagamento, form.data_pagamento)
+      if (result.erro) {
+        alert(result.erro)
+        setQuitandoPag(null)
+        return
+      }
       await carregar()
       setQuitarState(prev => { const n = { ...prev }; delete n[pagId]; return n })
       if (result.avisoCaixa) alert(`⚠️ ${result.avisoCaixa}`)

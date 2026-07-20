@@ -49,9 +49,15 @@ async function registrarEntradaComRetry(params: Parameters<typeof registrarEntra
 // outro com sobra (caso real: R$ 150 do Nilton foram parar no caixa do Luan,
 // 20/07/2026). Caixa é responsabilidade individual: sem caixa próprio aberto, o
 // operador abre o dele antes de receber.
-async function exigirSessaoCaixaAberta(orgId: string, formasPagamento: string[]): Promise<string | null> {
+// Retorna o erro em vez de lançar: exceção de server action chega ao browser
+// mascarada em produção ("An error occurred in the Server Components render…"),
+// então um throw aqui esconderia justamente a instrução que o operador precisa.
+async function exigirSessaoCaixaAberta(
+  orgId: string,
+  formasPagamento: string[],
+): Promise<{ sessaoId: string | null; erro?: string }> {
   const precisaCaixa = formasPagamento.some(f => FORMA_CAIXA[f] !== null)
-  if (!precisaCaixa) return null
+  if (!precisaCaixa) return { sessaoId: null }
 
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
@@ -66,9 +72,12 @@ async function exigirSessaoCaixaAberta(orgId: string, formasPagamento: string[])
     .maybeSingle()
 
   if (!sessaoAberta) {
-    throw new Error('Você não tem caixa aberto na Comercialização. Abra o seu caixa em Comercialização → Caixa antes de registrar este pagamento.')
+    return {
+      sessaoId: null,
+      erro: 'Você não tem caixa aberto na Comercialização. Abra o seu caixa em Comercialização → Caixa antes de registrar este pagamento.',
+    }
   }
-  return sessaoAberta.id
+  return { sessaoId: sessaoAberta.id }
 }
 
 // ── Verificar e marcar parcelas vencidas ──────────────────────────────────────
@@ -159,7 +168,11 @@ export async function registrarPagamentos(
     observacoes?:    string
   }>
 ) {
-  const sessaoCaixaId = await exigirSessaoCaixaAberta(orgId, parcelas.map(p => p.forma_pagamento))
+  const caixa = await exigirSessaoCaixaAberta(orgId, parcelas.map(p => p.forma_pagamento))
+  if (caixa.erro) {
+    return { pagamentos: [], quitou: false, totalPago: 0, valorTotalCota: 0, avisoCaixa: null, erro: caixa.erro }
+  }
+  const sessaoCaixaId = caixa.sessaoId
 
   const supabase = createAdminClient()
 
@@ -301,7 +314,7 @@ export async function registrarPagamentos(
 
   revalidatePath(`/cooperados/${cooperadoId}`)
 
-  return { pagamentos: inseridos ?? [], quitou, totalPago, valorTotalCota, avisoCaixa: avisosCaixa.join(' ') || null }
+  return { pagamentos: inseridos ?? [], quitou, totalPago, valorTotalCota, avisoCaixa: avisosCaixa.join(' ') || null, erro: undefined as string | undefined }
 }
 
 // ── Quitar parcela pendente ───────────────────────────────────────────────────
@@ -322,7 +335,11 @@ export async function quitarParcela(
 
   if (errParcela || !parcela) throw new Error('Parcela não encontrada.')
 
-  const sessaoCaixaId = await exigirSessaoCaixaAberta(parcela.organizacao_id, [formaPagamento])
+  const caixa = await exigirSessaoCaixaAberta(parcela.organizacao_id, [formaPagamento])
+  if (caixa.erro) {
+    return { quitou: false, totalPago: 0, valorTotalCota: 0, avisoCaixa: null, erro: caixa.erro }
+  }
+  const sessaoCaixaId = caixa.sessaoId
 
   const { error } = await supabase
     .from('cota_pagamentos')
@@ -413,5 +430,5 @@ export async function quitarParcela(
   revalidatePath(`/cooperados/${cooperadoId}`)
   revalidatePath('/financeiro')
 
-  return { quitou, totalPago, valorTotalCota, avisoCaixa }
+  return { quitou, totalPago, valorTotalCota, avisoCaixa, erro: undefined as string | undefined }
 }
