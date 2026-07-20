@@ -17,7 +17,9 @@ type CoopAtivo = Pick<Cooperado, 'id' | 'nome_completo' | 'cpf' | 'quota_parte' 
 interface PreviewItem {
   coop: CoopAtivo
   valor: string
-  jaExiste: boolean
+  // Meses do período (YYYY-MM) em que este membro AINDA não tem cobrança.
+  // Vazio = todos os meses já existem para ele.
+  mesesFaltantes: string[]
 }
 
 const BRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -33,6 +35,7 @@ export default function GerarMensalidadesPage() {
 
   const hoje = new Date()
   const [mesAno, setMesAno]       = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`)
+  const [qtdMeses, setQtdMeses]   = useState('1')
   const [diaVenc, setDiaVenc]     = useState('10')
   const [valorPad, setValorPad]   = useState('50')
 
@@ -59,19 +62,38 @@ export default function GerarMensalidadesPage() {
       .then(({ data }) => setTipoOrg(data?.tipo ?? null))
   }, [])
 
-  useEffect(() => { setPreview(null) }, [mesAno, diaVenc, valorPad])
+  useEffect(() => { setPreview(null) }, [mesAno, qtdMeses, diaVenc, valorPad])
+
+  // Meses do período (YYYY-MM), a partir de mesAno, por qtdMeses (1–12).
+  function mesesDoRange(): string[] {
+    const [ano, mes] = mesAno.split('-').map(Number)
+    const n = Math.min(Math.max(parseInt(qtdMeses, 10) || 1, 1), 12)
+    const out: string[] = []
+    for (let i = 0; i < n; i++) {
+      const d = new Date(ano, mes - 1 + i, 1)
+      out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    }
+    return out
+  }
 
   async function carregarPreview() {
     if (!mesAno || !diaVenc || !valorPad) { setErro('Preencha todos os campos antes de visualizar.'); return }
     setCarregandoPreview(true)
     setErro('')
 
+    const refs = mesesDoRange().map(m => `${m}-01`)
+    // Busca tudo que já existe no período de uma vez e agrupa por membro,
+    // para não duplicar cobrança em nenhum mês.
     const { data: existentes } = await createClient()
       .from('mensalidades')
-      .select('cooperado_id')
-      .eq('mes_referencia', `${mesAno}-01`)
+      .select('cooperado_id, mes_referencia')
+      .in('mes_referencia', refs)
 
-    const jaTemSet = new Set((existentes ?? []).map(e => e.cooperado_id as string))
+    const porCoop: Record<string, Set<string>> = {}
+    for (const e of existentes ?? []) {
+      const cid = e.cooperado_id as string
+      ;(porCoop[cid] ??= new Set()).add(e.mes_referencia as string)
+    }
 
     setPreview(
       cooperados.map(c => ({
@@ -79,22 +101,23 @@ export default function GerarMensalidadesPage() {
         valor: c.quota_parte && Number(c.quota_parte) > 0
           ? String(Number(c.quota_parte))
           : valorPad,
-        jaExiste: jaTemSet.has(c.id),
+        mesesFaltantes: refs.filter(r => !porCoop[c.id]?.has(r)).map(r => r.slice(0, 7)),
       }))
     )
     setCarregandoPreview(false)
   }
 
-  function calcDataVencimento(): string {
-    const [ano, mes] = mesAno.split('-').map(Number)
+  // Dia de vencimento no mês informado (YYYY-MM), ajustado ao último dia do mês.
+  function calcDataVencimento(mesRef: string): string {
+    const [ano, mes] = mesRef.split('-').map(Number)
     const dia = Math.min(parseInt(diaVenc, 10), new Date(ano, mes, 0).getDate())
     return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
   }
 
   async function handleGerar() {
     if (!preview) return
-    const novos = preview.filter(p => !p.jaExiste)
-    if (novos.length === 0) { setErro('Nenhuma cobrança nova a gerar — todos os membros já têm mensalidade para este mês.'); return }
+    const temFaltante = preview.some(p => p.mesesFaltantes.length > 0)
+    if (!temFaltante) { setErro('Nenhuma cobrança nova a gerar — todos os membros já têm mensalidade em todos os meses do período.'); return }
 
     setGerando(true)
     setErro('')
@@ -112,20 +135,20 @@ export default function GerarMensalidadesPage() {
       return
     }
 
-    const dataVenc = calcDataVencimento()
     const orgId = usuario.organizacao_id as string
 
-    const payload = novos
+    // Uma linha por (membro × mês faltante). Vencimento calculado por mês.
+    const payload = preview
       .filter(p => Number(p.valor) > 0)
-      .map(p => ({
+      .flatMap(p => p.mesesFaltantes.map(m => ({
         organizacao_id:  orgId,
         cooperado_id:    p.coop.id,
-        mes_referencia:  `${mesAno}-01`,
+        mes_referencia:  `${m}-01`,
         valor:           Number(p.valor),
         status:          'pendente' as const,
-        data_vencimento: dataVenc,
+        data_vencimento: calcDataVencimento(m),
         usuario_id:      user.id,
-      }))
+      })))
 
     if (payload.length === 0) {
       setErro('Todos os valores estão em R$ 0,00. Informe um valor padrão ou a quota-parte dos membros.')
@@ -143,8 +166,12 @@ export default function GerarMensalidadesPage() {
     router.push('/mensalidades')
   }
 
-  const novosCount  = preview?.filter(p => !p.jaExiste).length ?? 0
-  const existeCount = preview?.filter(p => p.jaExiste).length  ?? 0
+  const rangeLen    = mesesDoRange().length
+  // Cobranças novas = soma dos meses faltantes dos membros com valor > 0.
+  const novosCount  = preview?.filter(p => Number(p.valor) > 0).reduce((s, p) => s + p.mesesFaltantes.length, 0) ?? 0
+  const totalNovo   = preview?.filter(p => Number(p.valor) > 0).reduce((s, p) => s + Number(p.valor) * p.mesesFaltantes.length, 0) ?? 0
+  // Já existentes no período = total de slots (membros × meses) menos os faltantes.
+  const existeCount = preview ? preview.length * rangeLen - preview.reduce((s, p) => s + p.mesesFaltantes.length, 0) : 0
 
   return (
     <PageLayout
@@ -162,8 +189,17 @@ export default function GerarMensalidadesPage() {
 
         <ContentCard title="Parâmetros">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-            <Field label="Mês de referência">
+            <Field label="Mês inicial">
               <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} />
+            </Field>
+            <Field label="Quantidade de meses" hint="Gera este mês e os seguintes, pulando o que já existe.">
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Input
+                  type="number" value={qtdMeses} onChange={e => setQtdMeses(e.target.value)}
+                  min="1" max="12" placeholder="1" style={{ maxWidth: 90 }}
+                />
+                <Btn variante="cinza" tamanho="sm" onClick={() => setQtdMeses('12')}>Ano todo</Btn>
+              </div>
             </Field>
             <Field label="Dia de vencimento" hint="Ajustado automaticamente para o último dia do mês.">
               <Input
@@ -208,7 +244,7 @@ export default function GerarMensalidadesPage() {
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: COM_C.roxo, margin: '4px 0' }}>{novosCount}</div>
                 <div style={{ fontSize: 11, color: COM_C.txtSub }}>
-                  Total: {BRL(preview.filter(p => !p.jaExiste).reduce((s, p) => s + Number(p.valor), 0))}
+                  {rangeLen > 1 && `${rangeLen} meses • `}Total: {BRL(totalNovo)}
                 </div>
               </div>
               <div style={{
@@ -241,7 +277,8 @@ export default function GerarMensalidadesPage() {
                   style={{
                     display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', alignItems: 'center',
                     padding: '10px 16px', borderTop: i > 0 ? `1px solid ${COM_C.borda}` : 'none',
-                    background: p.jaExiste ? '#FAFAF9' : '#fff', opacity: p.jaExiste ? 0.55 : 1,
+                    background: p.mesesFaltantes.length === 0 ? '#FAFAF9' : '#fff',
+                    opacity: p.mesesFaltantes.length === 0 ? 0.55 : 1,
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 500, color: COM_C.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -259,15 +296,24 @@ export default function GerarMensalidadesPage() {
                       ? BRL(Number(p.coop.quota_parte))
                       : <span style={{ color: '#A8A29E' }}>—</span>}
                   </div>
-                  {p.jaExiste ? (
-                    <div style={{ fontSize: 11, color: '#A8A29E', fontStyle: 'italic' }}>já existe</div>
+                  {p.mesesFaltantes.length === 0 ? (
+                    <div style={{ fontSize: 11, color: '#A8A29E', fontStyle: 'italic' }}>
+                      {rangeLen > 1 ? 'todos os meses já existem' : 'já existe'}
+                    </div>
                   ) : (
-                    <Input
-                      type="number" min="0" step="0.01"
-                      value={p.valor}
-                      onChange={e => setPreview(prev => prev!.map(x => x.coop.id === p.coop.id ? { ...x, valor: e.target.value } : x))}
-                      style={{ width: 100, padding: '6px 8px', fontSize: 13 }}
-                    />
+                    <div>
+                      <Input
+                        type="number" min="0" step="0.01"
+                        value={p.valor}
+                        onChange={e => setPreview(prev => prev!.map(x => x.coop.id === p.coop.id ? { ...x, valor: e.target.value } : x))}
+                        style={{ width: 100, padding: '6px 8px', fontSize: 13 }}
+                      />
+                      {rangeLen > 1 && (
+                        <div style={{ fontSize: 10, color: COM_C.txtSub, marginTop: 2 }}>
+                          × {p.mesesFaltantes.length} {p.mesesFaltantes.length === 1 ? 'mês' : 'meses'}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
