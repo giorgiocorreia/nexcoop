@@ -54,20 +54,39 @@ export async function criarOrganizacao(input: CriarOrgInput): Promise<{ error?: 
     return { error: `Erro ao criar usuário: ${authError.message}` }
   }
 
-  // 3. Atualizar registro criado pelo trigger handle_new_user
+  // 3. Gravar o perfil do admin em `usuarios`.
+  // Antes era UPDATE, confiando no trigger handle_new_user (001) ter criado a
+  // linha no signup. Em produção o trigger não está criando: o UPDATE não
+  // achava linha nenhuma, o Postgres não trata isso como erro, e a org nascia
+  // sem nenhum usuário — quem logava caía num sistema sem nome e com a sidebar
+  // vazia (sem `funcoes`, nenhum item de menu é montado). Upsert funciona nos
+  // dois cenários: cria quando o trigger não criou, completa quando criou.
   const { error: userError } = await supabase
     .from('usuarios')
-    .update({
+    .upsert({
+      id: authData.user.id,
+      email: input.admin_email.trim(),
       organizacao_id: org.id,
       role: 'org_admin',
       funcoes: ['admin'],
       vinculo: 'diretoria',
       nome_completo: input.admin_nome.trim(),
-    })
-    .eq('id', authData.user.id)
+      ativo: true,
+    }, { onConflict: 'id' })
 
   if (userError) {
     return { error: `Organização criada, mas erro ao configurar usuário: ${userError.message}` }
+  }
+
+  // Sem perfil não há acesso útil (sidebar vazia) — confirma antes de dar OK.
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('id, funcoes')
+    .eq('id', authData.user.id)
+    .maybeSingle()
+
+  if (!perfil) {
+    return { error: 'Organização criada, mas o perfil do administrador não foi gravado. Verifique o usuário antes de usar a organização.' }
   }
 
   return { orgId: org.id }
