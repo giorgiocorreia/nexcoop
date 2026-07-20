@@ -64,6 +64,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const orgTipo = usuario?.organizacao?.tipo
   const org = usuario?.organizacao
   const n = nomenclatura(orgTipo)
+  // O gate de módulo (comercializacao/contabil/captacao) vale SÓ para associação.
+  // Cooperativa/central seguem por função/role como sempre — nunca podem perder
+  // acesso por dado de módulo incompleto (regra: não quebrar cooperativa).
+  const enforcaModulo = orgTipo === 'associacao'
   const isAdmin          = funcoes.includes('admin')
   const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
   const isFinanceiro     = funcoes.includes('financeiro')
@@ -97,7 +101,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const agroItens: NavItem[] = []
   if (isAdmin || isTecnico)
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
-  if ((isAdmin || isFinanceiro || isTecnico || isCaixaCacau) && temModulo(usuario?.organizacao?.modulos_ativos, 'comercializacao'))
+  if ((isAdmin || isFinanceiro || isTecnico || isCaixaCacau) && (!enforcaModulo || temModulo(usuario?.organizacao?.modulos_ativos, 'comercializacao')))
     agroItens.push({
       label: 'Comercialização', href: '/comercializacao', icone: '🤝',
       children: [
@@ -161,7 +165,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
   const projetosItens: NavItem[] = []
-  if ((isAdmin || isCaptador) && temModulo(org?.modulos_ativos, 'captacao'))
+  if ((isAdmin || isCaptador) && (!enforcaModulo || temModulo(org?.modulos_ativos, 'captacao')))
     projetosItens.push({ label: 'Captação', href: '/captacao', icone: '🎯' })
   if (isAdmin) {
     projetosItens.push(
@@ -175,7 +179,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   // Contábil do admin da org é gateado por módulo. O grupo "Escritório" logo
   // abaixo (parceiro/contador externo) NÃO é gateado — acesso via vínculo em
   // profissionais_parceiros, outro caminho, não deve ser bloqueado por módulo.
-  if ((isAdmin || isContador) && temModulo(org?.modulos_ativos, 'contabil'))
+  if ((isAdmin || isContador) && (!enforcaModulo || temModulo(org?.modulos_ativos, 'contabil')))
     grupos.push({ grupo: 'Contábil', itens: CONTABIL_ITENS })
 
   if (isParceiro || isContador)

@@ -80,8 +80,8 @@ function modulosDoDash(orgTipo: string | undefined, modulosAtivos: string[]) {
     { href: '/financeiro', label: 'Financeiro', desc: 'Receitas, despesas e lançamentos contábeis.', icon: 'ti-receipt-2', cor: COM_C.verde, corLt: COM_C.verdeLt },
     { href: '/assembleias', label: 'Assembleias', desc: 'AGO, AGE e reuniões de conselho.', icon: 'ti-users-group', cor: COM_C.azul, corLt: COM_C.azulLt },
     { href: '/documentos', label: 'Documentos', desc: 'Estatutos, atas, contratos e validades.', icon: 'ti-files', cor: COM_C.laranja, corLt: COM_C.laranjaLt },
-    // Comercialização só aparece se o módulo estiver ativo na org.
-    ...(modulosAtivos.includes('comercializacao') ? [{ href: '/comercializacao', label: 'Comercialização', desc: 'Caixa, lotes, NF-e e gestão do cacau.', icon: 'ti-plant-2', cor: COM_C.marrom, corLt: COM_C.marromLt }] : []),
+    // Comercialização: cooperativa/central sempre (por role); associação só com módulo.
+    ...((!ehAssoc || modulosAtivos.includes('comercializacao')) ? [{ href: '/comercializacao', label: 'Comercialização', desc: 'Caixa, lotes, NF-e e gestão do cacau.', icon: 'ti-plant-2', cor: COM_C.marrom, corLt: COM_C.marromLt }] : []),
   ]
   return cards
 }

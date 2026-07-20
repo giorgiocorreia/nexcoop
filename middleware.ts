@@ -122,7 +122,7 @@ export async function middleware(request: NextRequest) {
     if (usuario?.role !== 'super_admin' && usuario?.organizacao_id) {
       const { data: org } = await supabase
         .from('organizacoes')
-        .select('onboarding_concluido, modulos_ativos')
+        .select('onboarding_concluido, modulos_ativos, tipo')
         .eq('id', usuario.organizacao_id)
         .single()
 
@@ -132,16 +132,14 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      // Bloqueio genérico por módulo — cada prefixo de rota exige o módulo
-      // correspondente ativo em modulos_ativos. Roda só dentro do bloco acima
-      // (usuário não-super_admin, com organizacao_id), então preserva os
-      // early-returns de super_admin/parceiro que já retornam antes disso.
-      const ROTAS_POR_MODULO: Record<string, string> = {
-        '/comercializacao': 'comercializacao',
-        '/loja': 'loja',
-        '/contabil': 'contabil',
-        '/captacao': 'captacao',
-      }
+      // Bloqueio por módulo. /loja é gate pré-existente para todos os tipos.
+      // comercializacao/contabil/captacao só são bloqueados em ASSOCIAÇÃO —
+      // cooperativa/central nunca perdem acesso por dado de módulo incompleto
+      // (regra: não quebrar cooperativa).
+      const ROTAS_POR_MODULO: Record<string, string> =
+        org?.tipo === 'associacao'
+          ? { '/comercializacao': 'comercializacao', '/loja': 'loja', '/contabil': 'contabil', '/captacao': 'captacao' }
+          : { '/loja': 'loja' }
       for (const [prefixo, modulo] of Object.entries(ROTAS_POR_MODULO)) {
         if (pathname.startsWith(prefixo) && !org?.modulos_ativos?.includes(modulo)) {
           return NextResponse.redirect(new URL('/dashboard?modulo_inativo=true', request.url))
