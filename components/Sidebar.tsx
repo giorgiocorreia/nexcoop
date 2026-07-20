@@ -64,7 +64,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const orgTipo = usuario?.organizacao?.tipo
   const org = usuario?.organizacao
   const n = nomenclatura(orgTipo)
-  const exibeMensalidades = orgTipo !== 'associacao' && orgTipo !== 'central'
+  // Associação cobra anuidade/mensalidade de associado — mostra o menu.
+  // Central (de cooperativas) segue sem mensalidade de pessoa física.
+  // Cooperativa permanece como estava.
+  const exibeMensalidades = orgTipo !== 'central'
   const isAdmin          = funcoes.includes('admin')
   const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
   const isFinanceiro     = funcoes.includes('financeiro')
