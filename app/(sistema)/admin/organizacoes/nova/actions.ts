@@ -35,6 +35,10 @@ export async function criarOrganizacao(input: CriarOrgInput): Promise<{ error?: 
       email: input.email.trim() || null,
       telefone: input.telefone.trim() || null,
       ativo: true,
+      // Este formulário já coleta tipo, cnpj, telefone, cidade e estado — os
+      // mesmos campos do /onboarding. Sem esta flag a org caía no onboarding
+      // pedindo de novo exatamente o que o admin acabou de preencher.
+      onboarding_concluido: true,
     })
     .select('id')
     .single()
