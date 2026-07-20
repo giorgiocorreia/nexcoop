@@ -9,6 +9,7 @@ import {
   PageLayout, ContentCard, Badge, InfoRow, AlertBanner,
   MODULO_NEXCOOP, COM_C,
 } from '@/components/nexcoop/ui'
+import { nomenclatura } from '@/lib/nomenclatura'
 import CotasSection from './CotasSection'
 import PagamentosSection from './PagamentosSection'
 import AcessoSistemaCard from './AcessoSistemaCard'
@@ -74,7 +75,7 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
   const menuRef = useRef<HTMLDivElement>(null)
   const pagamentosRef = useRef<{ carregar: () => void } | null>(null)
 
-  const labelPlural = orgTipo === 'cooperativa' ? 'Cooperados' : 'Filiados'
+  const labelPlural = nomenclatura(orgTipo).plural
 
   const handleCotaAtualizada = useCallback(() => {
     pagamentosRef.current?.carregar()

@@ -299,7 +299,10 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
                   <div style={{ marginTop: 4 }}>
                     <InfoRow label="Status" valor={STATUS_COOPERADO[cooperado.status]?.label ?? cooperado.status} />
                     {cooperado.numero_matricula && <InfoRow label="Matrícula" valor={cooperado.numero_matricula} />}
-                    <InfoRow label="Quota-parte" valor={cooperado.quota_parte && Number(cooperado.quota_parte) > 0 ? BRL(Number(cooperado.quota_parte)) : '—'} />
+                    {/* Quota-parte é cota (capital social) — só cooperativa. */}
+                    {tipoOrg !== 'associacao' && (
+                      <InfoRow label="Quota-parte" valor={cooperado.quota_parte && Number(cooperado.quota_parte) > 0 ? BRL(Number(cooperado.quota_parte)) : '—'} />
+                    )}
                   </div>
                 </>
               ) : (

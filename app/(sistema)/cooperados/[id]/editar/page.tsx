@@ -660,9 +660,12 @@ export default function EditarCooperadoPage() {
                 <Field label="Data de admissão">
                   <Input type="date" value={form.data_admissao} onChange={set('data_admissao')} />
                 </Field>
-                <Field label="Quota-parte (R$)">
-                  <Input type="number" value={form.quota_parte} onChange={set('quota_parte')} placeholder="0.00" min="0" step="0.01" />
-                </Field>
+                {/* Quota-parte é capital social (cota) — só cooperativa tem. Associação não. */}
+                {tipoOrg !== 'associacao' && (
+                  <Field label="Quota-parte (R$)">
+                    <Input type="number" value={form.quota_parte} onChange={set('quota_parte')} placeholder="0.00" min="0" step="0.01" />
+                  </Field>
+                )}
               </div>
 
               {['suspenso', 'demitido', 'excluido'].includes(form.status) && (

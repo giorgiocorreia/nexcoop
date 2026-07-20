@@ -35,6 +35,9 @@ export default function GerarMensalidadesPage() {
   // Só para rotular a tela: associação = "associados", demais mantêm "filiados".
   const [tipoOrg, setTipoOrg] = useState<string | null>(null)
   const termo = termoMensalidade(tipoOrg)
+  // Quota-parte é cota (capital social) — só cooperativa tem; associação não mostra.
+  const mostraQuota = tipoOrg !== 'associacao'
+  const gridPreview = mostraQuota ? '2fr 1fr 1fr 120px' : '2fr 1fr 120px'
 
   const hoje = new Date()
   const [mesAno, setMesAno]       = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`)
@@ -265,10 +268,10 @@ export default function GerarMensalidadesPage() {
             <ContentCard title="Pré-visualização" noPadding>
               <div style={{
                 padding: '12px 16px', borderBottom: `1px solid ${COM_C.borda}`,
-                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', gap: 0,
+                display: 'grid', gridTemplateColumns: gridPreview, gap: 0,
                 background: '#FAFAF9',
               }}>
-                {['Membro', 'Status', 'Quota-parte', 'Valor cobrança'].map(h => (
+                {[termo.Singular, 'Status', ...(mostraQuota ? ['Quota-parte'] : []), 'Valor cobrança'].map(h => (
                   <div key={h} style={{ fontSize: 11, fontWeight: 600, color: COM_C.txtSub, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                     {h}
                   </div>
@@ -278,7 +281,7 @@ export default function GerarMensalidadesPage() {
                 <div
                   key={p.coop.id}
                   style={{
-                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 120px', alignItems: 'center',
+                    display: 'grid', gridTemplateColumns: gridPreview, alignItems: 'center',
                     padding: '10px 16px', borderTop: i > 0 ? `1px solid ${COM_C.borda}` : 'none',
                     background: p.mesesFaltantes.length === 0 ? '#FAFAF9' : '#fff',
                     opacity: p.mesesFaltantes.length === 0 ? 0.55 : 1,
@@ -294,11 +297,13 @@ export default function GerarMensalidadesPage() {
                       cor={p.coop.status === 'ativo' ? COM_C.roxo : COM_C.azul}
                     />
                   </div>
-                  <div style={{ fontSize: 12, color: COM_C.txtSub }}>
-                    {p.coop.quota_parte && Number(p.coop.quota_parte) > 0
-                      ? BRL(Number(p.coop.quota_parte))
-                      : <span style={{ color: '#A8A29E' }}>—</span>}
-                  </div>
+                  {mostraQuota && (
+                    <div style={{ fontSize: 12, color: COM_C.txtSub }}>
+                      {p.coop.quota_parte && Number(p.coop.quota_parte) > 0
+                        ? BRL(Number(p.coop.quota_parte))
+                        : <span style={{ color: '#A8A29E' }}>—</span>}
+                    </div>
+                  )}
                   {p.mesesFaltantes.length === 0 ? (
                     <div style={{ fontSize: 11, color: '#A8A29E', fontStyle: 'italic' }}>
                       {rangeLen > 1 ? 'todos os meses já existem' : 'já existe'}
