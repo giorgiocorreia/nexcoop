@@ -147,7 +147,7 @@ export default function GerarMensalidadesPage() {
       })))
 
     if (payload.length === 0) {
-      setErro('Todos os valores estão em R$ 0,00. Informe um valor padrão ou a quota-parte dos membros.')
+      setErro('Todos os valores estão em R$ 0,00. Informe um valor padrão maior que zero.')
       setGerando(false)
       return
     }
@@ -159,7 +159,7 @@ export default function GerarMensalidadesPage() {
       return
     }
 
-    router.push('/mensalidades')
+    router.push('/cooperados')
   }
 
   const rangeLen    = mesesDoRange().length
@@ -176,8 +176,8 @@ export default function GerarMensalidadesPage() {
       icone="ti-calendar-due"
       modulo={MODULO_NEXCOOP}
       breadcrumb={[
-        { label: 'Mensalidades', href: '/mensalidades' },
-        { label: 'Gerar' },
+        { label: 'Associados', href: '/cooperados' },
+        { label: 'Gerar mensalidades' },
       ]}
       fullHeight
     >
@@ -328,7 +328,7 @@ export default function GerarMensalidadesPage() {
             </ContentCard>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20, paddingBottom: 32 }}>
-              <Btn variante="cinza" onClick={() => router.push('/mensalidades')}>Cancelar</Btn>
+              <Btn variante="cinza" onClick={() => router.push('/cooperados')}>Cancelar</Btn>
               <Btn
                 variante="roxo"
                 icone="ti-bolt"

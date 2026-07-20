@@ -52,6 +52,7 @@ interface Props {
   resumoCotas: ResumoCotas | null
   orgTipo: string | undefined
   modulosAtivos: string[]
+  inadimplentesMensalidade: number
   indiceNex?: React.ReactNode
   custodia?: CustodiaUsuario[]
   resultadoComercializacao?: ResultadoComercializacao | null
@@ -75,8 +76,7 @@ function modulosDoDash(orgTipo: string | undefined, modulosAtivos: string[]) {
         : 'Cadastro, perfil, cotas e histórico dos cooperados.',
       icon: 'ti-users', cor: COM_C.marca, corLt: COM_C.marcaLt,
     },
-    // Mensalidade (anuidade) é só de associação.
-    ...(ehAssoc ? [{ href: '/mensalidades', label: 'Mensalidades', desc: 'Cobranças mensais, geração em lote e acompanhamento.', icon: 'ti-calendar-due', cor: COM_C.azul, corLt: COM_C.azulLt }] : []),
+    // Mensalidade foi fundida no módulo de Associados — não tem card próprio.
     { href: '/financeiro', label: 'Financeiro', desc: 'Receitas, despesas e lançamentos contábeis.', icon: 'ti-receipt-2', cor: COM_C.verde, corLt: COM_C.verdeLt },
     { href: '/assembleias', label: 'Assembleias', desc: 'AGO, AGE e reuniões de conselho.', icon: 'ti-users-group', cor: COM_C.azul, corLt: COM_C.azulLt },
     { href: '/documentos', label: 'Documentos', desc: 'Estatutos, atas, contratos e validades.', icon: 'ti-files', cor: COM_C.laranja, corLt: COM_C.laranjaLt },
@@ -108,6 +108,7 @@ export default function DashboardClient({
   resumoCotas,
   orgTipo,
   modulosAtivos,
+  inadimplentesMensalidade,
   indiceNex,
   custodia,
   resultadoComercializacao,
@@ -158,6 +159,17 @@ export default function DashboardClient({
             icon="ti-alert-triangle" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
             onClick={() => router.push('/documentos?vencendo=30')} />
         </div>
+
+        {/* Associação: único KPI de mensalidade é Inadimplentes (clicável). Sem
+            total/pendentes/vencidas, por decisão do Giorgio — evita número duplicado. */}
+        {orgTipo === 'associacao' && (
+          <div className="com-kpi-grid-4" style={{ marginBottom: 24 }}>
+            <KpiCard label="Inadimplentes" value={String(inadimplentesMensalidade)}
+              sub={inadimplentesMensalidade > 0 ? `${n.plural} com mensalidade vencida` : 'Ninguém em atraso'}
+              icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+              onClick={() => router.push('/cooperados?mensalidade=atrasada')} />
+          </div>
+        )}
 
         {(resumoCotas || resultadoComercializacao) && (
           <div className="com-kpi-grid-4" style={{ marginBottom: 24 }}>

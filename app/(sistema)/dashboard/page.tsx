@@ -19,6 +19,7 @@ import {
 } from '@/app/(sistema)/cooperados/[id]/pagamentos-actions'
 import { isAdmin } from '@/lib/permissoes'
 import { getResumoCustodiaOrg } from '@/lib/tesouraria/saldo-responsabilidade'
+import { buscarInadimplentesMensalidade } from '@/lib/mensalidades/inadimplencia'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -97,6 +98,11 @@ export default async function DashboardPage() {
     ? await getResumoCustodiaOrg(usuarioData!.organizacao_id as string)
     : []
 
+  // Inadimplência por mensalidade — só associação (fonte única, mesma da lista de associados)
+  const inadimplentesMensalidade = orgTipo === 'associacao' && usuarioData?.organizacao_id
+    ? (await buscarInadimplentesMensalidade(usuarioData.organizacao_id as string)).length
+    : 0
+
   // Índice Nex — só para cooperativas
   const [snapshot, sinaisNex, cotacoesMoageiras, precoBahia, usdBrl, iceNy, ultimasCotacoesOrg] =
     orgTipo === 'cooperativa' && usuarioOrg?.organizacao_id
@@ -170,6 +176,7 @@ export default async function DashboardPage() {
       resumoCotas={resumoCotas}
       orgTipo={orgTipo}
       modulosAtivos={modulosAtivos}
+      inadimplentesMensalidade={inadimplentesMensalidade}
       custodia={custodia}
       resultadoComercializacao={resultadoComercializacao}
       indiceNex={orgTipo === 'cooperativa' ? (

@@ -41,15 +41,23 @@ interface Props {
   cooperados: Cooperado[]
   tipoOrg: string
   statusInicial?: StatusCooperado
+  // Associação: ids de associados com mensalidade vencida (fonte única, do servidor).
+  inadimplentesMensalidade?: string[]
+  mensalidadeInicial?: boolean
 }
 
-export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: Props) {
+export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, inadimplentesMensalidade, mensalidadeInicial }: Props) {
   const n = nomenclatura(tipoOrg)
+  const ehAssoc = tipoOrg === 'associacao'
   const router = useRouter()
   const [lista] = useState(cooperados)
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<StatusCooperado | 'todos'>(statusInicial ?? 'todos')
+  const [filtroMensalidade, setFiltroMensalidade] = useState<'todos' | 'atrasada'>(mensalidadeInicial ? 'atrasada' : 'todos')
   const [hovered, setHovered] = useState<string | null>(null)
+
+  // Set de inadimplentes por mensalidade (só associação) — mesmo número do dashboard.
+  const setInad = useMemo(() => new Set(inadimplentesMensalidade ?? []), [inadimplentesMensalidade])
 
   const resumo = useMemo(() => ({
     total: lista.length,
@@ -69,11 +77,12 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
         (qDigitos.length > 0 && (c.cpf ?? '').replace(/\D/g, '').includes(qDigitos)) ||
         (c.email ?? '').toLowerCase().includes(q)
       const passaStatus = filtroStatus === 'todos' || c.status === filtroStatus
-      return passaBusca && passaStatus
+      const passaMensalidade = !ehAssoc || filtroMensalidade === 'todos' || setInad.has(c.id)
+      return passaBusca && passaStatus && passaMensalidade
     })
-  }, [lista, busca, filtroStatus])
+  }, [lista, busca, filtroStatus, filtroMensalidade, ehAssoc, setInad])
 
-  const temFiltro = busca || filtroStatus !== 'todos'
+  const temFiltro = busca || filtroStatus !== 'todos' || filtroMensalidade !== 'todos'
 
   return (
     <PageLayout
@@ -85,17 +94,33 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
       acoes={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <BotaoAjuda chave="manual_cooperados_url" />
+          {ehAssoc && (
+            <Btn variante="cinza" icone="ti-calendar-due" onClick={() => router.push('/mensalidades/gerar')}>
+              Gerar mensalidades
+            </Btn>
+          )}
           <Btn variante="roxo" icone="ti-plus" onClick={() => router.push('/cooperados/novo')}>
             {n.novo}
           </Btn>
         </div>
       }
     >
+      {/* KPIs clicáveis: filtram a lista. Em associação, Inadimplentes usa a
+          mensalidade vencida (mesmo número do dashboard). */}
       <div className="com-kpi-grid-4">
-        <KpiCard label={`Total de ${n.plural}`} value={String(resumo.total)} icon="ti-users" cor={COM_C.txtSub} corLt="#F5F5F4" />
-        <KpiCard label="Ativos" value={String(resumo.ativos)} icon="ti-user-check" cor={COM_C.roxo} corLt={COM_C.roxoLt} />
-        <KpiCard label="Probatórios" value={String(resumo.probatorios)} icon="ti-user-search" cor={COM_C.azul} corLt={COM_C.azulLt} />
-        <KpiCard label="Inadimplentes" value={String(resumo.inadimplentes)} icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt} />
+        <KpiCard label={`Total de ${n.plural}`} value={String(resumo.total)} icon="ti-users" cor={COM_C.txtSub} corLt="#F5F5F4"
+          onClick={() => { setBusca(''); setFiltroStatus('todos'); setFiltroMensalidade('todos') }} />
+        <KpiCard label="Ativos" value={String(resumo.ativos)} icon="ti-user-check" cor={COM_C.roxo} corLt={COM_C.roxoLt}
+          onClick={() => { setFiltroMensalidade('todos'); setFiltroStatus('ativo') }} />
+        <KpiCard label="Probatórios" value={String(resumo.probatorios)} icon="ti-user-search" cor={COM_C.azul} corLt={COM_C.azulLt}
+          onClick={() => { setFiltroMensalidade('todos'); setFiltroStatus('probatorio') }} />
+        {ehAssoc ? (
+          <KpiCard label="Inadimplentes" value={String(setInad.size)} icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+            onClick={() => { setFiltroStatus('todos'); setFiltroMensalidade('atrasada') }} />
+        ) : (
+          <KpiCard label="Inadimplentes" value={String(resumo.inadimplentes)} icon="ti-user-exclamation" cor={COM_C.laranja} corLt={COM_C.laranjaLt}
+            onClick={() => setFiltroStatus('inadimplente')} />
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -118,7 +143,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
           ))}
         </Select>
         {temFiltro && (
-          <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroStatus('todos') }}>
+          <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroStatus('todos'); setFiltroMensalidade('todos') }}>
             Limpar
           </Btn>
         )}
@@ -137,7 +162,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
-                  {['Nome', 'CPF', 'E-mail', 'Cidade / UF', 'Admissão', 'Status'].map(col => (
+                  {['Nome', 'CPF', 'E-mail', 'Cidade / UF', 'Admissão', ...(ehAssoc ? ['Mensalidade'] : []), 'Status'].map(col => (
                     <th key={col}>{col}</th>
                   ))}
                 </tr>
@@ -177,6 +202,13 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
                         {c.cidade && c.estado ? `${c.cidade} / ${c.estado}` : c.cidade || c.estado || '—'}
                       </td>
                       <td style={{ color: COM_C.txtSub }}>{formatarData(c.data_admissao)}</td>
+                      {ehAssoc && (
+                        <td>
+                          {setInad.has(c.id)
+                            ? <Badge label="Atrasada" bg="#fee2e2" cor="#dc2626" />
+                            : <Badge label="Em dia" bg="#dcfce7" cor="#166534" />}
+                        </td>
+                      )}
                       <td><Badge label={st.label} bg={st.bg} cor={st.cor} /></td>
                     </tr>
                   )

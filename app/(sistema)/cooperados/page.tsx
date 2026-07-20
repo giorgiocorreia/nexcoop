@@ -3,6 +3,7 @@ import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import { temAlgumaFuncao } from '@/lib/permissoes'
 import { nomenclatura } from '@/lib/nomenclatura'
+import { buscarInadimplentesMensalidade } from '@/lib/mensalidades/inadimplencia'
 import CooperadosLista from './CooperadosLista'
 import type { StatusCooperado } from '@/types/database'
 
@@ -24,7 +25,7 @@ export async function generateMetadata() {
 export default async function CooperadosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; mensalidade?: string }>
 }) {
   const supabaseAuth = await createClient()
   const { data: { user } } = await supabaseAuth.auth.getUser()
@@ -64,5 +65,19 @@ export default async function CooperadosPage({
   const params = await searchParams
   const statusInicial = STATUS_VALIDOS.find(s => s === params.status)
 
-  return <CooperadosLista cooperados={cooperados ?? []} tipoOrg={tipoOrg} statusInicial={statusInicial} />
+  // Inadimplência por mensalidade — só associação (mesma fonte do dashboard).
+  const inadimplentesMensalidade = tipoOrg === 'associacao'
+    ? await buscarInadimplentesMensalidade(ctx.orgId)
+    : undefined
+  const mensalidadeInicial = params.mensalidade === 'atrasada'
+
+  return (
+    <CooperadosLista
+      cooperados={cooperados ?? []}
+      tipoOrg={tipoOrg}
+      statusInicial={statusInicial}
+      inadimplentesMensalidade={inadimplentesMensalidade}
+      mensalidadeInicial={mensalidadeInicial}
+    />
+  )
 }

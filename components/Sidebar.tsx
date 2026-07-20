@@ -64,9 +64,6 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const orgTipo = usuario?.organizacao?.tipo
   const org = usuario?.organizacao
   const n = nomenclatura(orgTipo)
-  // Mensalidade (anuidade) é só de associação. Cooperativa usa cota (capital),
-  // não mensalidade; central (de cooperativas) também não tem.
-  const exibeMensalidades = orgTipo === 'associacao'
   const isAdmin          = funcoes.includes('admin')
   const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
   const isFinanceiro     = funcoes.includes('financeiro')
@@ -86,8 +83,8 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     principalItens.push({ label: 'Dashboard',    href: '/dashboard',    icone: '📊' })
   if (isAdmin || isTecnico)
     principalItens.push({ label: n.plural,       href: '/cooperados',   icone: '👥' })
-  if (exibeMensalidades && (isAdmin || isFinanceiro))
-    principalItens.push({ label: 'Mensalidades', href: '/mensalidades', icone: '💳' })
+  // Mensalidade (anuidade) foi fundida no módulo de Associados — não é mais item
+  // de menu próprio. Acesso pelo perfil do associado e pela lista de associados.
   if (isAdmin || isFinanceiro || isConselhoFiscal)
     principalItens.push({ label: 'Financeiro',   href: '/financeiro',   icone: '💰' })
   if (isAdmin || isConselhoFiscal)
