@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
 import { temAlgumaFuncao } from '@/lib/permissoes'
+import { nomenclatura } from '@/lib/nomenclatura'
 import CooperadosLista from './CooperadosLista'
 import type { StatusCooperado } from '@/types/database'
 
@@ -16,7 +17,7 @@ export async function generateMetadata() {
   const { data: org } = ctx
     ? await ctx.supabase.from('organizacoes').select('tipo').eq('id', ctx.orgId).single()
     : { data: null }
-  const label = org?.tipo === 'cooperativa' ? 'Cooperados' : 'Filiados'
+  const label = nomenclatura(org?.tipo).plural
   return { title: `${label} — NexCoop` }
 }
 

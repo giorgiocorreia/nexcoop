@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { TipoOrganizacao, PlanoOrganizacao } from '@/types/database'
 import { criarOrganizacao } from './actions'
+import { MODULOS_OPCIONAIS, MODULOS } from '@/lib/modulos'
+import { COR_POR_TIPO } from '@/lib/tema'
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -31,6 +33,8 @@ interface FormData {
   admin_email: string
   admin_senha: string
   admin_senha_confirma: string
+  modulos_extras: string[]
+  cor_primaria: string | null
 }
 
 const FORM_INICIAL: FormData = {
@@ -38,7 +42,15 @@ const FORM_INICIAL: FormData = {
   tipo: 'cooperativa', plano: 'essencial',
   cidade: '', estado: '', email: '', telefone: '',
   admin_nome: '', admin_email: '', admin_senha: '', admin_senha_confirma: '',
+  modulos_extras: [], cor_primaria: null,
 }
+
+// Swatches oferecidos no seletor de cor — as três cores padrão por tipo.
+const CORES_SWATCH = [
+  { hex: COR_POR_TIPO.cooperativa, label: 'Verde (cooperativa)' },
+  { hex: COR_POR_TIPO.associacao,  label: 'Teal (associação)' },
+  { hex: COR_POR_TIPO.central,     label: 'Azul (central)' },
+]
 
 function InputGroup({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
@@ -68,6 +80,15 @@ export default function NovaOrganizacaoPage() {
   function set(campo: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm(prev => ({ ...prev, [campo]: e.target.value }))
+  }
+
+  function toggleModulo(id: string) {
+    setForm(prev => ({
+      ...prev,
+      modulos_extras: prev.modulos_extras.includes(id)
+        ? prev.modulos_extras.filter(m => m !== id)
+        : [...prev.modulos_extras, id],
+    }))
   }
 
   function validarOrg(): string {
@@ -107,6 +128,8 @@ export default function NovaOrganizacaoPage() {
       email: form.email, telefone: form.telefone,
       admin_nome: form.admin_nome, admin_email: form.admin_email,
       admin_senha: form.admin_senha,
+      modulos_extras: form.modulos_extras,
+      cor_primaria: form.cor_primaria,
     })
 
     if (resultado.error) {
@@ -273,6 +296,75 @@ export default function NovaOrganizacaoPage() {
                     onBlur={e => (e.target.style.borderColor = '#d5d3cc')}
                   />
                 </InputGroup>
+              </div>
+
+              {/* Módulos — base sempre incluído (travado), opcionais liga/desliga */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  Módulos
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {MODULOS.filter(m => m.base).map(m => (
+                    <span key={m.id} title={m.descricao} style={{
+                      fontSize: '11px', fontWeight: '600', padding: '4px 10px',
+                      borderRadius: '20px', background: '#f0eeea', color: '#888',
+                    }}>
+                      {m.nome} ✓
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {MODULOS_OPCIONAIS.map(m => {
+                    const ativo = form.modulos_extras.includes(m.id)
+                    return (
+                      <label key={m.id} title={m.descricao} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                        padding: '8px 12px', border: `1px solid ${ativo ? '#635BFF' : '#e5e3dc'}`,
+                        borderRadius: '8px', background: ativo ? '#EEF0FF' : '#fff',
+                      }}>
+                        <input type="checkbox" checked={ativo} onChange={() => toggleModulo(m.id)}
+                          style={{ accentColor: '#635BFF', width: '16px', height: '16px' }} />
+                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>{m.nome}</span>
+                        <span style={{ fontSize: '11px', color: '#888' }}>{m.descricao}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Cor da marca — override opcional; vazio usa o padrão do tipo escolhido acima */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                  Cor da marca
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button type="button" title="Usar padrão do tipo"
+                    onClick={() => setForm(prev => ({ ...prev, cor_primaria: null }))}
+                    style={{
+                      width: '30px', height: '30px', borderRadius: '50%',
+                      background: COR_POR_TIPO[form.tipo],
+                      border: form.cor_primaria === null ? '2px solid #1a1a1a' : '2px solid transparent',
+                      cursor: 'pointer', boxShadow: '0 0 0 1px #e5e3dc',
+                    }}
+                  />
+                  {CORES_SWATCH.map(c => (
+                    <button key={c.hex} type="button" title={c.label}
+                      onClick={() => setForm(prev => ({ ...prev, cor_primaria: c.hex }))}
+                      style={{
+                        width: '30px', height: '30px', borderRadius: '50%', background: c.hex,
+                        border: form.cor_primaria === c.hex ? '2px solid #1a1a1a' : '2px solid transparent',
+                        cursor: 'pointer', boxShadow: '0 0 0 1px #e5e3dc',
+                      }}
+                    />
+                  ))}
+                  <input type="color" value={form.cor_primaria ?? COR_POR_TIPO[form.tipo]}
+                    onChange={e => setForm(prev => ({ ...prev, cor_primaria: e.target.value }))}
+                    style={{ width: '36px', height: '30px', padding: 0, border: '1px solid #d5d3cc', borderRadius: '6px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '12px', color: '#888' }}>
+                    {form.cor_primaria ? form.cor_primaria : `Padrão do tipo (${COR_POR_TIPO[form.tipo]})`}
+                  </span>
+                </div>
               </div>
             </div>
           )}

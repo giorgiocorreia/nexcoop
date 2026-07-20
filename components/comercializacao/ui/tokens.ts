@@ -39,10 +39,13 @@ export const COM_C = {
 // cada coluna tem a mesma cor e a faixa continua independente da largura da
 // sidebar (que muda ao recolher).
 export const HERO = {
-  bg:      'linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%)',
+  // Cor da marca por org (lib/tema.ts), injetada como CSS var no div raiz de
+  // app/(sistema)/layout.tsx. Fallback verde (cooperativa) quando a var nao
+  // existe — ex.: telas fora do layout do sistema.
+  bg:      'var(--nxc-marca-bg, linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%))',
   // Cor em que o gradiente termina. O corpo da sidebar continua nela, entao a
   // faixa desce sem degrau.
-  fim:     '#1B5E20',
+  fim:     'var(--nxc-marca-fim, #1B5E20)',
   borda:   '1px solid rgba(255,255,255,0.15)',
   hover:   'rgba(255,255,255,0.10)',
   chip:    'rgba(255,255,255,0.18)',

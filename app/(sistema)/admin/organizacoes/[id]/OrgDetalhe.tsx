@@ -6,6 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import type { Organizacao, Usuario } from '@/types/database'
 import { traduzirErro } from '@/lib/utils/erros'
 import { HubStyles } from '@/components/nexcoop/ui'
+import { MODULOS_OPCIONAIS } from '@/lib/modulos'
+import { COR_POR_TIPO } from '@/lib/tema'
+import { atualizarModulosOrg, atualizarCorOrg } from '@/lib/admin/org-actions'
 
 const PLANO_CONFIG: Record<string, { label: string; cor: string; bg: string }> = {
   gratuito:    { label: 'Gratuito',    cor: '#555',    bg: '#f0eeea' },
@@ -152,6 +155,136 @@ function IsentarForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Orga
       }}>
         {salvando ? 'Salvando...' : 'Salvar isenção'}
       </button>
+    </div>
+  )
+}
+
+function ModulosForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Organizacao) => void }) {
+  const [ativos, setAtivos] = useState<string[]>(
+    MODULOS_OPCIONAIS.filter(m => org.modulos_ativos?.includes(m.id)).map(m => m.id)
+  )
+  const [salvando, setSalvando] = useState(false)
+  const [sucesso, setSucesso] = useState('')
+  const [erro, setErro] = useState('')
+
+  function toggle(id: string) {
+    setAtivos(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id])
+  }
+
+  async function salvar() {
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    const resultado = await atualizarModulosOrg(org.id, ativos)
+    if (!resultado.ok) {
+      setErro(resultado.erro || 'Erro ao atualizar módulos.')
+    } else {
+      const idsBase = ['cooperados', 'financeiro', 'assembleias', 'documentos', 'mensalidades']
+      onUpdate({ ...org, modulos_ativos: [...new Set([...idsBase, ...ativos])] } as Organizacao)
+      setSucesso('Módulos atualizados.')
+      setTimeout(() => setSucesso(''), 3000)
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {MODULOS_OPCIONAIS.map(m => {
+          const ativo = ativos.includes(m.id)
+          return (
+            <label key={m.id} title={m.descricao} style={{
+              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+              padding: '8px 12px', border: `1px solid ${ativo ? '#635BFF' : '#e5e3dc'}`,
+              borderRadius: '8px', background: ativo ? '#EEF0FF' : '#fafaf8',
+            }}>
+              <input type="checkbox" checked={ativo} onChange={() => toggle(m.id)}
+                style={{ accentColor: '#635BFF', width: '16px', height: '16px' }} />
+              <span style={{ fontSize: '13px', fontWeight: '500', color: '#1a1a1a' }}>{m.nome}</span>
+              <span style={{ fontSize: '11px', color: '#888' }}>{m.descricao}</span>
+            </label>
+          )
+        })}
+      </div>
+
+      {erro && <div style={{ fontSize: '12px', color: '#dc2626' }}>{erro}</div>}
+      {sucesso && <div style={{ fontSize: '12px', color: '#4840CC' }}>✓ {sucesso}</div>}
+
+      <button onClick={salvar} disabled={salvando} style={{
+        padding: '8px 16px', background: salvando ? '#9F9BFF' : '#635BFF',
+        color: '#fff', border: 'none', borderRadius: '8px',
+        fontSize: '13px', fontWeight: '600',
+        cursor: salvando ? 'not-allowed' : 'pointer',
+        alignSelf: 'flex-start',
+      }}>
+        {salvando ? 'Salvando...' : 'Salvar módulos'}
+      </button>
+    </div>
+  )
+}
+
+const CORES_SWATCH = [
+  { hex: COR_POR_TIPO.cooperativa, label: 'Verde (cooperativa)' },
+  { hex: COR_POR_TIPO.associacao,  label: 'Teal (associação)' },
+  { hex: COR_POR_TIPO.central,     label: 'Azul (central)' },
+]
+
+function CorMarcaForm({ org, onUpdate }: { org: Organizacao; onUpdate: (org: Organizacao) => void }) {
+  const [cor, setCor] = useState<string | null>(org.cor_primaria)
+  const [salvando, setSalvando] = useState(false)
+  const [sucesso, setSucesso] = useState('')
+  const [erro, setErro] = useState('')
+  const corPadraoTipo = COR_POR_TIPO[org.tipo]
+
+  async function salvar(novaCor: string | null) {
+    setCor(novaCor)
+    setSalvando(true)
+    setErro('')
+    setSucesso('')
+    const resultado = await atualizarCorOrg(org.id, novaCor)
+    if (!resultado.ok) {
+      setErro(resultado.erro || 'Erro ao atualizar a cor.')
+    } else {
+      onUpdate({ ...org, cor_primaria: novaCor } as Organizacao)
+      setSucesso('Cor da marca atualizada.')
+      setTimeout(() => setSucesso(''), 3000)
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <button type="button" title="Usar padrão do tipo" disabled={salvando}
+          onClick={() => salvar(null)}
+          style={{
+            width: '30px', height: '30px', borderRadius: '50%',
+            background: corPadraoTipo,
+            border: cor === null ? '2px solid #1a1a1a' : '2px solid transparent',
+            cursor: salvando ? 'not-allowed' : 'pointer', boxShadow: '0 0 0 1px #e5e3dc',
+          }}
+        />
+        {CORES_SWATCH.map(c => (
+          <button key={c.hex} type="button" title={c.label} disabled={salvando}
+            onClick={() => salvar(c.hex)}
+            style={{
+              width: '30px', height: '30px', borderRadius: '50%', background: c.hex,
+              border: cor === c.hex ? '2px solid #1a1a1a' : '2px solid transparent',
+              cursor: salvando ? 'not-allowed' : 'pointer', boxShadow: '0 0 0 1px #e5e3dc',
+            }}
+          />
+        ))}
+        <input type="color" value={cor ?? corPadraoTipo} disabled={salvando}
+          onChange={e => salvar(e.target.value)}
+          style={{ width: '36px', height: '30px', padding: 0, border: '1px solid #d5d3cc', borderRadius: '6px', cursor: salvando ? 'not-allowed' : 'pointer' }}
+        />
+        <span style={{ fontSize: '12px', color: '#888' }}>
+          {cor ? cor : `Padrão do tipo (${corPadraoTipo})`}
+        </span>
+      </div>
+
+      {erro && <div style={{ fontSize: '12px', color: '#dc2626' }}>{erro}</div>}
+      {sucesso && <div style={{ fontSize: '12px', color: '#4840CC' }}>✓ {sucesso}</div>}
     </div>
   )
 }
@@ -360,6 +493,24 @@ export default function OrgDetalhe({ org: orgInicial, usuarios, totalCooperados,
               )
             })}
           </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        {/* Módulos ativos */}
+        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '1rem' }}>
+            Módulos
+          </div>
+          <ModulosForm org={org} onUpdate={setOrg} />
+        </div>
+
+        {/* Cor da marca */}
+        <div style={{ background: '#fff', border: '1px solid #e5e3dc', borderRadius: '12px', padding: '1.25rem' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1a1a1a', marginBottom: '1rem' }}>
+            Cor da marca
+          </div>
+          <CorMarcaForm org={org} onUpdate={setOrg} />
         </div>
       </div>
 

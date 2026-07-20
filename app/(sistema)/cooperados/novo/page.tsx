@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
@@ -9,12 +9,13 @@ import { vincularCooperadoComoProdutor } from '@/lib/comercializacao/produtores.
 import { inserirCooperado } from '@/lib/cooperados/actions'
 import BannerLimiteAtingido from '@/components/BannerLimiteAtingido'
 import { Btn } from '@/components/ui/Btn'
+import { nomenclatura } from '@/lib/nomenclatura'
 import {
   PageLayout, ContentCard, Field, Input, Select, Textarea,
   Tabs, AlertBanner, MODULO_NEXCOOP, COM_C,
 } from '@/components/nexcoop/ui'
 import type { ResultadoLimite } from '@/lib/assinatura'
-import type { StatusCooperado } from '@/types/database'
+import type { StatusCooperado, TipoOrganizacao } from '@/types/database'
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -96,6 +97,8 @@ const FORM_INICIAL: FormData = {
 
 export default function NovoCooperadoPage() {
   const router = useRouter()
+  const [tipoOrg, setTipoOrg] = useState<TipoOrganizacao | null>(null)
+  const n = nomenclatura(tipoOrg)
   const [abaAtiva, setAbaAtiva] = useState<Aba>('pessoal')
   const [form, setForm] = useState<FormData>(FORM_INICIAL)
   const [buscandoCep, setBuscandoCep] = useState(false)
@@ -109,6 +112,22 @@ export default function NovoCooperadoPage() {
   const [propriedades, setPropriedades] = useState<PropriedadeLocal[]>([])
   const [mostrarFormPropriedade, setMostrarFormPropriedade] = useState(false)
   const [formPropriedade, setFormPropriedade] = useState<PropriedadeLocal>(PROPRIEDADE_FORM_INICIAL)
+
+  // Tipo da org só pra escolher o rótulo visível (Cooperado/Associado) — não
+  // afeta rota, tabela nem payload, que continuam "cooperados"/"cooperado".
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data: usuario } = await supabase
+        .from('usuarios')
+        .select('organizacao:organizacao_id(tipo)')
+        .eq('id', user.id)
+        .single()
+      const tipo = (usuario?.organizacao as any)?.tipo as TipoOrganizacao | undefined
+      if (tipo) setTipoOrg(tipo)
+    })
+  }, [])
 
   function adicionarPropriedadeLocal() {
     setPropriedades(prev => [...prev, formPropriedade])
@@ -318,11 +337,11 @@ export default function NovoCooperadoPage() {
 
   return (
     <PageLayout
-      titulo="Novo Filiado"
+      titulo={n.novo}
       icone="ti-user-plus"
       modulo={MODULO_NEXCOOP}
       breadcrumb={[
-        { label: 'Cooperados', href: '/cooperados' },
+        { label: n.plural, href: '/cooperados' },
         { label: 'Novo' },
       ]}
     >
@@ -711,7 +730,7 @@ export default function NovoCooperadoPage() {
               </>
             ) : (
               <Btn type="submit" variante="roxo" icone="ti-check" disabled={salvando}>
-                {salvando ? 'Salvando…' : 'Salvar filiado'}
+                {salvando ? 'Salvando…' : `Salvar ${n.singular.toLowerCase()}`}
               </Btn>
             )}
           </div>

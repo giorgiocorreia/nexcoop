@@ -7,6 +7,7 @@ import MainContent from '@/app/(sistema)/MainContent'
 import { sairDaOrg } from '@/app/actions/impersonation'
 import { sairDaOrgParceiro } from '@/app/actions/parceiro'
 import { isParceiro } from '@/lib/parceiros/actions'
+import { temaOrg } from '@/lib/tema'
 import type { RoleUsuario } from '@/types/database'
 
 function assinaturaAtiva(org: { subscription_status: string | null; trial_ends_at: string | null } | null): boolean {
@@ -123,8 +124,17 @@ export default async function SistemaLayout({
       ? { ...usuario, organizacao }
       : null
 
+  // Cor da marca da org (padrão por tipo + override manual) — vira CSS var
+  // consumida por HERO em components/comercializacao/ui/tokens.ts, tematizando
+  // Sidebar e PageLayout juntos. Sem org (super_admin puro), cai no fallback verde.
+  const tema = temaOrg(organizacao as any)
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7f4' }}>
+    <div style={{
+      display: 'flex', minHeight: '100vh', background: '#f8f7f4',
+      ['--nxc-marca-bg' as any]: tema.bg,
+      ['--nxc-marca-fim' as any]: tema.base,
+    }}>
       <Sidebar
         usuario={usuarioComOrg}
         isParceiro={parceiroStatus && !isParceiroAcessandoOrg}

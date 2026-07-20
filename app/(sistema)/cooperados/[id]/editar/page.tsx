@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import { Btn } from '@/components/ui/Btn'
+import { nomenclatura } from '@/lib/nomenclatura'
 import {
   PageLayout, ContentCard, Field, Input, Select, Textarea,
   Tabs, AlertBanner, MODULO_NEXCOOP, COM_C,
 } from '@/components/nexcoop/ui'
-import type { StatusCooperado } from '@/types/database'
+import type { StatusCooperado, TipoOrganizacao } from '@/types/database'
 
 const UFS = [
   'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
@@ -91,6 +92,8 @@ export default function EditarCooperadoPage() {
   const params = useParams()
   const id = params?.id as string
 
+  const [tipoOrg, setTipoOrg] = useState<TipoOrganizacao | null>(null)
+  const n = nomenclatura(tipoOrg)
   const [abaAtiva, setAbaAtiva] = useState<Aba>('pessoal')
   const [form, setForm] = useState<FormData | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -172,6 +175,16 @@ export default function EditarCooperadoPage() {
           setErro('Cooperado não encontrado.')
           setCarregando(false)
           return
+        }
+        // Tipo da org só pra escolher o rótulo visível (Cooperado/Associado) —
+        // não afeta rota, tabela nem payload.
+        if (data.organizacao_id) {
+          supabase
+            .from('organizacoes')
+            .select('tipo')
+            .eq('id', data.organizacao_id)
+            .single()
+            .then(({ data: org }) => { if (org?.tipo) setTipoOrg(org.tipo as TipoOrganizacao) })
         }
         setForm({
           tipo:               data.tipo ?? 'pessoa_fisica',
@@ -324,8 +337,8 @@ export default function EditarCooperadoPage() {
 
   if (carregando) {
     return (
-      <PageLayout titulo="Editar Filiado" icone="ti-user-edit" modulo={MODULO_NEXCOOP}
-        breadcrumb={[{ label: 'Cooperados', href: '/cooperados' }, { label: 'Editar' }]}>
+      <PageLayout titulo={`Editar ${n.singular}`} icone="ti-user-edit" modulo={MODULO_NEXCOOP}
+        breadcrumb={[{ label: n.plural, href: '/cooperados' }, { label: 'Editar' }]}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: COM_C.txtSub, fontSize: 14 }}>
           <i className="ti ti-loader" style={{ marginRight: 8 }} /> Carregando...
         </div>
@@ -335,9 +348,9 @@ export default function EditarCooperadoPage() {
 
   if (!form) {
     return (
-      <PageLayout titulo="Editar Filiado" icone="ti-user-edit" modulo={MODULO_NEXCOOP}
-        breadcrumb={[{ label: 'Cooperados', href: '/cooperados' }, { label: 'Editar' }]}>
-        <AlertBanner tipo="erro">{erro || 'Filiado não encontrado.'}</AlertBanner>
+      <PageLayout titulo={`Editar ${n.singular}`} icone="ti-user-edit" modulo={MODULO_NEXCOOP}
+        breadcrumb={[{ label: n.plural, href: '/cooperados' }, { label: 'Editar' }]}>
+        <AlertBanner tipo="erro">{erro || `${n.singular} não encontrado.`}</AlertBanner>
       </PageLayout>
     )
   }
@@ -346,11 +359,11 @@ export default function EditarCooperadoPage() {
 
   return (
     <PageLayout
-      titulo="Editar Filiado"
+      titulo={`Editar ${n.singular}`}
       icone="ti-user-edit"
       modulo={MODULO_NEXCOOP}
       breadcrumb={[
-        { label: 'Cooperados', href: '/cooperados' },
+        { label: n.plural, href: '/cooperados' },
         { label: 'Perfil', href: `/cooperados/${id}` },
         { label: 'Editar' },
       ]}

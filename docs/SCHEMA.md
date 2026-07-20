@@ -64,7 +64,9 @@
 
 | 085 | Módulo Site — schema base (docs/PLANO_MODULO_SITE.md, Fase 2). `site_config` (1:1 por org) — slug (subdomínio, CHECK `^[a-z0-9][a-z0-9-]{1,40}$`, UNIQUE), dominio_custom (UNIQUE, nullable, addon futuro), publicado/indexavel (bool), tema/conteudo (jsonb), secoes_ativas (text[]). `site_conteudos` (N por org) — tipo CHECK ('evento'\|'video'\|'promocao'\|'noticia'\|'pagina'), titulo, descricao, imagem_url, url_externa, data_evento (só evento), ordem, ativo; índice (organizacao_id, tipo, ativo). RLS: SELECT para membros da org, INSERT/UPDATE/DELETE só `admin` (`funcoes && ARRAY['admin']`, mesmo padrão da 079) — leitura pública do site NÃO usa essas policies, é servida via `createAdminClient()` no server (documentado no topo da migration). Trigger `trg_set_atualizado_em()` reaproveitado (já existe desde a 011/012, search_path fixado na 078). Seed: linha da COOPAIBI (`3ad97dc2-f87f-4e67-950e-387854d5bccc`, slug `coopaibi`, publicado/indexavel false) via `ON CONFLICT DO NOTHING`. Fora de escopo: middleware por Host, painel de edição, endpoints públicos — tudo isso é código de aplicação, não schema |
 
-**Próxima migration:** 086
+| 086 | `organizacoes`: +cor_primaria text (override manual da cor da marca em hex; NULL = usa a cor padrão do tipo — cooperativa=#1B5E20, associacao=#0F766E, central=#185FA5, ver lib/tema.ts). Backfill de `modulos_ativos` para orgs ainda sem módulos definidos: COOPAIBI recebe base + comercialização; demais orgs recebem só a base (cooperados/financeiro/assembleias/documentos/mensalidades) |
+
+**Próxima migration:** 087
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -89,7 +91,7 @@
 ## Tabelas principais
 
 ### Core
-- `organizacoes` — orgs multi-tenant (modulos_ativos text[]); +aliquota_funrural numeric(6,4) default 0.0163 (migration 082, usado por fn_atualizar_resultado_safra_snapshot em vez do valor hardcoded)
+- `organizacoes` — orgs multi-tenant (modulos_ativos text[]); +aliquota_funrural numeric(6,4) default 0.0163 (migration 082, usado por fn_atualizar_resultado_safra_snapshot em vez do valor hardcoded); +cor_primaria text (migration 086, override manual da cor da marca; NULL = cor padrão do tipo, ver lib/tema.ts)
 - `usuarios` — login, role, funcoes text[], organizacao_id
 - `cooperados` — vínculo societário (CAF, DAP, quota_parte, status, numero_matricula AANNNN)
 - `produtores` — identidade cadastral (CPF, nome, cooperado_id, usuario_id, tipo)

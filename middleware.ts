@@ -132,8 +132,20 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      if (pathname.startsWith('/loja') && !org?.modulos_ativos?.includes('loja')) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+      // Bloqueio genérico por módulo — cada prefixo de rota exige o módulo
+      // correspondente ativo em modulos_ativos. Roda só dentro do bloco acima
+      // (usuário não-super_admin, com organizacao_id), então preserva os
+      // early-returns de super_admin/parceiro que já retornam antes disso.
+      const ROTAS_POR_MODULO: Record<string, string> = {
+        '/comercializacao': 'comercializacao',
+        '/loja': 'loja',
+        '/contabil': 'contabil',
+        '/captacao': 'captacao',
+      }
+      for (const [prefixo, modulo] of Object.entries(ROTAS_POR_MODULO)) {
+        if (pathname.startsWith(prefixo) && !org?.modulos_ativos?.includes(modulo)) {
+          return NextResponse.redirect(new URL('/dashboard?modulo_inativo=true', request.url))
+        }
       }
     }
   }

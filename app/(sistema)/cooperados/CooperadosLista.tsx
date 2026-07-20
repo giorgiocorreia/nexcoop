@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { Cooperado, StatusCooperado } from '@/types/database'
 import BotaoAjuda from '@/components/BotaoAjuda'
 import { Btn } from '@/components/ui/Btn'
+import { nomenclatura } from '@/lib/nomenclatura'
 import {
   PageLayout, KpiCard, ContentCard, Badge, EmptyState,
   Input, Select, COM_C,
@@ -36,13 +37,6 @@ function formatarData(data: string | null) {
   return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR')
 }
 
-function getNomenclatura(tipoOrg: string) {
-  if (tipoOrg === 'cooperativa') {
-    return { singular: 'Cooperado', plural: 'Cooperados', novo: 'Novo cooperado', busca: 'Buscar por nome, CPF ou e-mail…' }
-  }
-  return { singular: 'Filiado', plural: 'Filiados', novo: 'Novo filiado', busca: 'Buscar por nome, CPF ou e-mail…' }
-}
-
 interface Props {
   cooperados: Cooperado[]
   tipoOrg: string
@@ -50,7 +44,7 @@ interface Props {
 }
 
 export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: Props) {
-  const n = getNomenclatura(tipoOrg)
+  const n = nomenclatura(tipoOrg)
   const router = useRouter()
   const [lista] = useState(cooperados)
   const [busca, setBusca] = useState('')
@@ -108,7 +102,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial }: 
         <div style={{ flex: 1, minWidth: 220 }}>
           <Input
             type="text"
-            placeholder={n.busca}
+            placeholder="Buscar por nome, CPF ou e-mail…"
             value={busca}
             onChange={e => setBusca(e.target.value)}
           />

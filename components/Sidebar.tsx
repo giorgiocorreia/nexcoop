@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Usuario, Organizacao } from '@/types/database'
 import { temModulo } from '@/lib/org'
+import { nomenclatura } from '@/lib/nomenclatura'
 import { HERO } from '@/components/nexcoop/ui'
 
 interface NavItem {
@@ -61,6 +62,8 @@ const CONTABIL_ITENS: NavItem[] = [
 function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | null, isParceiro?: boolean): NavGrupo[] {
   const funcoes = (usuario?.funcoes ?? []) as string[]
   const orgTipo = usuario?.organizacao?.tipo
+  const org = usuario?.organizacao
+  const n = nomenclatura(orgTipo)
   const exibeMensalidades = orgTipo !== 'associacao' && orgTipo !== 'central'
   const isAdmin          = funcoes.includes('admin')
   const isContador       = funcoes.includes('contador') || funcoes.includes('contador_aux')
@@ -80,7 +83,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (isAdmin || isFinanceiro || isTecnico || isConselhoFiscal)
     principalItens.push({ label: 'Dashboard',    href: '/dashboard',    icone: '📊' })
   if (isAdmin || isTecnico)
-    principalItens.push({ label: 'Cooperados',   href: '/cooperados',   icone: '👥' })
+    principalItens.push({ label: n.plural,       href: '/cooperados',   icone: '👥' })
   if (exibeMensalidades && (isAdmin || isFinanceiro))
     principalItens.push({ label: 'Mensalidades', href: '/mensalidades', icone: '💳' })
   if (isAdmin || isFinanceiro || isConselhoFiscal)
@@ -95,7 +98,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   const agroItens: NavItem[] = []
   if (isAdmin || isTecnico)
     agroItens.push({ label: 'Produção', href: '/producao', icone: '🌱', em_breve: true })
-  if (isAdmin || isFinanceiro || isTecnico || isCaixaCacau)
+  if ((isAdmin || isFinanceiro || isTecnico || isCaixaCacau) && temModulo(usuario?.organizacao?.modulos_ativos, 'comercializacao'))
     agroItens.push({
       label: 'Comercialização', href: '/comercializacao', icone: '🤝',
       children: [
@@ -159,7 +162,7 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
     grupos.push({ grupo: 'Agro', itens: agroItens })
 
   const projetosItens: NavItem[] = []
-  if (isAdmin || isCaptador)
+  if ((isAdmin || isCaptador) && temModulo(org?.modulos_ativos, 'captacao'))
     projetosItens.push({ label: 'Captação', href: '/captacao', icone: '🎯' })
   if (isAdmin) {
     projetosItens.push(
@@ -170,7 +173,10 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (projetosItens.length > 0)
     grupos.push({ grupo: 'Projetos', itens: projetosItens })
 
-  if (isAdmin || isContador)
+  // Contábil do admin da org é gateado por módulo. O grupo "Escritório" logo
+  // abaixo (parceiro/contador externo) NÃO é gateado — acesso via vínculo em
+  // profissionais_parceiros, outro caminho, não deve ser bloqueado por módulo.
+  if ((isAdmin || isContador) && temModulo(org?.modulos_ativos, 'contabil'))
     grupos.push({ grupo: 'Contábil', itens: CONTABIL_ITENS })
 
   if (isParceiro || isContador)

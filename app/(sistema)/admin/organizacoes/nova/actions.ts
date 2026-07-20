@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { modulosPadrao } from '@/lib/modulos'
 import type { PlanoOrganizacao, TipoOrganizacao } from '@/types/database'
 
 export interface CriarOrgInput {
@@ -16,6 +17,8 @@ export interface CriarOrgInput {
   admin_nome: string
   admin_email: string
   admin_senha: string
+  modulos_extras: string[]
+  cor_primaria: string | null
 }
 
 export async function criarOrganizacao(input: CriarOrgInput): Promise<{ error?: string; orgId?: string }> {
@@ -35,6 +38,10 @@ export async function criarOrganizacao(input: CriarOrgInput): Promise<{ error?: 
       email: input.email.trim() || null,
       telefone: input.telefone.trim() || null,
       ativo: true,
+      // União dos módulos base/padrão do tipo com os opcionais marcados no
+      // formulário — Set remove duplicata caso o extra já esteja no padrão.
+      modulos_ativos: [...new Set([...modulosPadrao(input.tipo), ...input.modulos_extras])],
+      cor_primaria: input.cor_primaria || null,
       // Este formulário já coleta tipo, cnpj, telefone, cidade e estado — os
       // mesmos campos do /onboarding. Sem esta flag a org caía no onboarding
       // pedindo de novo exatamente o que o admin acabou de preencher.

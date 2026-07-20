@@ -62,6 +62,7 @@ export interface Organizacao {
   trial_ends_at: string | null
   subscription_ends_at: string | null
   modulos_ativos: string[]
+  cor_primaria: string | null   // migration 086 — override manual da cor da marca
   loja_nfce_csc_id:       string | null
   loja_nfce_csc_token:    string | null
   loja_regime_tributario: string | null
