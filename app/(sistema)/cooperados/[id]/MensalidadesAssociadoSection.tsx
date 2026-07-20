@@ -19,6 +19,7 @@ import {
   gerarMensalidadesCooperado,
   verificarComprovante,
   darBaixaMensalidadeComprovante,
+  cancelarBaixaMensalidade,
 } from '@/lib/mensalidades/actions'
 import { lerComprovantePix } from '@/lib/mensalidades/comprovante.actions'
 import { hashArquivo, soDigitos, fileParaBase64 } from '@/lib/mensalidades/comprovante-utils'
@@ -70,6 +71,7 @@ export default function MensalidadesAssociadoSection({ cooperadoId, orgId, orgCn
 
   // Modal de baixa
   const [mensalidadeAlvo, setMensalidadeAlvo] = useState<Mensalidade | null>(null)
+  const [cancelandoId, setCancelandoId] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -84,6 +86,16 @@ export default function MensalidadesAssociadoSection({ cooperadoId, orgId, orgCn
   }, [cooperadoId])
 
   useEffect(() => { carregar() }, [carregar])
+
+  async function cancelarBaixa(m: Mensalidade) {
+    if (!confirm(`Cancelar a baixa desta mensalidade (${fmtMes(m.mes_referencia)})? A parcela volta a pendente, o lançamento no financeiro é estornado e o comprovante é liberado.`)) return
+    setCancelandoId(m.id)
+    setErro('')
+    const res = await cancelarBaixaMensalidade(m.id)
+    if ('error' in res) setErro(res.error)
+    else await carregar()
+    setCancelandoId(null)
+  }
 
   async function gerar() {
     setGerando(true)
@@ -192,10 +204,15 @@ export default function MensalidadesAssociadoSection({ cooperadoId, orgId, orgCn
                           </span>
                         </td>
                         <td style={td}>
-                          {st !== 'pago' && (
+                          {st !== 'pago' ? (
                             <button onClick={() => setMensalidadeAlvo(m)}
                               style={{ fontSize: 11, padding: '3px 10px', background: '#E6F1FB', color: '#185FA5', border: '1px solid #93c5fd', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}>
                               Dar baixa
+                            </button>
+                          ) : (
+                            <button onClick={() => cancelarBaixa(m)} disabled={cancelandoId === m.id}
+                              style={{ fontSize: 11, padding: '3px 10px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 6, cursor: cancelandoId === m.id ? 'wait' : 'pointer', fontWeight: 500 }}>
+                              {cancelandoId === m.id ? 'Cancelando…' : 'Cancelar baixa'}
                             </button>
                           )}
                         </td>

@@ -308,3 +308,73 @@ export async function darBaixaMensalidadeComprovante(
 
   return { mensalidade: data }
 }
+
+/**
+ * Cancela a baixa de uma mensalidade paga: volta pra pendente, estorna o
+ * lançamento no financeiro (e suas partidas contábeis) e LIMPA os dados do
+ * comprovante — inclusive o Id da transação, o que LIBERA o comprovante pra
+ * ser reusado (a baixa foi um engano). Fonte da verdade da reversão no servidor.
+ */
+export async function cancelarBaixaMensalidade(
+  mensalidadeId: string
+): Promise<{ ok: true } | { error: string }> {
+  const usuario = await getUsuarioLogado()
+  const orgId = usuario.organizacao_id
+  if (!orgId) return { error: 'Organização não encontrada.' }
+
+  const supabase = createAdminClient()
+
+  const { data: antes, error: errAntes } = await supabase
+    .from('mensalidades')
+    .select('*')
+    .eq('id', mensalidadeId)
+    .eq('organizacao_id', orgId)
+    .single<Mensalidade>()
+
+  if (errAntes || !antes) return { error: 'Mensalidade não encontrada.' }
+  if (antes.status !== 'pago') return { error: 'Esta mensalidade não está paga.' }
+
+  // Estorna o(s) lançamento(s) de receita criado(s) pela baixa. A baixa ancora
+  // numero_documento no id da mensalidade (slice 8) — mesmo critério aqui.
+  const { data: lancs } = await supabase
+    .from('lancamentos')
+    .select('id')
+    .eq('organizacao_id', orgId)
+    .eq('numero_documento', mensalidadeId.slice(0, 8))
+    .eq('cooperado_id', antes.cooperado_id)
+    .eq('tipo', 'receita')
+
+  for (const l of lancs ?? []) {
+    // Remove as partidas contábeis antes do lançamento (não deixa órfã).
+    await supabase.from('partidas').delete().eq('lancamento_id', (l as { id: string }).id)
+    await supabase.from('lancamentos').delete().eq('id', (l as { id: string }).id)
+  }
+
+  // Volta a mensalidade pra pendente e limpa o comprovante (libera dedup).
+  const { error } = await supabase
+    .from('mensalidades')
+    .update({
+      status: 'pendente',
+      data_pagamento: null,
+      forma_pagamento: null,
+      comprovante_url: null,
+      comprovante_id_transacao: null,
+      comprovante_hash: null,
+      comprovante_pagador: null,
+      comprovante_valor: null,
+      comprovante_data: null,
+      comprovante_dados: null,
+      atualizado_em: new Date().toISOString(),
+      usuario_id: usuario.id,
+    })
+    .eq('id', mensalidadeId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/mensalidades')
+  revalidatePath('/financeiro')
+  revalidatePath('/cooperados')
+  revalidatePath(`/cooperados/${antes.cooperado_id}`)
+
+  return { ok: true }
+}
