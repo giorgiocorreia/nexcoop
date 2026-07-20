@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Btn } from '@/components/ui/Btn'
 import { ContentCard, InfoRow, Badge, Field, Input, COM_C } from '@/components/nexcoop/ui'
 import { gerarAcessoCooperado, enviarEmailBoasVindas } from '@/lib/cooperados/actions'
+import { nomenclatura } from '@/lib/nomenclatura'
 import type { AcessoCooperado } from './page'
 
 interface Props {
@@ -12,11 +13,13 @@ interface Props {
   orgNome: string | null
   emailPadrao: string | null
   acessoInicial: AcessoCooperado
+  orgTipo: string | null
 }
 
 export default function AcessoSistemaCard({
-  cooperadoId, nome, orgNome, emailPadrao, acessoInicial,
+  cooperadoId, nome, orgNome, emailPadrao, acessoInicial, orgTipo,
 }: Props) {
+  const membro = nomenclatura(orgTipo).singular.toLowerCase()
   const [acesso, setAcesso] = useState<AcessoCooperado>(acessoInicial)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [email, setEmail] = useState(emailPadrao ?? '')
@@ -96,7 +99,7 @@ export default function AcessoSistemaCard({
           {!mostrarForm && (
             <>
               <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 12px', lineHeight: 1.5 }}>
-                Este cooperado ainda não possui acesso à plataforma. Gere um login
+                Este {membro} ainda não possui acesso à plataforma. Gere um login
                 para que ele possa acessar sua área.
               </p>
               <Btn
@@ -145,7 +148,7 @@ export default function AcessoSistemaCard({
             Senha temporária: <strong style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}>{senhaGerada}</strong>
           </div>
           <div style={{ fontSize: 12, color: '#3B82F6', marginTop: 4 }}>
-            Compartilhe esta senha com o cooperado. Ela não será exibida novamente.
+            Compartilhe esta senha com o {membro}. Ela não será exibida novamente.
           </div>
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {emailEnviado ? (

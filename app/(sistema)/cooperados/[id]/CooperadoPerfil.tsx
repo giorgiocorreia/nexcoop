@@ -345,6 +345,7 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
               orgNome={orgNome}
               emailPadrao={cooperado.email}
               acessoInicial={acesso}
+              orgTipo={orgTipo}
             />
           </div>
         )}

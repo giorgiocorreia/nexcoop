@@ -169,6 +169,7 @@ export default async function DashboardPage() {
       proximaAssembleia={proximaAssembleia?.[0] ?? null}
       resumoCotas={resumoCotas}
       orgTipo={orgTipo}
+      modulosAtivos={modulosAtivos}
       custodia={custodia}
       resultadoComercializacao={resultadoComercializacao}
       indiceNex={orgTipo === 'cooperativa' ? (

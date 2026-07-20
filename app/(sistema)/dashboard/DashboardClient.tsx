@@ -6,6 +6,7 @@ import {
   HubStyles, KpiCard, LinkCard, ContentCard, COM_C, HERO,
 } from '@/components/nexcoop/ui'
 import type { CustodiaUsuario } from '@/lib/tesouraria/saldo-responsabilidade'
+import { nomenclatura } from '@/lib/nomenclatura'
 
 interface LancamentoResumo {
   descricao: string
@@ -50,6 +51,7 @@ interface Props {
   proximaAssembleia: AssembleiaResumo | null
   resumoCotas: ResumoCotas | null
   orgTipo: string | undefined
+  modulosAtivos: string[]
   indiceNex?: React.ReactNode
   custodia?: CustodiaUsuario[]
   resultadoComercializacao?: ResultadoComercializacao | null
@@ -58,21 +60,41 @@ interface Props {
 const BRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-const MODULOS = [
-  { href: '/cooperados', label: 'Cooperados', desc: 'Cadastro, perfil, cotas e histórico dos filiados.', icon: 'ti-users', cor: COM_C.marca, corLt: COM_C.marcaLt },
-  { href: '/mensalidades', label: 'Mensalidades', desc: 'Cobranças mensais, geração em lote e acompanhamento.', icon: 'ti-calendar-due', cor: COM_C.azul, corLt: COM_C.azulLt },
-  { href: '/financeiro', label: 'Financeiro', desc: 'Receitas, despesas e lançamentos contábeis.', icon: 'ti-receipt-2', cor: COM_C.verde, corLt: COM_C.verdeLt },
-  { href: '/assembleias', label: 'Assembleias', desc: 'AGO, AGE e reuniões de conselho.', icon: 'ti-users-group', cor: COM_C.azul, corLt: COM_C.azulLt },
-  { href: '/documentos', label: 'Documentos', desc: 'Estatutos, atas, contratos e validades.', icon: 'ti-files', cor: COM_C.laranja, corLt: COM_C.laranjaLt },
-  { href: '/comercializacao', label: 'Comercialização', desc: 'Caixa, lotes, NF-e e gestão do cacau.', icon: 'ti-plant-2', cor: COM_C.marrom, corLt: COM_C.marromLt },
-]
+// Cards de módulo do dashboard, montados conforme o tipo da org e os módulos
+// ativos: nomenclatura no card de membros (cota só em cooperativa), Mensalidades
+// só em associação, Comercialização só se o módulo estiver ativo.
+function modulosDoDash(orgTipo: string | undefined, modulosAtivos: string[]) {
+  const n = nomenclatura(orgTipo)
+  const ehAssoc = orgTipo === 'associacao'
 
-const ACOES = [
-  { label: 'Novo filiado', href: '/cooperados/novo', icon: 'ti-user-plus' },
-  { label: 'Novo lançamento', href: '/financeiro/novo', icon: 'ti-plus' },
-  { label: 'Nova assembleia', href: '/assembleias/nova', icon: 'ti-building-community' },
-  { label: 'Novo documento', href: '/documentos/novo', icon: 'ti-file-plus' },
-]
+  const cards = [
+    {
+      href: '/cooperados', label: n.plural,
+      desc: ehAssoc
+        ? `Cadastro, perfil e histórico dos ${n.plural.toLowerCase()}.`
+        : 'Cadastro, perfil, cotas e histórico dos cooperados.',
+      icon: 'ti-users', cor: COM_C.marca, corLt: COM_C.marcaLt,
+    },
+    // Mensalidade (anuidade) é só de associação.
+    ...(ehAssoc ? [{ href: '/mensalidades', label: 'Mensalidades', desc: 'Cobranças mensais, geração em lote e acompanhamento.', icon: 'ti-calendar-due', cor: COM_C.azul, corLt: COM_C.azulLt }] : []),
+    { href: '/financeiro', label: 'Financeiro', desc: 'Receitas, despesas e lançamentos contábeis.', icon: 'ti-receipt-2', cor: COM_C.verde, corLt: COM_C.verdeLt },
+    { href: '/assembleias', label: 'Assembleias', desc: 'AGO, AGE e reuniões de conselho.', icon: 'ti-users-group', cor: COM_C.azul, corLt: COM_C.azulLt },
+    { href: '/documentos', label: 'Documentos', desc: 'Estatutos, atas, contratos e validades.', icon: 'ti-files', cor: COM_C.laranja, corLt: COM_C.laranjaLt },
+    // Comercialização só aparece se o módulo estiver ativo na org.
+    ...(modulosAtivos.includes('comercializacao') ? [{ href: '/comercializacao', label: 'Comercialização', desc: 'Caixa, lotes, NF-e e gestão do cacau.', icon: 'ti-plant-2', cor: COM_C.marrom, corLt: COM_C.marromLt }] : []),
+  ]
+  return cards
+}
+
+function acoesDoDash(orgTipo: string | undefined) {
+  const n = nomenclatura(orgTipo)
+  return [
+    { label: n.novo, href: '/cooperados/novo', icon: 'ti-user-plus' },
+    { label: 'Novo lançamento', href: '/financeiro/novo', icon: 'ti-plus' },
+    { label: 'Nova assembleia', href: '/assembleias/nova', icon: 'ti-building-community' },
+    { label: 'Novo documento', href: '/documentos/novo', icon: 'ti-file-plus' },
+  ]
+}
 
 export default function DashboardClient({
   hoje,
@@ -85,11 +107,15 @@ export default function DashboardClient({
   proximaAssembleia,
   resumoCotas,
   orgTipo,
+  modulosAtivos,
   indiceNex,
   custodia,
   resultadoComercializacao,
 }: Props) {
   const router = useRouter()
+  const n = nomenclatura(orgTipo)
+  const MODULOS = modulosDoDash(orgTipo, modulosAtivos)
+  const ACOES = acoesDoDash(orgTipo)
   return (
     <>
       <HubStyles />
@@ -119,7 +145,7 @@ export default function DashboardClient({
 
       <div className="com-hub-content">
         <div className="com-kpi-grid-4" style={{ marginBottom: resumoCotas ? 16 : 24 }}>
-          <KpiCard label="Filiados" value={String(totalCooperados)} sub={`${cooperadosAtivos} ativos`}
+          <KpiCard label={n.plural} value={String(totalCooperados)} sub={`${cooperadosAtivos} ativos`}
             icon="ti-users" cor={COM_C.marca} corLt={COM_C.marcaLt}
             onClick={() => router.push('/cooperados')} />
           <KpiCard label="A receber" value={BRL(totalReceber)} sub="Lançamentos pendentes"
