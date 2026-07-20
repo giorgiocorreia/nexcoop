@@ -715,7 +715,8 @@ export default function NovoCooperadoPage() {
                 <Input type="date" value={form.data_admissao} onChange={set('data_admissao')} style={{ maxWidth: 200 }} />
               </Field>
 
-              {/* Mensalidades do ano (opcional) — independente de cotas */}
+              {/* Mensalidades do ano (opcional) — só associação (cooperativa usa cota) */}
+              {tipoOrg === 'associacao' && (
               <div style={{ border: `1px solid ${COM_C.borda}`, borderRadius: 10, padding: '14px 16px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <input type="checkbox" checked={gerarMens} onChange={e => setGerarMens(e.target.checked)}
@@ -727,7 +728,7 @@ export default function NovoCooperadoPage() {
                 {gerarMens && (
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                      <Field label="Valor mensal (R$)" hint="Ignorado se o membro tiver quota-parte definida.">
+                      <Field label="Valor mensal (R$)" hint="Aplicado a cada mês gerado.">
                         <Input type="number" min="0" step="0.01" value={mensValor}
                           onChange={e => setMensValor(e.target.value)} placeholder="50,00" style={{ maxWidth: 160 }} />
                       </Field>
@@ -742,6 +743,7 @@ export default function NovoCooperadoPage() {
                   </>
                 )}
               </div>
+              )}
 
               {['suspenso', 'demitido', 'excluido'].includes(form.status) && (
                 <Field label="Motivo de saída / suspensão">
