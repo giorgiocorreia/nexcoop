@@ -198,7 +198,11 @@ export default function GerarMensalidadesPage() {
                   type="number" value={qtdMeses} onChange={e => setQtdMeses(e.target.value)}
                   min="1" max="12" placeholder="1" style={{ maxWidth: 90 }}
                 />
-                <Btn variante="cinza" tamanho="sm" onClick={() => setQtdMeses('12')}>Ano todo</Btn>
+                <Btn variante="cinza" tamanho="sm" onClick={() => {
+                  // "Ano todo" = do mês inicial até dezembro daquele ano.
+                  const mes = parseInt(mesAno.split('-')[1], 10) || 1
+                  setQtdMeses(String(13 - mes))
+                }}>Até dezembro</Btn>
               </div>
             </Field>
             <Field label="Dia de vencimento" hint="Ajustado automaticamente para o último dia do mês.">
