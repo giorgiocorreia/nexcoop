@@ -174,7 +174,17 @@ export default function MensalidadesAssociadoSection({ cooperadoId, orgId, orgCn
                     return (
                       <tr key={m.id} style={{ borderBottom: '1px solid #f5f3ef' }}>
                         <td style={td}>{fmtMes(m.mes_referencia)}</td>
-                        <td style={{ ...td, fontWeight: 600 }}>{BRL(Number(m.valor))}</td>
+                        <td style={{ ...td, fontWeight: 600 }}>
+                          {/* Paga com comprovante → mostra o valor REAL pago; senão o parâmetro. */}
+                          {st === 'pago' && m.comprovante_valor != null
+                            ? BRL(Number(m.comprovante_valor))
+                            : BRL(Number(m.valor))}
+                          {st === 'pago' && m.comprovante_valor != null && Number(m.comprovante_valor) !== Number(m.valor) && (
+                            <span style={{ fontSize: 10, color: COM_C.txtSub, fontWeight: 400, marginLeft: 4 }}>
+                              (gerado {BRL(Number(m.valor))})
+                            </span>
+                          )}
+                        </td>
                         <td style={td}>{st === 'pago' ? `Pago ${fmtData(m.data_pagamento)}` : fmtData(m.data_vencimento)}</td>
                         <td style={td}>
                           <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600, background: sb.bg, color: sb.cor }}>

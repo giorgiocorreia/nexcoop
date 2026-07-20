@@ -275,12 +275,19 @@ export async function darBaixaMensalidadeComprovante(
   try {
     const { criarLancamento } = await import('@/lib/financeiro/actions')
     const descricaoPagador = params.pagador ? ` — PIX de ${params.pagador}` : ' — PIX'
+    // O valor da geração da mensalidade é só parâmetro; o pagamento pode variar.
+    // Uma vez paga, o registro/lançamento assume o VALOR REAL do comprovante
+    // (decisão do Giorgio). Fallback pro valor da mensalidade só se a IA não
+    // conseguiu ler o valor do comprovante.
+    const valorReal = params.valorComprovante != null && params.valorComprovante > 0
+      ? params.valorComprovante
+      : Number(antes.valor)
     await criarLancamento({
       organizacao_id: orgId,
       tipo: 'receita',
       status: 'pago',
       descricao: `Mensalidade — ${formatarMesRef(antes.mes_referencia)}${descricaoPagador}`,
-      valor: Number(antes.valor),
+      valor: valorReal,
       data_competencia: antes.mes_referencia.split('T')[0].slice(0, 10),
       data_pagamento: params.dataPagamento,
       cooperado_id: antes.cooperado_id,
