@@ -312,9 +312,14 @@ function PagamentosSection({ cooperadoId, orgId, usuarioId }, ref) {
                         {reimprimindo === cota.id ? 'Gerando…' : '🖨 Recibo'}
                       </button>
                     )}
-                    <button onClick={() => iniciarForm(cota.id)} style={btnPrimary}>
-                      + Registrar pagamento
-                    </button>
+                    {/* Cota já integralizada (mesmo status que gera o badge acima) não tem
+                        saldo a pagar — servidor já recusaria (registrarPagamentos), então
+                        nem oferece o botão */}
+                    {cota.status !== 'integralizada' && (
+                      <button onClick={() => iniciarForm(cota.id)} style={btnPrimary}>
+                        + Registrar pagamento
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
