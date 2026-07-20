@@ -390,6 +390,16 @@ export interface Mensalidade {
   usuario_id: string | null
   criado_em: string
   atualizado_em: string
+  // Baixa por comprovante PIX (migration 087) — preenchidos quando a baixa
+  // é feita via upload + leitura por IA (ver lib/mensalidades/comprovante.actions.ts)
+  forma_pagamento:          string | null
+  comprovante_url:          string | null
+  comprovante_id_transacao: string | null
+  comprovante_hash:         string | null
+  comprovante_pagador:      string | null
+  comprovante_valor:        number | null
+  comprovante_data:         string | null
+  comprovante_dados:        Record<string, unknown> | null
 }
 
 export interface Notificacao {

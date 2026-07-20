@@ -5,15 +5,26 @@
 // que na cooperativa é ocupado por Cotas/Pagamentos. É componente NOVO e separado
 // de propósito: não toca no caminho da cooperativa (ver feedback do Giorgio 20/07).
 // Nada de cota aqui — mensalidade é outra coisa.
+//
+// Fluxo de baixa (20/07): "Dar baixa" abre modal → forma de pagamento (PIX
+// default) → se PIX, upload do comprovante → IA lê e pré-preenche → dedup
+// (bloqueia) + validação do recebedor x CNPJ da org (só avisa) → confirma.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ContentCard, COM_C } from '@/components/nexcoop/ui'
+import { ContentCard, COM_C, Modal, Field, Input, Select } from '@/components/nexcoop/ui'
 import { Btn } from '@/components/ui/Btn'
-import { registrarPagamentoMensalidade } from '@/lib/mensalidades/actions'
-import { gerarMensalidadesCooperado } from '@/lib/mensalidades/actions'
+import {
+  registrarPagamentoMensalidade,
+  gerarMensalidadesCooperado,
+  verificarComprovante,
+  darBaixaMensalidadeComprovante,
+} from '@/lib/mensalidades/actions'
+import { lerComprovantePix } from '@/lib/mensalidades/comprovante.actions'
+import { hashArquivo, soDigitos, fileParaBase64 } from '@/lib/mensalidades/comprovante-utils'
 import { mesAtual, mesesAteDezembro } from '@/lib/mensalidades/gerar-utils'
 import type { Mensalidade } from '@/types/database'
+import type { ComprovantePixExtraido } from '@/lib/mensalidades/comprovante-types'
 
 const HOJE = new Date().toISOString().split('T')[0]
 const BRL = (v: number) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -42,12 +53,13 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; cor: string }> =
 
 interface Props {
   cooperadoId: string
+  orgId?:      string | null
+  orgCnpj?:    string | null
 }
 
-export default function MensalidadesAssociadoSection({ cooperadoId }: Props) {
+export default function MensalidadesAssociadoSection({ cooperadoId, orgId, orgCnpj }: Props) {
   const [lista, setLista]         = useState<Mensalidade[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [baixando, setBaixando]   = useState<string | null>(null)
   const [erro, setErro]           = useState('')
 
   // Formulário de geração até dezembro
@@ -55,6 +67,9 @@ export default function MensalidadesAssociadoSection({ cooperadoId }: Props) {
   const [valor, setValor]         = useState('50')
   const [diaVenc, setDiaVenc]     = useState('10')
   const [gerando, setGerando]     = useState(false)
+
+  // Modal de baixa
+  const [mensalidadeAlvo, setMensalidadeAlvo] = useState<Mensalidade | null>(null)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -69,15 +84,6 @@ export default function MensalidadesAssociadoSection({ cooperadoId }: Props) {
   }, [cooperadoId])
 
   useEffect(() => { carregar() }, [carregar])
-
-  async function darBaixa(id: string) {
-    setBaixando(id)
-    setErro('')
-    const res = await registrarPagamentoMensalidade(id, HOJE)
-    if ('error' in res) setErro(res.error)
-    else await carregar()
-    setBaixando(null)
-  }
 
   async function gerar() {
     setGerando(true)
@@ -177,9 +183,9 @@ export default function MensalidadesAssociadoSection({ cooperadoId }: Props) {
                         </td>
                         <td style={td}>
                           {st !== 'pago' && (
-                            <button onClick={() => darBaixa(m.id)} disabled={baixando === m.id}
+                            <button onClick={() => setMensalidadeAlvo(m)}
                               style={{ fontSize: 11, padding: '3px 10px', background: '#E6F1FB', color: '#185FA5', border: '1px solid #93c5fd', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}>
-                              {baixando === m.id ? '…' : 'Dar baixa'}
+                              Dar baixa
                             </button>
                           )}
                         </td>
@@ -192,7 +198,241 @@ export default function MensalidadesAssociadoSection({ cooperadoId }: Props) {
           </>
         )}
       </ContentCard>
+
+      {mensalidadeAlvo && (
+        <ModalBaixa
+          mensalidade={mensalidadeAlvo}
+          orgId={orgId ?? null}
+          orgCnpj={orgCnpj ?? null}
+          onClose={() => setMensalidadeAlvo(null)}
+          onConcluido={() => { setMensalidadeAlvo(null); carregar() }}
+        />
+      )}
     </div>
+  )
+}
+
+// ── Modal de baixa ────────────────────────────────────────────────────────────
+
+interface ModalBaixaProps {
+  mensalidade: Mensalidade
+  orgId: string | null
+  orgCnpj: string | null
+  onClose: () => void
+  onConcluido: () => void
+}
+
+type FormaPagamento = 'pix' | 'dinheiro' | 'cartao' | 'outro'
+
+function ModalBaixa({ mensalidade, orgId, orgCnpj, onClose, onConcluido }: ModalBaixaProps) {
+  const [forma, setForma]       = useState<FormaPagamento>('pix')
+  const [arquivo, setArquivo]   = useState<File | null>(null)
+  const [lendoIA, setLendoIA]   = useState(false)
+  const [erro, setErro]         = useState('')
+  const [confirmando, setConfirmando] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Campos editáveis (pré-preenchidos pela IA, mas o operador confere/edita — human-in-the-loop)
+  const [valorInformado, setValorInformado] = useState(String(mensalidade.valor))
+  const [dataInformada, setDataInformada]   = useState(HOJE)
+  const [pagador, setPagador]               = useState('')
+  const [idTransacao, setIdTransacao]       = useState('')
+  const [instituicao, setInstituicao]       = useState('')
+  const [hash, setHash]                     = useState<string | null>(null)
+  const [dadosComprovante, setDadosComprovante] = useState<ComprovantePixExtraido | null>(null)
+
+  // Avisos (não bloqueiam, exceto duplicidade)
+  const [duplicado, setDuplicado] = useState<{ cooperadoNome: string; mesReferencia: string } | null>(null)
+  const [recebedorDivergente, setRecebedorDivergente] = useState(false)
+  const [valorDivergente, setValorDivergente] = useState(false)
+
+  async function lerArquivo(file: File) {
+    setArquivo(file)
+    setErro('')
+    setDuplicado(null)
+    setLendoIA(true)
+    try {
+      const [b64, h] = await Promise.all([fileParaBase64(file), hashArquivo(file)])
+      setHash(h)
+
+      const res = await lerComprovantePix(b64, file.type)
+      if ('error' in res) {
+        setErro(res.error)
+        setLendoIA(false)
+        return
+      }
+
+      const d = res.dados
+      setDadosComprovante(d)
+      if (d.valor != null) setValorInformado(String(d.valor))
+      if (d.data_pagamento) setDataInformada(d.data_pagamento)
+      if (d.pagador_nome) setPagador(d.pagador_nome)
+      if (d.id_transacao) setIdTransacao(d.id_transacao)
+      if (d.instituicao_pagador) setInstituicao(d.instituicao_pagador)
+
+      // Divergência de valor (informativa, não bloqueia)
+      setValorDivergente(d.valor != null && Math.abs(d.valor - Number(mensalidade.valor)) > 0.009)
+
+      // Validação do recebedor x CNPJ da org (informativa, não bloqueia)
+      if (orgCnpj && d.recebedor_documento) {
+        setRecebedorDivergente(soDigitos(d.recebedor_documento) !== soDigitos(orgCnpj))
+      } else {
+        setRecebedorDivergente(false)
+      }
+
+      // Dedup — chave primária id_transacao, fallback hash. BLOQUEIA.
+      const dedup = await verificarComprovante(d.id_transacao ?? null, h)
+      if ('error' in dedup) setErro(dedup.error)
+      else if (dedup.duplicado) setDuplicado(dedup.duplicado)
+    } catch (e) {
+      setErro('Erro ao processar o arquivo: ' + String(e))
+    } finally {
+      setLendoIA(false)
+    }
+  }
+
+  async function confirmar() {
+    setErro('')
+    setConfirmando(true)
+    try {
+      let comprovanteUrl: string | null = null
+
+      if (forma === 'pix' && arquivo) {
+        if (!orgId) {
+          setErro('Organização não identificada — não é possível enviar o comprovante.')
+          setConfirmando(false)
+          return
+        }
+        const supabase = createClient()
+        const path = `${orgId}/mensalidades/${mensalidade.id}/${Date.now()}-${arquivo.name}`
+        const { error: uploadErr } = await supabase.storage.from('comprovantes').upload(path, arquivo)
+        if (uploadErr) {
+          setErro('Erro ao enviar o comprovante: ' + uploadErr.message + ' (bucket "comprovantes" existe no Dashboard?)')
+          setConfirmando(false)
+          return
+        }
+        const { data: urlData } = supabase.storage.from('comprovantes').getPublicUrl(path)
+        comprovanteUrl = urlData.publicUrl
+      }
+
+      if (forma === 'pix') {
+        const res = await darBaixaMensalidadeComprovante({
+          mensalidadeId:    mensalidade.id,
+          dataPagamento:    dataInformada || HOJE,
+          formaPagamento:   forma,
+          comprovanteUrl,
+          idTransacao:      idTransacao || null,
+          hash,
+          pagador:          pagador || null,
+          valorComprovante: valorInformado ? parseFloat(valorInformado.replace(',', '.')) : null,
+          dataComprovante:  dataInformada || null,
+          dadosComprovante,
+        })
+        if ('error' in res) { setErro(res.error); setConfirmando(false); return }
+      } else {
+        // Formas sem comprovante (dinheiro/cartão/outro) — baixa simples, data = hoje.
+        const res = await registrarPagamentoMensalidade(mensalidade.id, HOJE)
+        if ('error' in res) { setErro(res.error); setConfirmando(false); return }
+      }
+
+      onConcluido()
+    } catch (e) {
+      setErro('Erro ao confirmar a baixa: ' + String(e))
+      setConfirmando(false)
+    }
+  }
+
+  const bloqueado = !!duplicado
+  const podeConfirmar = forma !== 'pix' || (!!arquivo && !lendoIA && !bloqueado)
+
+  return (
+    <Modal
+      titulo="Dar baixa na mensalidade"
+      subtitulo={`${fmtMes(mensalidade.mes_referencia)} — ${BRL(Number(mensalidade.valor))}`}
+      onClose={onClose}
+      largura={480}
+      footer={
+        <>
+          <Btn variante="cinza" tamanho="sm" onClick={onClose}>Cancelar</Btn>
+          <Btn variante="roxo" tamanho="sm" onClick={confirmar} disabled={!podeConfirmar || confirmando}>
+            {confirmando ? 'Confirmando…' : 'Confirmar baixa'}
+          </Btn>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label="Como foi o pagamento?">
+          <Select value={forma} onChange={e => setForma(e.target.value as FormaPagamento)}>
+            <option value="pix">PIX</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="cartao">Cartão</option>
+            <option value="outro">Outro</option>
+          </Select>
+        </Field>
+
+        {forma === 'pix' && (
+          <>
+            <Field label="Comprovante (imagem ou PDF)">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={e => { const f = e.target.files?.[0]; if (f) lerArquivo(f) }}
+                style={inp}
+              />
+            </Field>
+
+            {lendoIA && (
+              <div style={{ fontSize: 12, color: COM_C.txtSub }}>Lendo comprovante…</div>
+            )}
+
+            {duplicado && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#dc2626' }}>
+                Este comprovante já foi usado para <strong>{duplicado.cooperadoNome}</strong> ({duplicado.mesReferencia}).
+              </div>
+            )}
+
+            {!duplicado && recebedorDivergente && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#92400e' }}>
+                O recebedor do comprovante não confere com o CNPJ da associação. Confira antes de confirmar.
+              </div>
+            )}
+
+            {!duplicado && valorDivergente && (
+              <div style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#185FA5' }}>
+                O valor do comprovante é diferente do valor da mensalidade.
+              </div>
+            )}
+
+            {arquivo && !lendoIA && (
+              <>
+                <Field label="Valor (R$)">
+                  <Input type="number" step="0.01" value={valorInformado} onChange={e => setValorInformado(e.target.value)} />
+                </Field>
+                <Field label="Data do pagamento">
+                  <Input type="date" value={dataInformada} onChange={e => setDataInformada(e.target.value)} />
+                </Field>
+                <Field label="Pagador">
+                  <Input value={pagador} onChange={e => setPagador(e.target.value)} />
+                </Field>
+                <Field label="Id da transação (EndToEndId)">
+                  <Input value={idTransacao} onChange={e => setIdTransacao(e.target.value)} />
+                </Field>
+                <Field label="Instituição do pagador">
+                  <Input value={instituicao} onChange={e => setInstituicao(e.target.value)} />
+                </Field>
+              </>
+            )}
+          </>
+        )}
+
+        {erro && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#dc2626' }}>
+            {erro}
+          </div>
+        )}
+      </div>
+    </Modal>
   )
 }
 

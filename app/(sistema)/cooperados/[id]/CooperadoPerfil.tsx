@@ -62,12 +62,13 @@ interface Props {
   propriedades: Propriedade[]
   orgTipo:    string | null
   orgNome:    string | null
+  orgCnpj:    string | null
   usuarioId:  string
   ehAdmin:    boolean
   acesso:     AcessoCooperado
 }
 
-export default function CooperadoPerfil({ cooperado: initial, propriedades, orgTipo, orgNome, usuarioId, ehAdmin, acesso }: Props) {
+export default function CooperadoPerfil({ cooperado: initial, propriedades, orgTipo, orgNome, orgCnpj, usuarioId, ehAdmin, acesso }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -371,7 +372,11 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
         {/* Associação: mensalidades no lugar das cotas. Componente separado,
             não toca no caminho da cooperativa. */}
         {orgTipo === 'associacao' && (
-          <MensalidadesAssociadoSection cooperadoId={cooperado.id} />
+          <MensalidadesAssociadoSection
+            cooperadoId={cooperado.id}
+            orgId={cooperado.organizacao_id}
+            orgCnpj={orgCnpj}
+          />
         )}
 
         <p style={{ fontSize: 11, color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>

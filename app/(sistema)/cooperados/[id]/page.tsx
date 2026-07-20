@@ -51,7 +51,7 @@ export default async function CooperadoPage({ params }: Props) {
 
   const { data: org } = await supabase
     .from('organizacoes')
-    .select('nome, tipo')
+    .select('nome, tipo, cnpj')
     .eq('id', cooperado.organizacao_id)
     .single()
 
@@ -86,6 +86,7 @@ export default async function CooperadoPage({ params }: Props) {
       propriedades={(propriedades ?? []) as any}
       orgTipo={org?.tipo ?? null}
       orgNome={org?.nome ?? null}
+      orgCnpj={org?.cnpj ?? null}
       usuarioId={user.id}
       ehAdmin={ehAdmin}
       acesso={acesso}

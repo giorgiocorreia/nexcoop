@@ -66,7 +66,9 @@
 
 | 086 | `organizacoes`: +cor_primaria text (override manual da cor da marca em hex; NULL = usa a cor padrão do tipo — cooperativa=#1B5E20, associacao=#0F766E, central=#185FA5, ver lib/tema.ts). Backfill de `modulos_ativos` para orgs ainda sem módulos definidos: COOPAIBI recebe base + comercialização; demais orgs recebem só a base (cooperados/financeiro/assembleias/documentos/mensalidades) |
 
-**Próxima migration:** 087
+| 087 | `mensalidades`: baixa com comprovante PIX (feature associação-only). +forma_pagamento text, +comprovante_url text, +comprovante_id_transacao text (EndToEndId, chave de dedup primária), +comprovante_hash text (SHA-256 do arquivo, dedup fallback), +comprovante_pagador text, +comprovante_valor numeric(12,2), +comprovante_data date, +comprovante_dados jsonb (extração completa da IA, auditoria). Todas nullable, tabela já populada. Dois índices únicos parciais por org: `uq_mensalidade_comprovante_e2e` (organizacao_id, comprovante_id_transacao) WHERE NOT NULL e `uq_mensalidade_comprovante_hash` (organizacao_id, comprovante_hash) WHERE NOT NULL — bloqueiam reuso do mesmo comprovante em duas mensalidades da mesma org |
+
+**Próxima migration:** 088
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
