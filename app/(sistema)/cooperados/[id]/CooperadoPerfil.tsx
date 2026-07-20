@@ -12,6 +12,7 @@ import {
 import { nomenclatura } from '@/lib/nomenclatura'
 import CotasSection from './CotasSection'
 import PagamentosSection from './PagamentosSection'
+import MensalidadesAssociadoSection from './MensalidadesAssociadoSection'
 import AcessoSistemaCard from './AcessoSistemaCard'
 import type { AcessoCooperado } from './page'
 
@@ -365,6 +366,12 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
             orgId={cooperado.organizacao_id}
             usuarioId={usuarioId}
           />
+        )}
+
+        {/* Associação: mensalidades no lugar das cotas. Componente separado,
+            não toca no caminho da cooperativa. */}
+        {orgTipo === 'associacao' && (
+          <MensalidadesAssociadoSection cooperadoId={cooperado.id} />
         )}
 
         <p style={{ fontSize: 11, color: '#bbb', marginTop: '1rem', textAlign: 'right' }}>
