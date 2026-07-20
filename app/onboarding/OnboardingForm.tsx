@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { concluirOnboarding } from './actions'
 
 const GREEN = '#635BFF'
 const GREEN_DARK = '#4840CC'
@@ -19,7 +18,6 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function OnboardingForm() {
-  const router = useRouter()
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -50,44 +48,18 @@ export default function OnboardingForm() {
     setSalvando(true)
     setErro('')
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    // Write org-level vai por server action (createAdminClient) — pela RLS do
+    // browser o UPDATE voltava sempre com zero linhas. Ver app/onboarding/actions.ts.
+    const resultado = await concluirOnboarding({
+      tipo:     form.tipo,
+      cnpj:     form.cnpj,
+      telefone: form.telefone,
+      cidade:   form.cidade,
+      estado:   form.estado,
+    })
 
-    const { data: usuario } = await supabase
-      .from('usuarios')
-      .select('organizacao_id')
-      .eq('id', user.id)
-      .single()
-
-    if (!usuario?.organizacao_id) {
-      setErro('Organização não encontrada. Contate o suporte.')
-      setSalvando(false)
-      return
-    }
-
-    const { data: updated, error } = await supabase
-      .from('organizacoes')
-      .update({
-        tipo: form.tipo,
-        cnpj: form.cnpj.replace(/\D/g, '') || null,
-        telefone: form.telefone.trim() || null,
-        cidade: form.cidade.trim(),
-        estado: form.estado,
-        onboarding_concluido: true,
-      })
-      .eq('id', usuario.organizacao_id)
-      .select('id')
-
-    if (error) {
-      setErro('Erro ao salvar. Tente novamente.')
-      setSalvando(false)
-      return
-    }
-
-    // Sem .select() o Supabase retorna error:null mesmo quando RLS bloca (0 rows)
-    if (!updated || updated.length === 0) {
-      setErro('Não foi possível salvar. Verifique suas permissões ou recarregue a página.')
+    if (!resultado.ok) {
+      setErro(resultado.erro)
       setSalvando(false)
       return
     }
