@@ -8,6 +8,7 @@ import { isAdmin } from '@/lib/permissoes'
 import { randomBytes } from 'crypto'
 import { enviarEmail } from '@/lib/email'
 import { traduzirErro } from '@/lib/utils/erros'
+import { tipoProdutorPorStatusCooperado } from '@/lib/cooperados/produtor-utils'
 import type { RoleUsuario, StatusCooperado, VinculoUsuario } from '@/types/database'
 
 // ── Criar cooperado (chamado pela página /cooperados/novo) ────────────────────
@@ -503,6 +504,7 @@ export async function promoverProdutorACooperado(
 
   // 3. Criar cooperado com colunas estruturadas
   const dc = input.dadosCooperado
+  const statusCooperado = dc.status ?? 'ativo'
   const { data: cooperado, error: cooperadoError } = await admin
     .from('cooperados')
     .insert({
@@ -534,7 +536,7 @@ export async function promoverProdutorACooperado(
       data_admissao: dc.data_admissao ?? null,
       quota_parte: dc.quota_parte ?? null,
       tipo: dc.tipo ?? 'pessoa_fisica',
-      status: dc.status ?? 'ativo',
+      status: statusCooperado,
     })
     .select('id')
     .single()
@@ -542,12 +544,17 @@ export async function promoverProdutorACooperado(
     return { success: false as const, error: `Erro ao criar cooperado: ${cooperadoError?.message}` }
   }
 
-  // 4. Atualizar produtor: vincular cooperado_id + usuario_id
+  // 4. Atualizar produtor: vincular cooperado_id + usuario_id + tipo.
+  // O trigger trg_sincronizar_tipo_produtor (053) só roda em UPDATE de status
+  // do cooperado — na promoção o cooperado é INSERT, então o tipo precisa ser
+  // derivado aqui, senão o produtor segue 'externo' (e recebe preço de não
+  // membro na cotação) até alguém mudar o status do cooperado depois.
   const { error: updateError } = await admin
     .from('produtores')
     .update({
       cooperado_id: cooperado.id,
       usuario_id: usuarioId,
+      tipo: tipoProdutorPorStatusCooperado(statusCooperado),
       ...(input.nomeAtualizado ? { nome: input.nomeAtualizado } : {}),
       ...(dc.conjuge_nome !== undefined ? { conjuge_nome: dc.conjuge_nome ?? null } : {}),
       ...(dc.conjuge_cpf !== undefined ? { conjuge_cpf: dc.conjuge_cpf ?? null } : {}),
@@ -737,6 +744,8 @@ export async function vincularUsuarioComoCooperado(
     return { success: false as const, error: 'Este usuário já possui vínculo de cooperado.' }
   }
 
+  const statusCooperado = input.status ?? 'ativo'
+
   // Gerar matrícula automática se não informada
   let numeroMatricula = input.numero_matricula
   if (!numeroMatricula) {
@@ -772,7 +781,7 @@ export async function vincularUsuarioComoCooperado(
       quota_parte: input.quota_parte ?? null,
       caf_numero: input.caf_numero ?? null,
       dap_numero: input.dap_numero ?? null,
-      status: input.status ?? 'ativo',
+      status: statusCooperado,
       tipo: 'pessoa_fisica',
       conjuge_nome: input.conjuge_nome ?? null,
       conjuge_cpf: input.conjuge_cpf ?? null,
@@ -791,6 +800,11 @@ export async function vincularUsuarioComoCooperado(
     .eq('organizacao_id', organizacaoId)
     .maybeSingle()
 
+  // Tipo derivado do status do cooperado (mesma regra do trigger 053, que não
+  // cobre INSERT) — 'cooperado' fixo aqui deixava produtor com preço de membro
+  // enquanto o cooperado ainda estava em proposta.
+  const tipoProdutor = tipoProdutorPorStatusCooperado(statusCooperado)
+
   if (!produtorExistente) {
     await admin.from('produtores').insert({
       organizacao_id: organizacaoId,
@@ -800,7 +814,7 @@ export async function vincularUsuarioComoCooperado(
       telefone: input.telefone ?? null,
       usuario_id: input.usuarioId,
       cooperado_id: cooperado.id,
-      tipo: 'cooperado',
+      tipo: tipoProdutor,
       conjuge_nome: input.conjuge_nome ?? null,
       conjuge_cpf: input.conjuge_cpf ?? null,
       ativo: true,
@@ -808,6 +822,7 @@ export async function vincularUsuarioComoCooperado(
   } else {
     await admin.from('produtores').update({
       cooperado_id: cooperado.id,
+      tipo: tipoProdutor,
       ...(input.conjuge_nome !== undefined ? { conjuge_nome: input.conjuge_nome ?? null } : {}),
       ...(input.conjuge_cpf !== undefined ? { conjuge_cpf: input.conjuge_cpf ?? null } : {}),
     } as any).eq('id', produtorExistente.id)
