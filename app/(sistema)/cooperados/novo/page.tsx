@@ -7,6 +7,8 @@ import { traduzirErro } from '@/lib/utils/erros'
 import { cpfInvalidoMsg } from '@/lib/utils/cpf'
 import { vincularCooperadoComoProdutor } from '@/lib/comercializacao/produtores.actions'
 import { inserirCooperado } from '@/lib/cooperados/actions'
+import { gerarMensalidadesCooperado } from '@/lib/mensalidades/actions'
+import { mesAtual, mesesAteDezembro } from '@/lib/mensalidades/gerar-utils'
 import BannerLimiteAtingido from '@/components/BannerLimiteAtingido'
 import { Btn } from '@/components/ui/Btn'
 import { nomenclatura } from '@/lib/nomenclatura'
@@ -112,6 +114,11 @@ export default function NovoCooperadoPage() {
   const [propriedades, setPropriedades] = useState<PropriedadeLocal[]>([])
   const [mostrarFormPropriedade, setMostrarFormPropriedade] = useState(false)
   const [formPropriedade, setFormPropriedade] = useState<PropriedadeLocal>(PROPRIEDADE_FORM_INICIAL)
+
+  // Geração de mensalidades no cadastro (opcional): do mês atual até dezembro.
+  const [gerarMens, setGerarMens]     = useState(false)
+  const [mensValor, setMensValor]     = useState('50')
+  const [mensDiaVenc, setMensDiaVenc] = useState('10')
 
   // Tipo da org só pra escolher o rótulo visível (Cooperado/Associado) — não
   // afeta rota, tabela nem payload, que continuam "cooperados"/"cooperado".
@@ -327,6 +334,23 @@ export default function NovoCooperadoPage() {
     } catch (eVinculo: any) {
       // Não bloqueia o cadastro — cooperado foi salvo, apenas loga o erro
       console.error('[NovoCooperado] falha ao vincular produtor:', eVinculo?.message ?? eVinculo)
+    }
+    // ────────────────────────────────────────────────────────
+
+    // ── MENSALIDADES DO ANO (opcional) ───────────────────────
+    // Gera as parcelas do mês atual até dezembro para este membro. Não bloqueia
+    // o cadastro (membro já foi salvo) — em caso de erro, apenas avisa.
+    if (gerarMens) {
+      const mi = mesAtual()
+      const resMens = await gerarMensalidadesCooperado(data.id, {
+        mesInicial:    mi,
+        qtdMeses:      mesesAteDezembro(mi),
+        diaVencimento: parseInt(mensDiaVenc, 10) || 10,
+        valorPadrao:   parseFloat(mensValor.replace(',', '.')) || 0,
+      })
+      if ('error' in resMens) {
+        alert(`${n.singular} cadastrado, mas não foi possível gerar as mensalidades: ${resMens.error}`)
+      }
     }
     // ────────────────────────────────────────────────────────
 
@@ -690,6 +714,34 @@ export default function NovoCooperadoPage() {
               <Field label="Data de admissão">
                 <Input type="date" value={form.data_admissao} onChange={set('data_admissao')} style={{ maxWidth: 200 }} />
               </Field>
+
+              {/* Mensalidades do ano (opcional) — independente de cotas */}
+              <div style={{ border: `1px solid ${COM_C.borda}`, borderRadius: 10, padding: '14px 16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={gerarMens} onChange={e => setGerarMens(e.target.checked)}
+                    style={{ accentColor: COM_C.roxo, width: 16, height: 16 }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt }}>
+                    Gerar mensalidades deste {n.singular.toLowerCase()} até dezembro
+                  </span>
+                </label>
+                {gerarMens && (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+                      <Field label="Valor mensal (R$)" hint="Ignorado se o membro tiver quota-parte definida.">
+                        <Input type="number" min="0" step="0.01" value={mensValor}
+                          onChange={e => setMensValor(e.target.value)} placeholder="50,00" style={{ maxWidth: 160 }} />
+                      </Field>
+                      <Field label="Dia de vencimento" hint="Ajustado ao último dia do mês quando necessário.">
+                        <Input type="number" min="1" max="31" value={mensDiaVenc}
+                          onChange={e => setMensDiaVenc(e.target.value)} placeholder="10" style={{ maxWidth: 120 }} />
+                      </Field>
+                    </div>
+                    <p style={{ fontSize: 12, color: COM_C.txtSub, margin: '8px 0 0' }}>
+                      Serão criadas as parcelas do mês atual até dezembro. Meses que já tenham mensalidade não são duplicados.
+                    </p>
+                  </>
+                )}
+              </div>
 
               {['suspenso', 'demitido', 'excluido'].includes(form.status) && (
                 <Field label="Motivo de saída / suspensão">

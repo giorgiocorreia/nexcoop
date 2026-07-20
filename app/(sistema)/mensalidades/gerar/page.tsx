@@ -7,8 +7,9 @@ import { traduzirErro } from '@/lib/utils/erros'
 import type { Cooperado } from '@/types/database'
 import { Btn } from '@/components/ui/Btn'
 import { termoMensalidade } from '../termo'
+import { mesesRange, mesesAteDezembro, vencimentoDoMes } from '@/lib/mensalidades/gerar-utils'
 import {
-  PageLayout, ContentCard, Field, Input, Badge,
+  PageLayout, ContentCard, Field, Input, Select, Badge,
   AlertBanner, COM_C, MODULO_NEXCOOP,
 } from '@/components/nexcoop/ui'
 
@@ -29,6 +30,8 @@ export default function GerarMensalidadesPage() {
 
   const [cooperados, setCooperados] = useState<CoopAtivo[]>([])
   const [carregando, setCarregando] = useState(true)
+  // Alvo da geração: 'todos' os membros ativos ou um membro específico (individual).
+  const [alvo, setAlvo] = useState<string>('todos')
   // Só para rotular a tela: associação = "associados", demais mantêm "filiados".
   const [tipoOrg, setTipoOrg] = useState<string | null>(null)
   const termo = termoMensalidade(tipoOrg)
@@ -62,19 +65,13 @@ export default function GerarMensalidadesPage() {
       .then(({ data }) => setTipoOrg(data?.tipo ?? null))
   }, [])
 
-  useEffect(() => { setPreview(null) }, [mesAno, qtdMeses, diaVenc, valorPad])
+  useEffect(() => { setPreview(null) }, [mesAno, qtdMeses, diaVenc, valorPad, alvo])
 
   // Meses do período (YYYY-MM), a partir de mesAno, por qtdMeses (1–12).
-  function mesesDoRange(): string[] {
-    const [ano, mes] = mesAno.split('-').map(Number)
-    const n = Math.min(Math.max(parseInt(qtdMeses, 10) || 1, 1), 12)
-    const out: string[] = []
-    for (let i = 0; i < n; i++) {
-      const d = new Date(ano, mes - 1 + i, 1)
-      out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-    }
-    return out
-  }
+  const mesesDoRange = () => mesesRange(mesAno, parseInt(qtdMeses, 10))
+
+  // Membros alvo da geração: todos os ativos ou só o selecionado.
+  const membrosAlvo = () => alvo === 'todos' ? cooperados : cooperados.filter(c => c.id === alvo)
 
   async function carregarPreview() {
     if (!mesAno || !diaVenc || !valorPad) { setErro('Preencha todos os campos antes de visualizar.'); return }
@@ -96,7 +93,7 @@ export default function GerarMensalidadesPage() {
     }
 
     setPreview(
-      cooperados.map(c => ({
+      membrosAlvo().map(c => ({
         coop: c,
         valor: c.quota_parte && Number(c.quota_parte) > 0
           ? String(Number(c.quota_parte))
@@ -108,11 +105,7 @@ export default function GerarMensalidadesPage() {
   }
 
   // Dia de vencimento no mês informado (YYYY-MM), ajustado ao último dia do mês.
-  function calcDataVencimento(mesRef: string): string {
-    const [ano, mes] = mesRef.split('-').map(Number)
-    const dia = Math.min(parseInt(diaVenc, 10), new Date(ano, mes, 0).getDate())
-    return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
-  }
+  const calcDataVencimento = (mesRef: string) => vencimentoDoMes(mesRef, parseInt(diaVenc, 10))
 
   async function handleGerar() {
     if (!preview) return
@@ -188,7 +181,15 @@ export default function GerarMensalidadesPage() {
       <div style={{ maxWidth: 820 }}>
 
         <ContentCard title="Parâmetros">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+          <Field label="Aplicar a" hint="Gere para todos os membros ativos ou para um específico.">
+            <Select value={alvo} onChange={e => setAlvo(e.target.value)}>
+              <option value="todos">Todos os {termo.plural} ativos ({cooperados.length})</option>
+              {cooperados.map(c => (
+                <option key={c.id} value={c.id}>{c.nome_completo}</option>
+              ))}
+            </Select>
+          </Field>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginTop: 12 }}>
             <Field label="Mês inicial">
               <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} />
             </Field>
@@ -198,11 +199,9 @@ export default function GerarMensalidadesPage() {
                   type="number" value={qtdMeses} onChange={e => setQtdMeses(e.target.value)}
                   min="1" max="12" placeholder="1" style={{ maxWidth: 90 }}
                 />
-                <Btn variante="cinza" tamanho="sm" onClick={() => {
-                  // "Ano todo" = do mês inicial até dezembro daquele ano.
-                  const mes = parseInt(mesAno.split('-')[1], 10) || 1
-                  setQtdMeses(String(13 - mes))
-                }}>Até dezembro</Btn>
+                <Btn variante="cinza" tamanho="sm" onClick={() => setQtdMeses(String(mesesAteDezembro(mesAno)))}>
+                  Até dezembro
+                </Btn>
               </div>
             </Field>
             <Field label="Dia de vencimento" hint="Ajustado automaticamente para o último dia do mês.">
