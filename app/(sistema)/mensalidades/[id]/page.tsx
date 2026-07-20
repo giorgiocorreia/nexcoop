@@ -30,7 +30,7 @@ export default async function MensalidadePage({ params }: Props) {
 
   if (error || !mensalidade) notFound()
 
-  const [{ data: cooperado }, { data: historico }] = await Promise.all([
+  const [{ data: cooperado }, { data: historico }, { data: org }] = await Promise.all([
     supabase
       .from('cooperados')
       .select('id, nome_completo, cpf, status, quota_parte, numero_matricula')
@@ -44,6 +44,11 @@ export default async function MensalidadePage({ params }: Props) {
       .order('mes_referencia', { ascending: false })
       .limit(11)
       .returns<HistoricoItem[]>(),
+    supabase
+      .from('organizacoes')
+      .select('tipo')
+      .eq('id', mensalidade.organizacao_id)
+      .single<{ tipo: string }>(),
   ])
 
   return (
@@ -51,6 +56,7 @@ export default async function MensalidadePage({ params }: Props) {
       mensalidade={mensalidade}
       cooperado={cooperado}
       historico={historico ?? []}
+      tipoOrg={org?.tipo ?? null}
     />
   )
 }

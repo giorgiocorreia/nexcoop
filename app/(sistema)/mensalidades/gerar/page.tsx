@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { traduzirErro } from '@/lib/utils/erros'
 import type { Cooperado } from '@/types/database'
 import { Btn } from '@/components/ui/Btn'
+import { termoMensalidade } from '../termo'
 import {
   PageLayout, ContentCard, Field, Input, Badge,
   AlertBanner, COM_C, MODULO_NEXCOOP,
@@ -26,6 +27,9 @@ export default function GerarMensalidadesPage() {
 
   const [cooperados, setCooperados] = useState<CoopAtivo[]>([])
   const [carregando, setCarregando] = useState(true)
+  // Só para rotular a tela: associação = "associados", demais mantêm "filiados".
+  const [tipoOrg, setTipoOrg] = useState<string | null>(null)
+  const termo = termoMensalidade(tipoOrg)
 
   const hoje = new Date()
   const [mesAno, setMesAno]       = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`)
@@ -38,13 +42,21 @@ export default function GerarMensalidadesPage() {
   const [erro, setErro]                           = useState('')
 
   useEffect(() => {
-    createClient()
+    const supabase = createClient()
+    supabase
       .from('cooperados')
       .select('id, nome_completo, cpf, quota_parte, status')
       .in('status', ['ativo', 'probatorio'])
       .order('nome_completo')
       .returns<CoopAtivo[]>()
       .then(({ data }) => { setCooperados(data ?? []); setCarregando(false) })
+    // Tipo da org do usuário (RLS devolve só a dele) — só para o rótulo.
+    supabase
+      .from('organizacoes')
+      .select('tipo')
+      .limit(1)
+      .maybeSingle<{ tipo: string }>()
+      .then(({ data }) => setTipoOrg(data?.tipo ?? null))
   }, [])
 
   useEffect(() => { setPreview(null) }, [mesAno, diaVenc, valorPad])
@@ -137,7 +149,7 @@ export default function GerarMensalidadesPage() {
   return (
     <PageLayout
       titulo="Gerar Mensalidades"
-      subtitulo="Criar cobranças mensais para os filiados ativos"
+      subtitulo={`Criar cobranças mensais para os ${termo.plural} ativos`}
       icone="ti-calendar-due"
       modulo={MODULO_NEXCOOP}
       breadcrumb={[

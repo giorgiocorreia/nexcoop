@@ -20,7 +20,7 @@ export default async function MensalidadesPage() {
   inicio.setMonth(inicio.getMonth() - 11)
   const dataInicio = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}-01`
 
-  const [{ data: mensalidades }, { data: cooperados }] = await Promise.all([
+  const [{ data: mensalidades }, { data: cooperados }, { data: org }] = await Promise.all([
     ctx.supabase
       .from('mensalidades')
       .select('*')
@@ -35,6 +35,11 @@ export default async function MensalidadesPage() {
       .eq('organizacao_id', ctx.orgId)
       .order('nome_completo')
       .returns<CooperadoResumo[]>(),
+    ctx.supabase
+      .from('organizacoes')
+      .select('tipo')
+      .eq('id', ctx.orgId)
+      .single<{ tipo: string }>(),
   ])
 
   const cooperadoMap: Record<string, CooperadoResumo> = {}
@@ -44,6 +49,7 @@ export default async function MensalidadesPage() {
     <MensalidadesLista
       mensalidades={mensalidades ?? []}
       cooperadoMap={cooperadoMap}
+      tipoOrg={org?.tipo ?? null}
     />
   )
 }

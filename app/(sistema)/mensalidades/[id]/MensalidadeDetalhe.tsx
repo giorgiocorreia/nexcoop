@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { registrarPagamentoMensalidade } from '@/lib/mensalidades/actions'
 import type { Mensalidade, StatusMensalidade } from '@/types/database'
 import type { CooperadoDetalhe, HistoricoItem } from './page'
+import { termoMensalidade } from '../termo'
 import { Btn } from '@/components/ui/Btn'
 import {
   PageLayout, ContentCard, Field, Input, Textarea, Badge,
@@ -67,6 +68,7 @@ interface Props {
   mensalidade: Mensalidade
   cooperado: CooperadoDetalhe | null
   historico: HistoricoItem[]
+  tipoOrg?: string | null
 }
 
 // ─── Modos de interação ───────────────────────────────────────────────────────
@@ -75,8 +77,9 @@ type Modo = 'view' | 'pagamento' | 'editar'
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 
-export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, historico }: Props) {
+export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, historico, tipoOrg }: Props) {
   const router = useRouter()
+  const termo = termoMensalidade(tipoOrg)
 
   const [mens, setMens]         = useState(initial)
   const [modo, setModo]         = useState<Modo>('view')
@@ -154,7 +157,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
 
   return (
     <PageLayout
-      titulo={cooperado?.nome_completo ?? 'Filiado'}
+      titulo={cooperado?.nome_completo ?? termo.Singular}
       subtitulo={formatarMes(mens.mes_referencia)}
       icone="ti-calendar-due"
       modulo={MODULO_NEXCOOP}
@@ -267,7 +270,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
         {/* Grid de seções (visualização) */}
         {modo !== 'editar' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-            <ContentCard title="Filiado">
+            <ContentCard title={termo.Singular}>
               {cooperado ? (
                 <>
                   <button
@@ -300,7 +303,7 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
                   </div>
                 </>
               ) : (
-                <p style={{ fontSize: 13, color: COM_C.txtSub, margin: 0 }}>Filiado removido</p>
+                <p style={{ fontSize: 13, color: COM_C.txtSub, margin: 0 }}>{termo.Singular} removido</p>
               )}
             </ContentCard>
 
@@ -348,9 +351,9 @@ export default function MensalidadeDetalhe({ mensalidade: initial, cooperado, hi
 
         {modo === 'editar' && <div style={{ height: 16 }} />}
 
-        {/* Histórico do cooperado */}
+        {/* Histórico do membro */}
         {historico.length > 0 && (
-          <ContentCard title="Histórico do cooperado" noPadding>
+          <ContentCard title={`Histórico do ${termo.membro}`} noPadding>
             <div style={{ overflowX: 'auto' }}>
               <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 520 }}>
                 <thead>

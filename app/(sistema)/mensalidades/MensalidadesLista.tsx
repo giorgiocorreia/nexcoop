@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Mensalidade, StatusMensalidade } from '@/types/database'
 import type { CooperadoResumo } from './page'
+import { termoMensalidade } from './termo'
 import { Btn } from '@/components/ui/Btn'
 import {
   PageLayout, KpiCard, ContentCard, Badge, EmptyState,
@@ -49,9 +50,11 @@ function calcStatusEfetivo(m: Mensalidade): StatusMensalidade {
 interface Props {
   mensalidades: Mensalidade[]
   cooperadoMap: Record<string, CooperadoResumo>
+  tipoOrg?: string | null
 }
 
-export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props) {
+export default function MensalidadesLista({ mensalidades, cooperadoMap, tipoOrg }: Props) {
+  const termo = termoMensalidade(tipoOrg)
   const router = useRouter()
   const [busca, setBusca] = useState('')
   const [filtroMes, setFiltroMes] = useState<string>('todos')
@@ -94,7 +97,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
   return (
     <PageLayout
       titulo="Mensalidades"
-      subtitulo="Cobranças mensais dos filiados"
+      subtitulo={`Cobranças mensais dos ${termo.plural}`}
       icone="ti-calendar-due"
       modulo={{ label: 'NexCoop', href: '/dashboard' }}
       semBreadcrumb
@@ -147,7 +150,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap }: Props)
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>
-                  {['Filiado', 'Mês de referência', 'Vencimento', 'Valor', 'Status'].map((col, i) => (
+                  {[termo.Singular, 'Mês de referência', 'Vencimento', 'Valor', 'Status'].map((col, i) => (
                     <th key={col} style={{ textAlign: i >= 3 ? 'right' : 'left' }}>{col}</th>
                   ))}
                 </tr>
