@@ -42,22 +42,31 @@ async function registrarEntradaComRetry(params: Parameters<typeof registrarEntra
 // comercialização, que já exige sessão aberta antes de qualquer operação. Bloqueia
 // ANTES de inserir parcela/lançamento, pra nunca ficar com pagamento registrado
 // pela metade (parcela/lançamento gravados, entrada de caixa não).
+//
+// A sessão é SEMPRE a do operador logado. Antes buscava qualquer sessão aberta
+// da org (a mais recente), então o dinheiro caía no caixa de outro atendente que
+// por acaso estivesse aberto — quem recebeu ficava sem o valor na gaveta e o
+// outro com sobra (caso real: R$ 150 do Nilton foram parar no caixa do Luan,
+// 20/07/2026). Caixa é responsabilidade individual: sem caixa próprio aberto, o
+// operador abre o dele antes de receber.
 async function exigirSessaoCaixaAberta(orgId: string, formasPagamento: string[]): Promise<string | null> {
   const precisaCaixa = formasPagamento.some(f => FORMA_CAIXA[f] !== null)
   if (!precisaCaixa) return null
 
+  const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
   const { data: sessaoAberta } = await supabase
     .from('sessoes_caixa')
     .select('id')
     .eq('organizacao_id', orgId)
+    .eq('usuario_id', usuario.id)
     .eq('status', 'aberta')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!sessaoAberta) {
-    throw new Error('Não há caixa aberto na Comercialização. Abra um caixa em Comercialização → Caixa antes de registrar este pagamento.')
+    throw new Error('Você não tem caixa aberto na Comercialização. Abra o seu caixa em Comercialização → Caixa antes de registrar este pagamento.')
   }
   return sessaoAberta.id
 }
