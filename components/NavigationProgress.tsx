@@ -139,12 +139,11 @@ export default function NavigationProgress() {
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 150,
+          // Abaixo da sidebar (100/200) e do hamburger (201); acima do conteúdo
+          zIndex: 90,
           pointerEvents: 'none',
           opacity: fading ? 0 : 1,
           transition: 'opacity 0.15s ease',
-          // Deixa a sidebar (z 100–200) e o hamburger (201) por cima no mobile
-          // cobrindo só a coluna de conteúdo via padding-left responsivo
         }}
       >
         <style>{`
@@ -156,9 +155,10 @@ export default function NavigationProgress() {
             flex-direction: column;
             font-family: system-ui, -apple-system, sans-serif;
           }
+          /* Desktop: recua pela sidebar expandida; colapsada ainda deixa uma faixa ok */
           @media (min-width: 768px) {
-            .nxc-nav-shell-inner { margin-left: 56px; }
-            /* sidebar expandida ~240 — se colapsada fica 56; 56 é o mínimo seguro */
+            .nxc-nav-shell-inner { margin-left: 240px; }
+            .nxc-nav-shell-inner.nxc-nav-shell--collapsed { margin-left: 56px; }
           }
           @keyframes nxc-nav-shimmer {
             0% { background-position: -420px 0; }
@@ -171,7 +171,7 @@ export default function NavigationProgress() {
             border-radius: 12px;
           }
         `}</style>
-        <div className="nxc-nav-shell-inner">
+        <div className={`nxc-nav-shell-inner${typeof window !== 'undefined' && localStorage.getItem('nexcoop_sidebar_collapsed') === 'true' ? ' nxc-nav-shell--collapsed' : ''}`}>
           {/* Faixa HERO */}
           <div
             style={{
