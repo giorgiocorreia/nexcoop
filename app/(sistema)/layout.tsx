@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { Suspense } from 'react'
 import Sidebar from '@/components/Sidebar'
 import MainContent from '@/app/(sistema)/MainContent'
+import NavigationProgress from '@/components/NavigationProgress'
 import { sairDaOrg } from '@/app/actions/impersonation'
 import { sairDaOrgParceiro } from '@/app/actions/parceiro'
 import { isParceiro } from '@/lib/parceiros/actions'
@@ -28,8 +30,10 @@ export default async function SistemaLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const cookieStore = await cookies()
 
+  // Auth + perfil em sequência curta; o resto em paralelo (navegação de menu).
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: usuario } = await supabase
@@ -39,9 +43,6 @@ export default async function SistemaLayout({
     .single()
 
   const isSuperAdmin = usuario?.role === 'super_admin'
-
-  // Lê cookie de impersonation
-  const cookieStore = await cookies()
   const impersonatingOrgId = isSuperAdmin
     ? (cookieStore.get('impersonating_org')?.value ?? null)
     : null
@@ -49,30 +50,19 @@ export default async function SistemaLayout({
     ? (cookieStore.get('parceiro_org_id')?.value ?? null)
     : null
 
-  let organizacao = null
-  let impersonandoOrg = null
+  // Org (impersonation OU própria) + flag de parceiro — em paralelo
+  const orgIdParaCarregar = impersonatingOrgId ?? usuario?.organizacao_id ?? null
+  const [orgRes, parceiroStatus] = await Promise.all([
+    orgIdParaCarregar
+      ? supabase.from('organizacoes').select('*').eq('id', orgIdParaCarregar).single()
+      : Promise.resolve({ data: null as any }),
+    (!isSuperAdmin && !impersonatingOrgId)
+      ? isParceiro(user.id)
+      : Promise.resolve(false),
+  ])
 
-  if (impersonatingOrgId) {
-    // Modo impersonation: carrega a org sendo visualizada
-    const { data: impOrg } = await supabase
-      .from('organizacoes')
-      .select('*')
-      .eq('id', impersonatingOrgId)
-      .single()
-    impersonandoOrg = impOrg
-    organizacao = impOrg
-  } else if (usuario?.organizacao_id) {
-    // Modo normal: org do próprio usuário
-    const { data: org } = await supabase
-      .from('organizacoes')
-      .select('*')
-      .eq('id', usuario.organizacao_id)
-      .single()
-    organizacao = org
-  }
-
-  // Verifica se é parceiro antes dos redirects para não bloquear acesso ao /escritorio
-  const parceiroStatus = user && !isSuperAdmin && !impersonatingOrgId ? await isParceiro(user.id) : false
+  let organizacao = orgRes.data
+  let impersonandoOrg = impersonatingOrgId ? orgRes.data : null
 
   let nomeEmpresaParceira = ''
   let isParceiroAcessandoOrg = false
@@ -83,7 +73,7 @@ export default async function SistemaLayout({
 
     if (parceiroOrgId) {
       // Parceiro acessando org cliente — carrega org e modulos em paralelo
-      const [orgRes, vinculoRes] = await Promise.all([
+      const [parceiroOrgRes, vinculoRes] = await Promise.all([
         adminSupabase.from('organizacoes').select('*').eq('id', parceiroOrgId).single(),
         adminSupabase
           .from('profissionais_parceiros')
@@ -91,8 +81,8 @@ export default async function SistemaLayout({
           .eq('usuario_id', user.id)
           .eq('ativo', true),
       ])
-      if (orgRes.data) {
-        organizacao = orgRes.data
+      if (parceiroOrgRes.data) {
+        organizacao = parceiroOrgRes.data
         isParceiroAcessandoOrg = true
         const vinculo = (vinculoRes.data ?? []).find((v: any) => v.empresa?.org_id === parceiroOrgId)
         const empresa = vinculo?.empresa as { modulos_acesso?: string[]; acesso_fiscal?: boolean } | undefined
@@ -147,6 +137,9 @@ export default async function SistemaLayout({
         modulosAcesso={modulosAcessoParceiro}
       />
       <MainContent>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
 
         {/* Banner parceiro acessando org */}
         {isParceiroAcessandoOrg && organizacao && (

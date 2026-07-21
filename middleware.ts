@@ -82,7 +82,12 @@ export async function middleware(request: NextRequest) {
   // HTML) cai no redirect de auth como qualquer rota interna.
   const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || pathname.startsWith('/sites/') || isFiliadoPublic
   const isOnboarding = pathname.startsWith('/onboarding')
-  const isRSC = request.headers.get('rsc') === '1'
+  // Navegação client-side (Link/router) manda RSC — evita queries extras no middleware
+  // e deixa a troca de página mais rápida após clique no menu.
+  const isRSC =
+    request.headers.get('rsc') === '1' ||
+    request.headers.get('next-router-prefetch') === '1' ||
+    request.headers.has('next-router-state-tree')
 
   // Não autenticado — redireciona para login
   if (!user && !isAuthPage && !isPublicPage && !isApiCron && !isApiWhatsApp && !isApiNfe && !isApiSite) {

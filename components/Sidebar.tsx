@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -357,6 +357,17 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   const org = usuario?.organizacao
   const W = collapsed ? 56 : 240
 
+  /** Fecha drawer na hora do clique (não espera o pathname mudar — sensação de app rápido). */
+  function onNavClick() {
+    if (isMobile) setMobileDrawer(false)
+  }
+
+  const linkBase: CSSProperties = {
+    width: '100%', display: 'flex', alignItems: 'center',
+    border: 'none', textDecoration: 'none', fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  }
+
   function renderItem(item: NavItem) {
     // Item com submenu
     if (item.children) {
@@ -367,21 +378,24 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
 
       if (collapsed) {
         return (
-          <button
+          <Link
             key={item.label}
-            onClick={() => router.push(item.href)}
+            href={item.href}
+            prefetch
             title={item.label}
+            onClick={onNavClick}
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              ...linkBase,
+              justifyContent: 'center',
               padding: '8px 0',
               background: childActive ? SB.ativoBg : 'transparent',
-              border: 'none', cursor: 'pointer',
+              cursor: 'pointer',
             }}
-            onMouseEnter={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
-            onMouseLeave={e => { if (!childActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            onMouseEnter={e => { if (!childActive) e.currentTarget.style.background = SB.hoverBg }}
+            onMouseLeave={e => { if (!childActive) e.currentTarget.style.background = 'transparent' }}
           >
             <span style={{ fontSize: '18px' }}>{item.icone}</span>
-          </button>
+          </Link>
         )
       }
 
@@ -389,6 +403,7 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         <div key={item.label}>
           {/* Cabeçalho do grupo */}
           <button
+            type="button"
             onClick={() => setExpandedGroup(expanded ? null : item.label)}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
@@ -418,30 +433,51 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           }}>
             {item.children.map(child => {
               const ativo = !child.em_breve && (pathname === child.href || pathname.startsWith(child.href + '/'))
-              return (
-                <button
-                  key={child.href}
-                  onClick={() => !child.em_breve && router.push(child.href)}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '7px 1rem 7px 2.5rem',
-                    background: ativo ? SB.ativoBg : 'transparent',
-                    border: 'none', cursor: child.em_breve ? 'default' : 'pointer',
-                    textAlign: 'left',
-                  }}
-                  onMouseEnter={e => { if (!ativo && !child.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
-                  onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                >
-                  <span style={{ fontSize: '14px', flexShrink: 0, opacity: child.em_breve ? 0.6 : 1 }}>{child.icone}</span>
-                  <span style={{ fontSize: '12px', fontWeight: ativo ? '600' : '400', color: child.em_breve ? SB.txtSub : ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
-                    {child.label}
-                  </span>
-                  {child.em_breve && (
+              if (child.em_breve) {
+                return (
+                  <div
+                    key={child.href}
+                    style={{
+                      ...linkBase,
+                      gap: '8px',
+                      padding: '7px 1rem 7px 2.5rem',
+                      background: 'transparent',
+                      cursor: 'default',
+                      opacity: 0.75,
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', flexShrink: 0, opacity: 0.6 }}>{child.icone}</span>
+                    <span style={{ fontSize: '12px', fontWeight: '400', color: SB.txtSub, flex: 1 }}>
+                      {child.label}
+                    </span>
                     <span style={{ fontSize: '9px', background: SB.badgeBg, color: SB.txtSub, padding: '2px 5px', borderRadius: '4px', fontWeight: '500', marginRight: '0.5rem' }}>
                       em breve
                     </span>
-                  )}
-                </button>
+                  </div>
+                )
+              }
+              return (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  prefetch
+                  onClick={onNavClick}
+                  style={{
+                    ...linkBase,
+                    gap: '8px',
+                    padding: '7px 1rem 7px 2.5rem',
+                    background: ativo ? SB.ativoBg : 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = SB.hoverBg }}
+                  onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <span style={{ fontSize: '14px', flexShrink: 0 }}>{child.icone}</span>
+                  <span style={{ fontSize: '12px', fontWeight: ativo ? '600' : '400', color: ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
+                    {child.label}
+                  </span>
+                </Link>
               )
             })}
           </div>
@@ -453,49 +489,91 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(item.href + '/')
 
+    if (item.em_breve) {
+      if (collapsed) {
+        return (
+          <div
+            key={item.href}
+            title={`${item.label} (em breve)`}
+            style={{
+              ...linkBase,
+              justifyContent: 'center',
+              padding: '8px 0',
+              opacity: 0.55,
+              cursor: 'default',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>{item.icone}</span>
+          </div>
+        )
+      }
+      return (
+        <div
+          key={item.href}
+          style={{
+            ...linkBase,
+            gap: '8px',
+            padding: '8px 1rem',
+            cursor: 'default',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: '16px', flexShrink: 0, opacity: 0.6 }}>{item.icone}</span>
+          <span style={{ fontSize: '11px', fontWeight: '400', color: SB.txtSub, flex: 1 }}>
+            {item.label}
+          </span>
+          <span style={{ fontSize: '9px', background: SB.badgeBg, color: SB.txtSub, padding: '2px 5px', borderRadius: '4px', fontWeight: '500' }}>
+            em breve
+          </span>
+        </div>
+      )
+    }
+
     if (collapsed) {
       return (
-        <button
+        <Link
           key={item.href}
-          onClick={() => !item.em_breve && router.push(item.href)}
+          href={item.href}
+          prefetch
           title={item.label}
+          onClick={onNavClick}
           style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '8px 0', background: ativo ? SB.ativoBg : 'transparent',
-            border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
-            opacity: item.em_breve ? 0.55 : 1,
+            ...linkBase,
+            justifyContent: 'center',
+            padding: '8px 0',
+            background: ativo ? SB.ativoBg : 'transparent',
+            cursor: 'pointer',
           }}
-          onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
-          onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+          onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = SB.hoverBg }}
+          onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}
         >
           <span style={{ fontSize: '18px' }}>{item.icone}</span>
-        </button>
+        </Link>
       )
     }
 
     return (
-      <button
+      <Link
         key={item.href}
-        onClick={() => !item.em_breve && router.push(item.href)}
+        href={item.href}
+        prefetch
+        onClick={onNavClick}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '8px 1rem', background: ativo ? SB.ativoBg : 'transparent',
-          border: 'none', cursor: item.em_breve ? 'default' : 'pointer',
+          ...linkBase,
+          gap: '8px',
+          padding: '8px 1rem',
+          background: ativo ? SB.ativoBg : 'transparent',
+          cursor: 'pointer',
           textAlign: 'left',
         }}
-        onMouseEnter={e => { if (!ativo && !item.em_breve) (e.currentTarget as HTMLButtonElement).style.background = SB.hoverBg }}
-        onMouseLeave={e => { if (!ativo) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+        onMouseEnter={e => { if (!ativo) e.currentTarget.style.background = SB.hoverBg }}
+        onMouseLeave={e => { if (!ativo) e.currentTarget.style.background = 'transparent' }}
       >
-        <span style={{ fontSize: '16px', flexShrink: 0, opacity: item.em_breve ? 0.6 : 1 }}>{item.icone}</span>
-        <span style={{ fontSize: item.em_breve ? '11px' : '13px', fontWeight: ativo ? '600' : '400', color: item.em_breve ? SB.txtSub : ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
+        <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icone}</span>
+        <span style={{ fontSize: '13px', fontWeight: ativo ? '600' : '400', color: ativo ? SB.ativoTxt : SB.txt, flex: 1 }}>
           {item.label}
         </span>
-        {item.em_breve && (
-          <span style={{ fontSize: '9px', background: SB.badgeBg, color: SB.txtSub, padding: '2px 5px', borderRadius: '4px', fontWeight: '500' }}>
-            em breve
-          </span>
-        )}
-      </button>
+      </Link>
     )
   }
 
