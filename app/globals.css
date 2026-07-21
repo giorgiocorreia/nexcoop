@@ -5,6 +5,10 @@
 /* Gutter do shell do sistema — headers/conteúdo usam margin negativo com a mesma var */
 :root {
   --nxc-gutter: 2rem;
+  --nxc-safe-top: env(safe-area-inset-top, 0px);
+  --nxc-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nxc-safe-left: env(safe-area-inset-left, 0px);
+  --nxc-safe-right: env(safe-area-inset-right, 0px);
 }
 
 @media (max-width: 767px) {
@@ -53,6 +57,12 @@ body {
   background: #f8f7f4;
 }
 
+@media (max-width: 767px) {
+  .nxc-main-area {
+    padding-bottom: calc(1.5rem + var(--nxc-safe-bottom));
+  }
+}
+
 /* Bleed horizontal alinhado ao gutter (substitui margin: 0 -2rem hardcoded) */
 .nxc-bleed-x {
   margin-left: calc(-1 * var(--nxc-gutter));
@@ -75,6 +85,106 @@ body {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ── Utilitários de layout (desktop-first; mobile só em @media) ── */
+.nxc-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.nxc-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.nxc-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.nxc-toolbar > * {
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE ONLY — regras abaixo NUNCA alteram desktop/tablet largo.
+   Breakpoints: 767 (shell), 640 (densidade), 360 (ultra-estreito)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .nxc-form-grid,
+  .nxc-form-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nxc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nxc-toolbar > *,
+  .nxc-toolbar input,
+  .nxc-toolbar select,
+  .nxc-toolbar button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Cards e seções não estouram */
+  .nxc-main-area,
+  .com-hub-content {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Tabelas: se tiverem min-width, o scroll fica no wrapper; senão forçamos */
+  .nxc-scroll-x,
+  .com-table-scroll,
+  .com-hub-content div[style*="overflow"],
+  .nxc-main-area div[style*="overflow"] {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Conteúdo de cards: título + ação empilham se preciso */
+  .nxc-card-head {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Botões CTA em páginas: toque confortável */
+  .com-btn-cta,
+  .nxc-main-area button:not(.nxc-menu-btn):not([class*="ti-"]) {
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* KPI valores longos (R$) podem quebrar em 2 linhas em vez de ellipsis cedo */
+  .com-kpi-value {
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Link cards de módulo: mais compactos */
+  .com-link-card {
+    padding: 12px 14px !important;
+  }
+
+  /* Headers legados com padding grande */
+  .hub-header {
+    padding: 12px 16px 12px 56px !important;
+  }
+  .hub-content {
+    padding: 16px !important;
+  }
 }
 
 @layer utilities {

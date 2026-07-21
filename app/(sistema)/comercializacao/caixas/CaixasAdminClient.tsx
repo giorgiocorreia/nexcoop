@@ -143,7 +143,7 @@ export default function CaixasAdminClient({
       <div>
         <div className="com-section-label">Fechamentos recentes</div>
         <ContentCard noPadding>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="com-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>

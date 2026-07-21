@@ -123,7 +123,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="com-toolbar nxc-toolbar">
         <div style={{ flex: 1, minWidth: 220 }}>
           <Input
             type="text"
@@ -158,7 +158,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
         />
       ) : (
         <ContentCard noPadding>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="com-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>

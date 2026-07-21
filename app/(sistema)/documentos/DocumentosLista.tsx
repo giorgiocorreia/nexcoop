@@ -126,7 +126,7 @@ export default function DocumentosLista({ documentos, filtroInicial }: Props) {
         <KpiCard label="Sem validade" value={String(resumo.semVal)} sub="sem prazo definido" icon="ti-infinity" cor={COM_C.txtSub} corLt="#F5F5F4" />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="com-toolbar nxc-toolbar">
         <div style={{ flex: 1, minWidth: 220 }}>
           <Input type="text" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome, número, órgão…" />
         </div>
@@ -164,7 +164,7 @@ export default function DocumentosLista({ documentos, filtroInicial }: Props) {
         />
       ) : (
         <ContentCard noPadding>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="com-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>

@@ -114,7 +114,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap, tipoOrg 
         <KpiCard label="Vencidas" value={String(resumo.vencidas)} sub="prazo expirado" icon="ti-alert-circle" cor={COM_C.vermelho} corLt={COM_C.vermelhoLt} />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="com-toolbar nxc-toolbar">
         <div style={{ flex: 1, minWidth: 200 }}>
           <Input type="text" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar membro..." />
         </div>
@@ -146,7 +146,7 @@ export default function MensalidadesLista({ mensalidades, cooperadoMap, tipoOrg 
         />
       ) : (
         <ContentCard noPadding>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="com-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr>

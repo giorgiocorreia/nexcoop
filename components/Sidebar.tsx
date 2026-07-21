@@ -662,6 +662,9 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
           .nxc-sidebar {
             transform: translateX(-100%);
             transition: transform 0.25s ease, box-shadow 0.25s ease;
+            /* iPhone notch / home indicator */
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
           }
           .nxc-sidebar.nxc-sidebar-open {
             transform: translateX(0);

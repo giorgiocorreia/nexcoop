@@ -3,7 +3,7 @@
 **Autor:** Grok (xAI)  
 **Data:** 2026-07-21  
 **Contexto:** avaliação visual da responsividade do sistema (`docs/ARQUITETURA.md` + shell + kit `PageLayout`/`HubStyles`)  
-**Status:** P0 em implementação; P1/P2 planejados
+**Status:** P0 + P1 aplicados (2026-07-21). Desktop/tablet preservados via media queries only.
 
 ---
 
@@ -141,18 +141,26 @@ Menos chrome, mais conteúdo de campo.
 | 6 | Sombra no drawer | `Sidebar.tsx` |
 | 7 | Largura = viewport (sem corte à direita) | `globals.css` (`--nxc-gutter`, `.nxc-shell`, `.nxc-bleed*`), `layout`/`MainContent` |
 
-### P1 — próximo
+### P1 — aplicado (sem quebrar desktop)
 
-- Padrão tabela → cards
-- KPI &lt;360px e sub oculto
-- Unificar media queries legadas
-- Safe-area (`env(safe-area-inset-*)`)
+| # | Item | Onde |
+|---|---|---|
+| 1 | Gutter + shell overflow + bleed | `globals.css` |
+| 2 | Safe-area (menu, main, drawer, modal) | `MainContent`, `Sidebar`, `Modal`, `globals` |
+| 3 | Toolbars empilhadas (filtros) | `.nxc-toolbar` / `.com-toolbar` em listas |
+| 4 | Tabelas com scroll interno | `.com-table-scroll` nas listas principais |
+| 5 | Forms 2 col → 1 col mobile | `.nxc-form-grid` (perfil etc.) |
+| 6 | KPI 2 col / 1 col &lt;360; sub oculto | `HubStyles` |
+| 7 | Headers hubs (Dashboard, Comerc., Loja) | classes `com-page-*` |
+| 8 | Mercado cacau = resumo mobile | `IndiceNex.tsx` |
+| 9 | Nav: Link+prefetch, skeleton, shell | Sidebar, loading, NavigationProgress |
 
-### P2 — produto
+### P2 — futuro (não implementado)
 
 - Bottom nav (Dashboard, Comercialização, Financeiro, Mais)
 - Site COOPAIBI alinhado à landing
 - Swipe para abrir drawer
+- Converter tabelas em cards (listas densas) — hoje usam scroll horizontal controlado
 
 ---
 

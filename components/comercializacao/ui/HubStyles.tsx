@@ -23,8 +23,12 @@ export function HubStyles() {
       }
       .com-page-header-wrap { min-width: 0; }
       .com-hub-content > * { min-width: 0; max-width: 100%; }
-      .com-table { max-width: 100%; }
-      .com-scroll-x { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .com-table { width: 100%; border-collapse: collapse; }
+      .com-scroll-x, .com-table-scroll {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       .com-hub-date { font-size: 12px; color: #515E53; padding-left: 50px; }
       .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
       .com-kpi-card {
@@ -32,6 +36,7 @@ export function HubStyles() {
         border-radius: 12px; border: 1px solid #BCC9BA;
         padding: 14px 16px; min-height: 72px;
         transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+        min-width: 0;
       }
       .com-kpi-card:hover { border-color: #C6D4C4; box-shadow: 0 3px 12px rgba(24,33,26,0.07); }
       .com-kpi-card[role="button"]:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(24,33,26,0.12); }
@@ -51,7 +56,8 @@ export function HubStyles() {
       .com-link-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
       .com-link-card { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px;
         background: #fff; border: 1px solid #BCC9BA; border-radius: 12px; text-decoration: none;
-        transition: border-color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        transition: border-color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        min-width: 0; }
       .com-link-card:hover { border-color: #2E7D32; box-shadow: 0 4px 12px rgba(27,94,32,0.14); }
       .com-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
         letter-spacing: 0.08em; color: #515E53; margin: 0 0 12px; }
@@ -66,19 +72,28 @@ export function HubStyles() {
       .com-table td { padding: 12px 16px; border-bottom: 1px solid #EDF2EC; font-size: 13px; color: #18211A; }
       .com-table tr:hover td { background: #F7FAF6; }
       .com-saldo-bar { background: linear-gradient(135deg, #92400e 0%, #78350f 100%); color: #fff; border-radius: 12px; padding: 16px 22px; margin-bottom: 20px; }
+      .com-toolbar {
+        display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+      }
+      .com-content-card { min-width: 0; max-width: 100%; }
+      .com-content-card-head {
+        padding: 16px 22px; border-bottom: 1px solid #BCC9BA;
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      }
       @media (max-width: 1450px) {
         .com-kpi-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
       }
       @media (max-width: 1200px) {
-        .com-kpi-grid { grid-template-columns: repeat(3, 1fr); }
-        .com-link-grid { grid-template-columns: repeat(2, 1fr); }
+        .com-kpi-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+        .com-link-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       }
       @media (max-width: 1024px) {
-        .com-chart-row { grid-template-columns: 1fr; }
-        .com-two-col { grid-template-columns: 1fr; }
+        .com-chart-row { grid-template-columns: minmax(0, 1fr); }
+        .com-two-col { grid-template-columns: minmax(0, 1fr); }
         .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        .com-kpi-grid-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
       }
-      /* Mobile header + densidade (sugestões P0 — docs/SUGESTOES_MOBILE_VIEW.md) */
+      /* ── MOBILE (≤640) — não altera desktop ── */
       @media (max-width: 640px) {
         .com-page-header {
           padding: 0 12px 0 56px;
@@ -91,24 +106,57 @@ export function HubStyles() {
         .com-page-breadcrumb { display: none !important; }
         .com-page-title { font-size: 16px !important; }
         .com-page-subtitle { display: none !important; }
-        .com-page-actions { max-width: 42%; justify-content: flex-end; }
-        .com-hub-content { padding: 12px 16px 24px; }
+        .com-page-actions {
+          max-width: 48%;
+          justify-content: flex-end;
+          gap: 6px !important;
+        }
+        .com-page-actions button,
+        .com-page-actions a {
+          font-size: 12px !important;
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+          white-space: nowrap;
+        }
+        .com-hub-content { padding: 12px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
         .com-hub-date { display: none; }
-        .com-kpi-value { font-size: clamp(15px, 4.5vw, 18px); }
-        .com-kpi-icon { width: 38px; height: 38px; }
-        .com-kpi-icon i { font-size: 17px; }
-        .com-kpi-card { padding: 12px 14px; min-height: 64px; gap: 10px; }
+        .com-kpi-value {
+          font-size: clamp(14px, 4.2vw, 17px);
+          white-space: normal;
+          overflow: visible;
+          text-overflow: unset;
+          line-height: 1.15;
+        }
+        .com-kpi-icon { width: 36px; height: 36px; }
+        .com-kpi-icon i { font-size: 16px; }
+        .com-kpi-card { padding: 10px 12px; min-height: 60px; gap: 10px; }
         .com-kpi-sub { display: none; }
         .com-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .com-kpi-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-        .com-link-grid { grid-template-columns: minmax(0, 1fr); }
-        .com-chart-row, .com-two-col { grid-template-columns: minmax(0, 1fr); }
+        .com-link-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+        .com-chart-row, .com-two-col { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+        .com-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .com-toolbar > * {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          box-sizing: border-box;
+        }
+        .com-content-card-head {
+          padding: 12px 14px;
+          flex-wrap: wrap;
+        }
+        .com-table th, .com-table td { padding: 10px 12px; }
+        .com-saldo-bar { padding: 12px 14px; }
       }
       @media (max-width: 360px) {
         .com-kpi-grid,
         .com-kpi-grid-4,
-        .com-kpi-grid-3 { grid-template-columns: 1fr; }
+        .com-kpi-grid-3 { grid-template-columns: minmax(0, 1fr); }
       }
     `}</style>
   )

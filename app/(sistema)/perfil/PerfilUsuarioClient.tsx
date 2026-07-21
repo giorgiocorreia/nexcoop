@@ -336,7 +336,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
 
               {editando ? (
                 // MODO EDIÇÃO — todos os campos como inputs
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="nxc-form-grid">
                   {campos.map(({ label, campo, colSpan }) => (
                     <div key={campo} style={colSpan ? { gridColumn: '1 / -1' } : {}}>
                       <div style={labelStyle}>{label}</div>
@@ -360,7 +360,7 @@ export default function PerfilUsuarioClient({ dados }: { dados: Dados }) {
                 </div>
               ) : (
                 // MODO LEITURA — só campos com valor
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="nxc-form-grid">
                   {campos
                     .filter(({ campo }) => !!form[campo])
                     .map(({ label, campo, colSpan }) => (

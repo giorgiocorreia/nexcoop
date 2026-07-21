@@ -49,7 +49,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
 
         /* Hamburger integrado à faixa HERO (chip translúcido, ícone branco) */
         .nxc-menu-btn {
-          position: fixed; top: 8px; left: 8px; z-index: 201;
+          position: fixed;
+          top: calc(8px + env(safe-area-inset-top, 0px));
+          left: calc(8px + env(safe-area-inset-left, 0px));
+          z-index: 201;
           width: 44px; height: 44px; border-radius: 10px;
           background: rgba(255,255,255,0.18);
           border: 1px solid rgba(255,255,255,0.28);
@@ -80,11 +83,36 @@ export default function MainContent({ children }: { children: React.ReactNode })
           .nxc-sys-banner__action { align-self: flex-start; }
         }
 
-        /* Inputs 16px no mobile — evita zoom forçado no iOS */
+        /* Mobile system-wide — só ≤767px; desktop intacto */
         @media (max-width: 767px) {
           input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
           select, textarea {
             font-size: 16px !important;
+            max-width: 100%;
+            box-sizing: border-box;
+          }
+
+          /* Tabelas largas: rolam horizontalmente no próprio bloco, não na página */
+          .nxc-main-area table,
+          .com-hub-content table {
+            max-width: none;
+          }
+          .nxc-main-area .nxc-scroll-x,
+          .nxc-main-area .com-table-scroll,
+          .com-hub-content .nxc-scroll-x,
+          .com-hub-content .com-table-scroll,
+          .nxc-main-area div[style*="overflowX"],
+          .nxc-main-area div[style*="overflow-x"],
+          .com-hub-content div[style*="overflowX"],
+          .com-hub-content div[style*="overflow-x"] {
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          /* Selects de filtro com minWidth inline: cabem na linha */
+          .nxc-main-area select,
+          .com-hub-content select {
+            max-width: 100%;
           }
         }
       `}</style>

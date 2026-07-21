@@ -102,7 +102,7 @@ export default function AssembleiaLista({ assembleias }: Props) {
         <KpiCard label="Canceladas" value={String(resumo.canceladas)} icon="ti-x" cor={COM_C.txtSub} corLt="#F5F5F4" />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="com-toolbar nxc-toolbar">
         <div style={{ flex: 1, minWidth: 200 }}>
           <Input type="text" placeholder="Buscar por título ou tipo…" value={busca} onChange={e => setBusca(e.target.value)} />
         </div>
@@ -129,7 +129,7 @@ export default function AssembleiaLista({ assembleias }: Props) {
         <EmptyState emoji="🏛️" titulo="Nenhuma assembleia encontrada" descricao="Ajuste os filtros ou crie uma nova assembleia." />
       ) : (
         <ContentCard noPadding>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="com-table-scroll" style={{ overflowX: 'auto' }}>
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
