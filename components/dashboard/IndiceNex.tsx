@@ -109,47 +109,102 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
   const s = { card: { background: '#fff', border: '1px solid #e5e3dc', borderRadius: 12, padding: '1.25rem' } }
 
   return (
-    <div style={{ marginTop: 4 }}>
+    <div className="inx" style={{ marginTop: 4 }}>
+      <style>{`
+        .inx-topbar {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .inx-topbar-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .inx-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 0.85fr);
+          gap: 12px;
+          align-items: start;
+        }
+        .inx-card-indice {
+          background: #E6F1FB; border: 1px solid #B5D4F4; border-radius: 12px;
+          padding: 1.25rem; display: flex; flex-direction: column; gap: 12px; min-width: 0;
+        }
+        .inx-card-precos, .inx-card-news { min-width: 0; }
+        .inx-score { font-size: 36px; font-weight: 500; color: #042C53; line-height: 1; }
+        .inx-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .inx-moag-form { display: flex; gap: 6px; margin-top: 8px; }
+        .inx-moag-form select { flex: 1; min-width: 0; }
+        .inx-bottom {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
+        }
+        .inx-prob { display: block; }
+        /* Tablet: 2 col — índice + notícias no topo, preços full width no meio (ordem: índice, preços, news) */
+        @media (max-width: 1024px) {
+          .inx-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          }
+          .inx-card-indice { grid-column: 1; grid-row: 1; }
+          .inx-card-news { grid-column: 2; grid-row: 1; }
+          .inx-card-precos { grid-column: 1 / -1; grid-row: 2; }
+        }
+        /* Mobile: 1 coluna, ordem prioriza score → preços → notícias; densifica */
+        @media (max-width: 640px) {
+          .inx-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .inx-card-indice { grid-column: auto; grid-row: auto; padding: 14px; gap: 10px; }
+          .inx-card-precos { grid-column: auto; grid-row: auto; padding: 14px !important; }
+          .inx-card-news { grid-column: auto; grid-row: auto; padding: 14px !important; }
+          .inx-score { font-size: 28px; }
+          .inx-topbar-meta .inx-updated { display: none; }
+          .inx-bottom { grid-template-columns: minmax(0, 1fr); }
+          .inx-moag-form { flex-wrap: wrap; }
+          .inx-moag-form select { flex: 1 1 100%; }
+          .inx-moag-form input { flex: 1 1 auto; width: auto !important; min-width: 100px; }
+          .inx-moag-form button { flex: 0 0 auto; }
+          /* Barras de probabilidade compactas no mobile */
+          .inx-prob { margin-top: 2px; }
+        }
+      `}</style>
+
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#92400e' }} />
+      <div className="inx-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#92400e', flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 500, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Índice Nex — mercado cacau
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: COM_C.txtSub }}>
+        <div className="inx-topbar-meta">
+          <span className="inx-updated" style={{ fontSize: 11, color: COM_C.txtSub }}>
             {snapshot
               ? `Atualizado às ${new Date(snapshot.calculado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
               : 'Nunca atualizado'}
           </span>
           <button
+            type="button"
             onClick={() => startTransition(async () => { await atualizarIndiceNex() })}
             disabled={isPending}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 12, fontWeight: 500, color: '#92400e', background: 'transparent', border: '1px solid #92400e', borderRadius: 8, cursor: isPending ? 'not-allowed' : 'pointer', opacity: isPending ? 0.6 : 1 }}
           >
             <i className="ti ti-refresh" style={{ fontSize: 13 }} aria-hidden="true" />
-            {isPending ? 'Atualizando…' : 'Atualizar agora'}
+            {isPending ? 'Atualizando…' : 'Atualizar'}
           </button>
         </div>
       </div>
 
-      {/* Grid 3 colunas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,0.85fr) minmax(0,1.3fr) minmax(0,0.85fr)', gap: 12 }}>
+      {/* Grid responsivo: 3 col desktop → 2 tablet → 1 mobile */}
+      <div className="inx-grid">
 
         {/* Card Índice */}
-        <div style={{ background: '#E6F1FB', border: '1px solid #B5D4F4', borderRadius: 12, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="inx-card-indice">
           <div>
             <div style={{ fontSize: 11, fontWeight: 500, color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Índice Nex</div>
-            <div style={{ fontSize: 36, fontWeight: 500, color: '#042C53', lineHeight: 1 }}>
+            <div className="inx-score">
               {snapshot?.score_final ?? '—'} <span style={{ fontSize: 14, color: '#185FA5', fontWeight: 400 }}>/ 100</span>
             </div>
             <div style={{ fontSize: 12, color: '#185FA5', marginTop: 2 }}>
               {snapshot ? FAIXA_LABEL[snapshot.faixa] : 'Clique em atualizar'}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="inx-metrics">
             <div style={{ background: 'rgba(24,95,165,0.1)', borderRadius: 8, padding: '8px 10px' }}>
               <div style={{ fontSize: 10, color: '#185FA5', marginBottom: 2 }}>USD / BRL</div>
               <div style={{ fontSize: 14, fontWeight: 500, color: '#042C53' }}>
@@ -179,7 +234,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             </div>
           </div>
           {snapshot && (
-            <div>
+            <div className="inx-prob">
               {([
                 { label: 'Forte alta', pct: snapshot.prob_forte_alta ?? 0, cor: '#0F6E56' },
                 { label: 'Alta',       pct: snapshot.prob_alta ?? 0,       cor: '#1D9E75' },
@@ -199,7 +254,7 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
         </div>
 
         {/* Card Preços */}
-        <div style={s.card}>
+        <div className="inx-card-precos" style={s.card}>
           {/* Mercado público */}
           <div style={{ fontSize: 11, fontWeight: 500, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
             Mercado regional — Bahia
@@ -252,16 +307,16 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
               </div>
             )
           })}
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <div className="inx-moag-form">
             <select value={moageiraSel} onChange={e => setMoageiraSel(e.target.value)}
               style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #e5e3dc', borderRadius: 6, background: '#f8f7f4' }}>
               <option value="barry_callebaut">Barry Callebaut</option>
               <option value="cargill">Cargill</option>
               <option value="olam">Olam / OFI</option>
             </select>
-            <input type="text" placeholder="R$/arroba" value={precoInput} onChange={e => setPrecoInput(e.target.value)}
-              style={{ width: 90, fontSize: 12, padding: '5px 8px', border: '1px solid #e5e3dc', borderRadius: 6, textAlign: 'right' }} />
-            <button onClick={handleRegistrar} disabled={salvando || !precoInput}
+            <input type="text" inputMode="decimal" placeholder="R$/arroba" value={precoInput} onChange={e => setPrecoInput(e.target.value)}
+              style={{ width: 90, fontSize: 16, padding: '5px 8px', border: '1px solid #e5e3dc', borderRadius: 6, textAlign: 'right' }} />
+            <button type="button" onClick={handleRegistrar} disabled={salvando || !precoInput}
               style={{ fontSize: 11, fontWeight: 500, padding: '5px 10px', border: '1px solid #92400e', borderRadius: 6, background: 'transparent', color: '#92400e', cursor: 'pointer', whiteSpace: 'nowrap', opacity: salvando ? 0.6 : 1 }}>
               {salvando ? '…' : 'Registrar'}
             </button>
@@ -306,13 +361,13 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
         </div>
 
         {/* Card Notícias */}
-        <div style={s.card}>
+        <div className="inx-card-news" style={s.card}>
           <div style={{ fontSize: 11, fontWeight: 500, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
             Notícias relevantes
           </div>
           {sinais.filter(s => s.titulo).slice(0, 4).map((sinal, i, arr) => (
             <div key={i} style={{ paddingBottom: 9, marginBottom: 9, borderBottom: i < arr.length - 1 ? '1px solid #f0eeea' : 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' }}>
                 <ImpactoBadge impacto={sinal.impacto} />
                 <span style={{ fontSize: 10, color: COM_C.txtSub }}>{sinal.dimensao}</span>
                 <span style={{ fontSize: 10, color: COM_C.txtSub, marginLeft: 'auto' }}>
@@ -320,11 +375,11 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.45, marginBottom: 3 }}>{sinal.titulo}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 10, color: COM_C.txtSub }}>{sinal.fonte}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 10, color: COM_C.txtSub, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sinal.fonte}</span>
                 {sinal.url && (
                   <a href={sinal.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 10, color: '#185FA5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    style={{ fontSize: 10, color: '#185FA5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                     ler <i className="ti ti-external-link" style={{ fontSize: 10 }} aria-hidden="true" />
                   </a>
                 )}
@@ -333,14 +388,14 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
           ))}
           {sinais.filter(s => s.titulo).length === 0 && (
             <p style={{ fontSize: 12, color: COM_C.txtSub, textAlign: 'center', padding: '1rem 0' }}>
-              Sem notícias ainda. Clique em &quot;Atualizar agora&quot;.
+              Sem notícias ainda. Clique em &quot;Atualizar&quot;.
             </p>
           )}
         </div>
       </div>
 
       {/* Bottom: Dimensões + Contexto */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+      <div className="inx-bottom">
         <div style={s.card}>
           <div style={{ fontSize: 11, fontWeight: 500, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Dimensões do índice</div>
           {snapshot && ([
@@ -349,13 +404,13 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             { nome: 'Merc. financeiro', score: snapshot.score_financeiro, peso: '20%' },
             { nome: 'Macroeconomia',    score: snapshot.score_macro,      peso: '10%' },
           ] as const).map(({ nome, score, peso }) => (
-            <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+            <div key={nome} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9, minWidth: 0 }}>
               <span style={{ fontSize: 12, color: '#374151', width: 92, flexShrink: 0 }}>{nome}</span>
-              <div style={{ flex: 1, height: 5, background: '#f0eeea', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ flex: 1, height: 5, background: '#f0eeea', borderRadius: 3, overflow: 'hidden', minWidth: 0 }}>
                 <div style={{ width: `${score ?? 50}%`, height: '100%', borderRadius: 3, background: '#92400e' }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 500, color: '#1a1a1a', width: 22, textAlign: 'right' }}>{score ?? '—'}</span>
-              <span style={{ fontSize: 10, color: COM_C.txtSub, width: 28, textAlign: 'right' }}>{peso}</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: '#1a1a1a', width: 22, textAlign: 'right', flexShrink: 0 }}>{score ?? '—'}</span>
+              <span style={{ fontSize: 10, color: COM_C.txtSub, width: 28, textAlign: 'right', flexShrink: 0 }}>{peso}</span>
             </div>
           ))}
           {!snapshot && <p style={{ fontSize: 12, color: COM_C.txtSub }}>Sem dados.</p>}
@@ -368,9 +423,9 @@ export function IndiceNex({ snapshot, sinais, cotacoes, ultimasCotacoesOrg, prec
             { label: 'Último praticado (coop.)', valor: ultimasCotacoesOrg[0] ? fmt(ultimasCotacoesOrg[0].preco_cooperado) + '/arr.' : '—', cor: '#635BFF' },
             { label: 'Último praticado (ext.)',  valor: ultimasCotacoesOrg[0] ? fmt(ultimasCotacoesOrg[0].preco_externo) + '/arr.' : '—', cor: '#92400e' },
           ].map(({ label, valor, cor }) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
-              <span style={{ fontSize: 12, color: '#374151' }}>{label}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: cor }}>{valor}</span>
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 9 }}>
+              <span style={{ fontSize: 12, color: '#374151', minWidth: 0 }}>{label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: cor, textAlign: 'right', flexShrink: 0, maxWidth: '55%', wordBreak: 'break-word' }}>{valor}</span>
             </div>
           ))}
         </div>
