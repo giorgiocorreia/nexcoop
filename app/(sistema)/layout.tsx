@@ -130,11 +130,15 @@ export default async function SistemaLayout({
   const tema = temaOrg(organizacao as any)
 
   return (
-    <div style={{
-      display: 'flex', minHeight: '100vh', background: '#f8f7f4',
-      ['--nxc-marca-bg' as any]: tema.bg,
-      ['--nxc-marca-fim' as any]: tema.base,
-    }}>
+    <div
+      className="nxc-shell"
+      style={{
+        display: 'flex', minHeight: '100vh', background: '#f8f7f4',
+        width: '100%',
+        ['--nxc-marca-bg' as any]: tema.bg,
+        ['--nxc-marca-fim' as any]: tema.base,
+      }}
+    >
       <Sidebar
         usuario={usuarioComOrg}
         isParceiro={parceiroStatus && !isParceiroAcessandoOrg}
@@ -215,11 +219,7 @@ export default async function SistemaLayout({
           </div>
         )}
 
-        <main style={{
-          flex: 1,
-          padding: '0 2rem 2rem 2rem',
-          background: '#f8f7f4',
-        }}>
+        <main className="nxc-main-area" style={{ flex: 1 }}>
           {children}
         </main>
       </MainContent>

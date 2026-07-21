@@ -139,6 +139,7 @@ Menos chrome, mais conteúdo de campo.
 | 4 | Banners empilhados | `layout.tsx` + CSS |
 | 5 | Modal bottom sheet | `Modal.tsx` |
 | 6 | Sombra no drawer | `Sidebar.tsx` |
+| 7 | Largura = viewport (sem corte à direita) | `globals.css` (`--nxc-gutter`, `.nxc-shell`, `.nxc-bleed*`), `layout`/`MainContent` |
 
 ### P1 — próximo
 

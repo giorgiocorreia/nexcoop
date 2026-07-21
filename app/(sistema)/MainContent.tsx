@@ -44,7 +44,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
   return (
     <ToastProvider>
       <style>{`
-        .nxc-main { transition: margin-left 0.2s ease; }
+        .nxc-main { transition: margin-left 0.2s ease; min-width: 0; max-width: 100%; }
         @media (max-width: 767px) { .nxc-main { margin-left: 0 !important; } }
 
         /* Hamburger integrado à faixa HERO (chip translúcido, ícone branco) */
@@ -103,10 +103,14 @@ export default function MainContent({ children }: { children: React.ReactNode })
         className="nxc-main"
         style={{
           flex: 1,
+          minWidth: 0,
+          maxWidth: '100%',
+          width: '100%',
           marginLeft: isMobile ? 0 : (collapsed ? '56px' : '240px'),
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
+          overflowX: 'clip',
         }}
       >
         {children}

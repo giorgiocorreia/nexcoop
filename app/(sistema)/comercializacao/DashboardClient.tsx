@@ -169,9 +169,9 @@ export default function DashboardComercializacao({
       <HubStyles />
 
       {/* Header */}
-      <div style={{
+      <div className="nxc-bleed-x" style={{
         position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
-        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
+        borderBottom: HERO.borda,
       }}>
         <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>

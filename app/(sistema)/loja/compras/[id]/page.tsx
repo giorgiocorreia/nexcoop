@@ -64,11 +64,11 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
         }
       `}</style>
 
-      <header className="cd-header" style={{
+      <header className="cd-header nxc-bleed-x" style={{
         position: 'sticky', top: 0, zIndex: 10,
         background: '#fff', borderBottom: `1px solid ${C.borda}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, margin: '0 -2rem 0 -2rem',
+        gap: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <div style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 10, background: C.laranjaLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -96,8 +96,8 @@ export default async function CompraDetalhePage({ params }: { params: Promise<{ 
         </span>
       </header>
 
-      <div className="cd-content" style={{ background: C.bg, margin: '0 -2rem -2rem -2rem', minHeight: 'calc(100vh - 88px)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <div style={{ maxWidth: '960px' }}>
+      <div className="cd-content nxc-bleed" style={{ background: C.bg, minHeight: 'calc(100vh - 88px)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ maxWidth: '960px', width: '100%' }}>
 
           {/* Resumo da compra */}
           <div style={{ background: '#fff', border: `1px solid ${C.borda}`, borderRadius: '12px', padding: '20px 24px', marginBottom: '1.25rem' }}>

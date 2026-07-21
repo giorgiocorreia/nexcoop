@@ -381,7 +381,7 @@ export default function PDVPage() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', background: '#f8f7f4', overflow: 'hidden', margin: '0 -2rem -2rem -2rem' }}>
+    <div className="nxc-bleed" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', background: '#f8f7f4', overflow: 'hidden', minWidth: 0, maxWidth: '100%' }}>
       <style>{`
         .pdv-header { padding: 0 32px; }
         @media (max-width: 640px) { .pdv-header { padding: 0 16px 0 56px; } }

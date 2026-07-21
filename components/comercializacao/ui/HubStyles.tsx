@@ -8,7 +8,23 @@ export function HubStyles() {
       .com-dot-pulse { animation: com-pulse 2s ease-in-out infinite; }
       .com-page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; flex-wrap: nowrap; }
       .com-page-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .com-hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #D2D8D0; min-height: 100vh; }
+      /* Bleed usa --nxc-gutter (globals.css) p/ não estourar a largura da tela no mobile */
+      .com-hub-content {
+        padding: 28px 32px;
+        margin-left: calc(-1 * var(--nxc-gutter, 2rem));
+        margin-right: calc(-1 * var(--nxc-gutter, 2rem));
+        margin-bottom: calc(-1 * var(--nxc-gutter, 2rem));
+        background: #D2D8D0;
+        min-height: 100vh;
+        max-width: none;
+        box-sizing: border-box;
+        min-width: 0;
+        overflow-x: clip;
+      }
+      .com-page-header-wrap { min-width: 0; }
+      .com-hub-content > * { min-width: 0; max-width: 100%; }
+      .com-table { max-width: 100%; }
+      .com-scroll-x { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .com-hub-date { font-size: 12px; color: #515E53; padding-left: 50px; }
       .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
       .com-kpi-card {
@@ -76,17 +92,18 @@ export function HubStyles() {
         .com-page-title { font-size: 16px !important; }
         .com-page-subtitle { display: none !important; }
         .com-page-actions { max-width: 42%; justify-content: flex-end; }
-        .com-hub-content { padding: 16px; }
+        .com-hub-content { padding: 12px 16px 24px; }
         .com-hub-date { display: none; }
         .com-kpi-value { font-size: clamp(15px, 4.5vw, 18px); }
         .com-kpi-icon { width: 38px; height: 38px; }
         .com-kpi-icon i { font-size: 17px; }
         .com-kpi-card { padding: 12px 14px; min-height: 64px; gap: 10px; }
         .com-kpi-sub { display: none; }
-        .com-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .com-kpi-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .com-kpi-grid-3 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .com-link-grid { grid-template-columns: 1fr; }
+        .com-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .com-kpi-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .com-link-grid { grid-template-columns: minmax(0, 1fr); }
+        .com-chart-row, .com-two-col { grid-template-columns: minmax(0, 1fr); }
       }
       @media (max-width: 360px) {
         .com-kpi-grid,

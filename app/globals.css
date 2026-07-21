@@ -2,9 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gutter do shell do sistema — headers/conteúdo usam margin negativo com a mesma var */
+:root {
+  --nxc-gutter: 2rem;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --nxc-gutter: 1rem;
+  }
+}
+
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background: #f8f7f4;
   color: #1c1917;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Shell: nunca “vaza” além da largura da tela (flex min-width:auto era o vilão) */
+.nxc-shell {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.nxc-main {
+  min-width: 0 !important;
+  max-width: 100%;
+  width: 100%;
+  overflow-x: clip;
+}
+
+.nxc-main-area {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 var(--nxc-gutter) 2rem;
+  overflow-x: clip;
+  background: #f8f7f4;
+}
+
+/* Bleed horizontal alinhado ao gutter (substitui margin: 0 -2rem hardcoded) */
+.nxc-bleed-x {
+  margin-left: calc(-1 * var(--nxc-gutter));
+  margin-right: calc(-1 * var(--nxc-gutter));
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.nxc-bleed {
+  margin-left: calc(-1 * var(--nxc-gutter));
+  margin-right: calc(-1 * var(--nxc-gutter));
+  margin-bottom: calc(-1 * var(--nxc-gutter));
+  max-width: none;
+  box-sizing: border-box;
+}
+
+/* Tabelas / blocos largos: rolam por dentro, não empurram a página */
+.nxc-scroll-x,
+.com-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @layer utilities {

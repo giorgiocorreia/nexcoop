@@ -40,10 +40,10 @@ export function PageLayout({
     <>
       <HubStyles />
       <div
-        className="com-page-header-wrap"
+        className="com-page-header-wrap nxc-bleed-x"
         style={{
           position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
-          borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
+          borderBottom: HERO.borda,
         }}
       >
         <div className="com-page-header" style={{ justifyContent: 'space-between', gap: 12 }}>
