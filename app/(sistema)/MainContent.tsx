@@ -104,8 +104,9 @@ export default function MainContent({ children }: { children: React.ReactNode })
         style={{
           flex: 1,
           minWidth: 0,
-          maxWidth: '100%',
-          width: '100%',
+          // Sem width:100% — no desktop o marginLeft da sidebar somaria e estouraria a tela
+          maxWidth: isMobile ? '100%' : undefined,
+          width: isMobile ? '100%' : undefined,
           marginLeft: isMobile ? 0 : (collapsed ? '56px' : '240px'),
           display: 'flex',
           flexDirection: 'column',

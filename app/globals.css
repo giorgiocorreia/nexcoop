@@ -33,9 +33,14 @@ body {
 
 .nxc-main {
   min-width: 0 !important;
-  max-width: 100%;
-  width: 100%;
   overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  .nxc-main {
+    max-width: 100%;
+    width: 100%;
+  }
 }
 
 .nxc-main-area {
