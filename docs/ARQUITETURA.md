@@ -104,33 +104,45 @@ Cor de destaque por módulo (ícone do header + KPIs):
 
 ## Responsividade Mobile (a partir de 24/06/2026)
 
+> **Sugestões e roadmap visual:** ver `docs/SUGESTOES_MOBILE_VIEW.md` (P0 aplicado em 2026-07-21).
+
 ### Breakpoints padrão
 - `1024px` — tablet: KPI grid 3 colunas, chart-row em coluna única
-- `640px` — mobile: KPI grid 2 colunas, padding reduzido, elementos secundários ocultos
+- `768px` — sidebar vira drawer
+- `640px` — header compacto, KPI 2 colunas, modal bottom sheet, padding reduzido
+- `360px` — KPI 1 coluna (telas muito estreitas)
 
 ### Sidebar mobile
-- Abaixo de `768px` o sidebar vira drawer (slide-in da esquerda)
+- Abaixo de `768px` o sidebar vira drawer (slide-in da esquerda, largura 280px)
 - Implementado em `components/Sidebar.tsx` + `app/(sistema)/MainContent.tsx`
-- Hamburger button fixo `top:12 left:12 zIndex:201` — renderizado no `MainContent`
+- Hamburger **integrado à marca**: chip translúcido, ícone branco, 44×44, `top:8 left:8 zIndex:201` (classe `.nxc-menu-btn`)
+- Ícone alterna menu ↔ X via evento `sidebar-mobile-state` `{ open: boolean }`
 - Overlay `rgba(0,0,0,0.45) zIndex:199` fecha o drawer ao clicar fora
+- Drawer aberto: `box-shadow: 8px 0 28px rgba(0,0,0,0.22)`
 - Botão de retração (collapse/expand) oculto no mobile (`ToggleBtn` retorna `null` quando `isMobile`)
-- Evento customizado `sidebar-mobile-toggle` (CustomEvent) dispara o drawer — usar `window.dispatchEvent`
+- Eventos: `sidebar-mobile-toggle` (abre/fecha), `sidebar-mobile-state` (sincroniza ícone)
 
 ### Header de página — regras obrigatórias
 - O header sticky DEVE ter `margin: 0 -2rem 0 -2rem` para cancelar o padding do `<main>` e ocupar largura total
 - O header DEVE ter `min-height: 88px` para alinhar com o cabeçalho do sidebar (16+56+16)
-- No mobile (≤640px): `min-height: 60px; padding: 0 16px 0 56px` para não colidir com o hamburger
+- No mobile (≤640px): `min-height: 56px; padding: 0 12px 0 56px`; breadcrumb e subtítulo ocultos; título 16px com ellipsis
 - **Caso especial — layout full-screen (ex: PDV):** quando o root div tem `overflow: hidden` (necessário para conter scroll interno), o `margin: 0 -2rem 0 -2rem` no header filho é cortado pelo clipping. Solução: colocar `margin: 0 -2rem -2rem -2rem` no **root div** e usar apenas `padding: 0 32px` no header via CSS class. Isso distribui a expansão para toda a área raiz, não para o header isolado.
-- Classe CSS padrão do header:
+- Preferir `PageLayout` + `HubStyles` (classes `.com-page-header`, `.com-page-title`, etc.)
+- Classe CSS padrão do header (legado):
 ```css
 .page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
 @media (max-width: 640px) {
-  .page-header { padding: 0 16px 0 56px; min-height: 60px; }
+  .page-header { padding: 0 12px 0 56px; min-height: 56px; }
 }
 ```
 - `min-height: 88px` = 16px (padding sidebar) + 56px (logo sidebar) + 16px (padding sidebar)
-- Mobile: `60px` para não ocupar espaço excessivo em telas pequenas
+- Mobile: `56px` para não ocupar espaço excessivo em telas pequenas
 - `display: flex; align-items: center` DEVE estar na CSS class, não só no inline style
+
+### Mobile UX (P0)
+- Inputs/select/textarea: `font-size: 16px` no mobile (evita zoom iOS) — CSS em `MainContent`
+- Modal: bottom sheet ≤640px (`Modal.tsx`)
+- Banners de sistema: classe `.nxc-sys-banner` (empilha no mobile, padding-left 56px)
 
 ### KPI cards — quando usar
 - **Usar:** páginas com dados agregáveis úteis — produtos, compras, estoque, caixas, conferência

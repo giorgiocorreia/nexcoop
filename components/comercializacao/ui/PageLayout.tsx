@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { HubStyles } from './HubStyles'
-import { COM_C, HERO } from './tokens'
+import { HERO } from './tokens'
 
 interface ModuloRef {
   label: string
@@ -39,21 +39,27 @@ export function PageLayout({
   return (
     <>
       <HubStyles />
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
-        borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
-      }}>
-        <div className="com-page-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 10, background: HERO.chip, flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+      <div
+        className="com-page-header-wrap"
+        style={{
+          position: 'sticky', top: 0, zIndex: 10, background: HERO.bg,
+          borderBottom: HERO.borda, margin: '0 -2rem 0 -2rem',
+        }}
+      >
+        <div className="com-page-header" style={{ justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+            <div
+              className="com-page-header-icon"
+              style={{
+                width: 38, height: 38, borderRadius: 10, background: HERO.chip, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
               <i className={`ti ${icone}`} style={{ fontSize: 20, color: HERO.txt }} />
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               {!semBreadcrumb && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                <div className="com-page-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
                   <Link href={modulo.href} style={{ fontSize: 12, color: HERO.txtSub, textDecoration: 'none' }}>
                     {modulo.label}
                   </Link>
@@ -69,14 +75,16 @@ export function PageLayout({
                   ))}
                 </div>
               )}
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: HERO.txt, margin: 0, lineHeight: 1.2 }}>{titulo}</h1>
+              <h1 className="com-page-title" style={{ fontSize: 19, fontWeight: 800, color: HERO.txt, margin: 0, lineHeight: 1.2 }}>
+                {titulo}
+              </h1>
               {subtitulo && (
-                <div style={{ fontSize: 12, color: HERO.txtSub, marginTop: 2 }}>{subtitulo}</div>
+                <div className="com-page-subtitle" style={{ fontSize: 12, color: HERO.txtSub, marginTop: 2 }}>{subtitulo}</div>
               )}
             </div>
           </div>
           {acoes && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div className="com-page-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
               {acoes}
             </div>
           )}

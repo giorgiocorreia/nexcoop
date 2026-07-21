@@ -281,24 +281,41 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   const [isMobile, setIsMobile] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  function setMobileDrawer(open: boolean) {
+    setMobileOpen(open)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sidebar-mobile-state', { detail: { open } }))
+    }
+  }
+
   useEffect(() => {
     if (pathname.startsWith('/loja')) {
       setExpandedGroup('Loja')
     } else if (pathname.startsWith('/comercializacao')) {
       setExpandedGroup('Comercialização')
     }
-    setMobileOpen(false)
+    setMobileDrawer(false)
   }, [pathname])
 
   useEffect(() => {
     const saved = localStorage.getItem(SIDEBAR_KEY)
     if (saved === 'true') setCollapsed(true)
 
-    function checkMobile() { setIsMobile(window.innerWidth < 768) }
+    function checkMobile() {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (!mobile) setMobileDrawer(false)
+    }
     checkMobile()
     window.addEventListener('resize', checkMobile)
 
-    function handleMobileToggle() { setMobileOpen(prev => !prev) }
+    function handleMobileToggle() {
+      setMobileOpen(prev => {
+        const next = !prev
+        window.dispatchEvent(new CustomEvent('sidebar-mobile-state', { detail: { open: next } }))
+        return next
+      })
+    }
     window.addEventListener('sidebar-mobile-toggle', handleMobileToggle)
 
     return () => {
@@ -564,20 +581,27 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
         }
         .nxc-sidebar nav::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.45); }
         @media (max-width: 767px) {
-          .nxc-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
-          .nxc-sidebar.nxc-sidebar-open { transform: translateX(0); }
+          .nxc-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+          }
+          .nxc-sidebar.nxc-sidebar-open {
+            transform: translateX(0);
+            box-shadow: 8px 0 28px rgba(0,0,0,0.22);
+          }
         }
       `}</style>
     {isMobile && mobileOpen && (
       <div
-        onClick={() => setMobileOpen(false)}
+        onClick={() => setMobileDrawer(false)}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 199 }}
+        aria-hidden
       />
     )}
     <aside
       className={`nxc-sidebar${mobileOpen ? ' nxc-sidebar-open' : ''}`}
       style={{
-        width: isMobile ? 240 : `${W}px`,
+        width: isMobile ? 280 : `${W}px`,
         // Continua a cor em que o gradiente do hero termina: a faixa desce sem degrau.
         height: '100vh', background: SB.bg,
         position: 'fixed', top: 0, left: 0,

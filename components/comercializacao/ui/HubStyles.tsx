@@ -6,7 +6,8 @@ export function HubStyles() {
         50%      { box-shadow: 0 0 0 6px rgba(22,163,74,0); }
       }
       .com-dot-pulse { animation: com-pulse 2s ease-in-out infinite; }
-      .com-page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; }
+      .com-page-header { padding: 0 32px; min-height: 88px; display: flex; align-items: center; flex-wrap: nowrap; }
+      .com-page-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .com-hub-content { padding: 28px 32px; margin: 0 -2rem -2rem -2rem; background: #D2D8D0; min-height: 100vh; }
       .com-hub-date { font-size: 12px; color: #515E53; padding-left: 50px; }
       .com-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
@@ -59,22 +60,38 @@ export function HubStyles() {
       @media (max-width: 1024px) {
         .com-chart-row { grid-template-columns: 1fr; }
         .com-two-col { grid-template-columns: 1fr; }
+        .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
       }
+      /* Mobile header + densidade (sugestões P0 — docs/SUGESTOES_MOBILE_VIEW.md) */
       @media (max-width: 640px) {
-        .com-page-header { padding: 0 16px 0 56px; min-height: 60px; flex-wrap: wrap; }
+        .com-page-header {
+          padding: 0 12px 0 56px;
+          min-height: 56px;
+          flex-wrap: nowrap;
+          gap: 8px;
+        }
+        .com-page-header-icon { width: 32px !important; height: 32px !important; border-radius: 8px !important; }
+        .com-page-header-icon i { font-size: 16px !important; }
+        .com-page-breadcrumb { display: none !important; }
+        .com-page-title { font-size: 16px !important; }
+        .com-page-subtitle { display: none !important; }
+        .com-page-actions { max-width: 42%; justify-content: flex-end; }
         .com-hub-content { padding: 16px; }
         .com-hub-date { display: none; }
-        .com-kpi-value { font-size: 18px; }
+        .com-kpi-value { font-size: clamp(15px, 4.5vw, 18px); }
         .com-kpi-icon { width: 38px; height: 38px; }
         .com-kpi-icon i { font-size: 17px; }
         .com-kpi-card { padding: 12px 14px; min-height: 64px; gap: 10px; }
+        .com-kpi-sub { display: none; }
         .com-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-kpi-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-kpi-grid-3 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .com-link-grid { grid-template-columns: 1fr; }
       }
-      @media (max-width: 1024px) {
-        .com-kpi-grid-3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      @media (max-width: 360px) {
+        .com-kpi-grid,
+        .com-kpi-grid-4,
+        .com-kpi-grid-3 { grid-template-columns: 1fr; }
       }
     `}</style>
   )
