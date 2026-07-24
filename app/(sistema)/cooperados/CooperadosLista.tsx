@@ -60,6 +60,11 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   // não tem carteirinha ativa é silenciosamente pulado pela rota de
   // impressão — a seleção aqui não sabe (nem precisa saber) quem tem ou não.
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  // Modo de seleção para impressão em lote: os checkboxes só aparecem depois
+  // de clicar em "Imprimir carteirinhas". Antes o botão é que só aparecia
+  // depois de marcar alguém — a pessoa tinha que adivinhar o caminho
+  // (feedback do Giorgio, 24/07/2026).
+  const [modoSelecao, setModoSelecao] = useState(false)
 
   // Set de inadimplentes por mensalidade (só associação) — mesmo número do dashboard.
   const setInad = useMemo(() => new Set(inadimplentesMensalidade ?? []), [inadimplentesMensalidade])
@@ -119,6 +124,12 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
     if (selecionados.size === 0) return
     const ids = Array.from(selecionados).join(',')
     window.open(`/imprimir/carteirinhas?ids=${encodeURIComponent(ids)}`, '_blank', 'noopener,noreferrer')
+    sairDoModoSelecao()
+  }
+
+  function sairDoModoSelecao() {
+    setModoSelecao(false)
+    setSelecionados(new Set())
   }
 
   return (
@@ -184,12 +195,43 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             Limpar
           </Btn>
         )}
-        {selecionados.size > 0 && (
-          <Btn variante="roxo" icone="ti-printer" tamanho="sm" onClick={imprimirCarteirinhasSelecionadas}>
-            Imprimir carteirinhas ({selecionados.size})
+        {!modoSelecao ? (
+          <Btn variante="cinza" icone="ti-printer" tamanho="sm" onClick={() => setModoSelecao(true)}>
+            Imprimir carteirinhas
           </Btn>
+        ) : (
+          <>
+            <Btn
+              variante="roxo"
+              icone="ti-printer"
+              tamanho="sm"
+              onClick={imprimirCarteirinhasSelecionadas}
+              disabled={selecionados.size === 0}
+            >
+              Imprimir {selecionados.size > 0 ? `(${selecionados.size})` : ''}
+            </Btn>
+            <Btn variante="cinza" tamanho="sm" onClick={sairDoModoSelecao}>
+              Cancelar
+            </Btn>
+          </>
         )}
       </div>
+
+      {/* Instrução do modo de seleção — sem isto o usuário precisava adivinhar
+          que devia marcar alguém pra revelar o botão de impressão. */}
+      {modoSelecao && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 12px',
+          padding: '10px 14px', borderRadius: 10,
+          background: COM_C.roxoLt, border: `1px solid ${COM_C.roxo}33`,
+        }}>
+          <i className="ti ti-info-circle" style={{ fontSize: 16, color: COM_C.roxo }} aria-hidden />
+          <span style={{ fontSize: 13, color: COM_C.roxo, fontWeight: 500 }}>
+            Selecione os {n.plural.toLowerCase()} que deseja imprimir a carteirinha.
+            {' '}Só entram os que já têm carteirinha emitida.
+          </span>
+        </div>
+      )}
 
       {filtrados.length === 0 ? (
         <EmptyState
@@ -204,15 +246,17 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
-                  <th style={{ width: 36 }}>
-                    <input
-                      type="checkbox"
-                      checked={todosFiltradosSelecionados}
-                      onChange={alternarSelecionarTodosFiltrados}
-                      title="Selecionar todos os filtrados"
-                      aria-label="Selecionar todos os filtrados"
-                    />
-                  </th>
+                  {modoSelecao && (
+                    <th style={{ width: 36 }}>
+                      <input
+                        type="checkbox"
+                        checked={todosFiltradosSelecionados}
+                        onChange={alternarSelecionarTodosFiltrados}
+                        title="Selecionar todos os filtrados"
+                        aria-label="Selecionar todos os filtrados"
+                      />
+                    </th>
+                  )}
                   {['Nome', 'CPF', 'E-mail', 'Cidade / UF', 'Admissão', ...(ehAssoc ? ['Mensalidade'] : []), 'Status'].map(col => (
                     <th key={col}>{col}</th>
                   ))}
@@ -225,19 +269,23 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
                   return (
                     <tr
                       key={c.id}
-                      onClick={() => router.push(`/cooperados/${c.id}`)}
+                      // No modo de seleção, clicar na linha marca/desmarca em vez
+                      // de navegar — evita sair da tela no meio da seleção.
+                      onClick={() => modoSelecao ? alternarSelecao(c.id) : router.push(`/cooperados/${c.id}`)}
                       onMouseEnter={() => setHovered(c.id)}
                       onMouseLeave={() => setHovered(null)}
                       style={{ cursor: 'pointer', background: isHov ? '#FAFAF9' : undefined }}
                     >
-                      <td onClick={e => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selecionados.has(c.id)}
-                          onChange={() => alternarSelecao(c.id)}
-                          aria-label={`Selecionar ${c.nome_completo}`}
-                        />
-                      </td>
+                      {modoSelecao && (
+                        <td onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selecionados.has(c.id)}
+                            onChange={() => alternarSelecao(c.id)}
+                            aria-label={`Selecionar ${c.nome_completo}`}
+                          />
+                        </td>
+                      )}
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{
