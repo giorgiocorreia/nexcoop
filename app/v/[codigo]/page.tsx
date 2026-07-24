@@ -94,7 +94,26 @@ export default async function VerificacaoCarteirinhaPage({
 
         {/* Cartão com os dados do filiado — o mínimo pra identificação visual,
             nunca dado financeiro/contato (ver regras da Fase 1). */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden' }}>
+          {/* Marca d'água: logo da org preenchendo o fundo do cartão. Opacidade
+              baixa (0.06) pra não competir com o texto — a página é lida na
+              hora da conferência, legibilidade vem antes da identidade visual.
+              position/zIndex mantêm o conteúdo por cima; pointerEvents none pra
+              não capturar toque no celular. */}
+          {carteirinha.organizacao.logoUrl && (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute', inset: 0, zIndex: 0, opacity: 0.06,
+                backgroundImage: `url(${carteirinha.organizacao.logoUrl})`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                backgroundSize: '78%',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+          <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e4e4e7' }}>
             {carteirinha.organizacao.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -148,6 +167,7 @@ export default async function VerificacaoCarteirinhaPage({
               <dd style={{ color: '#3f3f46', fontWeight: 600 }}>{mascararCpf(carteirinha.cooperado.cpf)}</dd>
             </div>
           </dl>
+          </div>
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 12, color: '#a1a1aa', marginTop: 16 }}>

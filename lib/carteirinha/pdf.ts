@@ -209,6 +209,32 @@ interface ImagensCartao {
 // Não desenha situação do vínculo (ATIVO/NÃO ATIVO) — decisão explícita do
 // Giorgio: o cartão físico é estático e o status muda; quem responde isso ao
 // vivo é o QR, nunca o plástico impresso.
+// Marca d'água: logo da org ocupando o fundo do cartão, bem transparente.
+// Desenhada logo depois do fundo branco e ANTES de qualquer conteúdo, pra
+// ficar por baixo do texto. Opacidade baixa (0.07) porque o cartão é lido de
+// perto e impresso — marca d'água forte compete com o texto e, no QR, chega a
+// atrapalhar a leitura óptica. Mantém a proporção da logo (scaleToFit),
+// centralizada, com uma folga pra não encostar nas bordas.
+function desenharMarcaDagua(
+  page: PDFPage,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  logoImg: PDFImage | null
+) {
+  if (!logoImg) return
+  const area = Math.min(w, h) * 0.82
+  const dim = logoImg.scaleToFit(area, area)
+  page.drawImage(logoImg, {
+    x: x + (w - dim.width) / 2,
+    y: y + (h - dim.height) / 2,
+    width: dim.width,
+    height: dim.height,
+    opacity: 0.07,
+  })
+}
+
 function desenharFrente(
   page: PDFPage,
   x: number,
@@ -224,6 +250,8 @@ function desenharFrente(
 
   // Fundo branco + borda
   page.drawRectangle({ x, y, width: w, height: h, color: rgb(1, 1, 1), borderColor: rgb(0.75, 0.75, 0.75), borderWidth: 0.75 })
+
+  desenharMarcaDagua(page, x, y, w, h, imagens.logoImg)
 
   // Faixa superior com a cor da marca
   const headerH = 30
@@ -304,7 +332,8 @@ function desenharVerso(
   y: number,
   dados: DadosCartao,
   fontRegular: PDFFont,
-  fontBold: PDFFont
+  fontBold: PDFFont,
+  logoImg: PDFImage | null
 ) {
   const w = CARTAO_LARGURA
   const h = CARTAO_ALTURA
@@ -312,6 +341,8 @@ function desenharVerso(
   const largura = w - margem * 2
 
   page.drawRectangle({ x, y, width: w, height: h, color: rgb(1, 1, 1), borderColor: rgb(0.75, 0.75, 0.75), borderWidth: 0.75 })
+
+  desenharMarcaDagua(page, x, y, w, h, logoImg)
 
   let cursorY = y + h - margem - 10
 
@@ -420,7 +451,7 @@ async function desenharCartaoDobravel(
   desenharFrente(paginaFrenteTemp, 0, 0, dados, { fotoImg, logoImg, qrImg }, fontRegular, fontBold)
 
   const paginaVersoTemp = tempDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
-  desenharVerso(paginaVersoTemp, 0, 0, dados, fontRegular, fontBold)
+  desenharVerso(paginaVersoTemp, 0, 0, dados, fontRegular, fontBold, logoImg)
 
   const embeddedFrente = await pdfDocFinal.embedPage(paginaFrenteTemp)
   const embeddedVerso = await pdfDocFinal.embedPage(paginaVersoTemp)
