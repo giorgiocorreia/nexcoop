@@ -61,6 +61,44 @@ interface LinhaCarteirinha {
   } | null
 }
 
+export interface CarteirinhaAtiva {
+  id: string
+  codigo: string
+  via: number
+  emitidaEm: string
+  validaAte: string | null
+  revogadaEm: string | null
+}
+
+// Usada pelo portal do filiado (/filiado/carteirinha) e pelo card de emissão
+// na ficha do cooperado (admin) — busca a via ATIVA (não revogada) do
+// cooperado, se existir. organizacaoId é passado explicitamente pra nunca
+// confiar só no cooperadoId vindo de fora (o chamador já validou o vínculo
+// usuario<->cooperado<->org antes de chegar aqui).
+export async function buscarCarteirinhaAtivaDoCooperado(
+  cooperadoId: string,
+  organizacaoId: string
+): Promise<CarteirinhaAtiva | null> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('cooperado_carteirinhas')
+    .select('id, codigo, via, emitida_em, valida_ate, revogada_em')
+    .eq('cooperado_id', cooperadoId)
+    .eq('organizacao_id', organizacaoId)
+    .is('revogada_em', null)
+    .maybeSingle()
+
+  if (!data) return null
+  return {
+    id: data.id as string,
+    codigo: data.codigo as string,
+    via: data.via as number,
+    emitidaEm: data.emitida_em as string,
+    validaAte: data.valida_ate as string | null,
+    revogadaEm: data.revogada_em as string | null,
+  }
+}
+
 export async function buscarCarteirinhaPorCodigo(codigo: string): Promise<CarteirinhaVerificacao | null> {
   if (!REGEX_CODIGO.test(codigo)) return null
 

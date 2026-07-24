@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { isAdmin, temAlgumaFuncao } from '@/lib/permissoes'
+import { buscarCarteirinhaAtivaDoCooperado } from '@/lib/carteirinha/queries'
+import { montarUrlVerificacao } from '@/lib/carteirinha/carteirinha-utils'
 import CooperadoPerfil from './CooperadoPerfil'
 
 export type AcessoCooperado =
@@ -80,6 +82,19 @@ export default async function CooperadoPage({ params }: Props) {
     }
   }
 
+  // Carteirinha ativa (se houver) + slug do site próprio da org, pra montar
+  // o link de verificação pública exibido no card de admin (item 4 da fase 2).
+  const carteirinhaAtiva = await buscarCarteirinhaAtivaDoCooperado(id, cooperado.organizacao_id)
+  const admin = createAdminClient()
+  const { data: siteConfig } = await admin
+    .from('site_config')
+    .select('slug')
+    .eq('organizacao_id', cooperado.organizacao_id)
+    .maybeSingle()
+  const urlVerificacaoCarteirinha = carteirinhaAtiva
+    ? montarUrlVerificacao(carteirinhaAtiva.codigo, (siteConfig as { slug: string } | null)?.slug ?? null)
+    : null
+
   return (
     <CooperadoPerfil
       cooperado={cooperado}
@@ -90,6 +105,8 @@ export default async function CooperadoPage({ params }: Props) {
       usuarioId={user.id}
       ehAdmin={ehAdmin}
       acesso={acesso}
+      carteirinhaAtiva={carteirinhaAtiva}
+      urlVerificacaoCarteirinha={urlVerificacaoCarteirinha}
     />
   )
 }

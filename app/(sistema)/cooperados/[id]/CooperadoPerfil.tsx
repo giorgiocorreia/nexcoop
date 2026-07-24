@@ -14,6 +14,9 @@ import CotasSection from './CotasSection'
 import PagamentosSection from './PagamentosSection'
 import MensalidadesAssociadoSection from './MensalidadesAssociadoSection'
 import AcessoSistemaCard from './AcessoSistemaCard'
+import FotoCooperadoCard from './FotoCooperadoCard'
+import CarteirinhaCard from './CarteirinhaCard'
+import type { CarteirinhaAtiva } from '@/lib/carteirinha/queries'
 import type { AcessoCooperado } from './page'
 
 const STATUS_CONFIG: Record<
@@ -66,11 +69,17 @@ interface Props {
   usuarioId:  string
   ehAdmin:    boolean
   acesso:     AcessoCooperado
+  carteirinhaAtiva: CarteirinhaAtiva | null
+  urlVerificacaoCarteirinha: string | null
 }
 
-export default function CooperadoPerfil({ cooperado: initial, propriedades, orgTipo, orgNome, orgCnpj, usuarioId, ehAdmin, acesso }: Props) {
+export default function CooperadoPerfil({
+  cooperado: initial, propriedades, orgTipo, orgNome, orgCnpj, usuarioId, ehAdmin, acesso,
+  carteirinhaAtiva, urlVerificacaoCarteirinha,
+}: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
+  const [fotoUrl, setFotoUrl] = useState(initial.foto_url)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
   const [alterandoStatus, setAlterandoStatus] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
@@ -155,14 +164,23 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
         <ContentCard padding="1.5rem">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: '50%', background: COM_C.roxoLt,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, fontWeight: 700, color: COM_C.roxo, flexShrink: 0,
-                border: `2px solid ${COM_C.borda}`,
-              }}>
-                {iniciais}
-              </div>
+              {fotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={fotoUrl}
+                  alt={cooperado.nome_completo}
+                  style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: `2px solid ${COM_C.borda}` }}
+                />
+              ) : (
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%', background: COM_C.roxoLt,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, fontWeight: 700, color: COM_C.roxo, flexShrink: 0,
+                  border: `2px solid ${COM_C.borda}`,
+                }}>
+                  {iniciais}
+                </div>
+              )}
               <div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COM_C.txt }}>
                   {cooperado.nome_completo}
@@ -340,7 +358,13 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
         </div>
 
         {ehAdmin && (
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <FotoCooperadoCard
+              cooperadoId={cooperado.id}
+              nome={cooperado.nome_completo}
+              fotoUrl={fotoUrl}
+              onFotoAtualizada={setFotoUrl}
+            />
             <AcessoSistemaCard
               cooperadoId={cooperado.id}
               nome={cooperado.nome_completo}
@@ -348,6 +372,16 @@ export default function CooperadoPerfil({ cooperado: initial, propriedades, orgT
               emailPadrao={cooperado.email}
               acessoInicial={acesso}
               orgTipo={orgTipo}
+            />
+          </div>
+        )}
+
+        {ehAdmin && (
+          <div style={{ marginTop: 12 }}>
+            <CarteirinhaCard
+              cooperadoId={cooperado.id}
+              carteirinhaAtiva={carteirinhaAtiva}
+              urlVerificacao={urlVerificacaoCarteirinha}
             />
           </div>
         )}

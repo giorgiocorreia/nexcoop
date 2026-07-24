@@ -101,6 +101,28 @@ export default async function FiliadoInicioPage() {
         )}
       </div>
 
+      <a
+        href="/filiado/carteirinha"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: '#fff', borderRadius: 16, border: '1px solid #E7E5E4',
+          padding: '16px 18px', textDecoration: 'none',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div style={{
+          width: 40, height: 40, borderRadius: 10, background: '#F5F3FF',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <i className="ti ti-id" style={{ fontSize: 20, color: '#635BFF' }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#1C1917' }}>Minha carteirinha</div>
+          <div style={{ fontSize: 12, color: '#78716C' }}>Documento de identificação digital com QR code</div>
+        </div>
+        <i className="ti ti-chevron-right" style={{ fontSize: 16, color: '#A8A29E' }} />
+      </a>
+
       <FiliadoSairButton />
     </div>
   )
