@@ -147,6 +147,25 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
               Gerar mensalidades
             </Btn>
           )}
+          {!modoSelecao ? (
+            <Btn variante="cinza" icone="ti-printer" onClick={() => setModoSelecao(true)}>
+              Imprimir carteirinhas
+            </Btn>
+          ) : (
+            <>
+              <Btn
+                variante="roxo"
+                icone="ti-printer"
+                onClick={imprimirCarteirinhasSelecionadas}
+                disabled={selecionados.size === 0}
+              >
+                Imprimir {selecionados.size > 0 ? `(${selecionados.size})` : ''}
+              </Btn>
+              <Btn variante="cinza" onClick={sairDoModoSelecao}>
+                Cancelar
+              </Btn>
+            </>
+          )}
           <Btn variante="roxo" icone="ti-plus" onClick={() => router.push('/cooperados/novo')}>
             {n.novo}
           </Btn>
@@ -194,26 +213,6 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
           <Btn variante="cinza" tamanho="sm" onClick={() => { setBusca(''); setFiltroStatus('todos'); setFiltroMensalidade('todos') }}>
             Limpar
           </Btn>
-        )}
-        {!modoSelecao ? (
-          <Btn variante="cinza" icone="ti-printer" tamanho="sm" onClick={() => setModoSelecao(true)}>
-            Imprimir carteirinhas
-          </Btn>
-        ) : (
-          <>
-            <Btn
-              variante="roxo"
-              icone="ti-printer"
-              tamanho="sm"
-              onClick={imprimirCarteirinhasSelecionadas}
-              disabled={selecionados.size === 0}
-            >
-              Imprimir {selecionados.size > 0 ? `(${selecionados.size})` : ''}
-            </Btn>
-            <Btn variante="cinza" tamanho="sm" onClick={sairDoModoSelecao}>
-              Cancelar
-            </Btn>
-          </>
         )}
       </div>
 
