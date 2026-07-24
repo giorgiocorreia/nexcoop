@@ -33,10 +33,27 @@ export function gerarCodigoCarteirinha(): string {
   return codigo
 }
 
-// Monta a URL pública de verificação (o que vai no QR code). Com slug de
-// site próprio, usa o subdomínio da org; sem slug, cai no domínio raiz.
+// Liga/desliga o uso de subdomínio por org na URL do QR.
+//
+// FALSE desde 24/07/2026 — o wildcard *.nexcoop.com.br NÃO existe em DNS
+// (coopaibi.nexcoop.com.br não resolve) e domínio wildcard na Vercel exige
+// plano Pro; o projeto está no Hobby. Com true, o QR aponta pra um host
+// inexistente e a leitura dá "link quebrado".
+//
+// Para religar quando houver wildcard configurado: mude para true. Nenhuma
+// carteirinha precisa ser reemitida — o `codigo` continua o mesmo e a rota
+// /v/[codigo] é global (app/v/, fora do grupo do módulo Site), atendendo
+// nos dois hosts. Só os cartões JÁ IMPRESSOS carregam a URL antiga no QR e
+// precisariam ser reimpressos.
+const USAR_SUBDOMINIO_POR_ORG = false
+
+// Monta a URL pública de verificação (o que vai no QR code). O slug segue
+// sendo recebido pra não mudar a assinatura em todos os chamadores quando o
+// subdomínio for religado.
 export function montarUrlVerificacao(codigo: string, slugSite: string | null): string {
-  const host = slugSite ? `${slugSite}.${DOMINIO_BASE}` : DOMINIO_BASE
+  const host = (USAR_SUBDOMINIO_POR_ORG && slugSite)
+    ? `${slugSite}.${DOMINIO_BASE}`
+    : DOMINIO_BASE
   return `https://${host}/v/${codigo}`
 }
 
