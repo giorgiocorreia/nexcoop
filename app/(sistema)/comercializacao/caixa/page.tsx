@@ -755,10 +755,18 @@ export default function CaixaPage() {
     } finally { setFechando(false) }
   }
 
+  // O preço aplicado depende do vínculo do produtor: cooperado recebe
+  // preco_cooperado, externo recebe preco_externo. Mesma regra de
+  // produtores/[id]/page.tsx e lotes/actions.ts — até 24/07/2026 esta tela
+  // pré-preenchia sempre com preco_cooperado, pagando externo a mais.
   async function carregarCotacao(produto_id: string) {
     if (!produto_id) return
     const cot = await getCotacaoHoje(produto_id)
-    if (cot) setFormReceber(f => ({ ...f, preco_kg: (cot as any).preco_cooperado.toString() }))
+    if (!cot) return
+    const preco = produtorSelecionado?.tipo === 'cooperado'
+      ? (cot as any).preco_cooperado
+      : (cot as any).preco_externo
+    setFormReceber(f => ({ ...f, preco_kg: preco.toString() }))
   }
 
   // saldo_especie_calculado já acumula saldo_inicial + aportes - sangrias via registrarAporteSangria
