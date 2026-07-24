@@ -68,7 +68,11 @@
 
 | 087 | `mensalidades`: baixa com comprovante PIX (feature associação-only). +forma_pagamento text, +comprovante_url text, +comprovante_id_transacao text (EndToEndId, chave de dedup primária), +comprovante_hash text (SHA-256 do arquivo, dedup fallback), +comprovante_pagador text, +comprovante_valor numeric(12,2), +comprovante_data date, +comprovante_dados jsonb (extração completa da IA, auditoria). Todas nullable, tabela já populada. Dois índices únicos parciais por org: `uq_mensalidade_comprovante_e2e` (organizacao_id, comprovante_id_transacao) WHERE NOT NULL e `uq_mensalidade_comprovante_hash` (organizacao_id, comprovante_hash) WHERE NOT NULL — bloqueiam reuso do mesmo comprovante em duas mensalidades da mesma org |
 
-**Próxima migration:** 089
+| 088 | bucket `comprovantes` (Storage) — upload dos comprovantes PIX de mensalidade (087) |
+
+| 089 | `cooperado_carteirinhas` (NOVA) — carteirinha de identificação do filiado (física/PDF e digital) com QR code de verificação pública ao vivo (`/v/{codigo}`, sem cache de status). `codigo` opaco (12 alfanuméricos, CHECK, UNIQUE) — nunca UUID nem CPF, evita enumeração/vazamento de PII pela URL. Índice único parcial `uq_carteirinha_ativa_por_cooperado` (cooperado_id) WHERE revogada_em IS NULL — no máximo uma via ativa por cooperado, 2ª via exige revogar a anterior. `valida_ate` é só a validade impressa no cartão, NUNCA a autoridade da verificação (essa é sempre o status ao vivo). RLS: SELECT membros da org, INSERT/UPDATE/DELETE só admin (padrão 079/085) — leitura pública de `/v/{codigo}` NÃO usa essas policies, é servida via `createAdminClient()` no server; `anon` não recebe policy nenhuma. Sem backfill de emissão — é ato administrativo da Fase 3. Regra de negócio (não implementada no banco, decisão do Giorgio 24/07/2026): `inadimplente` conta como ATIVO na carteirinha, vínculo não expõe situação financeira |
+
+**Próxima migration:** 090
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

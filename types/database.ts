@@ -302,6 +302,23 @@ export interface Cooperado {
   atualizado_em: string
 }
 
+// Carteirinha de identificação do filiado (migration 089) — física (PDF) e
+// digital, com QR code de verificação pública ao vivo em /v/{codigo}.
+export interface CooperadoCarteirinha {
+  id: string
+  organizacao_id: string
+  cooperado_id: string
+  codigo: string
+  via: number
+  emitida_em: string
+  valida_ate: string | null
+  revogada_em: string | null
+  motivo_revogacao: string | null
+  emitida_por: string | null
+  criado_em: string
+  atualizado_em: string
+}
+
 export interface Lancamento {
   id: string
   organizacao_id: string
@@ -1541,6 +1558,8 @@ export type Database = {
       // ── Site institucional (085) ─────────────────────────────────────────
       site_config:                 TableDef<SiteConfig>
       site_conteudos:              TableDef<SiteConteudo>
+      // ── Carteirinha do filiado (089) ──────────────────────────────────────
+      cooperado_carteirinhas:      TableDef<CooperadoCarteirinha>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

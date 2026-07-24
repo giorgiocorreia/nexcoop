@@ -37,7 +37,13 @@ export async function middleware(request: NextRequest) {
   // reescrito pra /coopaibi/sites/coopaibi/css/style.css (404, quebra o
   // layout inteiro). .css/.js já não têm extensão isenta no matcher deste
   // middleware (diferente de imagens, que o matcher já pula por completo).
-  if (slug && !request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/sites/')) {
+  // /v/* (verificação pública da carteirinha do filiado, migration 089)
+  // também é excluído do rewrite — é rota GLOBAL fora do grupo (site-org)
+  // porque o layout de (site-org)/[slug] dá notFound() em org sem
+  // site_config, o que quebraria o QR code de qualquer org sem site próprio.
+  // Sem esta exceção, coopaibi.nexcoop.com.br/v/ABC123 viraria
+  // /coopaibi/v/ABC123 e cairia (incorretamente) na página do site da org.
+  if (slug && !request.nextUrl.pathname.startsWith('/api') && !request.nextUrl.pathname.startsWith('/sites/') && !request.nextUrl.pathname.startsWith('/v/')) {
     const url = request.nextUrl.clone()
     url.pathname = `/${slug}${request.nextUrl.pathname === '/' ? '' : request.nextUrl.pathname}`
     return NextResponse.rewrite(url)
@@ -75,12 +81,17 @@ export async function middleware(request: NextRequest) {
   const isApiSite = pathname.startsWith('/api/site')
   const isFiliadoLogin = pathname.startsWith('/filiado/login')
   const isFiliadoPublic = pathname === '/filiado' || isFiliadoLogin
+  // Verificação pública da carteirinha (/v/{codigo}, migration 089) — quem
+  // escaneia o QR é um visitante anônimo (porteiro, fiscal, comerciante),
+  // nunca vai ter sessão logada. Sem isto, o gate de auth abaixo redireciona
+  // pro /login antes mesmo de a página consultar o banco.
+  const isVerificacaoCarteirinha = pathname.startsWith('/v/')
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/redefinir-senha') || isFiliadoLogin
   // /sites/* é sempre público (assets estáticos do site institucional — ver
   // nota acima) — sem isto, pedir o asset direto em localhost/dev (sem
   // ?siteSlug, que só a navegação de página propaga, não os <link>/<img> do
   // HTML) cai no redirect de auth como qualquer rota interna.
-  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || pathname.startsWith('/sites/') || isFiliadoPublic
+  const isPublicPage = pathname === '/' || pathname.startsWith('/assinar') || pathname.startsWith('/aceitar-convite') || pathname.startsWith('/link-expirado') || pathname.startsWith('/sites/') || isFiliadoPublic || isVerificacaoCarteirinha
   const isOnboarding = pathname.startsWith('/onboarding')
   // Navegação client-side (Link/router) manda RSC — evita queries extras no middleware
   // e deixa a troca de página mais rápida após clique no menu.
