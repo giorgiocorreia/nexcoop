@@ -19,34 +19,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/permissoes'
+import { validarArquivoFoto, montarPathFotoCooperado } from '@/lib/cooperados/foto-utils'
 
 type ResultadoFoto = { url?: string; error?: string }
-
-// Mesmos tipos aceitos pelo bucket 'avatares' (migration 005) — validado no
-// server, nunca confiando no `accept` do <input> do cliente.
-const MIME_ACEITOS = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
-const TAMANHO_MAX_BYTES = 5 * 1024 * 1024 // 5 MB, mesmo limite do bucket
-
-const EXTENSAO_POR_MIME: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-}
-
-// Validações comuns aos dois caminhos de upload (admin e autoatendimento) —
-// função só de checagem síncrona, mas fica aqui (arquivo 'use server') porque
-// depende do tipo File do runtime de request, não é utilitário puro reusável
-// fora de uma action.
-function validarArquivo(file: File): string | null {
-  if (!MIME_ACEITOS.includes(file.type)) {
-    return 'Formato de imagem não suportado. Envie PNG, JPEG, WEBP ou GIF.'
-  }
-  if (file.size > TAMANHO_MAX_BYTES) {
-    return 'Arquivo muito grande. O limite é 5 MB.'
-  }
-  return null
-}
 
 // Sobe o arquivo pro bucket 'avatares' no path {organizacao_id}/cooperados/{cooperado_id}.{ext}
 // (estrutura documentada na migration 005) e grava a URL pública completa em
@@ -58,8 +33,7 @@ async function subirFotoEGravar(
   cooperadoId: string,
   file: File
 ): Promise<ResultadoFoto> {
-  const ext = EXTENSAO_POR_MIME[file.type]
-  const path = `${organizacaoId}/cooperados/${cooperadoId}.${ext}`
+  const path = montarPathFotoCooperado(organizacaoId, cooperadoId, file.type)
 
   const { error: erroUpload } = await admin.storage
     .from('avatares')
@@ -120,7 +94,7 @@ export async function atualizarFotoCooperadoAdmin(
     if (!(file instanceof File) || file.size === 0) {
       return { error: 'Nenhum arquivo enviado.' }
     }
-    const erroValidacao = validarArquivo(file)
+    const erroValidacao = validarArquivoFoto(file.type, file.size)
     if (erroValidacao) return { error: erroValidacao }
 
     const resultado = await subirFotoEGravar(admin, cooperado.organizacao_id as string, cooperadoId, file)
@@ -161,7 +135,7 @@ export async function atualizarFotoPropriaCooperado(formData: FormData): Promise
     if (!(file instanceof File) || file.size === 0) {
       return { error: 'Nenhum arquivo enviado.' }
     }
-    const erroValidacao = validarArquivo(file)
+    const erroValidacao = validarArquivoFoto(file.type, file.size)
     if (erroValidacao) return { error: erroValidacao }
 
     const resultado = await subirFotoEGravar(admin, cooperado.organizacao_id as string, cooperado.id as string, file)
