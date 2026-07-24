@@ -8,6 +8,7 @@ import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { atualizarFotoPropriaCooperado } from '@/lib/cooperados/foto-actions'
 import { redimensionarFoto } from '@/lib/cooperados/foto-imagem'
+import FotoCropper from '@/components/nexcoop/FotoCropper'
 
 interface Props {
   fotoUrl: string | null
@@ -18,8 +19,10 @@ interface Props {
 export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [enviando, setEnviando] = useState(false)
+  // Arquivo escolhido aguardando o recorte 3:4 no FotoCropper.
+  const [aRecortar, setARecortar] = useState<File | null>(null)
 
-  async function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = '' // permite selecionar o mesmo arquivo de novo depois
     if (!file) return
@@ -35,13 +38,19 @@ export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: P
       return
     }
 
+    // Abre o recorte antes de enviar — o filiado enquadra o próprio rosto.
+    setARecortar(file)
+  }
+
+  async function enviar(file: File) {
+    setARecortar(null)
     setEnviando(true)
     try {
-      // Reduz no navegador antes de enviar — foto tirada na hora pelo celular
-      // do filiado passa fácil dos 4 MB e estouraria o limite de body.
-      const reduzida = await redimensionarFoto(file)
+      // O cropper já devolve 3:4 na resolução final; redimensionarFoto fica
+      // como rede de segurança caso o canvas falhe e volte o arquivo cru.
+      const pronta = await redimensionarFoto(file)
       const formData = new FormData()
-      formData.append('foto', reduzida)
+      formData.append('foto', pronta)
       const res = await atualizarFotoPropriaCooperado(formData)
       if (res.error) {
         toast.error(res.error)
@@ -96,6 +105,14 @@ export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: P
       >
         {enviando ? 'Enviando…' : fotoUrl ? 'Trocar foto' : 'Adicionar foto'}
       </button>
+
+      {aRecortar && (
+        <FotoCropper
+          arquivo={aRecortar}
+          onConfirmar={enviar}
+          onCancelar={() => setARecortar(null)}
+        />
+      )}
     </div>
   )
 }
