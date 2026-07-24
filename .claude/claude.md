@@ -44,6 +44,28 @@ Marianna/Humani é recepção clínica).
 
 ---
 
+## Regra 0 — autorização antes de implementar
+
+**NUNCA escrever ou editar código sem autorização explícita do Giorgio.**
+
+- **Pergunta é pergunta.** "Isso funciona assim?", "não tem como...?", "onde
+  fica X?", "esse botão só serve pra isso?" pedem RESPOSTA, não implementação.
+  Se a resposta revelar uma lacuna, apontar a lacuna e oferecer resolver —
+  nunca sair resolvendo.
+- Antes de qualquer edição: listar os arquivos/funções que seriam tocados e
+  esperar o "pode fazer". Vale também para "melhorias óbvias" percebidas no
+  caminho.
+- Autorização é **por tarefa**, não por sessão: aprovar a tarefa A não
+  autoriza a tarefa B que surgiu no meio dela.
+- **Sem precisar perguntar:** ler/investigar arquivos, rodar query de
+  diagnóstico, `npx tsc --noEmit`, `npm run build`, e commit+push de algo já
+  aprovado.
+- Dentro de uma tarefa já autorizada, executar do começo ao fim sem
+  microconfirmações — a regra é sobre INICIAR trabalho, não sobre interromper
+  trabalho aprovado.
+
+---
+
 ## Regras críticas — NUNCA violar em nenhum arquivo
 
 1. **NUNCA** usar `auth_org_id()` — sempre subquery:
