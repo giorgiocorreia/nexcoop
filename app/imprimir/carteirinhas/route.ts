@@ -1,11 +1,12 @@
-// Impressão em lote das carteirinhas de identificação — folha A4 com 10
-// cartões por página (grid 2×5). Mesmas checagens de segurança da rota
-// individual (app/imprimir/carteirinha/[cooperadoId]/route.ts).
+// Impressão em lote das carteirinhas de identificação — folha A4 com 4
+// peças DOBRÁVEIS por página (grid 2×2). Cada peça já une frente e verso
+// (ver lib/carteirinha/pdf.ts) — corta, dobra ao meio e plastifica. Mesmas
+// checagens de segurança da rota individual
+// (app/imprimir/carteirinha/[cooperadoId]/route.ts).
 //
 // Query params:
 //   ids=uuid,uuid,...   — lista explícita de cooperados (ex.: seleção manual na lista)
 //   status=ativo        — alternativa a `ids`: todos os cooperados da org com esse status
-//   verso=1             — opcional, gera também o verso (mesma grade, mesma ordem)
 // Sem `ids` nem `status`: todos os cooperados da organização (ainda
 // filtrados por carteirinha ativa logo abaixo).
 
@@ -45,7 +46,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const idsParam = searchParams.get('ids')
   const statusParam = searchParams.get('status')
-  const comVerso = searchParams.get('verso') === '1'
 
   let query = admin
     .from('cooperados')
@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Nenhum dos cooperados encontrados possui carteirinha ativa.', { status: 404 })
   }
 
-  const pdfBytes = await gerarLoteCarteirinhasPDF(itens, { comVerso })
+  const pdfBytes = await gerarLoteCarteirinhasPDF(itens)
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {

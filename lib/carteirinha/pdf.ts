@@ -1,20 +1,26 @@
 // Gerador de PDF da carteirinha de identificação do filiado — impressão
-// individual (frente + verso, CR80) e em lote (folha A4 com 10 cartões).
-// pdf-lib de propósito (regra 10 do CLAUDE.md — pdfkit é incompatível com o
-// runtime serverless da Vercel). Sem I/O de banco aqui: quem busca os dados
-// é o route handler (app/imprimir/...), este módulo só recebe dados prontos
-// e devolve bytes de PDF.
+// individual e em lote de uma peça DOBRÁVEL: frente e verso unidos numa só
+// folha CR80 dupla (85,6 × 108 mm), pra cortar, dobrar ao meio e plastificar
+// (pedido do Giorgio, 24/07/2026). pdf-lib de propósito (regra 10 do
+// CLAUDE.md — pdfkit é incompatível com o runtime serverless da Vercel). Sem
+// I/O de banco aqui: quem busca os dados é o route handler (app/imprimir/...),
+// este módulo só recebe dados prontos e devolve bytes de PDF.
 
-import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, degrees, rgb } from 'pdf-lib'
 import type { TipoOrganizacao } from '@/types/database'
 import { mascararCpf } from '@/lib/carteirinha/carteirinha-utils'
 import { gerarQrCodePngBuffer } from '@/lib/carteirinha/qrcode'
 import { corPrimariaOrg } from '@/lib/tema'
 
-// Dimensões do cartão CR80 (85,6 × 54 mm) convertidas pra pontos PDF
-// (1 pt = 1/72 polegada; 1 polegada = 25,4 mm).
+// Dimensões de cada FACE do cartão — CR80 (85,6 × 54 mm) convertido pra
+// pontos PDF (1 pt = 1/72 polegada; 1 polegada = 25,4 mm). A peça final
+// dobrável tem o dobro da altura (frente + verso empilhados).
 export const CARTAO_LARGURA = 242.6
 export const CARTAO_ALTURA = 153.1
+
+// Peça dobrável completa: 85,6 × 108 mm — frente na metade de cima, verso
+// na metade de baixo (rotacionado 180°, ver desenharCartaoDobravel).
+export const CARTAO_DOBRAVEL_ALTURA = CARTAO_ALTURA * 2
 
 // 20 mm em pontos — tamanho MÍNIMO do QR no papel (não do PNG fonte).
 // Abaixo disso a leitura falha em impressão comum (instrução do Giorgio).
@@ -132,6 +138,26 @@ function iniciaisDoNome(nome: string): string {
   return nome.trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
 }
 
+// Desenha a foto em modo "contain" centralizado dentro da moldura — nunca
+// distorce a imagem (Giorgio reportou rostos esticados quando a foto não
+// tinha a mesma proporção da moldura). Calcula a escala pela MENOR razão
+// entre moldura e imagem (usando as dimensões reais da imagem embutida, não
+// presumidas), centraliza o resultado e preenche a faixa que sobrar nas
+// laterais/topo-base com um cinza bem claro pra moldura continuar retangular.
+// Defensivo: mesmo com o upload já recortando em 3:4 (foto-imagem.ts), fotos
+// enviadas antes dessa mudança podem ter qualquer proporção.
+function desenharFotoContain(page: PDFPage, image: PDFImage, x: number, y: number, w: number, h: number) {
+  page.drawRectangle({ x, y, width: w, height: h, color: rgb(0.96, 0.96, 0.96) })
+
+  const escala = Math.min(w / image.width, h / image.height)
+  const larguraDesenhada = image.width * escala
+  const alturaDesenhada = image.height * escala
+  const offsetX = x + (w - larguraDesenhada) / 2
+  const offsetY = y + (h - alturaDesenhada) / 2
+
+  page.drawImage(image, { x: offsetX, y: offsetY, width: larguraDesenhada, height: alturaDesenhada })
+}
+
 // Placeholder cinza com as iniciais — usado sempre que a foto não existe ou
 // falhou ao baixar/embutir.
 function desenharPlaceholderFoto(page: PDFPage, x: number, y: number, w: number, h: number, nome: string, fontBold: PDFFont) {
@@ -221,13 +247,16 @@ function desenharFrente(
 
   // ── Corpo ──
   const margem = 8
-  const fotoW = 46
-  const fotoH = 58
+  // Moldura em 3:4 exato (proporção de foto de documento/retrato) — igual à
+  // saída do recorte no upload (lib/cooperados/foto-imagem.ts), pra fotos
+  // novas entrarem sem nenhuma faixa sobrando.
+  const fotoW = 45
+  const fotoH = 60
   const fotoX = x + margem
   const fotoY = y + h - headerH - margem - fotoH
 
   if (imagens.fotoImg) {
-    page.drawImage(imagens.fotoImg, { x: fotoX, y: fotoY, width: fotoW, height: fotoH })
+    desenharFotoContain(page, imagens.fotoImg, fotoX, fotoY, fotoW, fotoH)
     page.drawRectangle({ x: fotoX, y: fotoY, width: fotoW, height: fotoH, borderColor: rgb(0.7, 0.7, 0.7), borderWidth: 0.5 })
   } else {
     desenharPlaceholderFoto(page, fotoX, fotoY, fotoW, fotoH, dados.cooperado.nome, fontBold)
@@ -351,19 +380,88 @@ function desenharParagrafo(
   return y
 }
 
+// ── Montagem da peça dobrável (frente + verso unidos) ──────────────────────
+
+// Monta, dentro de `paginaFinal` (do documento `pdfDocFinal`), uma peça
+// dobrável completa ancorada em (x, y): frente na metade de cima (y+H a
+// y+2H), verso na metade de baixo (y a y+H), linha de dobra tracejada no
+// meio e marcas de corte no contorno.
+//
+// Truque de implementação: cria um PDFDocument TEMPORÁRIO só pra desenhar
+// frente e verso como duas páginas CR80 isoladas — reaproveitando
+// desenharFrente/desenharVerso sem reescrever layout nenhum — e embute as
+// duas como XObjects (embedPage) no documento final. O verso entra rotacionado
+// 180°: ao dobrar o cartão na horizontal com a impressão pra fora, a metade
+// de baixo gira 180° em torno do eixo da dobra, então se o verso fosse
+// desenhado na orientação normal ele sairia de cabeça pra baixo depois de
+// dobrado. A rotação do pdf-lib pivota em torno do próprio ponto (x, y)
+// informado — por isso o anchor do verso é deslocado em +CARTAO_LARGURA/
+// +CARTAO_ALTURA em relação à origem da metade de baixo, senão o resultado
+// rotacionado cairia fora da página.
+async function desenharCartaoDobravel(
+  pdfDocFinal: PDFDocument,
+  paginaFinal: PDFPage,
+  x: number,
+  y: number,
+  dados: DadosCartao,
+  fotoBaixada: ImagemBaixada | null,
+  logoBaixada: ImagemBaixada | null,
+  qrBuffer: Uint8Array
+) {
+  const tempDoc = await PDFDocument.create()
+  const fontRegular = await tempDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await tempDoc.embedFont(StandardFonts.HelveticaBold)
+
+  const fotoImg = await embutirImagem(tempDoc, fotoBaixada)
+  const logoImg = await embutirImagem(tempDoc, logoBaixada)
+  const qrImg = await tempDoc.embedPng(qrBuffer)
+
+  const paginaFrenteTemp = tempDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
+  desenharFrente(paginaFrenteTemp, 0, 0, dados, { fotoImg, logoImg, qrImg }, fontRegular, fontBold)
+
+  const paginaVersoTemp = tempDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
+  desenharVerso(paginaVersoTemp, 0, 0, dados, fontRegular, fontBold)
+
+  const embeddedFrente = await pdfDocFinal.embedPage(paginaFrenteTemp)
+  const embeddedVerso = await pdfDocFinal.embedPage(paginaVersoTemp)
+
+  // Frente — metade de cima, orientação normal.
+  paginaFinal.drawPage(embeddedFrente, {
+    x,
+    y: y + CARTAO_ALTURA,
+    width: CARTAO_LARGURA,
+    height: CARTAO_ALTURA,
+  })
+
+  // Verso — metade de baixo, rotacionado 180° (ver explicação acima).
+  paginaFinal.drawPage(embeddedVerso, {
+    x: x + CARTAO_LARGURA,
+    y: y + CARTAO_ALTURA,
+    width: CARTAO_LARGURA,
+    height: CARTAO_ALTURA,
+    rotate: degrees(180),
+  })
+
+  // Linha de dobra tracejada exatamente no meio da peça.
+  paginaFinal.drawLine({
+    start: { x, y: y + CARTAO_ALTURA },
+    end: { x: x + CARTAO_LARGURA, y: y + CARTAO_ALTURA },
+    thickness: 0.5,
+    color: rgb(0.8, 0.8, 0.8),
+    dashArray: [4, 3],
+  })
+
+  desenharMarcasDeCorte(paginaFinal, x, y, CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA)
+}
+
 // ── API pública ──────────────────────────────────────────────────────────
 
-// Gera o PDF individual — 1 página frente + 1 página verso (a menos que
-// comVerso seja false), no tamanho exato do cartão CR80.
-export async function gerarCartaoCarteirinhaPDF(
-  dados: DadosCartao,
-  opts?: { comVerso?: boolean }
-): Promise<Uint8Array> {
-  const comVerso = opts?.comVerso ?? true
-
+// Gera o PDF individual — UMA peça dobrável (85,6 × 108 mm = 242,6 × 306,2
+// pt), frente em cima e verso embaixo já na orientação certa pra dobrar,
+// cortar e plastificar (pedido do Giorgio, 24/07/2026: uma peça só, não mais
+// duas páginas separadas).
+export async function gerarCartaoCarteirinhaPDF(dados: DadosCartao): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   // Foto, logo e QR baixados/gerados em paralelo — mesmo com 1 cartão só,
   // não há motivo pra serializar 3 operações independentes.
@@ -373,34 +471,19 @@ export async function gerarCartaoCarteirinhaPDF(
     gerarQrCodePngBuffer(dados.urlVerificacao),
   ])
 
-  const fotoImg = await embutirImagem(pdfDoc, fotoBaixada)
-  const logoImg = await embutirImagem(pdfDoc, logoBaixada)
-  const qrImg = await pdfDoc.embedPng(qrBuffer)
-
-  const paginaFrente = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
-  desenharFrente(paginaFrente, 0, 0, dados, { fotoImg, logoImg, qrImg }, fontRegular, fontBold)
-
-  if (comVerso) {
-    const paginaVerso = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
-    desenharVerso(paginaVerso, 0, 0, dados, fontRegular, fontBold)
-  }
+  const pagina = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA])
+  await desenharCartaoDobravel(pdfDoc, pagina, 0, 0, dados, fotoBaixada, logoBaixada, qrBuffer)
 
   return pdfDoc.save()
 }
 
-// Gera a folha A4 em lote — grid 2 colunas × 5 linhas (10 cartões/página).
-// Só frente por padrão (o verso duplicaria o papel e a instrução é igual
-// pra todos); passe comVerso:true (query ?verso=1 na rota) se a secretaria
-// preferir imprimir os dois lados.
-export async function gerarLoteCarteirinhasPDF(
-  itens: DadosCartao[],
-  opts?: { comVerso?: boolean }
-): Promise<Uint8Array> {
-  const comVerso = opts?.comVerso ?? false
-
+// Gera a folha A4 em lote — grid 2 colunas × 2 linhas (4 peças dobráveis por
+// página: 2 × 242,6 = 485,2 pt de largura; 2 × 306,2 = 612,4 pt de altura).
+// Cada peça já sai com frente + verso unidos (a mesma peça dobrável da
+// impressão individual) — não existe mais a opção "só frente", porque sem o
+// verso não há como dobrar e plastificar o cartão.
+export async function gerarLoteCarteirinhasPDF(itens: DadosCartao[]): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   // Downloads de rede (foto de cada cooperado + logo da org) SEMPRE em
   // paralelo via Promise.allSettled — nunca em série dentro do loop de
@@ -418,44 +501,48 @@ export async function gerarLoteCarteirinhasPDF(
 
   const qrResultados = await Promise.allSettled(itens.map(it => gerarQrCodePngBuffer(it.urlVerificacao)))
 
-  // Embutir no PDFDocument é operação local (CPU sobre buffer já em
-  // memória, sem rede) — sequencial aqui é seguro e rápido; o cache do
-  // logo evita reembutir a mesma imagem centenas de vezes.
-  const logoImgCache = new Map<string, PDFImage | null>()
-  const cartoes: { dados: DadosCartao; imagens: ImagensCartao }[] = []
+  // Cache só do BUFFER do logo (não do PDFImage embutido): cada cartão do
+  // lote monta seu próprio documento temporário isolado (ver
+  // desenharCartaoDobravel), então o objeto PDFImage embutido não pode ser
+  // reaproveitado entre cartões — mas o buffer baixado, sim.
+  const logoBufferCache = new Map<string, ImagemBaixada | null>()
+
+  interface CartaoPendente {
+    dados: DadosCartao
+    fotoBaixada: ImagemBaixada | null
+    logoBaixada: ImagemBaixada | null
+    qrBuffer: Uint8Array | null
+  }
+  const cartoes: CartaoPendente[] = []
 
   for (let i = 0; i < itens.length; i++) {
     const fotoResultado = fotosResultados[i]
     const fotoBaixada = fotoResultado.status === 'fulfilled' ? fotoResultado.value : null
-    const fotoImg = await embutirImagem(pdfDoc, fotoBaixada)
 
-    let logoImg: PDFImage | null = null
+    let logoBaixada: ImagemBaixada | null = null
     const logoUrl = itens[i].organizacao.logoUrl
     if (logoUrl) {
-      if (logoImgCache.has(logoUrl)) {
-        logoImg = logoImgCache.get(logoUrl) ?? null
+      if (logoBufferCache.has(logoUrl)) {
+        logoBaixada = logoBufferCache.get(logoUrl) ?? null
       } else {
-        const logoBaixada = await logosUnicas.get(logoUrl)!
-        logoImg = await embutirImagem(pdfDoc, logoBaixada ?? null)
-        logoImgCache.set(logoUrl, logoImg)
+        logoBaixada = (await logosUnicas.get(logoUrl)!) ?? null
+        logoBufferCache.set(logoUrl, logoBaixada)
       }
     }
 
     const qrResultado = qrResultados[i]
-    const qrImg = qrResultado.status === 'fulfilled' ? await pdfDoc.embedPng(qrResultado.value) : null
+    const qrBuffer = qrResultado.status === 'fulfilled' ? qrResultado.value : null
 
-    cartoes.push({ dados: itens[i], imagens: { fotoImg, logoImg, qrImg } })
+    cartoes.push({ dados: itens[i], fotoBaixada, logoBaixada, qrBuffer })
   }
 
-  // Folha A4 (595 × 842 pt) — 2 colunas × 5 linhas cabem com margem folgada
-  // (2 × 242,6 = 485,2 pt de largura; 5 × 153,1 = 765,5 pt de altura).
   const PAGINA_LARGURA = 595
   const PAGINA_ALTURA = 842
   const MARGEM = 26
   const COLUNAS = 2
-  const LINHAS = 5
+  const LINHAS = 2
   const gapX = COLUNAS > 1 ? (PAGINA_LARGURA - MARGEM * 2 - COLUNAS * CARTAO_LARGURA) / (COLUNAS - 1) : 0
-  const gapY = LINHAS > 1 ? (PAGINA_ALTURA - MARGEM * 2 - LINHAS * CARTAO_ALTURA) / (LINHAS - 1) : 0
+  const gapY = LINHAS > 1 ? (PAGINA_ALTURA - MARGEM * 2 - LINHAS * CARTAO_DOBRAVEL_ALTURA) / (LINHAS - 1) : 0
   const porPagina = COLUNAS * LINHAS
   const totalPaginas = Math.ceil(cartoes.length / porPagina)
 
@@ -464,7 +551,7 @@ export async function gerarLoteCarteirinhasPDF(
     const col = idx % COLUNAS
     return {
       x: MARGEM + col * (CARTAO_LARGURA + gapX),
-      y: PAGINA_ALTURA - MARGEM - CARTAO_ALTURA - row * (CARTAO_ALTURA + gapY),
+      y: PAGINA_ALTURA - MARGEM - CARTAO_DOBRAVEL_ALTURA - row * (CARTAO_DOBRAVEL_ALTURA + gapY),
     }
   }
 
@@ -475,23 +562,10 @@ export async function gerarLoteCarteirinhasPDF(
       if (globalIdx >= cartoes.length) break
       const { x, y } = posicaoDoSlot(slot)
       const cartao = cartoes[globalIdx]
-      desenharFrente(page, x, y, cartao.dados, cartao.imagens, fontRegular, fontBold)
-      desenharMarcasDeCorte(page, x, y, CARTAO_LARGURA, CARTAO_ALTURA)
-    }
-  }
-
-  if (comVerso) {
-    // Verso opcional — mesma grade e mesma ordem da frente, instrução
-    // idêntica pra todos (não há personalização por cartão no verso).
-    for (let p = 0; p < totalPaginas; p++) {
-      const page = pdfDoc.addPage([PAGINA_LARGURA, PAGINA_ALTURA])
-      for (let slot = 0; slot < porPagina; slot++) {
-        const globalIdx = p * porPagina + slot
-        if (globalIdx >= cartoes.length) break
-        const { x, y } = posicaoDoSlot(slot)
-        desenharVerso(page, x, y, cartoes[globalIdx].dados, fontRegular, fontBold)
-        desenharMarcasDeCorte(page, x, y, CARTAO_LARGURA, CARTAO_ALTURA)
-      }
+      // Sem QR não há como gerar o cartão — defensivo, gerarQrCodePngBuffer
+      // não deveria falhar, mas allSettled cobre o caso mesmo assim.
+      if (!cartao.qrBuffer) continue
+      await desenharCartaoDobravel(pdfDoc, page, x, y, cartao.dados, cartao.fotoBaixada, cartao.logoBaixada, cartao.qrBuffer)
     }
   }
 

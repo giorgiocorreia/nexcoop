@@ -1,6 +1,6 @@
-// Impressão individual da carteirinha de identificação do filiado — PDF
-// CR80 (frente + verso), seguindo o mesmo padrão de rota de impressão de
-// app/imprimir/caixa/[id]/route.ts.
+// Impressão individual da carteirinha de identificação do filiado — peça
+// dobrável única (frente + verso unidos, 85,6 × 108 mm), seguindo o mesmo
+// padrão de rota de impressão de app/imprimir/caixa/[id]/route.ts.
 //
 // SEGURANÇA (crítico): este handler devolve PII (nome, CPF mascarado, foto)
 // em PDF. Checa auth.getUser() + admin da org via lib/permissoes.ts (regra 7
@@ -71,29 +71,26 @@ export async function GET(
 
   const urlVerificacao = montarUrlVerificacao(carteirinha.codigo, (siteConfig as { slug: string } | null)?.slug ?? null)
 
-  const pdfBytes = await gerarCartaoCarteirinhaPDF(
-    {
-      cooperado: {
-        nome: cooperado.nome_completo,
-        numeroMatricula: cooperado.numero_matricula,
-        cpf: cooperado.cpf,
-        dataAdmissao: cooperado.data_admissao,
-        validaAte: carteirinha.validaAte,
-        fotoUrl: cooperado.foto_url,
-      },
-      organizacao: {
-        nome: org?.nome ?? 'NexCoop',
-        logoUrl: org?.logo_url ?? null,
-        corPrimaria: org?.cor_primaria ?? null,
-        tipo: org?.tipo ?? 'cooperativa',
-        email: org?.email ?? null,
-        telefone: org?.telefone ?? null,
-      },
-      carteirinha: { codigo: carteirinha.codigo, via: carteirinha.via },
-      urlVerificacao,
+  const pdfBytes = await gerarCartaoCarteirinhaPDF({
+    cooperado: {
+      nome: cooperado.nome_completo,
+      numeroMatricula: cooperado.numero_matricula,
+      cpf: cooperado.cpf,
+      dataAdmissao: cooperado.data_admissao,
+      validaAte: carteirinha.validaAte,
+      fotoUrl: cooperado.foto_url,
     },
-    { comVerso: true }
-  )
+    organizacao: {
+      nome: org?.nome ?? 'NexCoop',
+      logoUrl: org?.logo_url ?? null,
+      corPrimaria: org?.cor_primaria ?? null,
+      tipo: org?.tipo ?? 'cooperativa',
+      email: org?.email ?? null,
+      telefone: org?.telefone ?? null,
+    },
+    carteirinha: { codigo: carteirinha.codigo, via: carteirinha.via },
+    urlVerificacao,
+  })
 
   const nomeArquivo = cooperado.nome_completo
     .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
