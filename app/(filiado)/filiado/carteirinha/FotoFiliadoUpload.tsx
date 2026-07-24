@@ -7,6 +7,7 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { atualizarFotoPropriaCooperado } from '@/lib/cooperados/foto-actions'
+import { redimensionarFoto } from '@/lib/cooperados/foto-imagem'
 
 interface Props {
   fotoUrl: string | null
@@ -36,8 +37,11 @@ export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: P
 
     setEnviando(true)
     try {
+      // Reduz no navegador antes de enviar — foto tirada na hora pelo celular
+      // do filiado passa fácil dos 4 MB e estouraria o limite de body.
+      const reduzida = await redimensionarFoto(file)
       const formData = new FormData()
-      formData.append('foto', file)
+      formData.append('foto', reduzida)
       const res = await atualizarFotoPropriaCooperado(formData)
       if (res.error) {
         toast.error(res.error)

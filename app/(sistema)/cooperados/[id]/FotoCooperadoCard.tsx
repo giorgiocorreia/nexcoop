@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ContentCard, COM_C } from '@/components/nexcoop/ui'
 import { Btn } from '@/components/ui/Btn'
 import { atualizarFotoCooperadoAdmin } from '@/lib/cooperados/foto-actions'
+import { redimensionarFoto } from '@/lib/cooperados/foto-imagem'
 
 interface Props {
   cooperadoId: string
@@ -39,8 +40,11 @@ export default function FotoCooperadoCard({ cooperadoId, nome, fotoUrl, onFotoAt
 
     setEnviando(true)
     try {
+      // Reduz no navegador antes de enviar — o limite de body de Server
+      // Action (1 MB) é menor que uma foto de celular comum.
+      const reduzida = await redimensionarFoto(file)
       const formData = new FormData()
-      formData.append('foto', file)
+      formData.append('foto', reduzida)
       const res = await atualizarFotoCooperadoAdmin(cooperadoId, formData)
       if (res.error) {
         toast.error(res.error)
