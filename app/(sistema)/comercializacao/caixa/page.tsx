@@ -184,7 +184,10 @@ export default function CaixaPage() {
   const [formReceber, setFormReceber] = useState({ produto_id: '', quantidade: '', preco_kg: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '' })
   const [formSaque, setFormSaque] = useState({ valor: '', forma_pagamento: 'especie' as 'especie' | 'pix', chave_pix: '', produto_id: '', preco_kg: '' })
   const [saldosSelecao, setSaldosSelecao] = useState<{ produto_id: string; nome: string; unidade: string; saldo: number }[]>([])
-  const [confirmarAntecipacao, setConfirmarAntecipacao] = useState<{ tipo: 'receber' | 'saque'; mensagem: string } | null>(null)
+  const [confirmarAntecipacao, setConfirmarAntecipacao] = useState<{ mensagem: string } | null>(null)
+  const [confirmarPagamento, setConfirmarPagamento] = useState<{
+    frase: string; total: number; avisoAntecipacao: string | null
+  } | null>(null)
   const [statusOp, setStatusOp] = useState<'idle' | 'salvando' | 'sucesso' | 'erro'>('idle')
   const [erroMsg, setErroMsg] = useState('')
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([])
@@ -661,17 +664,31 @@ export default function CaixaPage() {
   async function handleReceber(force = false) {
     if (!sessao || !conta || !formReceber.produto_id || !formReceber.quantidade || !formReceber.preco_kg) return
     const qtd = parseFloat(formReceber.quantidade), preco = parseFloat(formReceber.preco_kg)
-    const saldoAtual = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.saldo ?? 0
-    if (!force && qtd > saldoAtual) {
-      const ficaDevendo = (qtd - saldoAtual).toFixed(3)
-      const nomeProduto = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)?.nome ?? 'produto'
-      setConfirmarAntecipacao({
-        tipo: 'receber',
-        mensagem: `${produtorSelecionado?.nome} tem ${saldoAtual.toFixed(3)} de saldo em ${nomeProduto} e está vendendo ${qtd.toFixed(3)} — vai ficar devendo ${ficaDevendo}. Confirmar venda antecipada?`
+    // Conferência antes de o dinheiro sair do caixa: o operador relê em texto
+    // corrido a quantidade, o preço/unidade e o total. O aviso de venda
+    // antecipada entra no mesmo modal — empilhar duas confirmações em sequência
+    // só faz o operador clicar no automático.
+    if (!force) {
+      const item = saldosSelecao.find(s => s.produto_id === formReceber.produto_id)
+      const saldoAtual = item?.saldo ?? 0
+      const nomeProduto = item?.nome ?? 'produto'
+      const unidade = item?.unidade ?? 'kg'
+      const total = parseFloat((qtd * preco).toFixed(2))
+      const comoPaga = formReceber.forma_pagamento === 'pix'
+        ? `via Pix${formReceber.chave_pix ? ` (${formReceber.chave_pix})` : ''}`
+        : 'em espécie'
+      setConfirmarPagamento({
+        frase: `Você está pagando ${qtd.toFixed(3)} ${unidade} de ${nomeProduto} a ${fmtReal(preco)}/${unidade}, `
+          + `totalizando ${fmtReal(total)}, para ${produtorSelecionado?.nome ?? 'o produtor'}, ${comoPaga}.`,
+        total,
+        avisoAntecipacao: qtd > saldoAtual
+          ? `Saldo em ${nomeProduto}: ${saldoAtual.toFixed(3)} ${unidade}. Vendendo ${qtd.toFixed(3)} ${unidade} — `
+            + `${produtorSelecionado?.nome ?? 'o produtor'} fica devendo ${(qtd - saldoAtual).toFixed(3)} ${unidade}.`
+          : null,
       })
       return
     }
-    setConfirmarAntecipacao(null)
+    setConfirmarPagamento(null)
     setStatusOp('salvando')
     try {
       const result = await registrarConversaoESaque({
@@ -702,7 +719,6 @@ export default function CaixaPage() {
       const nomeProduto = saldosSelecao.find(s => s.produto_id === formSaque.produto_id)?.nome ?? 'produto'
       const ficaDevendo = (qtdProduto - saldoAtual).toFixed(3)
       setConfirmarAntecipacao({
-        tipo: 'saque',
         mensagem: `Saldo em conta cobre ${fmtReal(Math.max(conta.saldo_financeiro, 0))}. O restante (${fmtReal(restante)}) será convertido em ${qtdProduto.toFixed(3)} de ${nomeProduto} — ${produtorSelecionado?.nome} vai ficar devendo ${ficaDevendo}. Confirmar venda antecipada?`
       })
       return
@@ -909,6 +925,42 @@ export default function CaixaPage() {
         <ModalNfeEntrada movimentacao_id={modalNfe} onClose={() => setModalNfe(null)} />
       )}
 
+      {confirmarPagamento && (
+        <Modal
+          titulo="Confirmar pagamento"
+          subtitulo="Confira os valores antes de pagar"
+          onClose={() => setConfirmarPagamento(null)}
+          largura={460}
+          footer={
+            <>
+              <Btn variante="cinza" onClick={() => setConfirmarPagamento(null)}>Cancelar</Btn>
+              <Btn variante="verde" icone="ti-check" disabled={statusOp === 'salvando'} onClick={() => handleReceber(true)}>
+                {statusOp === 'salvando' ? 'Processando...' : 'Confirmar pagamento'}
+              </Btn>
+            </>
+          }
+        >
+          <p style={{ fontSize: 15, color: COM_C.txt, lineHeight: 1.6, margin: 0 }}>
+            {confirmarPagamento.frase}
+          </p>
+          <div style={{
+            marginTop: 14, padding: '12px 14px', background: COM_C.marromLt, borderRadius: 8,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: COM_C.marrom }}>Total a pagar</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: COM_C.marrom }}>{fmtReal(confirmarPagamento.total)}</span>
+          </div>
+          {confirmarPagamento.avisoAntecipacao && (
+            <div style={{
+              marginTop: 12, padding: '10px 12px', background: '#fef3c7',
+              border: '1px solid #fcd34d', borderRadius: 8, fontSize: 13, color: '#92400e', lineHeight: 1.5
+            }}>
+              <strong>Venda antecipada.</strong> {confirmarPagamento.avisoAntecipacao}
+            </div>
+          )}
+        </Modal>
+      )}
+
       {confirmarAntecipacao && (
         <Modal
           titulo="Venda antecipada"
@@ -918,7 +970,7 @@ export default function CaixaPage() {
           footer={
             <>
               <Btn variante="cinza" onClick={() => setConfirmarAntecipacao(null)}>Cancelar</Btn>
-              <Btn variante="marrom" icone="ti-check" onClick={() => confirmarAntecipacao.tipo === 'receber' ? handleReceber(true) : handleSaque(true)}>
+              <Btn variante="marrom" icone="ti-check" onClick={() => handleSaque(true)}>
                 Confirmar
               </Btn>
             </>
