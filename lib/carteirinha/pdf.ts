@@ -454,13 +454,62 @@ async function desenharCartaoDobravel(
   desenharMarcasDeCorte(paginaFinal, x, y, CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA)
 }
 
+// ── Folha A4 com a peça em escala 1:1 ────────────────────────────────────
+
+// Tamanho de página A4 em pontos PDF (210 × 297 mm) — padrão de qualquer
+// impressora comum, ao contrário do CR80 que exige impressora de cartão.
+const A4_LARGURA = 595
+const A4_ALTURA = 842
+
+// Margem superior confortável onde a peça fica ancorada — decisão própria
+// (o prompt pediu "margem superior confortável, ex.: ~60 pt", sem exigir
+// valor exato).
+const A4_MARGEM_SUPERIOR = 60
+
+// Desenha, abaixo da peça, o aviso de impressão em escala real — o ponto
+// crítico do ajuste (Giorgio, 24/07/2026): se o leitor de PDF aplicar
+// "ajustar à página" a peça sai maior que o CR80 e o cartão físico final
+// não bate com o tamanho de uma CNH, inutilizando a plastificação.
+function desenharAvisoEscala(page: PDFPage, font: PDFFont, fontBold: PDFFont, yTopo: number) {
+  const cor = rgb(0.5, 0.5, 0.5)
+  const tamanho = 8
+  const largura = A4_LARGURA - 60 * 2
+  let y = yTopo
+
+  const linha1 = 'IMPORTANTE: imprima em escala 100% / tamanho real — nunca use "ajustar à página".'
+  y = desenharParagrafo(page, linha1, 60, y, largura, tamanho, fontBold, cor, 11)
+  y -= 2
+
+  const linha2 = 'Depois de imprimir, corte nas marcas dos quatro cantos, dobre na linha tracejada e plastifique.'
+  y = desenharParagrafo(page, linha2, 60, y, largura, tamanho, font, cor, 11)
+  y -= 2
+
+  const linha3 = `O cartão final mede 85,6 × 54 mm — o mesmo tamanho de uma CNH. Confira com uma régua se a impressão respeitou a escala.`
+  desenharParagrafo(page, linha3, 60, y, largura, tamanho, font, cor, 11)
+}
+
 // ── API pública ──────────────────────────────────────────────────────────
 
 // Gera o PDF individual — UMA peça dobrável (85,6 × 108 mm = 242,6 × 306,2
 // pt), frente em cima e verso embaixo já na orientação certa pra dobrar,
 // cortar e plastificar (pedido do Giorgio, 24/07/2026: uma peça só, não mais
 // duas páginas separadas).
-export async function gerarCartaoCarteirinhaPDF(dados: DadosCartao): Promise<Uint8Array> {
+//
+// `formato` controla o TAMANHO DA PÁGINA, nunca o tamanho da peça:
+// - 'a4' (default): página A4 com a peça centralizada horizontalmente e
+//   ancorada perto do topo, em escala 1:1 — pensado pra impressora comum,
+//   que sem isso amplia a peça pra preencher a folha ("ajustar à página") e
+//   o cartão perde o tamanho CR80 (Giorgio, 24/07/2026: não tem impressora
+//   de cartão, só A4).
+// - 'cartao': página do tamanho exato da peça (242,6 × 306,2 pt) — mantido
+//   pra quem tiver impressora de cartão.
+// Em ambos os casos, desenharCartaoDobravel recebe sempre CARTAO_LARGURA/
+// CARTAO_DOBRAVEL_ALTURA como width/height do drawPage — a escala da peça
+// NUNCA muda, só a posição dela varia dentro da página escolhida.
+export async function gerarCartaoCarteirinhaPDF(
+  dados: DadosCartao,
+  formato: 'a4' | 'cartao' = 'a4'
+): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
 
   // Foto, logo e QR baixados/gerados em paralelo — mesmo com 1 cartão só,
@@ -471,8 +520,20 @@ export async function gerarCartaoCarteirinhaPDF(dados: DadosCartao): Promise<Uin
     gerarQrCodePngBuffer(dados.urlVerificacao),
   ])
 
-  const pagina = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA])
-  await desenharCartaoDobravel(pdfDoc, pagina, 0, 0, dados, fotoBaixada, logoBaixada, qrBuffer)
+  if (formato === 'cartao') {
+    const pagina = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA])
+    await desenharCartaoDobravel(pdfDoc, pagina, 0, 0, dados, fotoBaixada, logoBaixada, qrBuffer)
+    return pdfDoc.save()
+  }
+
+  const pagina = pdfDoc.addPage([A4_LARGURA, A4_ALTURA])
+  const x = (A4_LARGURA - CARTAO_LARGURA) / 2
+  const y = A4_ALTURA - A4_MARGEM_SUPERIOR - CARTAO_DOBRAVEL_ALTURA
+  await desenharCartaoDobravel(pdfDoc, pagina, x, y, dados, fotoBaixada, logoBaixada, qrBuffer)
+
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  desenharAvisoEscala(pagina, fontRegular, fontBold, y - 24)
 
   return pdfDoc.save()
 }

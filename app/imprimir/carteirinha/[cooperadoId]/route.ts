@@ -71,6 +71,13 @@ export async function GET(
 
   const urlVerificacao = montarUrlVerificacao(carteirinha.codigo, (siteConfig as { slug: string } | null)?.slug ?? null)
 
+  // ?tamanho=cartao devolve a página no tamanho exato da peça (242,6 ×
+  // 306,2 pt), pra quem tem impressora de cartão — qualquer outro valor
+  // (ou ausência do param) cai no padrão A4, pensado pra impressora comum
+  // (pedido do Giorgio, 24/07/2026: sem isso o "ajustar à página" do leitor
+  // de PDF amplia a peça e o cartão perde o tamanho CR80/CNH).
+  const formato = req.nextUrl.searchParams.get('tamanho') === 'cartao' ? 'cartao' : 'a4'
+
   const pdfBytes = await gerarCartaoCarteirinhaPDF({
     cooperado: {
       nome: cooperado.nome_completo,
@@ -90,7 +97,7 @@ export async function GET(
     },
     carteirinha: { codigo: carteirinha.codigo, via: carteirinha.via },
     urlVerificacao,
-  })
+  }, formato)
 
   const nomeArquivo = cooperado.nome_completo
     .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
