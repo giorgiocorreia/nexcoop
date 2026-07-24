@@ -5,7 +5,7 @@
 | Módulo | Status | Última atualização |
 |---|---|---|
 | Autenticação / Onboarding | ✅ Completo | — |
-| Cooperados / Filiados | ✅ Completo | 18/07/2026 — trava de saldo em pagamento de cota + guard admin/tecnico nas páginas |
+| Cooperados / Filiados | ✅ Completo | 24/07/2026 — foto do cooperado (bucket `avatares`) + card de carteirinha na ficha + emissão/impressão em lote na lista |
 | Tesouraria (continuidade + transferência entre caixas + custódia) | ✅ Completo | 18/07/2026 — migrations 073/074; saldos exibidos corrigidos |
 | Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | 04/07/2026 — UI redesign |
 | Stripe (modo teste) | ✅ Completo | — |
@@ -21,7 +21,8 @@
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
 | Escritório (portal contador) | ✅ Completo | 04/07/2026 — UI redesign |
 | Landing page | ✅ Completo | 04/07/2026 |
-| Portal do Filiado | ✅ MVP | 16/07/2026 — `/filiado`: saldo + extrato PDF; cotas/documentos/assembleias pendentes |
+| Carteirinha de identificação | ✅ Completo | 24/07/2026 — migration 089; QR de verificação ao vivo (`/v/{codigo}`), PDF individual A4 e lote 4/folha, emissão individual e em lote, recorte de foto 3:4 |
+| Portal do Filiado | ✅ MVP | 24/07/2026 — `/filiado`: saldo + extrato PDF, carteirinha digital com QR e upload da própria foto; cotas/documentos/assembleias pendentes |
 | Fluxo de Saque / Vendas Comercialização | ✅ Completo | 16/07/2026 — `registrarConversaoESaque` + `/comercializacao/vendas` |
 
 ## UI — Design System (jul/2026)

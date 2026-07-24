@@ -191,6 +191,10 @@ Cor de destaque por módulo (ícone do header + KPIs):
 
 | Data | Decisão | Motivo |
 |---|---|---|
+| 2026-07-24 | Carteirinha do filiado verifica **ao vivo** (QR → URL pública), nunca com dado assinado offline | Desligar o cooperado revoga o cartão na hora; um JWT/HMAC dentro do QR continuaria "válido" até expirar, mesmo com o vínculo encerrado |
+| 2026-07-24 | `codigo` da carteirinha é token opaco de 12 alfanuméricos (`crypto.randomBytes` + rejection sampling), nunca UUID nem CPF | A URL do QR é pública e fica impressa no cartão — UUID vazaria id interno e CPF seria PII exposta; token opaco também inviabiliza enumeração |
+| 2026-07-24 | URL do QR em `nexcoop.com.br/v/{codigo}`, sem subdomínio por org (flag `USAR_SUBDOMINIO_POR_ORG=false`) | Wildcard `*.nexcoop.com.br` não existe em DNS e domínio wildcard na Vercel exige plano Pro (projeto está no Hobby); a rota `/v/` sempre foi global, o subdomínio era cosmético |
+| 2026-07-24 | PDF da carteirinha desenha tudo **num único PDFDocument**; rotação do verso via `concatTransformationMatrix`, não `embedPage` | Fontes e imagens pertencem ao documento onde foram embutidas — desenhar recursos de um doc temporário na página do doc final fazia foto/logo/QR sumirem e os acentos virarem lixo |
 | 2026-07-18 | Helpers de RLS (`get_org_id`/`get_user_role`) mantêm GRANT EXECUTE pra `authenticated` (migration 081), aceitando o warning do Security Advisor | Função chamada dentro de policy executa com o role do usuário da query — o REVOKE das 076/077 quebrou toda RLS de usuário comum (42501). Correção definitiva: policies com subquery inline (regra 1), migration futura |
 | 2026-07-17 | Continuidade de caixa travada: abertura nunca é digitada, sempre o saldo sob responsabilidade recalculado das tabelas brutas (`lib/tesouraria/saldo-responsabilidade.ts`) | Elimina digitação errada/fraude na abertura; `valor_contado_especie` vira só auditoria (migration 074) |
 | 2026-07-17 | Transferência entre caixas com dupla ponta linkada por `referencia_transferencia_id` (uuid gerado em código, não-FK) | As duas pontas vivem em tabelas diferentes (`aportes_sangrias` × `loja_sangrias`); rollback da segunda ponta deleta a primeira pelo mesmo id (migration 073) |
@@ -265,15 +269,78 @@ Cor de destaque por módulo (ícone do header + KPIs):
 
 Regra: separar buckets por tipo de conteúdo. Nunca acumular tudo em `'documentos'`.
 
-| Bucket        | Conteúdo                              | Público |
-|---------------|---------------------------------------|---------|
-| `documentos`  | Docs gerais, manuais                  | Não     |
-| `avatares`    | Fotos de perfil                       | Não     |
-| `logos-orgs`  | Logos das organizações                | Sim     |
-| `comprovantes`| Comprovantes financeiros (26/06/2026) | Não     |
+| Bucket        | Conteúdo                                             | Público |
+|---------------|------------------------------------------------------|---------|
+| `documentos`  | Docs gerais, manuais                                 | Não     |
+| `avatares`    | Fotos de perfil, logos de org, foto do cooperado     | **Sim** |
+| `logos-orgs`  | Logos das organizações                               | Sim     |
+| `comprovantes`| Comprovantes financeiros (26/06/2026)                | Não     |
+
+`avatares` é **público** desde a migration 005 (o doc dizia "Não" até 24/07/2026 —
+estava errado). `cooperados.foto_url` guarda a **URL pública completa** com
+cache-buster (`?v={timestamp}`), não o path: a página de verificação da
+carteirinha (`/v/{codigo}`) é anônima e consome o campo direto como `<img src>`.
+Upload em `lib/cooperados/foto-actions.ts` roda com `createAdminClient()` e faz a
+autorização em código — a policy `avatares_update` só libera `org_admin`/
+`super_admin` a sobrescrever um path existente, então o próprio filiado não
+conseguiria trocar a foto dele uma segunda vez pela policy padrão.
 
 RLS: path começa com `{org_id}/`, policies validam `foldername(name)[1] = organizacao_id`.
 Ao criar feature com upload: avaliar bucket existente ou criar novo por tipo.
+
+## Carteirinha de identificação do filiado (24/07/2026)
+
+Documento de identificação do cooperado/associado, físico (PDF) e digital, com
+QR code de verificação pública. Migration **089** (`cooperado_carteirinhas`).
+
+### Princípio central — verificação ao vivo
+O QR carrega uma **URL**, não dados. Quem escaneia (câmera nativa do celular,
+sem app) abre `nexcoop.com.br/v/{codigo}`, que consulta o banco na hora. Por
+isso o cartão impresso **nunca** estampa a situação do vínculo: plástico dura
+anos, status muda. Quem responde "está ativo?" é sempre a consulta.
+
+### Arquivos
+| Arquivo | Papel |
+|---|---|
+| `lib/carteirinha/carteirinha-utils.ts` | Puros: `gerarCodigoCarteirinha`, `montarUrlVerificacao`, `mascararCpf`, `resolverStatusCarteirinha`, `LIMITE_LOTE` |
+| `lib/carteirinha/queries.ts` | Consultas (`createAdminClient` — a página pública é anônima) |
+| `lib/carteirinha/actions.ts` | Emitir, revogar, reemitir (2ª via), emitir em lote |
+| `lib/carteirinha/qrcode.ts` | `gerarQrCodeSvg` (tela) e `gerarQrCodePngBuffer` (PDF — pdf-lib não embute SVG) |
+| `lib/carteirinha/pdf.ts` | Peça dobrável CR80 dupla; individual em A4 e lote 2×2 |
+| `app/v/[codigo]/page.tsx` | Página pública de verificação (`noindex`, `force-dynamic`) |
+| `app/imprimir/carteirinha/[cooperadoId]/route.ts` | PDF individual (`?tamanho=cartao` p/ impressora de cartão) |
+| `app/imprimir/carteirinhas/route.ts` | PDF em lote |
+| `components/nexcoop/FotoCropper.tsx` | Recorte 3:4 da foto no navegador |
+
+### Regras de negócio
+- **`inadimplente` conta como ATIVO** (decisão do Giorgio, 24/07/2026): vínculo é
+  vínculo; situação financeira não é exposta a quem escaneia o QR.
+- `probatorio` é válido, com etiqueta "Em período probatório".
+- Precedência do status: revogada > expirada > status do cooperado.
+- **Uma via ativa por cooperado** (índice único parcial). 2ª via exige revogar a
+  anterior — a emissão em lote PULA quem já tem, nunca reemite, senão
+  invalidaria silenciosamente o cartão que a pessoa já carrega.
+- `valida_ate` é só a validade impressa; a autoridade é sempre a consulta ao vivo.
+  Emissão em lote sugere 1 ano, editável; em branco = sem prazo.
+
+### Impressão
+- Peça **dobrável**: 85,6 × 108 mm (frente em cima, verso embaixo girado 180°),
+  para cortar, dobrar ao meio e plastificar. Cartão final = CR80 (85,6 × 54 mm),
+  o mesmo tamanho de uma CNH.
+- Individual sai em **A4 com a peça em escala 1:1** + marcas de corte + aviso
+  impresso para imprimir em 100%. Sem isso, o leitor de PDF aplica "ajustar à
+  página" e o cartão perde o tamanho físico.
+- Lote: **4 peças por A4** (grid 2×2). Teto de `LIMITE_LOTE` (500) por operação.
+- QR com no mínimo 20 mm de lado; marca d'água da logo em opacidade 0.07 (mais
+  que isso atrapalha a leitura óptica).
+
+### Foto
+- Recorte **3:4** no navegador (`FotoCropper`), com máscara fixa e imagem
+  arrastável; o corte é feito na imagem original, em 675×900.
+- Só **PNG/JPEG**: pdf-lib não embute WEBP/GIF.
+- Redimensionar no cliente é obrigatório — Server Action tem limite de body de
+  1 MB por padrão (`serverActions.bodySizeLimit` subiu pra 4mb como rede de
+  segurança; a Vercel corta acima de ~4,5 MB de qualquer forma).
 
 ## NF-e entrada (Focus NFe)
 
