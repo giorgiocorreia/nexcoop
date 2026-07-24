@@ -6,7 +6,10 @@
 // I/O de banco aqui: quem busca os dados é o route handler (app/imprimir/...),
 // este módulo só recebe dados prontos e devolve bytes de PDF.
 
-import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, degrees, rgb } from 'pdf-lib'
+import {
+  PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb,
+  pushGraphicsState, popGraphicsState, concatTransformationMatrix,
+} from 'pdf-lib'
 import type { TipoOrganizacao } from '@/types/database'
 import { mascararCpf } from '@/lib/carteirinha/carteirinha-utils'
 import { gerarQrCodePngBuffer } from '@/lib/carteirinha/qrcode'
@@ -418,60 +421,42 @@ function desenharParagrafo(
 // y+2H), verso na metade de baixo (y a y+H), linha de dobra tracejada no
 // meio e marcas de corte no contorno.
 //
-// Truque de implementação: cria um PDFDocument TEMPORÁRIO só pra desenhar
-// frente e verso como duas páginas CR80 isoladas — reaproveitando
-// desenharFrente/desenharVerso sem reescrever layout nenhum — e embute as
-// duas como XObjects (embedPage) no documento final. O verso entra rotacionado
-// 180°: ao dobrar o cartão na horizontal com a impressão pra fora, a metade
-// de baixo gira 180° em torno do eixo da dobra, então se o verso fosse
-// desenhado na orientação normal ele sairia de cabeça pra baixo depois de
-// dobrado. A rotação do pdf-lib pivota em torno do próprio ponto (x, y)
-// informado — por isso o anchor do verso é deslocado em +CARTAO_LARGURA/
-// +CARTAO_ALTURA em relação à origem da metade de baixo, senão o resultado
-// rotacionado cairia fora da página.
-async function desenharCartaoDobravel(
-  pdfDocFinal: PDFDocument,
+// O verso é desenhado rotacionado 180°: ao dobrar o cartão na horizontal com a
+// impressão pra fora, a metade de baixo gira 180° em torno do eixo da dobra,
+// então se o verso fosse desenhado na orientação normal ele sairia de cabeça
+// pra baixo depois de dobrado.
+//
+// A rotação é aplicada via matriz de transformação (CTM) na PRÓPRIA página
+// final, entre pushGraphicsState/popGraphicsState. A tentativa anterior usava
+// um PDFDocument temporário + embedPage, e isso QUEBROU o cartão (24/07/2026):
+// fontes e imagens pertencem ao documento onde foram embutidas, então ao
+// desenhar recursos do doc temporário numa página do doc final a foto, a logo
+// e o QR sumiam e os acentos viravam lixo ("AGROPECU RIA", "Matr cula").
+// Desenhar sempre no mesmo documento elimina a classe inteira de bug — e de
+// quebra evita criar um PDFDocument por cartão no lote.
+//
+// A matriz [-1, 0, 0, -1, 2·cx, 2·cy] gira 180° em torno de (cx, cy). Com o
+// verso ocupando o retângulo (x, y)–(x+w, y+h), o centro é (x+w/2, y+h/2),
+// logo tx = 2x+w e ty = 2y+h.
+function desenharCartaoDobravel(
   paginaFinal: PDFPage,
   x: number,
   y: number,
   dados: DadosCartao,
-  fotoBaixada: ImagemBaixada | null,
-  logoBaixada: ImagemBaixada | null,
-  qrBuffer: Uint8Array
+  imagens: ImagensCartao,
+  fontRegular: PDFFont,
+  fontBold: PDFFont
 ) {
-  const tempDoc = await PDFDocument.create()
-  const fontRegular = await tempDoc.embedFont(StandardFonts.Helvetica)
-  const fontBold = await tempDoc.embedFont(StandardFonts.HelveticaBold)
-
-  const fotoImg = await embutirImagem(tempDoc, fotoBaixada)
-  const logoImg = await embutirImagem(tempDoc, logoBaixada)
-  const qrImg = await tempDoc.embedPng(qrBuffer)
-
-  const paginaFrenteTemp = tempDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
-  desenharFrente(paginaFrenteTemp, 0, 0, dados, { fotoImg, logoImg, qrImg }, fontRegular, fontBold)
-
-  const paginaVersoTemp = tempDoc.addPage([CARTAO_LARGURA, CARTAO_ALTURA])
-  desenharVerso(paginaVersoTemp, 0, 0, dados, fontRegular, fontBold, logoImg)
-
-  const embeddedFrente = await pdfDocFinal.embedPage(paginaFrenteTemp)
-  const embeddedVerso = await pdfDocFinal.embedPage(paginaVersoTemp)
-
   // Frente — metade de cima, orientação normal.
-  paginaFinal.drawPage(embeddedFrente, {
-    x,
-    y: y + CARTAO_ALTURA,
-    width: CARTAO_LARGURA,
-    height: CARTAO_ALTURA,
-  })
+  desenharFrente(paginaFinal, x, y + CARTAO_ALTURA, dados, imagens, fontRegular, fontBold)
 
-  // Verso — metade de baixo, rotacionado 180° (ver explicação acima).
-  paginaFinal.drawPage(embeddedVerso, {
-    x: x + CARTAO_LARGURA,
-    y: y + CARTAO_ALTURA,
-    width: CARTAO_LARGURA,
-    height: CARTAO_ALTURA,
-    rotate: degrees(180),
-  })
+  // Verso — metade de baixo, girado 180° em torno do próprio centro.
+  paginaFinal.pushOperators(
+    pushGraphicsState(),
+    concatTransformationMatrix(-1, 0, 0, -1, 2 * x + CARTAO_LARGURA, 2 * y + CARTAO_ALTURA)
+  )
+  desenharVerso(paginaFinal, x, y, dados, fontRegular, fontBold, imagens.logoImg)
+  paginaFinal.pushOperators(popGraphicsState())
 
   // Linha de dobra tracejada exatamente no meio da peça.
   paginaFinal.drawLine({
@@ -551,19 +536,28 @@ export async function gerarCartaoCarteirinhaPDF(
     gerarQrCodePngBuffer(dados.urlVerificacao),
   ])
 
+  // Fontes e imagens embutidas no documento FINAL — é onde elas serão
+  // desenhadas. Cruzar documentos quebra fontes e imagens (ver comentário de
+  // desenharCartaoDobravel).
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const imagens: ImagensCartao = {
+    fotoImg: await embutirImagem(pdfDoc, fotoBaixada),
+    logoImg: await embutirImagem(pdfDoc, logoBaixada),
+    qrImg: await pdfDoc.embedPng(qrBuffer),
+  }
+
   if (formato === 'cartao') {
     const pagina = pdfDoc.addPage([CARTAO_LARGURA, CARTAO_DOBRAVEL_ALTURA])
-    await desenharCartaoDobravel(pdfDoc, pagina, 0, 0, dados, fotoBaixada, logoBaixada, qrBuffer)
+    desenharCartaoDobravel(pagina, 0, 0, dados, imagens, fontRegular, fontBold)
     return pdfDoc.save()
   }
 
   const pagina = pdfDoc.addPage([A4_LARGURA, A4_ALTURA])
   const x = (A4_LARGURA - CARTAO_LARGURA) / 2
   const y = A4_ALTURA - A4_MARGEM_SUPERIOR - CARTAO_DOBRAVEL_ALTURA
-  await desenharCartaoDobravel(pdfDoc, pagina, x, y, dados, fotoBaixada, logoBaixada, qrBuffer)
+  desenharCartaoDobravel(pagina, x, y, dados, imagens, fontRegular, fontBold)
 
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
   desenharAvisoEscala(pagina, fontRegular, fontBold, y - 24)
 
   return pdfDoc.save()
@@ -647,6 +641,15 @@ export async function gerarLoteCarteirinhasPDF(itens: DadosCartao[]): Promise<Ui
     }
   }
 
+  // Fontes embutidas UMA vez no documento (não por cartão) — em lote de
+  // centenas, repetir embedFont incharia o PDF sem necessidade.
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+  // Cache de PDFImage da logo por URL: o buffer já é reaproveitado acima, mas
+  // embutir a mesma logo uma vez por cartão criaria N objetos idênticos.
+  const logoImgCache = new Map<string, PDFImage | null>()
+
   for (let p = 0; p < totalPaginas; p++) {
     const page = pdfDoc.addPage([PAGINA_LARGURA, PAGINA_ALTURA])
     for (let slot = 0; slot < porPagina; slot++) {
@@ -657,7 +660,22 @@ export async function gerarLoteCarteirinhasPDF(itens: DadosCartao[]): Promise<Ui
       // Sem QR não há como gerar o cartão — defensivo, gerarQrCodePngBuffer
       // não deveria falhar, mas allSettled cobre o caso mesmo assim.
       if (!cartao.qrBuffer) continue
-      await desenharCartaoDobravel(pdfDoc, page, x, y, cartao.dados, cartao.fotoBaixada, cartao.logoBaixada, cartao.qrBuffer)
+
+      const logoUrl = cartao.dados.organizacao.logoUrl
+      let logoImg: PDFImage | null
+      if (logoUrl && logoImgCache.has(logoUrl)) {
+        logoImg = logoImgCache.get(logoUrl) ?? null
+      } else {
+        logoImg = await embutirImagem(pdfDoc, cartao.logoBaixada)
+        if (logoUrl) logoImgCache.set(logoUrl, logoImg)
+      }
+
+      const imagens: ImagensCartao = {
+        fotoImg: await embutirImagem(pdfDoc, cartao.fotoBaixada),
+        logoImg,
+        qrImg: await pdfDoc.embedPng(cartao.qrBuffer),
+      }
+      desenharCartaoDobravel(page, x, y, cartao.dados, imagens, fontRegular, fontBold)
     }
   }
 
