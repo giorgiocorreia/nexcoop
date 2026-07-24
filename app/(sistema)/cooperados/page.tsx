@@ -71,6 +71,18 @@ export default async function CooperadosPage({
     : undefined
   const mensalidadeInicial = params.mensalidade === 'atrasada'
 
+  // Quem já tem carteirinha ativa (via não revogada). A lista precisa saber
+  // disso pra avisar, ANTES de abrir o PDF, quem ficaria de fora da impressão
+  // — a rota de impressão pula esses em silêncio e o header de aviso nunca
+  // chega ao usuário, já que o PDF abre em outra aba (Giorgio, 24/07/2026).
+  const { data: carteirinhasAtivas } = await ctx.supabase
+    .from('cooperado_carteirinhas')
+    .select('cooperado_id')
+    .eq('organizacao_id', ctx.orgId)
+    .is('revogada_em', null)
+
+  const comCarteirinha = (carteirinhasAtivas ?? []).map(c => c.cooperado_id as string)
+
   return (
     <CooperadosLista
       cooperados={cooperados ?? []}
@@ -78,6 +90,7 @@ export default async function CooperadosPage({
       statusInicial={statusInicial}
       inadimplentesMensalidade={inadimplentesMensalidade}
       mensalidadeInicial={mensalidadeInicial}
+      comCarteirinha={comCarteirinha}
     />
   )
 }

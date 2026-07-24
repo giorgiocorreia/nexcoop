@@ -46,9 +46,20 @@ interface Props {
   // Associação: ids de associados com mensalidade vencida (fonte única, do servidor).
   inadimplentesMensalidade?: string[]
   mensalidadeInicial?: boolean
+  // Ids de cooperados com carteirinha ativa — usado pra avisar quem ficaria
+  // de fora da impressão em lote antes de abrir o PDF.
+  comCarteirinha?: string[]
 }
 
-export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, inadimplentesMensalidade, mensalidadeInicial }: Props) {
+// Sugestão de validade na emissão em lote: 1 ano a partir de hoje (decisão do
+// Giorgio, 24/07/2026 — editável, não imposta).
+function validadeSugerida(): string {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, inadimplentesMensalidade, mensalidadeInicial, comCarteirinha }: Props) {
   const n = nomenclatura(tipoOrg)
   const ehAssoc = tipoOrg === 'associacao'
   const router = useRouter()
@@ -68,6 +79,21 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   // (feedback do Giorgio, 24/07/2026).
   const [modoSelecao, setModoSelecao] = useState(false)
   const [emitindoLote, setEmitindoLote] = useState(false)
+  // Diálogos do modo de seleção: validade da emissão e confirmação da
+  // impressão quando há selecionado sem carteirinha.
+  const [dialogoEmitir, setDialogoEmitir] = useState(false)
+  const [validaAte, setValidaAte] = useState(validadeSugerida)
+  const [dialogoImprimir, setDialogoImprimir] = useState(false)
+
+  const setComCarteirinha = useMemo(() => new Set(comCarteirinha ?? []), [comCarteirinha])
+
+  // Quebra da seleção atual entre quem já tem carteirinha e quem não tem —
+  // alimenta os contadores dos botões e os dois diálogos.
+  const selecionadosSemCarteirinha = useMemo(
+    () => Array.from(selecionados).filter(id => !setComCarteirinha.has(id)),
+    [selecionados, setComCarteirinha]
+  )
+  const selecionadosComCarteirinha = selecionados.size - selecionadosSemCarteirinha.length
 
   // Set de inadimplentes por mensalidade (só associação) — mesmo número do dashboard.
   const setInad = useMemo(() => new Set(inadimplentesMensalidade ?? []), [inadimplentesMensalidade])
@@ -123,8 +149,21 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
     })
   }
 
+  // Só abre o PDF direto quando TODOS os selecionados têm carteirinha. Se
+  // algum não tem, confirma antes — senão a pessoa imprime, recebe menos
+  // cartões do que esperava e não descobre o motivo (o aviso da rota vai num
+  // header HTTP que ninguém vê, porque o PDF abre em outra aba).
   function imprimirCarteirinhasSelecionadas() {
     if (selecionados.size === 0) return
+    if (selecionadosSemCarteirinha.length > 0) {
+      setDialogoImprimir(true)
+      return
+    }
+    abrirPdfDoLote()
+  }
+
+  function abrirPdfDoLote() {
+    setDialogoImprimir(false)
     const ids = Array.from(selecionados).join(',')
     window.open(`/imprimir/carteirinhas?ids=${encodeURIComponent(ids)}`, '_blank', 'noopener,noreferrer')
     sairDoModoSelecao()
@@ -136,8 +175,11 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   async function emitirCarteirinhasSelecionadas() {
     if (selecionados.size === 0 || emitindoLote) return
     setEmitindoLote(true)
+    setDialogoEmitir(false)
     try {
-      const res = await emitirCarteirinhasEmLote(Array.from(selecionados))
+      // validaAte vazio = sem prazo (a verificação online continua sendo a
+      // autoridade; a data só antecipa o vencimento).
+      const res = await emitirCarteirinhasEmLote(Array.from(selecionados), validaAte || undefined)
       if (res.error) {
         toast.error(res.error)
         return
@@ -191,18 +233,26 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
               <Btn
                 variante="cinza"
                 icone="ti-id"
-                onClick={emitirCarteirinhasSelecionadas}
-                disabled={selecionados.size === 0 || emitindoLote}
+                onClick={() => setDialogoEmitir(true)}
+                disabled={selecionadosSemCarteirinha.length === 0 || emitindoLote}
+                title={selecionadosSemCarteirinha.length === 0 && selecionados.size > 0
+                  ? 'Todos os selecionados já têm carteirinha'
+                  : undefined}
               >
-                {emitindoLote ? 'Emitindo...' : `Emitir ${selecionados.size > 0 ? `(${selecionados.size})` : ''}`}
+                {emitindoLote
+                  ? 'Emitindo...'
+                  : `Emitir ${selecionadosSemCarteirinha.length > 0 ? `(${selecionadosSemCarteirinha.length})` : ''}`}
               </Btn>
               <Btn
                 variante="roxo"
                 icone="ti-printer"
                 onClick={imprimirCarteirinhasSelecionadas}
-                disabled={selecionados.size === 0}
+                disabled={selecionadosComCarteirinha === 0}
+                title={selecionadosComCarteirinha === 0 && selecionados.size > 0
+                  ? 'Nenhum dos selecionados tem carteirinha emitida'
+                  : undefined}
               >
-                Imprimir {selecionados.size > 0 ? `(${selecionados.size})` : ''}
+                Imprimir {selecionadosComCarteirinha > 0 ? `(${selecionadosComCarteirinha})` : ''}
               </Btn>
               <Btn variante="cinza" onClick={sairDoModoSelecao}>
                 Cancelar
@@ -272,6 +322,12 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             Selecione os {n.plural.toLowerCase()} e escolha a ação.
             {' '}<strong>Emitir</strong> gera a carteirinha de quem ainda não tem;
             {' '}<strong>Imprimir</strong> gera o PDF de quem já tem — 4 por folha, para cortar, dobrar e plastificar.
+            {selecionados.size > 0 && (
+              <>
+                {' · '}
+                {selecionadosComCarteirinha} com carteirinha, {selecionadosSemCarteirinha.length} sem.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -339,7 +395,22 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
                             {c.nome_completo.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600 }}>{c.nome_completo}</div>
+                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {c.nome_completo}
+                              {/* Só no modo de seleção: deixa claro de relance
+                                  quem não sairia no PDF da impressão. */}
+                              {modoSelecao && !setComCarteirinha.has(c.id) && (
+                                <span
+                                  title="Sem carteirinha emitida"
+                                  style={{
+                                    fontSize: 10, fontWeight: 600, color: '#854F0B', background: '#FAEEDA',
+                                    padding: '1px 6px', borderRadius: 999, whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  sem carteirinha
+                                </span>
+                              )}
+                            </div>
                             {c.numero_matricula && (
                               <div style={{ fontSize: 11, color: COM_C.txtSub }}>Matríc. {c.numero_matricula}</div>
                             )}
@@ -368,6 +439,96 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
           </div>
         </ContentCard>
       )}
+
+      {/* Validade da emissão em lote — sugerida em 1 ano, editável; em branco
+          emite sem prazo. Aplica a mesma data a todo o lote. */}
+      {dialogoEmitir && (
+        <ModalSimples
+          titulo="Emitir carteirinhas"
+          onFechar={() => setDialogoEmitir(false)}
+        >
+          <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 14px', lineHeight: 1.5 }}>
+            Serão emitidas <strong>{selecionadosSemCarteirinha.length}</strong> carteirinha(s).
+            {selecionadosComCarteirinha > 0 && (
+              <> Os {selecionadosComCarteirinha} que já têm carteirinha não serão alterados.</>
+            )}
+          </p>
+          <label style={{ display: 'block', fontSize: 12, color: COM_C.txtSub, marginBottom: 4 }}>
+            Válida até
+          </label>
+          <Input
+            type="date"
+            value={validaAte}
+            onChange={e => setValidaAte(e.target.value)}
+          />
+          <p style={{ fontSize: 11, color: COM_C.txtSub, margin: '6px 0 0' }}>
+            Deixe em branco para emitir sem prazo. A conferência pelo QR é sempre ao vivo —
+            a data só antecipa o vencimento do cartão impresso.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
+            <Btn variante="cinza" tamanho="sm" onClick={() => setDialogoEmitir(false)}>Cancelar</Btn>
+            <Btn variante="roxo" tamanho="sm" icone="ti-id" onClick={emitirCarteirinhasSelecionadas} disabled={emitindoLote}>
+              {emitindoLote ? 'Emitindo...' : 'Emitir'}
+            </Btn>
+          </div>
+        </ModalSimples>
+      )}
+
+      {/* Confirmação de impressão com selecionados sem carteirinha. */}
+      {dialogoImprimir && (
+        <ModalSimples
+          titulo="Alguns ficarão de fora"
+          onFechar={() => setDialogoImprimir(false)}
+        >
+          <p style={{ fontSize: 13, color: COM_C.txtSub, margin: '0 0 8px', lineHeight: 1.5 }}>
+            <strong>{selecionadosSemCarteirinha.length}</strong> dos {selecionados.size} selecionados
+            ainda não têm carteirinha emitida e não sairão no PDF.
+          </p>
+          <p style={{ fontSize: 13, color: COM_C.txtSub, margin: 0, lineHeight: 1.5 }}>
+            Serão impressas <strong>{selecionadosComCarteirinha}</strong> carteirinha(s). Você pode
+            emitir as que faltam antes de imprimir.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
+            <Btn variante="cinza" tamanho="sm" onClick={() => setDialogoImprimir(false)}>Voltar</Btn>
+            <Btn variante="cinza" tamanho="sm" icone="ti-id" onClick={() => { setDialogoImprimir(false); setDialogoEmitir(true) }}>
+              Emitir as que faltam
+            </Btn>
+            <Btn variante="roxo" tamanho="sm" icone="ti-printer" onClick={abrirPdfDoLote} disabled={selecionadosComCarteirinha === 0}>
+              Imprimir mesmo assim
+            </Btn>
+          </div>
+        </ModalSimples>
+      )}
     </PageLayout>
+  )
+}
+
+// Modal enxuto local — o UI kit não tem um componente de diálogo, e criar um
+// genérico agora exigiria decidir API pro projeto inteiro. Fica aqui até
+// aparecer o segundo caso de uso.
+function ModalSimples({
+  titulo, onFechar, children,
+}: { titulo: string; onFechar: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={titulo}
+      onClick={onFechar}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 14, padding: 20, maxWidth: 420, width: '100%' }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 700, color: COM_C.txt, marginBottom: 12 }}>
+          {titulo}
+        </div>
+        {children}
+      </div>
+    </div>
   )
 }
