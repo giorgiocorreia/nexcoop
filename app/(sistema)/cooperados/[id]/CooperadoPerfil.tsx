@@ -71,11 +71,12 @@ interface Props {
   acesso:     AcessoCooperado
   carteirinhaAtiva: CarteirinhaAtiva | null
   urlVerificacaoCarteirinha: string | null
+  qrSvgCarteirinha: string | null
 }
 
 export default function CooperadoPerfil({
   cooperado: initial, propriedades, orgTipo, orgNome, orgCnpj, usuarioId, ehAdmin, acesso,
-  carteirinhaAtiva, urlVerificacaoCarteirinha,
+  carteirinhaAtiva, urlVerificacaoCarteirinha, qrSvgCarteirinha,
 }: Props) {
   const router = useRouter()
   const [cooperado, setCooperado] = useState(initial)
@@ -382,6 +383,7 @@ export default function CooperadoPerfil({
               cooperadoId={cooperado.id}
               carteirinhaAtiva={carteirinhaAtiva}
               urlVerificacao={urlVerificacaoCarteirinha}
+              qrSvg={qrSvgCarteirinha}
             />
           </div>
         )}

@@ -18,3 +18,17 @@ export async function gerarQrCodeSvg(url: string): Promise<string> {
     margin: 1,
   })
 }
+
+// Versão em PNG — usada só pelo gerador de PDF (fase 3), que não sabe
+// embutir SVG (pdf-lib só embute PNG/JPEG). Largura generosa (600px):
+// o PDF sempre reescala o QR pra um tamanho menor no cartão físico, e um
+// PNG pequeno reescalado pra cima fica pixelado a ponto de não ler no
+// leitor de código da loja/portaria.
+export async function gerarQrCodePngBuffer(url: string): Promise<Buffer> {
+  return QRCode.toBuffer(url, {
+    type: 'png',
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 600,
+  })
+}

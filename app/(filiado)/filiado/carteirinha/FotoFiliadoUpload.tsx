@@ -23,8 +23,10 @@ export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: P
     e.target.value = '' // permite selecionar o mesmo arquivo de novo depois
     if (!file) return
 
-    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
-      toast.error('Formato inválido. Envie PNG, JPEG, WEBP ou GIF.')
+    // PNG/JPEG apenas — pdf-lib (gerador da carteirinha em PDF, fase 3) não
+    // embute WEBP/GIF, então nem deixamos subir esses formatos.
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      toast.error('Formato inválido. Envie PNG ou JPEG.')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -68,12 +70,12 @@ export default function FotoFiliadoUpload({ fotoUrl, nome, onFotoAtualizada }: P
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1917' }}>Foto da carteirinha</div>
-        <div style={{ fontSize: 11, color: '#78716C' }}>PNG, JPEG, WEBP ou GIF — até 5 MB</div>
+        <div style={{ fontSize: 11, color: '#78716C' }}>PNG ou JPEG — até 5 MB</div>
       </div>
       <input
         ref={inputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        accept="image/png,image/jpeg"
         onChange={handleArquivo}
         style={{ display: 'none' }}
       />

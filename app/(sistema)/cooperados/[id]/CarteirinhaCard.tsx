@@ -19,6 +19,7 @@ interface Props {
   cooperadoId: string
   carteirinhaAtiva: CarteirinhaAtiva | null
   urlVerificacao: string | null
+  qrSvg: string | null
 }
 
 function formatarData(iso: string | null): string {
@@ -26,7 +27,7 @@ function formatarData(iso: string | null): string {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
 
-export default function CarteirinhaCard({ cooperadoId, carteirinhaAtiva, urlVerificacao }: Props) {
+export default function CarteirinhaCard({ cooperadoId, carteirinhaAtiva, urlVerificacao, qrSvg }: Props) {
   const router = useRouter()
 
   const [mostrarEmitir, setMostrarEmitir] = useState(false)
@@ -118,30 +119,56 @@ export default function CarteirinhaCard({ cooperadoId, carteirinhaAtiva, urlVeri
   // ── Com carteirinha ativa ────────────────────────────────────────────────
   return (
     <ContentCard title="Carteirinha">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, color: COM_C.txt }}>
-          <strong>Código:</strong> {carteirinhaAtiva.codigo}
+      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14, flex: '1 1 220px' }}>
+          <div style={{ fontSize: 13, color: COM_C.txt }}>
+            <strong>Código:</strong> {carteirinhaAtiva.codigo}
+          </div>
+          <div style={{ fontSize: 13, color: COM_C.txt }}>
+            <strong>Via:</strong> {carteirinhaAtiva.via}ª
+          </div>
+          <div style={{ fontSize: 13, color: COM_C.txt }}>
+            <strong>Emitida em:</strong> {formatarData(carteirinhaAtiva.emitidaEm)}
+          </div>
+          <div style={{ fontSize: 13, color: COM_C.txt }}>
+            <strong>Validade:</strong> {carteirinhaAtiva.validaAte ? formatarData(carteirinhaAtiva.validaAte) : 'Sem prazo definido'}
+          </div>
+          {urlVerificacao && (
+            <a
+              href={urlVerificacao}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 12, color: COM_C.azul, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+            >
+              <i className="ti ti-external-link" style={{ fontSize: 13 }} />
+              Conferir na página pública
+            </a>
+          )}
         </div>
-        <div style={{ fontSize: 13, color: COM_C.txt }}>
-          <strong>Via:</strong> {carteirinhaAtiva.via}ª
-        </div>
-        <div style={{ fontSize: 13, color: COM_C.txt }}>
-          <strong>Emitida em:</strong> {formatarData(carteirinhaAtiva.emitidaEm)}
-        </div>
-        <div style={{ fontSize: 13, color: COM_C.txt }}>
-          <strong>Validade:</strong> {carteirinhaAtiva.validaAte ? formatarData(carteirinhaAtiva.validaAte) : 'Sem prazo definido'}
-        </div>
-        {urlVerificacao && (
-          <a
-            href={urlVerificacao}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: 12, color: COM_C.azul, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
-          >
-            <i className="ti ti-external-link" style={{ fontSize: 13 }} />
-            Conferir na página pública
-          </a>
+
+        {/* QR renderizado direto na ficha — antes só existia depois de gerar
+            o PDF; a secretaria precisa conferir/mostrar o QR sem imprimir nada. */}
+        {qrSvg && (
+          <div
+            style={{
+              width: 120, height: 120, flexShrink: 0, background: '#fff',
+              border: `1px solid ${COM_C.borda}`, borderRadius: 10, padding: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            dangerouslySetInnerHTML={{ __html: qrSvg }}
+          />
         )}
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <Btn
+          variante="cinza"
+          icone="ti-printer"
+          tamanho="sm"
+          onClick={() => window.open(`/imprimir/carteirinha/${cooperadoId}`, '_blank', 'noopener,noreferrer')}
+        >
+          Imprimir carteirinha
+        </Btn>
       </div>
 
       {acaoMotivo === null ? (

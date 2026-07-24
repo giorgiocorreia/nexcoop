@@ -11,6 +11,7 @@ import {
   PageLayout, ContentCard, Field, Input, Select, Textarea,
   Tabs, AlertBanner, MODULO_NEXCOOP, COM_C,
 } from '@/components/nexcoop/ui'
+import FotoCooperadoCard from '../FotoCooperadoCard'
 import type { StatusCooperado, TipoOrganizacao } from '@/types/database'
 
 const UFS = [
@@ -96,6 +97,7 @@ export default function EditarCooperadoPage() {
   const n = nomenclatura(tipoOrg)
   const [abaAtiva, setAbaAtiva] = useState<Aba>('pessoal')
   const [form, setForm] = useState<FormData | null>(null)
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -186,6 +188,7 @@ export default function EditarCooperadoPage() {
             .single()
             .then(({ data: org }) => { if (org?.tipo) setTipoOrg(org.tipo as TipoOrganizacao) })
         }
+        setFotoUrl(data.foto_url ?? null)
         setForm({
           tipo:               data.tipo ?? 'pessoa_fisica',
           nome_completo:      data.nome_completo ?? '',
@@ -369,6 +372,18 @@ export default function EditarCooperadoPage() {
       ]}
     >
       <div style={{ maxWidth: 760 }}>
+
+      {/* Upload de foto também a partir do cadastro (pedido explícito do
+          Giorgio) — reaproveita o mesmo componente e a mesma server action
+          (atualizarFotoCooperadoAdmin) já usados na ficha, sem duplicar lógica. */}
+      <div style={{ marginBottom: '1rem' }}>
+        <FotoCooperadoCard
+          cooperadoId={id}
+          nome={form.nome_completo || 'Cooperado'}
+          fotoUrl={fotoUrl}
+          onFotoAtualizada={setFotoUrl}
+        />
+      </div>
 
       <Tabs
         tabs={ABAS.map((aba, i) => ({ id: aba.id, label: `${i + 1}. ${aba.label}`, icon: aba.icon }))}

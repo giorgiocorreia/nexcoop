@@ -56,6 +56,11 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   const [filtroMensalidade, setFiltroMensalidade] = useState<'todos' | 'atrasada'>(mensalidadeInicial ? 'atrasada' : 'todos')
   const [hovered, setHovered] = useState<string | null>(null)
 
+  // Seleção múltipla pra impressão de carteirinhas em lote (fase 3). Quem
+  // não tem carteirinha ativa é silenciosamente pulado pela rota de
+  // impressão — a seleção aqui não sabe (nem precisa saber) quem tem ou não.
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+
   // Set de inadimplentes por mensalidade (só associação) — mesmo número do dashboard.
   const setInad = useMemo(() => new Set(inadimplentesMensalidade ?? []), [inadimplentesMensalidade])
 
@@ -83,6 +88,38 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   }, [lista, busca, filtroStatus, filtroMensalidade, ehAssoc, setInad])
 
   const temFiltro = busca || filtroStatus !== 'todos' || filtroMensalidade !== 'todos'
+
+  const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every(c => selecionados.has(c.id))
+
+  function alternarSelecao(id: string) {
+    setSelecionados(prev => {
+      const novo = new Set(prev)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
+    })
+  }
+
+  function alternarSelecionarTodosFiltrados() {
+    setSelecionados(prev => {
+      if (todosFiltradosSelecionados) {
+        // Desmarca só os que estão visíveis no filtro atual — não mexe numa
+        // seleção feita antes de trocar o filtro.
+        const novo = new Set(prev)
+        filtrados.forEach(c => novo.delete(c.id))
+        return novo
+      }
+      const novo = new Set(prev)
+      filtrados.forEach(c => novo.add(c.id))
+      return novo
+    })
+  }
+
+  function imprimirCarteirinhasSelecionadas() {
+    if (selecionados.size === 0) return
+    const ids = Array.from(selecionados).join(',')
+    window.open(`/imprimir/carteirinhas?ids=${encodeURIComponent(ids)}`, '_blank', 'noopener,noreferrer')
+  }
 
   return (
     <PageLayout
@@ -147,6 +184,11 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             Limpar
           </Btn>
         )}
+        {selecionados.size > 0 && (
+          <Btn variante="roxo" icone="ti-printer" tamanho="sm" onClick={imprimirCarteirinhasSelecionadas}>
+            Imprimir carteirinhas ({selecionados.size})
+          </Btn>
+        )}
       </div>
 
       {filtrados.length === 0 ? (
@@ -162,6 +204,15 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
+                  <th style={{ width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={todosFiltradosSelecionados}
+                      onChange={alternarSelecionarTodosFiltrados}
+                      title="Selecionar todos os filtrados"
+                      aria-label="Selecionar todos os filtrados"
+                    />
+                  </th>
                   {['Nome', 'CPF', 'E-mail', 'Cidade / UF', 'Admissão', ...(ehAssoc ? ['Mensalidade'] : []), 'Status'].map(col => (
                     <th key={col}>{col}</th>
                   ))}
@@ -179,6 +230,14 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
                       onMouseLeave={() => setHovered(null)}
                       style={{ cursor: 'pointer', background: isHov ? '#FAFAF9' : undefined }}
                     >
+                      <td onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selecionados.has(c.id)}
+                          onChange={() => alternarSelecao(c.id)}
+                          aria-label={`Selecionar ${c.nome_completo}`}
+                        />
+                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{

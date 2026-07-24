@@ -26,8 +26,10 @@ export default function FotoCooperadoCard({ cooperadoId, nome, fotoUrl, onFotoAt
     e.target.value = ''
     if (!file) return
 
-    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
-      toast.error('Formato inválido. Envie PNG, JPEG, WEBP ou GIF.')
+    // PNG/JPEG apenas — pdf-lib (gerador da carteirinha em PDF, fase 3) não
+    // embute WEBP/GIF, então nem deixamos subir esses formatos.
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      toast.error('Formato inválido. Envie PNG ou JPEG.')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -69,12 +71,12 @@ export default function FotoCooperadoCard({ cooperadoId, nome, fotoUrl, onFotoAt
         )}
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 12, color: COM_C.txtSub, margin: '0 0 8px', lineHeight: 1.4 }}>
-            Foto usada na carteirinha de identificação (PNG, JPEG, WEBP ou GIF, até 5 MB).
+            Foto usada na carteirinha de identificação (PNG ou JPEG, até 5 MB).
           </p>
           <input
             ref={inputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
+            accept="image/png,image/jpeg"
             onChange={handleArquivo}
             style={{ display: 'none' }}
           />

@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { isAdmin, temAlgumaFuncao } from '@/lib/permissoes'
 import { buscarCarteirinhaAtivaDoCooperado } from '@/lib/carteirinha/queries'
 import { montarUrlVerificacao } from '@/lib/carteirinha/carteirinha-utils'
+import { gerarQrCodeSvg } from '@/lib/carteirinha/qrcode'
 import CooperadoPerfil from './CooperadoPerfil'
 
 export type AcessoCooperado =
@@ -95,6 +96,10 @@ export default async function CooperadoPage({ params }: Props) {
     ? montarUrlVerificacao(carteirinhaAtiva.codigo, (siteConfig as { slug: string } | null)?.slug ?? null)
     : null
 
+  // QR renderizado direto na ficha (fase 3) — só quando há carteirinha
+  // ativa, senão não há URL de verificação pra codificar.
+  const qrSvgCarteirinha = urlVerificacaoCarteirinha ? await gerarQrCodeSvg(urlVerificacaoCarteirinha) : null
+
   return (
     <CooperadoPerfil
       cooperado={cooperado}
@@ -107,6 +112,7 @@ export default async function CooperadoPage({ params }: Props) {
       acesso={acesso}
       carteirinhaAtiva={carteirinhaAtiva}
       urlVerificacaoCarteirinha={urlVerificacaoCarteirinha}
+      qrSvgCarteirinha={qrSvgCarteirinha}
     />
   )
 }
