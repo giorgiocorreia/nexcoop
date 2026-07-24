@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/permissoes'
 import { traduzirErro } from '@/lib/utils/erros'
-import { gerarCodigoCarteirinha } from '@/lib/carteirinha/carteirinha-utils'
+import { gerarCodigoCarteirinha, LIMITE_LOTE } from '@/lib/carteirinha/carteirinha-utils'
 
 type ResultadoAction<T = undefined> = { data?: T; error?: string }
 
@@ -84,6 +84,83 @@ export async function emitirCarteirinha(
 
     revalidatePath('/cooperados')
     return { data: { id: data.id as string, codigo: data.codigo as string } }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Erro inesperado.' }
+  }
+}
+
+// Emite carteirinha para vários cooperados de uma vez (tela de Cooperados).
+// Sem isto a emissão era uma-a-uma na ficha de cada pessoa, o que inviabiliza
+// entregar carteirinha pra uma associação inteira (Giorgio, 24/07/2026).
+//
+// Quem JÁ tem carteirinha ativa é PULADO, nunca reemitido: reemitir geraria
+// um código novo e invalidaria silenciosamente o cartão que a pessoa já tem
+// no bolso. Segunda via continua sendo ato individual e consciente, na ficha.
+export async function emitirCarteirinhasEmLote(
+  cooperadoIds: string[],
+  validaAte?: string
+): Promise<ResultadoAction<{ emitidas: number; jaTinham: number; falhas: number }>> {
+  try {
+    const { userId, organizacaoId } = await verificarAdminDaOrg()
+
+    if (cooperadoIds.length === 0) return { error: 'Nenhum cooperado selecionado.' }
+    if (cooperadoIds.length > LIMITE_LOTE) {
+      return { error: `Selecione no máximo ${LIMITE_LOTE} por vez.` }
+    }
+
+    const admin = createAdminClient()
+
+    // Uma query só pra saber quem é mesmo da org — evita N verificações.
+    const { data: daOrg } = await admin
+      .from('cooperados')
+      .select('id')
+      .eq('organizacao_id', organizacaoId)
+      .in('id', cooperadoIds)
+
+    const idsValidos = (daOrg ?? []).map(c => c.id as string)
+    if (idsValidos.length === 0) {
+      return { error: 'Nenhum cooperado válido nesta organização.' }
+    }
+
+    // Quem já tem via ativa (revogada_em null) sai da lista de emissão.
+    const { data: jaAtivas } = await admin
+      .from('cooperado_carteirinhas')
+      .select('cooperado_id')
+      .eq('organizacao_id', organizacaoId)
+      .is('revogada_em', null)
+      .in('cooperado_id', idsValidos)
+
+    const comCarteirinha = new Set((jaAtivas ?? []).map(c => c.cooperado_id as string))
+    const aEmitir = idsValidos.filter(id => !comCarteirinha.has(id))
+
+    if (aEmitir.length === 0) {
+      return { data: { emitidas: 0, jaTinham: comCarteirinha.size, falhas: 0 } }
+    }
+
+    const linhas = aEmitir.map(cooperadoId => ({
+      organizacao_id: organizacaoId,
+      cooperado_id: cooperadoId,
+      codigo: gerarCodigoCarteirinha(),
+      valida_ate: validaAte ?? null,
+      emitida_por: userId,
+    }))
+
+    const { data: inseridas, error } = await admin
+      .from('cooperado_carteirinhas')
+      .insert(linhas)
+      .select('id')
+
+    if (error) return { error: traduzirErro(error.message) }
+
+    const emitidas = (inseridas ?? []).length
+    revalidatePath('/cooperados')
+    return {
+      data: {
+        emitidas,
+        jaTinham: comCarteirinha.size,
+        falhas: aEmitir.length - emitidas,
+      },
+    }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Erro inesperado.' }
   }

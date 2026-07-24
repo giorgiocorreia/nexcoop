@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Cooperado, StatusCooperado } from '@/types/database'
 import BotaoAjuda from '@/components/BotaoAjuda'
+import { toast } from 'sonner'
+import { emitirCarteirinhasEmLote } from '@/lib/carteirinha/actions'
 import { Btn } from '@/components/ui/Btn'
 import { nomenclatura } from '@/lib/nomenclatura'
 import {
@@ -65,6 +67,7 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
   // depois de marcar alguém — a pessoa tinha que adivinhar o caminho
   // (feedback do Giorgio, 24/07/2026).
   const [modoSelecao, setModoSelecao] = useState(false)
+  const [emitindoLote, setEmitindoLote] = useState(false)
 
   // Set de inadimplentes por mensalidade (só associação) — mesmo número do dashboard.
   const setInad = useMemo(() => new Set(inadimplentesMensalidade ?? []), [inadimplentesMensalidade])
@@ -127,6 +130,38 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
     sairDoModoSelecao()
   }
 
+  // Emite para os selecionados que ainda não têm carteirinha. Quem já tem é
+  // pulado (nunca reemitido — isso invalidaria o cartão que a pessoa já
+  // carrega); a 2ª via continua sendo ato individual, na ficha.
+  async function emitirCarteirinhasSelecionadas() {
+    if (selecionados.size === 0 || emitindoLote) return
+    setEmitindoLote(true)
+    try {
+      const res = await emitirCarteirinhasEmLote(Array.from(selecionados))
+      if (res.error) {
+        toast.error(res.error)
+        return
+      }
+      const { emitidas, jaTinham } = res.data!
+      if (emitidas === 0) {
+        toast.info(jaTinham > 0
+          ? `Nenhuma emitida — ${jaTinham} já tinham carteirinha ativa.`
+          : 'Nenhuma carteirinha emitida.')
+      } else {
+        toast.success(
+          `${emitidas} carteirinha(s) emitida(s)` +
+          (jaTinham > 0 ? ` · ${jaTinham} já tinham` : '') +
+          '. Agora é só imprimir.'
+        )
+      }
+      router.refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao emitir as carteirinhas.')
+    } finally {
+      setEmitindoLote(false)
+    }
+  }
+
   function sairDoModoSelecao() {
     setModoSelecao(false)
     setSelecionados(new Set())
@@ -153,6 +188,14 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
             </Btn>
           ) : (
             <>
+              <Btn
+                variante="cinza"
+                icone="ti-id"
+                onClick={emitirCarteirinhasSelecionadas}
+                disabled={selecionados.size === 0 || emitindoLote}
+              >
+                {emitindoLote ? 'Emitindo...' : `Emitir ${selecionados.size > 0 ? `(${selecionados.size})` : ''}`}
+              </Btn>
               <Btn
                 variante="roxo"
                 icone="ti-printer"
@@ -226,8 +269,9 @@ export default function CooperadosLista({ cooperados, tipoOrg, statusInicial, in
         }}>
           <i className="ti ti-info-circle" style={{ fontSize: 16, color: COM_C.roxo }} aria-hidden />
           <span style={{ fontSize: 13, color: COM_C.roxo, fontWeight: 500 }}>
-            Selecione os {n.plural.toLowerCase()} que deseja imprimir a carteirinha.
-            {' '}Só entram os que já têm carteirinha emitida.
+            Selecione os {n.plural.toLowerCase()} e escolha a ação.
+            {' '}<strong>Emitir</strong> gera a carteirinha de quem ainda não tem;
+            {' '}<strong>Imprimir</strong> gera o PDF de quem já tem — 4 por folha, para cortar, dobrar e plastificar.
           </span>
         </div>
       )}

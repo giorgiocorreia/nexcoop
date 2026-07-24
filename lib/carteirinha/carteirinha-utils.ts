@@ -33,6 +33,12 @@ export function gerarCodigoCarteirinha(): string {
   return codigo
 }
 
+// Teto de cooperados por operação em lote (emissão e impressão). Evita
+// estourar tempo/memória da função serverless — a impressão baixa uma foto
+// por cartão e desenha tudo num PDF só. Compartilhado pela server action de
+// emissão e pela rota de impressão, pra não divergirem.
+export const LIMITE_LOTE = 500
+
 // Liga/desliga o uso de subdomínio por org na URL do QR.
 //
 // FALSE desde 24/07/2026 — o wildcard *.nexcoop.com.br NÃO existe em DNS

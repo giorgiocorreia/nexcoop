@@ -14,14 +14,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/permissoes'
-import { montarUrlVerificacao } from '@/lib/carteirinha/carteirinha-utils'
+import { montarUrlVerificacao, LIMITE_LOTE } from '@/lib/carteirinha/carteirinha-utils'
 import { gerarLoteCarteirinhasPDF, type DadosCartao } from '@/lib/carteirinha/pdf'
 import type { StatusCooperado } from '@/types/database'
 
 // Trava de segurança: acima disso o timeout/memória da function serverless
 // fica em risco (lote grande = muitos downloads de foto + geração de QR +
 // desenho de página). Devolve erro claro em vez de deixar a function estourar.
-const LIMITE_LOTE = 500
+// Teto compartilhado com a emissão em lote (lib/carteirinha/carteirinha-utils).
 
 const STATUS_VALIDOS: StatusCooperado[] = [
   'proposta', 'probatorio', 'ativo', 'inadimplente', 'suspenso', 'demitido', 'excluido',
