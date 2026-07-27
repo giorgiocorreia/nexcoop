@@ -120,11 +120,40 @@ export async function buscarDocsLoteAction(loteId: string) {
 }
 
 export async function gerarZipLoteAction(loteId: string) {
-  const { gerarZipEEnviarEmail } = await import('@/lib/comercializacao/zip-lote')
-  return gerarZipEEnviarEmail(loteId)
+  const { gerarZipLote } = await import('@/lib/comercializacao/zip-lote')
+  return gerarZipLote(loteId)
 }
 
 export async function enviarZipEmailAction(loteId: string, email: string) {
   const { gerarZipEEnviarEmail } = await import('@/lib/comercializacao/zip-lote')
   return gerarZipEEnviarEmail(loteId, email)
+}
+
+/** Reconsulta uma NF-e de saída na Focus e atualiza o status local. */
+export async function sincronizarNfeSaidaAction(vendaId: string) {
+  const usuario = await getUsuarioLogado()
+  const { sincronizarNfeSaida } = await import('@/lib/focusnfe/emitir-nfe-saida')
+  const resultado = await sincronizarNfeSaida({
+    vendaId,
+    organizacao_id: usuario.organizacao_id as string,
+    usuario_id: usuario.id,
+    usuario_email: usuario.email ?? undefined,
+  })
+  revalidatePath('/comercializacao/fiscal')
+  revalidatePath('/comercializacao/lotes')
+  return resultado
+}
+
+/** Reconsulta todas as NF-e de saída com status processando da org. */
+export async function sincronizarNfesSaidaProcessandoAction() {
+  const usuario = await getUsuarioLogado()
+  const { sincronizarNfesSaidaProcessando } = await import('@/lib/focusnfe/emitir-nfe-saida')
+  const resumo = await sincronizarNfesSaidaProcessando({
+    organizacao_id: usuario.organizacao_id as string,
+    usuario_id: usuario.id,
+    usuario_email: usuario.email ?? undefined,
+  })
+  revalidatePath('/comercializacao/fiscal')
+  revalidatePath('/comercializacao/lotes')
+  return resumo
 }

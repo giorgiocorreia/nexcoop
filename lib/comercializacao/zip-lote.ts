@@ -3,52 +3,103 @@
 import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarEmail } from '@/lib/email'
-import { FOCUS_BASE_URL, getFocusAuthHeader, getFocusConfig } from '@/lib/focusnfe/client'
+import { getFocusAuthHeader, getFocusConfig } from '@/lib/focusnfe/client'
+
+/** Normaliza chave para 44 dígitos (remove prefixo NFe). */
+function chave44(chave: string | null | undefined): string | null {
+  if (!chave) return null
+  const digits = chave.replace(/\D/g, '')
+  return digits.length >= 44 ? digits.slice(-44) : digits || null
+}
+
+function ambienteComercializacao(): 'producao' | 'homologacao' {
+  try {
+    return getFocusConfig('comercializacao').ambiente
+  } catch {
+    const env = process.env.FOCUSNFE_AMBIENTE_COMERCIALIZACAO ?? process.env.FOCUSNFE_AMBIENTE
+    return env === 'producao' ? 'producao' : 'homologacao'
+  }
+}
+
+function focusBaseUrl(): string {
+  return ambienteComercializacao() === 'producao'
+    ? 'https://api.focusnfe.com.br'
+    : 'https://homologacao.focusnfe.com.br'
+}
 
 function getEmailDestinatario(emailComprador: string | null): string {
-  if (getFocusConfig('comercializacao').ambiente === 'producao' && emailComprador) {
+  if (ambienteComercializacao() === 'producao' && emailComprador) {
     return emailComprador
   }
   return 'gio.pessoal@gmail.com'
 }
 
+function authHeaderOpcional(): Record<string, string> {
+  try {
+    return { Authorization: getFocusAuthHeader('comercializacao') }
+  } catch {
+    return {}
+  }
+}
+
 async function baixarArquivo(url: string): Promise<Buffer> {
-  const res = await fetch(url, {
-    headers: { Authorization: getFocusAuthHeader('comercializacao') },
-  })
-  if (!res.ok) throw new Error(`Erro ao baixar ${url}: ${res.status}`)
+  const res = await fetch(url, { headers: authHeaderOpcional() })
+  if (!res.ok) throw new Error(`Erro ao baixar arquivo (${res.status}): ${url}`)
   return Buffer.from(await res.arrayBuffer())
 }
 
-function construirXmlUrl(chave: string): string {
-  const anoMes = `${chave.slice(2, 4)}${chave.slice(4, 6)}`
+/** Monta URL do XML no padrão Focus a partir da chave de 44 dígitos. */
+function construirXmlUrl(chaveRaw: string): string {
+  const chave = chave44(chaveRaw) ?? chaveRaw.replace(/\D/g, '')
+  // AAMM na chave (posições 2-5 zero-based: YYMM após cUF)
+  const yy = chave.slice(2, 4)
+  const mm = chave.slice(4, 6)
+  const pastaAnoMes = `20${yy}${mm}` // ex.: 202607
   const cnpj = '54305114000179'
-  const { ambiente } = getFocusConfig('comercializacao')
-  return `${FOCUS_BASE_URL}/arquivos${ambiente === 'producao' ? '' : '_development'}/${cnpj}_222056/${anoMes === '2606' ? '202606' : anoMes}/XMLs/${chave}-nfe.xml`
+  const base = focusBaseUrl()
+  const pastaAmbiente = ambienteComercializacao() === 'producao' ? '' : '_development'
+  return `${base}/arquivos${pastaAmbiente}/${cnpj}_222056/${pastaAnoMes}/XMLs/${chave}-nfe.xml`
 }
 
-export async function gerarZipEEnviarEmail(loteId: string, emailOverride?: string): Promise<{ sucesso: boolean; erro?: string; zipBase64?: string }> {
+function danfeUrlFromXml(xmlUrl: string): string {
+  // Padrão real Focus: .../XMLs/CHAVE-nfe.xml → .../DANFEs/CHAVE-nfe.pdf
+  return xmlUrl.replace('/XMLs/', '/DANFEs/').replace(/-nfe\.xml$/i, '-nfe.pdf')
+}
+
+function nomeArquivoSeguro(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w.\-]+/g, '_')
+    .replace(/_+/g, '_')
+    .slice(0, 80)
+}
+
+async function montarZipLote(loteId: string): Promise<{
+  zipBuffer: Buffer
+  lote: { id: string; codigo: string; produto_descricao: string | null; organizacao_id: string }
+  nomeOrg: string
+  compradorEmail: string | null
+  arquivosIncluidos: number
+}> {
   const supabase = createAdminClient()
 
-  // 1. Buscar lote
-  const { data: lote } = await supabase
+  const { data: lote, error: loteErr } = await supabase
     .from('lotes')
     .select('id, codigo, produto_descricao, organizacao_id')
     .eq('id', loteId)
     .single()
 
-  if (!lote) return { sucesso: false, erro: 'Lote não encontrado' }
+  if (loteErr || !lote) throw new Error(loteErr?.message ?? 'Lote não encontrado')
 
-  // 1b. Buscar nome da organização
   const { data: org } = await supabase
     .from('organizacoes')
     .select('nome, nome_curto')
     .eq('id', lote.organizacao_id)
     .single()
 
-  const nomeOrg = org?.nome_curto ?? org?.nome ?? 'Cooperativa'
+  const nomeOrg = (org as any)?.nome_curto ?? org?.nome ?? 'Cooperativa'
 
-  // 2. IDs das movimentações do lote
   const { data: movs } = await supabase
     .from('movimentacoes_conta')
     .select('id')
@@ -56,18 +107,19 @@ export async function gerarZipEEnviarEmail(loteId: string, emailOverride?: strin
 
   const movIds = movs?.map(m => m.id) ?? []
 
-  // 3. Buscar notas de entrada autorizadas
-  const { data: notasEntrada } = movIds.length > 0 ? await supabase
-    .from('notas_entrega')
-    .select(`
-      id, chave_nfe, numero_nfe, xml_url, quantidade_kg, valor_unitario, valor_total,
-      produtores(nome, cpf, telefone, municipio, endereco)
-    `)
-    .eq('organizacao_id', lote.organizacao_id)
-    .in('movimentacao_id', movIds)
-    .eq('status', 'autorizada') : { data: [] }
+  // status pode ser 'autorizada' ou legado 'emitida'
+  const { data: notasEntrada } = movIds.length > 0
+    ? await supabase
+        .from('notas_entrega')
+        .select(`
+          id, chave_nfe, numero_nfe, xml_url, quantidade_kg, valor_unitario, valor_total, status,
+          produtores(nome, cpf, telefone, municipio, endereco)
+        `)
+        .eq('organizacao_id', lote.organizacao_id)
+        .in('movimentacao_id', movIds)
+        .in('status', ['autorizada', 'emitida'])
+    : { data: [] as any[] }
 
-  // 4. Buscar nota de saída autorizada
   const { data: venda } = await supabase
     .from('vendas_externas')
     .select(`
@@ -78,88 +130,172 @@ export async function gerarZipEEnviarEmail(loteId: string, emailOverride?: strin
     .eq('status_nfe', 'autorizada')
     .maybeSingle()
 
-  // 5. Montar ZIP
   const zip = new JSZip()
   const entradas = zip.folder('entradas')!
   const saida = zip.folder('saida')!
+  let arquivosIncluidos = 0
 
-  // XMLs de entrada
   for (const nota of notasEntrada ?? []) {
-    if (!nota.chave_nfe) continue
-    const produtor = (nota as any).produtores
-    const nomeArquivo = `NF${nota.numero_nfe}_${(produtor?.nome ?? 'produtor').replace(/\s+/g, '_')}`
-    const xmlUrl = (nota as any).xml_url || construirXmlUrl(nota.chave_nfe)
+    const chave = chave44(nota.chave_nfe) ?? nota.chave_nfe
+    if (!chave) continue
+    const produtor = Array.isArray((nota as any).produtores)
+      ? (nota as any).produtores[0]
+      : (nota as any).produtores
+    const nomeArquivo = nomeArquivoSeguro(`NF${nota.numero_nfe ?? ''}_${produtor?.nome ?? 'produtor'}`)
+    const xmlUrl = (nota as any).xml_url || construirXmlUrl(String(chave))
     try {
       const xmlBuffer = await baixarArquivo(xmlUrl)
       entradas.file(`${nomeArquivo}.xml`, xmlBuffer)
-    } catch {}
+      arquivosIncluidos++
+    } catch (e) {
+      console.warn('[zip-lote] XML entrada falhou:', xmlUrl, e)
+    }
   }
 
-  // XML + DANFE de saída
-  if (venda?.xml_nfe && venda?.chave_nfe) {
-    try {
-      const xmlSaida = await baixarArquivo(venda.xml_nfe)
-      const comprador = (venda as any).compradores
-      const nomeSaida = `NF${venda.numero_nfe}_${(comprador?.nome ?? 'comprador').replace(/\s+/g, '_')}`
-      saida.file(`${nomeSaida}.xml`, xmlSaida)
+  if (venda?.chave_nfe || venda?.xml_nfe) {
+    const comprador = Array.isArray((venda as any).compradores)
+      ? (venda as any).compradores[0]
+      : (venda as any).compradores
+    const nomeSaida = nomeArquivoSeguro(`NF${venda.numero_nfe ?? ''}_${comprador?.nome ?? 'comprador'}`)
+    const xmlUrl = venda.xml_nfe || (venda.chave_nfe ? construirXmlUrl(venda.chave_nfe) : null)
 
-      const danfeUrl = venda.xml_nfe.replace('/XMLs/', '/DANFEs/').replace('-nfe.xml', '.pdf')
+    if (xmlUrl) {
       try {
-        const danfeBuffer = await baixarArquivo(danfeUrl)
-        saida.file(`${nomeSaida}.pdf`, danfeBuffer)
-      } catch {}
-    } catch {}
+        const xmlSaida = await baixarArquivo(xmlUrl)
+        saida.file(`${nomeSaida}.xml`, xmlSaida)
+        arquivosIncluidos++
+
+        const danfeUrl = danfeUrlFromXml(xmlUrl)
+        try {
+          const danfeBuffer = await baixarArquivo(danfeUrl)
+          saida.file(`${nomeSaida}.pdf`, danfeBuffer)
+          arquivosIncluidos++
+        } catch (e) {
+          console.warn('[zip-lote] DANFE saída falhou:', danfeUrl, e)
+        }
+      } catch (e) {
+        console.warn('[zip-lote] XML saída falhou:', xmlUrl, e)
+      }
+    }
   }
 
-  // CSV de cooperados
-  const linhasCSV = ['Nome,CPF,Telefone,Endereço,Município,Kg,Valor Total']
+  const linhasCSV = ['Nome,CPF,Telefone,Endereco,Municipio,Kg,Valor Total']
   for (const nota of notasEntrada ?? []) {
-    const p = (nota as any).produtores
+    const p = Array.isArray((nota as any).produtores)
+      ? (nota as any).produtores[0]
+      : (nota as any).produtores
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
     linhasCSV.push([
-      p?.nome ?? '',
-      p?.cpf ?? '',
-      p?.telefone ?? '',
-      p?.endereco ?? '',
-      p?.municipio ?? '',
-      (nota as any).quantidade_kg ?? '',
-      (nota as any).valor_total ?? '',
+      esc(p?.nome),
+      esc(p?.cpf),
+      esc(p?.telefone),
+      esc(p?.endereco),
+      esc(p?.municipio),
+      esc((nota as any).quantidade_kg),
+      esc((nota as any).valor_total),
     ].join(','))
   }
   zip.file('cooperados.csv', linhasCSV.join('\n'))
+  arquivosIncluidos++
 
-  // 6. Gerar ZIP
-  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' })
-  const zipBase64 = zipBuffer.toString('base64')
+  const zipBuffer = Buffer.from(await zip.generateAsync({ type: 'nodebuffer' }))
+  const compradorEmail = (() => {
+    const c = (venda as any)?.compradores
+    const comp = Array.isArray(c) ? c[0] : c
+    return (comp?.email as string | null) ?? null
+  })()
 
-  // 7. Enviar email
-  const comprador = (venda as any)?.compradores
-  const emailDestinatario = emailOverride ?? getEmailDestinatario(comprador?.email ?? null)
-  const dataHoje = new Date().toLocaleDateString('pt-BR')
-  const nomeLote = `Lote ${lote.codigo}`
+  return {
+    zipBuffer,
+    lote: lote as any,
+    nomeOrg,
+    compradorEmail,
+    arquivosIncluidos,
+  }
+}
 
-  await enviarEmail({
-    to: emailDestinatario,
-    subject: `${nomeOrg} — Documentos Fiscais — Lote ${lote.codigo} — ${dataHoje}`,
-    html: `
-      <h2>${nomeOrg} — Documentos Fiscais</h2>
-      <p><strong>Lote:</strong> ${nomeLote}</p>
-      <p><strong>Produto:</strong> ${lote.produto_descricao ?? 'Multi-produto'}</p>
-      <p><strong>Data:</strong> ${dataHoje}</p>
-      <p>Segue em anexo o pacote ZIP contendo:</p>
-      <ul>
-        <li>XMLs das NF-e de entrada (por produtor)</li>
-        <li>XML + DANFE da NF-e de saída</li>
-        <li>Lista de cooperados (CSV)</li>
-      </ul>
-      <p>Atenciosamente,<br/><strong>${nomeOrg}</strong></p>
-    `,
-    attachments: [
-      {
-        filename: `lote_${lote.codigo}_${dataHoje.replace(/\//g, '')}.zip`,
-        content: zipBuffer,
-      },
-    ],
-  })
+/** Só gera o ZIP (download). Não envia e-mail. */
+export async function gerarZipLote(loteId: string): Promise<{
+  sucesso: boolean
+  erro?: string
+  zipBase64?: string
+  codigoLote?: string
+}> {
+  try {
+    const { zipBuffer, lote } = await montarZipLote(loteId)
+    return {
+      sucesso: true,
+      zipBase64: zipBuffer.toString('base64'),
+      codigoLote: lote.codigo,
+    }
+  } catch (e: any) {
+    console.error('[zip-lote] gerarZipLote:', e)
+    return { sucesso: false, erro: e?.message ?? 'Erro ao gerar ZIP do lote' }
+  }
+}
 
-  return { sucesso: true, zipBase64 }
+/**
+ * Gera ZIP e envia por e-mail.
+ * `emailOverride` tem prioridade (campo do modal).
+ * Não devolve o ZIP em base64 no sucesso do e-mail (evita payload enorme na server action).
+ */
+export async function gerarZipEEnviarEmail(
+  loteId: string,
+  emailOverride?: string
+): Promise<{ sucesso: boolean; erro?: string; email?: string }> {
+  try {
+    const { zipBuffer, lote, nomeOrg, compradorEmail } = await montarZipLote(loteId)
+
+    const emailDestinatario = (emailOverride?.trim() || getEmailDestinatario(compradorEmail))
+    if (!emailDestinatario || !emailDestinatario.includes('@')) {
+      return { sucesso: false, erro: 'E-mail do destinatário inválido' }
+    }
+
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      return {
+        sucesso: false,
+        erro: 'SMTP não configurado no servidor (SMTP_USER / SMTP_PASS). O download do ZIP ainda funciona.',
+      }
+    }
+
+    const dataHoje = new Date().toLocaleDateString('pt-BR')
+    const nomeLote = `Lote ${lote.codigo}`
+
+    await enviarEmail({
+      to: emailDestinatario,
+      subject: `${nomeOrg} — Documentos Fiscais — Lote ${lote.codigo} — ${dataHoje}`,
+      html: `
+        <h2>${nomeOrg} — Documentos Fiscais</h2>
+        <p><strong>Lote:</strong> ${nomeLote}</p>
+        <p><strong>Produto:</strong> ${lote.produto_descricao ?? 'Multi-produto'}</p>
+        <p><strong>Data:</strong> ${dataHoje}</p>
+        <p>Segue em anexo o pacote ZIP contendo:</p>
+        <ul>
+          <li>XMLs das NF-e de entrada (por produtor)</li>
+          <li>XML + DANFE da NF-e de saída</li>
+          <li>Lista de cooperados (CSV)</li>
+        </ul>
+        <p>Atenciosamente,<br/><strong>${nomeOrg}</strong></p>
+      `,
+      attachments: [
+        {
+          filename: `lote_${lote.codigo}_${dataHoje.replace(/\//g, '')}.zip`,
+          content: zipBuffer,
+        },
+      ],
+    })
+
+    return { sucesso: true, email: emailDestinatario }
+  } catch (e: any) {
+    console.error('[zip-lote] gerarZipEEnviarEmail:', e)
+    const msg = e?.message ?? String(e)
+    // Mensagens legíveis de nodemailer / rede
+    if (/auth|invalid login|EAUTH/i.test(msg)) {
+      return { sucesso: false, erro: 'Falha de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.' }
+    }
+    if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|certificate/i.test(msg)) {
+      return { sucesso: false, erro: `Falha de conexão ao enviar e-mail: ${msg}` }
+    }
+    return { sucesso: false, erro: msg || 'Erro ao enviar documentos por e-mail' }
+  }
 }

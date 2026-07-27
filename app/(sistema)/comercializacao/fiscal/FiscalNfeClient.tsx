@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { fmt } from '@/lib/fmt'
-import { cancelarNfe, buscarDocsLoteAction, gerarZipLoteAction, enviarZipEmailAction, listarNfeSaida, kpisNfeSaida } from './actions'
+import {
+  cancelarNfe,
+  buscarDocsLoteAction,
+  gerarZipLoteAction,
+  enviarZipEmailAction,
+  listarNfeSaida,
+  kpisNfeSaida,
+  sincronizarNfeSaidaAction,
+  sincronizarNfesSaidaProcessandoAction,
+} from './actions'
 import { Btn } from '@/components/ui/Btn'
 import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
 import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
@@ -67,6 +76,82 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   const [emailEnvio, setEmailEnvio] = useState('')
   const [enviandoEmail, setEnviandoEmail] = useState(false)
   const [baixandoZip, setBaixandoZip] = useState(false)
+  const [sincronizandoId, setSincronizandoId] = useState<string | null>(null)
+  const [sincronizandoTodas, setSincronizandoTodas] = useState(false)
+
+  // Ao abrir a tela, reconsulta automaticamente notas ainda em "processando"
+  useEffect(() => {
+    const pendentes = (nfesProp ?? lista).filter(n => n.status_nfe === 'processando')
+    if (pendentes.length === 0) return
+    let cancelado = false
+    ;(async () => {
+      try {
+        const resumo = await sincronizarNfesSaidaProcessandoAction()
+        if (cancelado || resumo.total === 0) return
+        const [n, k] = await Promise.all([listarNfeSaida(), kpisNfeSaida()])
+        if (cancelado) return
+        setLista(n as unknown as NfeSaida[])
+        setKpisState(k)
+        if (resumo.autorizadas > 0) {
+          setMensagem({
+            tipo: 'ok',
+            texto: `${resumo.autorizadas} NF-e sincronizada(s) com a SEFAZ (autorizada).`,
+          })
+        }
+      } catch {
+        // silencioso — usuário ainda tem botão manual
+      }
+    })()
+    return () => { cancelado = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function recarregarLista() {
+    const [n, k] = await Promise.all([listarNfeSaida(), kpisNfeSaida()])
+    setLista(n as unknown as NfeSaida[])
+    setKpisState(k)
+  }
+
+  async function handleSincronizarUma(nfe: NfeSaida) {
+    setSincronizandoId(nfe.id)
+    setMensagem(null)
+    try {
+      const res = await sincronizarNfeSaidaAction(nfe.id)
+      await recarregarLista()
+      if (res.status === 'autorizada') {
+        setMensagem({ tipo: 'ok', texto: `NF-e ${res.numero_nfe ?? ''} autorizada e sincronizada.` })
+      } else if (res.status === 'processando') {
+        setMensagem({ tipo: 'ok', texto: 'Ainda em processamento na SEFAZ. Tente novamente em instantes.' })
+      } else {
+        setMensagem({ tipo: 'erro', texto: res.erro ?? 'Não foi possível sincronizar a NF-e.' })
+      }
+    } catch (e: any) {
+      setMensagem({ tipo: 'erro', texto: e.message ?? 'Erro ao sincronizar' })
+    } finally {
+      setSincronizandoId(null)
+    }
+  }
+
+  async function handleSincronizarTodas() {
+    setSincronizandoTodas(true)
+    setMensagem(null)
+    try {
+      const resumo = await sincronizarNfesSaidaProcessandoAction()
+      await recarregarLista()
+      if (resumo.total === 0) {
+        setMensagem({ tipo: 'ok', texto: 'Nenhuma NF-e em processamento.' })
+      } else {
+        setMensagem({
+          tipo: resumo.erros > 0 && resumo.autorizadas === 0 ? 'erro' : 'ok',
+          texto: `Sincronizadas: ${resumo.autorizadas} autorizada(s), ${resumo.aindaProcessando} ainda processando, ${resumo.erros} com erro.`,
+        })
+      }
+    } catch (e: any) {
+      setMensagem({ tipo: 'erro', texto: e.message ?? 'Erro ao sincronizar' })
+    } finally {
+      setSincronizandoTodas(false)
+    }
+  }
 
   const filtradas = lista.filter(n => {
     const matchStatus = !filtroStatus || n.status_nfe === filtroStatus
@@ -92,24 +177,33 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     }
   }
 
+  function base64ToBlob(b64: string, type: string) {
+    const bin = atob(b64)
+    const bytes = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+    return new Blob([bytes], { type })
+  }
+
   async function handleBaixarZip() {
     if (!modalDocs?.lote_id) return
     setBaixandoZip(true)
+    setErroModal(null)
     try {
       const res = await gerarZipLoteAction(modalDocs.lote_id)
       if (res.sucesso && res.zipBase64) {
-        const blob = new Blob([Buffer.from(res.zipBase64, 'base64')], { type: 'application/zip' })
+        const blob = base64ToBlob(res.zipBase64, 'application/zip')
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `lote_${modalDocs.lotes?.codigo ?? 'lote'}.zip`
+        a.download = `lote_${res.codigoLote ?? modalDocs.lotes?.codigo ?? 'lote'}.zip`
         a.click()
         URL.revokeObjectURL(url)
+        setMensagem({ tipo: 'ok', texto: 'ZIP baixado com sucesso.' })
       } else {
-        setMensagem({ tipo: 'erro', texto: res.erro ?? 'Erro ao gerar ZIP' })
+        setErroModal(res.erro ?? 'Erro ao gerar ZIP')
       }
     } catch (e: any) {
-      setMensagem({ tipo: 'erro', texto: e.message })
+      setErroModal(e?.message ?? 'Erro ao baixar ZIP')
     } finally {
       setBaixandoZip(false)
     }
@@ -118,11 +212,12 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   async function handleEnviarEmail() {
     if (!modalDocs?.lote_id || !emailEnvio) return
     setEnviandoEmail(true)
+    setErroModal(null)
     try {
       const res = await enviarZipEmailAction(modalDocs.lote_id, emailEnvio)
       if (res.sucesso) {
         setEnviandoEmail(false)
-        setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${emailEnvio}` })
+        setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${res.email ?? emailEnvio}` })
         setTimeout(() => setModalDocs(null), 3000)
       } else {
         setEnviandoEmail(false)
@@ -130,7 +225,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
       }
     } catch (e: any) {
       setEnviandoEmail(false)
-      setErroModal(e.message)
+      setErroModal(e?.message ?? 'Erro ao enviar email')
     }
   }
 
@@ -193,7 +288,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
           <KpiCard label="Valor autorizado" value={fmt.moeda(Number(kpisState.valorTotal))} icon="ti-currency-real" cor={COM_C.marrom} corLt={COM_C.marromLt} />
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <Input
               placeholder="Buscar comprador, nº NF-e, chave, lote..."
@@ -210,6 +305,17 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
               <option value="erro">Erro</option>
             </Select>
           </div>
+          {lista.some(n => n.status_nfe === 'processando') && (
+            <Btn
+              variante="marrom"
+              tamanho="sm"
+              icone="ti-refresh"
+              disabled={sincronizandoTodas}
+              onClick={handleSincronizarTodas}
+            >
+              {sincronizandoTodas ? 'Sincronizando...' : 'Sincronizar processando'}
+            </Btn>
+          )}
         </div>
 
         <ContentCard noPadding>
@@ -264,6 +370,17 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                           )}
                           {nfe.chave_nfe && nfe.status_nfe === 'autorizada' && danfeUrl && (
                             <Btn variante="azul" tamanho="sm" onClick={() => window.open(danfeUrl, '_blank')}>DANFE</Btn>
+                          )}
+                          {(nfe.status_nfe === 'processando' || nfe.status_nfe === 'erro') && (
+                            <Btn
+                              variante="marrom"
+                              tamanho="sm"
+                              icone="ti-refresh"
+                              disabled={sincronizandoId === nfe.id || sincronizandoTodas}
+                              onClick={() => handleSincronizarUma(nfe)}
+                            >
+                              {sincronizandoId === nfe.id ? '...' : 'Sincronizar'}
+                            </Btn>
                           )}
                           {nfe.status_nfe === 'autorizada' && nfe.lote_id && (
                             <Btn variante="roxo" tamanho="sm" onClick={() => handleAbrirDocs(nfe)}>Docs</Btn>
