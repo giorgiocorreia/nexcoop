@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { emitirNfeSaidaAction, gerarZipLoteAction, sincronizarNfeSaidaAction } from './actions'
+import { emitirNfeSaidaAction, sincronizarNfeSaidaAction } from './actions'
 import { fmt } from '@/lib/fmt'
 import { PageLayout } from '@/components/comercializacao/ui/PageLayout'
 import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
@@ -124,7 +124,12 @@ export default function NfeSaidaClient({ lote, venda, vendaId }: {
   async function handleGerarZip() {
     setGerandoZip(true)
     try {
-      const res = await gerarZipLoteAction(lote.id)
+      const resFetch = await fetch('/api/comercializacao/lote-zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loteId: lote.id, modo: 'download' }),
+      })
+      const res = await resFetch.json()
       if (res.sucesso && res.zipBase64) {
         const bin = atob(res.zipBase64)
         const bytes = new Uint8Array(bin.length)

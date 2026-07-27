@@ -5,13 +5,37 @@ import { fmt } from '@/lib/fmt'
 import {
   cancelarNfe,
   buscarDocsLoteAction,
-  gerarZipLoteAction,
-  enviarZipEmailAction,
   listarNfeSaida,
   kpisNfeSaida,
   sincronizarNfeSaidaAction,
   sincronizarNfesSaidaProcessandoAction,
 } from './actions'
+
+function mensagemErroRede(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e ?? '')
+  if (/Failed to find Server Action|server action/i.test(msg)) {
+    return 'A página ficou desatualizada após o deploy. Atualize com Ctrl+Shift+R e tente de novo.'
+  }
+  return msg || 'Erro inesperado'
+}
+
+async function postLoteZip(body: { loteId: string; modo: 'download' | 'email'; email?: string }) {
+  const res = await fetch('/api/comercializacao/lote-zip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  let data: any = null
+  try {
+    data = await res.json()
+  } catch {
+    data = null
+  }
+  if (!res.ok && !data?.erro) {
+    throw new Error(res.status === 401 ? 'Sessão expirada. Faça login novamente.' : `Erro HTTP ${res.status}`)
+  }
+  return data as { sucesso: boolean; erro?: string; zipBase64?: string; codigoLote?: string; email?: string }
+}
 import { Btn } from '@/components/ui/Btn'
 import { HubStyles } from '@/components/comercializacao/ui/HubStyles'
 import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
@@ -189,7 +213,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     setBaixandoZip(true)
     setErroModal(null)
     try {
-      const res = await gerarZipLoteAction(modalDocs.lote_id)
+      const res = await postLoteZip({ loteId: modalDocs.lote_id, modo: 'download' })
       if (res.sucesso && res.zipBase64) {
         const blob = base64ToBlob(res.zipBase64, 'application/zip')
         const url = URL.createObjectURL(blob)
@@ -203,7 +227,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
         setErroModal(res.erro ?? 'Erro ao gerar ZIP')
       }
     } catch (e: any) {
-      setErroModal(e?.message ?? 'Erro ao baixar ZIP')
+      setErroModal(mensagemErroRede(e))
     } finally {
       setBaixandoZip(false)
     }
@@ -214,7 +238,11 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     setEnviandoEmail(true)
     setErroModal(null)
     try {
-      const res = await enviarZipEmailAction(modalDocs.lote_id, emailEnvio)
+      const res = await postLoteZip({
+        loteId: modalDocs.lote_id,
+        modo: 'email',
+        email: emailEnvio,
+      })
       if (res.sucesso) {
         setEnviandoEmail(false)
         setMensagem({ tipo: 'ok', texto: `Documentos enviados para ${res.email ?? emailEnvio}` })
@@ -225,7 +253,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
       }
     } catch (e: any) {
       setEnviandoEmail(false)
-      setErroModal(e?.message ?? 'Erro ao enviar email')
+      setErroModal(mensagemErroRede(e))
     }
   }
 
