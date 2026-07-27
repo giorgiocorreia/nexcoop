@@ -1,4 +1,3 @@
-import 'server-only'
 import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enviarEmail, smtpConfigured, formatSmtpError } from '@/lib/email'
