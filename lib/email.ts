@@ -7,8 +7,8 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport'
  * Env:
  *  - SMTP_USER  — e-mail completo (ex.: suporte@nexcoop.com.br)
  *  - SMTP_PASS  — senha do e-mail ou App Password do Zoho (se 2FA)
- *  - SMTP_HOST  — opcional; default: smtppro.zoho.com (conta org/domínio próprio)
- *                 alternativas: smtp.zoho.com | smtp.zoho.com.br | smtppro.zoho.com.br
+ *  - SMTP_HOST  — opcional; default: smtp.zoho.com (conforme console Zoho Mail)
+ *                 alternativas: smtppro.zoho.com | smtp.zoho.com.br
  *  - SMTP_PORT  — opcional; default 465
  *  - SMTP_SECURE — opcional; default true (SSL). Use false com porta 587 (STARTTLS)
  *  - SMTP_FROM  — opcional; default = SMTP_USER
@@ -31,7 +31,7 @@ export function getSmtpConfig(): {
 } {
   const user = (process.env.SMTP_USER ?? '').trim()
   const pass = (process.env.SMTP_PASS ?? '').trim()
-  const host = (process.env.SMTP_HOST ?? 'smtppro.zoho.com').trim()
+  const host = (process.env.SMTP_HOST ?? 'smtp.zoho.com').trim()
   const port = Number(process.env.SMTP_PORT ?? '465') || 465
   // Porta 465 = SSL implícito; 587 = STARTTLS
   const secure = envBool(process.env.SMTP_SECURE, port === 465)
@@ -84,8 +84,8 @@ export function formatSmtpError(err: unknown): string {
     return [
       'Falha de autenticação SMTP.',
       `Host: ${host} · Usuário: ${user || '(vazio)'}.`,
-      'No Zoho Mail (domínio próprio) use smtppro.zoho.com e senha de app se houver 2FA.',
-      'Atualize SMTP_USER/SMTP_PASS (e opcionalmente SMTP_HOST) na Vercel → Production.',
+      'No Zoho Mail use o host do console (geralmente smtp.zoho.com:465 SSL) e App Password se houver 2FA.',
+      'Atualize SMTP_USER/SMTP_PASS (e SMTP_HOST) na Vercel → Production e faça redeploy.',
     ].join(' ')
   }
   if (code === 'ESOCKET' || code === 'ECONNECTION' || /ENOTFOUND|ECONNREFUSED|ETIMEDOUT|certificate/i.test(msg)) {
