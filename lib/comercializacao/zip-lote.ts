@@ -2,7 +2,7 @@
 
 import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { enviarEmail } from '@/lib/email'
+import { enviarEmail, smtpConfigured, formatSmtpError } from '@/lib/email'
 import { getFocusAuthHeader, getFocusConfig } from '@/lib/focusnfe/client'
 
 /** Normaliza chave para 44 dígitos (remove prefixo NFe). */
@@ -251,7 +251,7 @@ export async function gerarZipEEnviarEmail(
       return { sucesso: false, erro: 'E-mail do destinatário inválido' }
     }
 
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    if (!smtpConfigured()) {
       return {
         sucesso: false,
         erro: 'SMTP não configurado no servidor (SMTP_USER / SMTP_PASS). O download do ZIP ainda funciona.',
@@ -288,14 +288,9 @@ export async function gerarZipEEnviarEmail(
     return { sucesso: true, email: emailDestinatario }
   } catch (e: any) {
     console.error('[zip-lote] gerarZipEEnviarEmail:', e)
-    const msg = e?.message ?? String(e)
-    // Mensagens legíveis de nodemailer / rede
-    if (/auth|invalid login|EAUTH/i.test(msg)) {
-      return { sucesso: false, erro: 'Falha de autenticação SMTP. Verifique SMTP_USER e SMTP_PASS.' }
+    return {
+      sucesso: false,
+      erro: formatSmtpError(e) || e?.message || 'Erro ao enviar documentos por e-mail',
     }
-    if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|certificate/i.test(msg)) {
-      return { sucesso: false, erro: `Falha de conexão ao enviar e-mail: ${msg}` }
-    }
-    return { sucesso: false, erro: msg || 'Erro ao enviar documentos por e-mail' }
   }
 }
