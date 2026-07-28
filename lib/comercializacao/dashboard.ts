@@ -89,10 +89,12 @@ export async function getDashboardComercializacao(organizacaoId: string) {
     })
   }
 
-  // Sessão do próprio usuário (para botão de solicitar aporte)
-  const minhaSessao = sessoesComMovimentos.find((_, i) =>
-    (sessoesRaw ?? [])[i]?.usuario_id === usuarioId
-  ) ?? null
+  // Sessão do próprio usuário (aporte / "meu caixa")
+  // Match por id — não por índice paralelo (mais seguro se a lista mudar).
+  const minhaRaw = (sessoesRaw ?? []).find(s => s.usuario_id === usuarioId) ?? null
+  const minhaSessao = minhaRaw
+    ? (sessoesComMovimentos.find(s => s.id === minhaRaw.id) ?? null)
+    : null
 
   let entregasHoje: { count: number; totalKg: number } = { count: 0, totalKg: 0 }
   let produtoresHoje = 0

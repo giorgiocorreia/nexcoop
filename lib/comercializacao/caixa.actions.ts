@@ -109,7 +109,7 @@ export async function abrirCaixa(): Promise<{ success: boolean; error?: string; 
       .single()
 
     if (error) {
-      // Corrida: outro request abriu entre o SELECT e o INSERT
+      // Corrida ou índice único (migration 090): já existe sessão aberta
       const { data: race } = await supabase
         .from('sessoes_caixa')
         .select('id')
@@ -119,6 +119,9 @@ export async function abrirCaixa(): Promise<{ success: boolean; error?: string; 
         .limit(1)
         .maybeSingle()
       if (race?.id) return { success: true, ja_aberto: true, sessao_id: race.id }
+      if (/unique|duplicate|sessoes_caixa_unica_aberta/i.test(error.message)) {
+        return { success: false, error: 'Já existe um caixa aberto para este operador.' }
+      }
       return { success: false, error: error.message }
     }
     return { success: true, sessao_id: criada?.id }
