@@ -1,10 +1,14 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getResumoPagamentosMes } from './saidas-caixa'
 
 export async function getDashboardComercializacao(organizacaoId: string) {
+  // Sessões de caixa: admin client (mesmo padrão de abrirCaixa) — evita divergência
+  // RLS vs service role em que a UI mostrava "fechado" com sessão aberta no banco.
   const supabase = await createClient()
+  const admin = createAdminClient()
   // "hoje" no fuso de Brasília (UTC-3): dia começa às 03:00 UTC
   const agora = new Date()
   const inicioDiaBrasilia = new Date(agora)
@@ -29,7 +33,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   const usuarioId = usuarioLogado?.id ?? ''
 
   // Admin vê todas as sessões abertas; atendente vê só a própria
-  let queryBase = supabase
+  let queryBase = admin
     .from('sessoes_caixa')
     .select(`
       id,
@@ -61,7 +65,7 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   }[] = []
 
   for (const sessao of sessoesRaw ?? []) {
-    const { data: movimentos } = await supabase
+    const { data: movimentos } = await admin
       .from('aportes_sangrias')
       .select('tipo, valor')
       .eq('sessao_caixa_id', sessao.id)

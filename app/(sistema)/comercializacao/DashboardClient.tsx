@@ -68,7 +68,11 @@ export default function DashboardComercializacao({
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
   const hojeKey = new Date().toISOString().slice(0, 10)
-  const caixaAberto = d.sessoesAbertas.length > 0
+  // Badge/org: qualquer caixa aberto na org (admin vê todos).
+  // Meu caixa: só a sessão do usuário logado — botão "Abrir" usa isto.
+  const meuCaixaAberto = !!d.minhaSessao
+  const haCaixasAbertosNaOrg = d.sessoesAbertas.length > 0
+  const caixaAberto = d.isAdmin ? haCaixasAbertosNaOrg : meuCaixaAberto
   const agora = new Date()
 
   const graficoDados = d.entregasSemana.map((e) => ({
@@ -106,7 +110,18 @@ export default function DashboardComercializacao({
   async function handleAbrirCaixa() {
     setAbrindoCaixa(true)
     try {
-      await abrirCaixa()
+      const result = await abrirCaixa()
+      if (!result.success) {
+        alert(result.error ?? 'Não foi possível abrir o caixa.')
+        return
+      }
+      if (result.ja_aberto) {
+        // Já havia sessão aberta — só recarrega (não cria duplicata)
+        setModalAbrirCaixa(false)
+        setSaldoHerdado(null)
+        router.refresh()
+        return
+      }
       setModalAbrirCaixa(false)
       setSaldoHerdado(null)
       router.refresh()
@@ -131,17 +146,32 @@ export default function DashboardComercializacao({
   }
 
   const saldoKpi = () => {
-    if (d.sessoesAbertas.length === 0) {
+    // Operador sem a própria sessão aberta: mostra último fechamento + botão Abrir
+    // (mesmo que outro operador tenha caixa aberto na org).
+    if (!meuCaixaAberto && (!d.isAdmin || d.sessoesAbertas.length === 0)) {
       return {
         value: d.ultimoFechamento ? fmtReal(d.ultimoFechamento.saldo) : '—',
         sub: d.ultimoFechamento
           ? `Últ. fechamento · ${new Date(d.ultimoFechamento.fechamento).toLocaleDateString('pt-BR')}`
           : 'Nenhum fechamento registrado',
-        extra: !caixaAberto ? (
+        extra: (
           <Btn variante="marrom" tamanho="sm" icone="ti-lock-open" onClick={() => abrirModalAbrirCaixa()}>
             Abrir caixa
           </Btn>
-        ) : undefined,
+        ),
+      }
+    }
+    if (!meuCaixaAberto && d.isAdmin && d.sessoesAbertas.length > 0) {
+      // Admin sem caixa próprio, mas há caixas de outros — não oferece "Abrir" duplicando lógica;
+      // ainda pode abrir o próprio se quiser.
+      return {
+        value: `${d.sessoesAbertas.length} aberto${d.sessoesAbertas.length > 1 ? 's' : ''}`,
+        sub: d.sessoesAbertas.map(s => s.operador).join(', '),
+        extra: (
+          <Btn variante="marrom" tamanho="sm" icone="ti-lock-open" onClick={() => abrirModalAbrirCaixa()}>
+            Abrir meu caixa
+          </Btn>
+        ),
       }
     }
     if (d.sessoesAbertas.length === 1) {

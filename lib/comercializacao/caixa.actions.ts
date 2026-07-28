@@ -53,21 +53,39 @@ export async function getSessaoAberta() {
   return data
 }
 
-export async function abrirCaixa(): Promise<{ success: boolean; error?: string }> {
+export async function abrirCaixa(): Promise<{ success: boolean; error?: string; ja_aberto?: boolean; sessao_id?: string }> {
   try {
     const usuario = await getUsuarioLogado()
     const supabase = createAdminClient()
+    const orgId = usuario.organizacao_id as string
+
+    // Idempotência: nunca criar 2ª sessão aberta pro mesmo operador.
+    // (Bug real: dashboard/responsabilidade mostrava "fechado" e o operador
+    // reabria, gerando sessão órfã + operações na sessão errada.)
+    const { data: jaAberta } = await supabase
+      .from('sessoes_caixa')
+      .select('id')
+      .eq('organizacao_id', orgId)
+      .eq('usuario_id', usuario.id)
+      .eq('status', 'aberta')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (jaAberta?.id) {
+      return { success: true, ja_aberto: true, sessao_id: jaAberta.id }
+    }
 
     // Continuidade travada: o saldo inicial nunca é digitado — é sempre o
     // saldo sob responsabilidade do usuário calculado pelo sistema (herda do
     // fechamento anterior + qualquer aporte/sangria/transferência posterior).
-    const resp = await getSaldoResponsabilidadeComercializacao(usuario.organizacao_id as string, usuario.id)
+    const resp = await getSaldoResponsabilidadeComercializacao(orgId, usuario.id)
     const saldo_inicial_especie = resp.saldo_atual_especie
 
     const { data: estoqueAtual } = await supabase
       .from('estoque_fisico')
       .select('produto_id, quantidade, produtos(nome, unidade)')
-      .eq('organizacao_id', usuario.organizacao_id as string)
+      .eq('organizacao_id', orgId)
 
     const snapshot = (estoqueAtual ?? []).map((e: any) => ({
       produto_id: e.produto_id,
@@ -76,10 +94,10 @@ export async function abrirCaixa(): Promise<{ success: boolean; error?: string }
       quantidade: e.quantidade
     }))
 
-    const { error } = await supabase
+    const { data: criada, error } = await supabase
       .from('sessoes_caixa')
       .insert({
-        organizacao_id: usuario.organizacao_id as string,
+        organizacao_id: orgId,
         usuario_id: usuario.id,
         data: new Date().toISOString().split('T')[0],
         saldo_inicial_especie,
@@ -87,8 +105,23 @@ export async function abrirCaixa(): Promise<{ success: boolean; error?: string }
         snapshot_estoque: snapshot,
         status: 'aberta'
       })
-    if (error) return { success: false, error: error.message }
-    return { success: true }
+      .select('id')
+      .single()
+
+    if (error) {
+      // Corrida: outro request abriu entre o SELECT e o INSERT
+      const { data: race } = await supabase
+        .from('sessoes_caixa')
+        .select('id')
+        .eq('organizacao_id', orgId)
+        .eq('usuario_id', usuario.id)
+        .eq('status', 'aberta')
+        .limit(1)
+        .maybeSingle()
+      if (race?.id) return { success: true, ja_aberto: true, sessao_id: race.id }
+      return { success: false, error: error.message }
+    }
+    return { success: true, sessao_id: criada?.id }
   } catch (e: any) {
     return { success: false, error: e.message ?? 'Erro ao abrir caixa.' }
   }
@@ -952,20 +985,29 @@ export async function listarAtendentesComSessaoCaixa(orgId: string) {
   const supabase = createAdminClient()
   const { data: sessoes } = await supabase
     .from('sessoes_caixa')
-    .select('id, usuario_id, status, usuarios!sessoes_caixa_usuario_id_fkey(nome_completo)')
+    .select('id, usuario_id, status, created_at, usuarios!sessoes_caixa_usuario_id_fkey(nome_completo)')
     .eq('organizacao_id', orgId)
     .order('created_at', { ascending: false })
 
+  // Por usuário: preferir qualquer sessão aberta; senão a mais recente (já vem primeiro).
   const porUsuario = new Map<string, { usuario_id: string; nome: string; sessao_id: string; status: 'aberta' | 'fechada' }>()
   for (const s of sessoes ?? []) {
-    if (porUsuario.has(s.usuario_id)) continue
+    const atual = porUsuario.get(s.usuario_id)
     const nome = (s as any).usuarios?.nome_completo ?? '—'
-    porUsuario.set(s.usuario_id, {
+    const entry = {
       usuario_id: s.usuario_id,
       nome,
       sessao_id: s.id,
-      status: s.status === 'aberta' ? 'aberta' : 'fechada',
-    })
+      status: (s.status === 'aberta' ? 'aberta' : 'fechada') as 'aberta' | 'fechada',
+    }
+    if (!atual) {
+      porUsuario.set(s.usuario_id, entry)
+      continue
+    }
+    // Se já temos fechada e encontramos aberta, substitui
+    if (atual.status !== 'aberta' && entry.status === 'aberta') {
+      porUsuario.set(s.usuario_id, entry)
+    }
   }
   return Array.from(porUsuario.values())
 }

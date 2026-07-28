@@ -554,7 +554,12 @@ export default function CaixaPage() {
     setAbrindo(true)
     try {
       const result = await abrirCaixa()
-      if (result.success) await init()
+      if (!result.success) {
+        alert(result.error ?? 'Não foi possível abrir o caixa.')
+        return
+      }
+      // success ou ja_aberto: recarrega a sessão aberta existente
+      await init()
     } finally { setAbrindo(false) }
   }
 

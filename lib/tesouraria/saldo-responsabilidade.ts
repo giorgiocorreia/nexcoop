@@ -18,14 +18,32 @@ export async function getSaldoResponsabilidadeComercializacao(
 }> {
   const supabase = createAdminClient()
 
-  const { data: sessao } = await supabase
+  // Preferir sessão ABERTA se existir — senão a última por created_at.
+  // Sem isso, após fechar a sessão "de trabalho" com outra órfã ainda aberta
+  // (ou o inverso: órfã aberta + fechamento mais recente), o status/saldo
+  // vinham da sessão errada e o dashboard mostrava "caixa fechado" indevidamente.
+  const { data: sessaoAberta } = await supabase
     .from('sessoes_caixa')
     .select('id, status, saldo_inicial_especie')
     .eq('organizacao_id', organizacaoId)
     .eq('usuario_id', usuarioId)
-    .order('created_at', { ascending: false })
+    .eq('status', 'aberta')
+    .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
+
+  let sessao = sessaoAberta
+  if (!sessao) {
+    const { data: sessaoRecente } = await supabase
+      .from('sessoes_caixa')
+      .select('id, status, saldo_inicial_especie')
+      .eq('organizacao_id', organizacaoId)
+      .eq('usuario_id', usuarioId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    sessao = sessaoRecente
+  }
 
   if (!sessao) {
     return { sessao_id: null, status_sessao: null, saldo_atual_especie: 0 }
