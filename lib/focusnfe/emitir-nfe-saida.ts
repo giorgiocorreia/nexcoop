@@ -1,6 +1,6 @@
 // lib/focusnfe/emitir-nfe-saida.ts
 // Emite NF-e de saída (venda de cacau para comprador externo)
-// CFOP 5102 | NCM 18010000 | CST ICMS 041 | PIS/COFINS CST 72
+// CFOP 5102 | NCM 18010000 | CST ICMS 51 (diferimento) | PIS/COFINS CST 72
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { focusPost, focusGet, urlCompleta, sleep } from './client'
@@ -304,7 +304,7 @@ export async function emitirNfeSaida(params: EmitirNfeSaidaParams): Promise<{
 
   const { data: org } = await supabase
     .from('organizacoes')
-    .select('nome, cnpj, loja_nfe_saida_serie')
+    .select('nome, cnpj, loja_nfe_saida_serie, com_nfe_saida_aliquota_icms, com_nfe_saida_perc_diferimento')
     .eq('id', organizacao_id)
     .single()
 
@@ -323,6 +323,15 @@ export async function emitirNfeSaida(params: EmitirNfeSaidaParams): Promise<{
   const quantidade_kg = Number(venda.quantidade_kg)
   const preco_kg = Number(venda.preco_kg)
   const valor_total = Number((quantidade_kg * preco_kg).toFixed(2))
+
+  // ICMS diferido (CST 51). vICMSDif TEM que ser exatamente vICMSOp × pDif,
+  // senão a SEFAZ devolve rejeição 352 — por isso o arredondamento é feito em
+  // vICMSOp primeiro e vICMSDif deriva dele, nunca do valor bruto do item.
+  const aliquotaIcms = Number((org as any).com_nfe_saida_aliquota_icms ?? 20.5)
+  const percDiferimento = Number((org as any).com_nfe_saida_perc_diferimento ?? 100)
+  const icmsValorOperacao = Number((valor_total * aliquotaIcms / 100).toFixed(2))
+  const icmsValorDiferido = Number((icmsValorOperacao * percDiferimento / 100).toFixed(2))
+  const icmsValorDevido = Number((icmsValorOperacao - icmsValorDiferido).toFixed(2))
 
   const agora = new Date()
   const agoraBrasilia = new Date(agora.getTime() - 3 * 60 * 60 * 1000)
@@ -371,20 +380,32 @@ export async function emitirNfeSaida(params: EmitirNfeSaidaParams): Promise<{
         valor_bruto: valor_total.toFixed(2),
         inclui_no_total: '1',
         icms_origem: '0',
-        icms_situacao_tributaria: '41',
+        icms_situacao_tributaria: '51',
+        icms_modalidade_base_calculo: '3', // 3 = valor da operação
+        icms_base_calculo: valor_total.toFixed(2),
+        icms_aliquota: aliquotaIcms.toFixed(2),
+        icms_valor_operacao: icmsValorOperacao.toFixed(2),
+        icms_percentual_diferimento: percDiferimento.toFixed(2),
+        icms_valor_diferido: icmsValorDiferido.toFixed(2),
+        icms_valor: icmsValorDevido.toFixed(2),
         pis_situacao_tributaria: '72',
         cofins_situacao_tributaria: '72',
       }
     ],
 
-    icms_base_calculo: '0.00',
-    icms_valor_total: '0.00',
+    // Totais da nota somam os itens: com CST 51 o item TEM base de cálculo
+    // (diferente do CST 41, em que a base era zero), e o ICMS total é só a
+    // parcela não diferida.
+    icms_base_calculo: valor_total.toFixed(2),
+    icms_valor_total: icmsValorDevido.toFixed(2),
     pis_valor_total: '0.00',
     cofins_valor_total: '0.00',
     valor_produtos: valor_total.toFixed(2),
     valor_total_nota: valor_total.toFixed(2),
 
-    informacoes_adicionais_contribuinte: `Venda de cacau em amendoa. Ref: ${referencia}`,
+    informacoes_adicionais_contribuinte:
+      `Venda de cacau em amendoa. Ref: ${referencia}. ` +
+      `ICMS diferido em ${percDiferimento.toFixed(2)}% (CST 51) - valor diferido R$ ${icmsValorDiferido.toFixed(2)}.`,
   }
 
   let focusResposta: any
