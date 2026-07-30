@@ -116,6 +116,18 @@ export async function listarEventosNfeAction(vendaId: string): Promise<EventoNfe
   return (data ?? []) as EventoNfe[]
 }
 
+export type ResultadoCartaCorrecao = {
+  sucesso: boolean
+  erro?: string
+  correcao?: string
+  sequencia?: number
+  xml_url?: string
+  pdf_url?: string
+  mensagem_sefaz?: string
+  /** id em nfe_eventos — alimenta o envio por e-mail no painel de confirmação */
+  eventoId?: string
+}
+
 /**
  * Emite Carta de Correção Eletrônica para uma NF-e de saída autorizada.
  *
@@ -123,7 +135,10 @@ export async function listarEventosNfeAction(vendaId: string): Promise<EventoNfe
  * 07/05) — a validação disso é do usuário, aqui só garantimos que a nota está
  * autorizada e que o texto atende ao formato exigido pela SEFAZ.
  */
-export async function emitirCartaCorrecaoAction(vendaId: string, correcao: string) {
+export async function emitirCartaCorrecaoAction(
+  vendaId: string,
+  correcao: string,
+): Promise<ResultadoCartaCorrecao> {
   const usuario = await getUsuarioLogado()
   const orgId = usuario.organizacao_id as string
   const supabase = createAdminClient()
@@ -153,7 +168,7 @@ export async function emitirCartaCorrecaoAction(vendaId: string, correcao: strin
 
   // Registra a tentativa mesmo quando falha — o histórico do que foi enviado
   // à SEFAZ é justamente o que a tabela existe para guardar.
-  await supabase.from('nfe_eventos').insert({
+  const { data: eventoGravado } = await supabase.from('nfe_eventos').insert({
     organizacao_id: orgId,
     venda_id: venda.id,
     tipo: 'carta_correcao',
@@ -166,10 +181,11 @@ export async function emitirCartaCorrecaoAction(vendaId: string, correcao: strin
     pdf_url: resultado.pdf_url ?? null,
     mensagem_sefaz: resultado.mensagem_sefaz ?? resultado.erro ?? null,
     criado_por: usuario.id,
-  } as any)
+  } as any).select('id').single()
 
   revalidatePath('/comercializacao/fiscal')
-  return resultado
+  // eventoId alimenta o envio por e-mail no painel de confirmação.
+  return { ...resultado, eventoId: eventoGravado?.id as string | undefined }
 }
 
 export async function buscarDocsLoteAction(loteId: string) {

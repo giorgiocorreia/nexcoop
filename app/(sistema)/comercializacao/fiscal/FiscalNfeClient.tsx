@@ -120,6 +120,16 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   const [enviandoCCe, setEnviandoCCe] = useState(false)
   const [eventosCCe, setEventosCCe] = useState<EventoNfe[]>([])
   const [carregandoEventos, setCarregandoEventos] = useState(false)
+  // Preenchido quando a SEFAZ registra a carta: troca o formulário pelo painel
+  // de confirmação, em vez de fechar o modal e levar os links embora.
+  const [cceRegistrada, setCceRegistrada] = useState<{
+    eventoId?: string
+    sequencia?: number
+    pdf_url?: string
+    xml_url?: string
+  } | null>(null)
+  const [emailCCe, setEmailCCe] = useState('')
+  const [enviandoEmailCCe, setEnviandoEmailCCe] = useState(false)
 
   // Ao abrir a tela, reconsulta automaticamente notas ainda em "processando"
   useEffect(() => {
@@ -296,6 +306,8 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     setCorrecao('')
     setErroModal(null)
     setEventosCCe([])
+    setCceRegistrada(null)
+    setEmailCCe(nfe.compradores?.email ?? '')
     setCarregandoEventos(true)
     try {
       setEventosCCe(await listarEventosNfeAction(nfe.id))
@@ -313,12 +325,16 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     try {
       const res = await emitirCartaCorrecaoAction(modalCCe.id, correcao)
       if (res.sucesso) {
-        setMensagem({
-          tipo: 'ok',
-          texto: `Carta de correção ${res.sequencia ? `nº ${res.sequencia} ` : ''}registrada na SEFAZ para a NF-e ${modalCCe.numero_nfe}/${modalCCe.serie_nfe}.`,
+        // Modal continua aberto: os links do PDF e do XML são justamente o que
+        // se precisa neste instante.
+        setCceRegistrada({
+          eventoId: res.eventoId,
+          sequencia: res.sequencia,
+          pdf_url: res.pdf_url,
+          xml_url: res.xml_url,
         })
-        setModalCCe(null)
         setCorrecao('')
+        setEventosCCe(await listarEventosNfeAction(modalCCe.id).catch(() => eventosCCe))
       } else {
         setErroModal(res.erro ?? 'Erro ao emitir a carta de correção')
         setEventosCCe(await listarEventosNfeAction(modalCCe.id).catch(() => eventosCCe))
@@ -330,10 +346,44 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     }
   }
 
+  async function handleEnviarEmailCCe() {
+    if (!cceRegistrada?.eventoId || !emailCCe) return
+    setEnviandoEmailCCe(true)
+    setErroModal(null)
+    try {
+      const r = await fetch('/api/comercializacao/cce-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventoId: cceRegistrada.eventoId, email: emailCCe }),
+      })
+      const data = await r.json().catch(() => null)
+      if (!r.ok && !data?.erro) {
+        throw new Error(r.status === 401 ? 'Sessão expirada. Faça login novamente.' : `Erro HTTP ${r.status}`)
+      }
+      if (data?.sucesso) {
+        setMensagem({ tipo: 'ok', texto: `Carta de correção enviada para ${data.email ?? emailCCe}` })
+      } else {
+        setErroModal(data?.erro ?? 'Erro ao enviar a carta por e-mail')
+      }
+    } catch (e: any) {
+      setErroModal(mensagemErroRede(e))
+    } finally {
+      setEnviandoEmailCCe(false)
+    }
+  }
+
   function fecharModalCCe() {
+    if (cceRegistrada) {
+      setMensagem({
+        tipo: 'ok',
+        texto: `Carta de correção ${cceRegistrada.sequencia ? `nº ${cceRegistrada.sequencia} ` : ''}registrada na SEFAZ para a NF-e ${modalCCe?.numero_nfe}/${modalCCe?.serie_nfe}.`,
+      })
+    }
     setModalCCe(null)
     setCorrecao('')
     setEventosCCe([])
+    setCceRegistrada(null)
+    setEmailCCe('')
     setErroModal(null)
   }
 
@@ -578,14 +628,84 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
             onClose={fecharModalCCe}
             largura={520}
             footer={
-              <>
-                <Btn variante="cinza" onClick={fecharModalCCe}>Voltar</Btn>
-                <Btn variante="marrom" onClick={handleEmitirCCe} disabled={!podeEnviar}>
-                  {enviandoCCe ? 'Enviando à SEFAZ...' : 'Emitir CC-e'}
-                </Btn>
-              </>
+              cceRegistrada ? (
+                <Btn variante="marrom" onClick={fecharModalCCe}>Concluir</Btn>
+              ) : (
+                <>
+                  <Btn variante="cinza" onClick={fecharModalCCe}>Voltar</Btn>
+                  <Btn variante="marrom" onClick={handleEmitirCCe} disabled={!podeEnviar}>
+                    {enviandoCCe ? 'Enviando à SEFAZ...' : 'Emitir CC-e'}
+                  </Btn>
+                </>
+              )
             }
           >
+            {cceRegistrada ? (
+              <>
+                <div style={{
+                  background: COM_C.verdeLt, border: `1px solid ${COM_C.verde}`, borderRadius: 10,
+                  padding: '14px 16px', marginBottom: 18, color: COM_C.verde,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700 }}>
+                    <i className="ti ti-circle-check" aria-hidden="true" />
+                    Carta {cceRegistrada.sequencia ? `nº ${cceRegistrada.sequencia} ` : ''}registrada na SEFAZ
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>
+                    Vinculada à NF-e {modalCCe.numero_nfe}/{modalCCe.serie_nfe}. O registro é definitivo:
+                    uma carta não pode ser cancelada, apenas substituída por outra.
+                  </div>
+                </div>
+
+                <div className="com-section-label">Documentos da carta</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+                  {cceRegistrada.pdf_url && (
+                    <Btn variante="azul" icone="ti-file-text" onClick={() => window.open(cceRegistrada.pdf_url!, '_blank')}>
+                      Ver PDF
+                    </Btn>
+                  )}
+                  {cceRegistrada.xml_url && (
+                    <Btn variante="verde" icone="ti-download" onClick={() => window.open(cceRegistrada.xml_url!, '_blank')}>
+                      Baixar XML
+                    </Btn>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: COM_C.txtSub, marginTop: -12, marginBottom: 20 }}>
+                  O XML é o arquivo que a contabilidade do comprador importa; o PDF é a versão legível.
+                </div>
+
+                <div style={{ borderTop: `1px solid ${COM_C.borda}`, paddingTop: 16 }}>
+                  <div className="com-section-label">Enviar ao comprador</div>
+                  <Field label="E-mail do destinatário">
+                    <Input
+                      type="email"
+                      value={emailCCe}
+                      onChange={e => setEmailCCe(e.target.value)}
+                      placeholder="email@exemplo.com"
+                    />
+                  </Field>
+                  <div style={{ marginTop: 10 }}>
+                    <Btn
+                      variante="marrom"
+                      icone="ti-mail"
+                      onClick={handleEnviarEmailCCe}
+                      disabled={enviandoEmailCCe || !emailCCe.includes('@')}
+                    >
+                      {enviandoEmailCCe ? 'Enviando...' : 'Enviar por e-mail'}
+                    </Btn>
+                  </div>
+                </div>
+
+                {erroModal && (
+                  <div style={{
+                    background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 10,
+                    padding: '12px 14px', marginTop: 12, fontSize: 12, color: COM_C.vermelho,
+                  }}>
+                    {erroModal}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
             <div style={{
               background: COM_C.bg, border: `1px solid ${COM_C.borda}`, borderRadius: 10,
               padding: '12px 14px', marginBottom: 16, fontSize: 12, color: COM_C.txt, lineHeight: 1.5,
@@ -671,6 +791,8 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                 </div>
               )}
             </div>
+              </>
+            )}
           </Modal>
         )
       })()}
