@@ -72,6 +72,16 @@ type Kpis = {
   valorTotal: number
 }
 
+/**
+ * A SEFAZ só aceita cancelamento até 24h após a emissão — a mesma regra que
+ * `cancelarNfe` aplica no servidor. Espelhada aqui para o botão não oferecer
+ * uma ação que já não é possível.
+ */
+function dentroDoPrazoCancelamento(dataEmissao: string | null): boolean {
+  if (!dataEmissao) return true // sem data, deixa o servidor decidir
+  return Date.now() - new Date(dataEmissao).getTime() <= 24 * 60 * 60 * 1000
+}
+
 const STATUS_LABEL: Record<string, { label: string; bg: string; cor: string }> = {
   autorizada:  { label: 'Autorizada',  bg: COM_C.verdeLt, cor: COM_C.verde },
   processando: { label: 'Processando', bg: COM_C.laranjaLt, cor: COM_C.laranja },
@@ -445,8 +455,11 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                       <td>
                         <Badge label={st.label} bg={st.bg} cor={st.cor} dot />
                       </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {/* nowrap: com 5 ações a linha quebrava e jogava o último
+                          botão sozinho numa segunda linha. O container da tabela
+                          já tem overflow-x, então em tela estreita rola de lado. */}
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                           {nfe.xml_nfe && (
                             <Btn variante="verde" tamanho="sm" onClick={() => window.open(nfe.xml_nfe!, '_blank')}>XML</Btn>
                           )}
@@ -477,11 +490,26 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                               CC-e
                             </Btn>
                           )}
-                          {nfe.status_nfe === 'autorizada' && (
-                            <Btn variante="cinza" tamanho="sm" onClick={() => setModalCancelar(nfe)} style={{ color: COM_C.vermelho, borderColor: '#fecaca' }}>
-                              Cancelar
-                            </Btn>
-                          )}
+                          {nfe.status_nfe === 'autorizada' && (() => {
+                            const noPrazo = dentroDoPrazoCancelamento(nfe.data_emissao_nfe)
+                            return (
+                              // Ícone junto do rótulo: a ação destrutiva não pode
+                              // se distinguir das demais só pela cor do texto.
+                              <Btn
+                                variante="cinza"
+                                tamanho="sm"
+                                icone="ti-ban"
+                                disabled={!noPrazo}
+                                title={noPrazo
+                                  ? 'Cancelar NF-e junto à SEFAZ'
+                                  : 'Prazo esgotado: a SEFAZ só aceita cancelamento até 24h após a emissão'}
+                                onClick={() => setModalCancelar(nfe)}
+                                style={noPrazo ? { color: COM_C.vermelho, borderColor: '#fecaca' } : undefined}
+                              >
+                                Cancelar
+                              </Btn>
+                            )
+                          })()}
                         </div>
                       </td>
                     </tr>
