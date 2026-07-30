@@ -71,6 +71,9 @@ export interface Organizacao {
   ultimo_numero_ficha:    number
   // migration 082
   aliquota_funrural: number
+  // migration 091 — diferimento do ICMS na NF-e de saída da comercialização (CST 51)
+  com_nfe_saida_aliquota_icms:    number
+  com_nfe_saida_perc_diferimento: number
   criado_em: string
   atualizado_em: string
 }
@@ -317,6 +320,25 @@ export interface CooperadoCarteirinha {
   emitida_por: string | null
   criado_em: string
   atualizado_em: string
+}
+
+/** Evento pós-autorização de NF-e de saída (migration 091). Uma linha por
+ *  tentativa, inclusive as recusadas pela SEFAZ (status = 'erro'). */
+export interface NfeEvento {
+  id: string
+  organizacao_id: string
+  venda_id: string
+  tipo: 'carta_correcao' | 'cancelamento'
+  referencia: string
+  chave_nfe: string | null
+  sequencia: number | null
+  texto: string
+  status: 'registrado' | 'erro'
+  xml_url: string | null
+  pdf_url: string | null
+  mensagem_sefaz: string | null
+  criado_por: string | null
+  criado_em: string
 }
 
 export interface Lancamento {
@@ -1560,6 +1582,8 @@ export type Database = {
       site_conteudos:              TableDef<SiteConteudo>
       // ── Carteirinha do filiado (089) ──────────────────────────────────────
       cooperado_carteirinhas:      TableDef<CooperadoCarteirinha>
+      // ── Eventos de NF-e: CC-e (091) ───────────────────────────────────────
+      nfe_eventos:                 TableDef<NfeEvento>
     }
     Views:          { [_ in never]: never }
     Functions:      { [_ in never]: never }

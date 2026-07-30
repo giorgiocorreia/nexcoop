@@ -9,6 +9,9 @@ import {
   kpisNfeSaida,
   sincronizarNfeSaidaAction,
   sincronizarNfesSaidaProcessandoAction,
+  emitirCartaCorrecaoAction,
+  listarEventosNfeAction,
+  type EventoNfe,
 } from './actions'
 
 function mensagemErroRede(e: unknown): string {
@@ -102,6 +105,11 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   const [baixandoZip, setBaixandoZip] = useState(false)
   const [sincronizandoId, setSincronizandoId] = useState<string | null>(null)
   const [sincronizandoTodas, setSincronizandoTodas] = useState(false)
+  const [modalCCe, setModalCCe] = useState<NfeSaida | null>(null)
+  const [correcao, setCorrecao] = useState('')
+  const [enviandoCCe, setEnviandoCCe] = useState(false)
+  const [eventosCCe, setEventosCCe] = useState<EventoNfe[]>([])
+  const [carregandoEventos, setCarregandoEventos] = useState(false)
 
   // Ao abrir a tela, reconsulta automaticamente notas ainda em "processando"
   useEffect(() => {
@@ -273,6 +281,52 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
     }
   }
 
+  async function handleAbrirCCe(nfe: NfeSaida) {
+    setModalCCe(nfe)
+    setCorrecao('')
+    setErroModal(null)
+    setEventosCCe([])
+    setCarregandoEventos(true)
+    try {
+      setEventosCCe(await listarEventosNfeAction(nfe.id))
+    } catch {
+      // histórico é acessório — não bloqueia a emissão de uma nova carta
+    } finally {
+      setCarregandoEventos(false)
+    }
+  }
+
+  async function handleEmitirCCe() {
+    if (!modalCCe) return
+    setEnviandoCCe(true)
+    setErroModal(null)
+    try {
+      const res = await emitirCartaCorrecaoAction(modalCCe.id, correcao)
+      if (res.sucesso) {
+        setMensagem({
+          tipo: 'ok',
+          texto: `Carta de correção ${res.sequencia ? `nº ${res.sequencia} ` : ''}registrada na SEFAZ para a NF-e ${modalCCe.numero_nfe}/${modalCCe.serie_nfe}.`,
+        })
+        setModalCCe(null)
+        setCorrecao('')
+      } else {
+        setErroModal(res.erro ?? 'Erro ao emitir a carta de correção')
+        setEventosCCe(await listarEventosNfeAction(modalCCe.id).catch(() => eventosCCe))
+      }
+    } catch (e: any) {
+      setErroModal(mensagemErroRede(e))
+    } finally {
+      setEnviandoCCe(false)
+    }
+  }
+
+  function fecharModalCCe() {
+    setModalCCe(null)
+    setCorrecao('')
+    setEventosCCe([])
+    setErroModal(null)
+  }
+
   function fecharModalCancelar() {
     setModalCancelar(null)
     setJustificativa('')
@@ -414,6 +468,16 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                             <Btn variante="roxo" tamanho="sm" onClick={() => handleAbrirDocs(nfe)}>Docs</Btn>
                           )}
                           {nfe.status_nfe === 'autorizada' && (
+                            <Btn
+                              variante="marrom-outline"
+                              tamanho="sm"
+                              title="Emitir Carta de Correção Eletrônica"
+                              onClick={() => handleAbrirCCe(nfe)}
+                            >
+                              CC-e
+                            </Btn>
+                          )}
+                          {nfe.status_nfe === 'autorizada' && (
                             <Btn variante="cinza" tamanho="sm" onClick={() => setModalCancelar(nfe)} style={{ color: COM_C.vermelho, borderColor: '#fecaca' }}>
                               Cancelar
                             </Btn>
@@ -470,6 +534,118 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
           )}
         </Modal>
       )}
+
+      {modalCCe && (() => {
+        // Conta como a SEFAZ vai contar: sem espaço duplo e sem quebra de linha.
+        const textoNormalizado = correcao.replace(/\s+/g, ' ').trim()
+        const cartasRegistradas = eventosCCe.filter(e => e.tipo === 'carta_correcao' && e.status === 'registrado')
+        const limiteAtingido = cartasRegistradas.length >= 20
+        const podeEnviar =
+          textoNormalizado.length >= 15 && textoNormalizado.length <= 1000 && !enviandoCCe && !limiteAtingido
+
+        return (
+          <Modal
+            titulo="Carta de Correção Eletrônica"
+            subtitulo={`NF-e ${modalCCe.numero_nfe}/${modalCCe.serie_nfe} — ${modalCCe.compradores?.nome}`}
+            onClose={fecharModalCCe}
+            largura={520}
+            footer={
+              <>
+                <Btn variante="cinza" onClick={fecharModalCCe}>Voltar</Btn>
+                <Btn variante="marrom" onClick={handleEmitirCCe} disabled={!podeEnviar}>
+                  {enviandoCCe ? 'Enviando à SEFAZ...' : 'Emitir CC-e'}
+                </Btn>
+              </>
+            }
+          >
+            <div style={{
+              background: COM_C.bg, border: `1px solid ${COM_C.borda}`, borderRadius: 10,
+              padding: '12px 14px', marginBottom: 16, fontSize: 12, color: COM_C.txt, lineHeight: 1.5,
+            }}>
+              A CC-e <strong>não corrige</strong> valores, base de cálculo, alíquota, CST, dados do
+              destinatário nem data de emissão (Ajuste SINIEF 07/05). Para esses casos o caminho é
+              cancelamento (até 24h) ou nota de ajuste.
+              <br />
+              Cada carta <strong>substitui</strong> a anterior — repita nesta o que ainda vale das antigas.
+            </div>
+
+            <Field label="Texto da correção (15 a 1000 caracteres)">
+              <Textarea
+                value={correcao}
+                onChange={e => setCorrecao(e.target.value)}
+                rows={4}
+                placeholder="Ex: Fica corrigida a natureza da operacao para Venda de producao do estabelecimento rural."
+              />
+            </Field>
+            <div style={{
+              fontSize: 11, marginTop: 8,
+              color: textoNormalizado.length < 15 || textoNormalizado.length > 1000 ? COM_C.vermelho : COM_C.txtSub,
+            }}>
+              {textoNormalizado.length}/1000 caracteres
+              {textoNormalizado.length < 15 && ' — mínimo de 15'}
+              {textoNormalizado.length > 1000 && ' — passou do limite'}
+            </div>
+
+            {limiteAtingido && (
+              <div style={{
+                background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 10,
+                padding: '12px 14px', marginTop: 12, fontSize: 12, color: COM_C.vermelho,
+              }}>
+                Esta NF-e já tem 20 cartas de correção registradas — limite da SEFAZ atingido.
+              </div>
+            )}
+
+            {erroModal && (
+              <div style={{
+                background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 10,
+                padding: '12px 14px', marginTop: 12, fontSize: 12, color: COM_C.vermelho,
+              }}>
+                {erroModal}
+              </div>
+            )}
+
+            <div style={{ borderTop: `1px solid ${COM_C.borda}`, marginTop: 20, paddingTop: 16 }}>
+              <div className="com-section-label">
+                Cartas anteriores{carregandoEventos ? '' : ` (${eventosCCe.length})`}
+              </div>
+              {carregandoEventos ? (
+                <div style={{ fontSize: 12, color: COM_C.txtSub }}>Carregando histórico...</div>
+              ) : eventosCCe.length === 0 ? (
+                <div style={{ fontSize: 12, color: COM_C.txtSub }}>Nenhuma carta emitida para esta nota.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {eventosCCe.map(ev => (
+                    <div key={ev.id} style={{ background: COM_C.bg, borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: COM_C.txt }}>
+                          {ev.status === 'registrado'
+                            ? `Carta nº ${ev.sequencia ?? '—'} · registrada`
+                            : 'Tentativa recusada'}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, color: COM_C.txtSub }}>
+                            {new Date(ev.criado_em).toLocaleString('pt-BR')}
+                          </span>
+                          {ev.pdf_url && (
+                            <Btn variante="azul" tamanho="sm" onClick={() => window.open(ev.pdf_url!, '_blank')}>PDF</Btn>
+                          )}
+                          {ev.xml_url && (
+                            <Btn variante="verde" tamanho="sm" onClick={() => window.open(ev.xml_url!, '_blank')}>XML</Btn>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 4 }}>{ev.texto}</div>
+                      {ev.status !== 'registrado' && ev.mensagem_sefaz && (
+                        <div style={{ fontSize: 11, color: COM_C.vermelho, marginTop: 4 }}>{ev.mensagem_sefaz}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Modal>
+        )
+      })()}
 
       {modalDocs && (
         <Modal

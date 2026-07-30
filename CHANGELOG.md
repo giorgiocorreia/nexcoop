@@ -1,5 +1,46 @@
 # NexCoop — Changelog
 
+## 2026-07-30
+
+### feat(fiscal): ICMS diferido (CST 51) na saída + Carta de Correção
+- **NF-e de saída** (`lib/focusnfe/emitir-nfe-saida.ts`): CST do ICMS passa de **41** (não tributada) para **51** (diferimento). O CST 51 exige o grupo de diferimento no item — `icms_valor_operacao`, `icms_percentual_diferimento`, `icms_valor_diferido` — e o valor diferido tem que ser exatamente vICMSOp × pDif, senão a SEFAZ devolve **rejeição 352**
+- Totais da nota acompanham: com CST 51 o item tem base de cálculo (com 41 era zero); o ICMS total é só a parcela não diferida (zero com 100% diferido)
+- Alíquota e percentual saem de `organizacoes.com_nfe_saida_aliquota_icms` / `com_nfe_saida_perc_diferimento` (padrão **20,50%** — alíquota modal da BA em 2026 — e **100%**). Configurável porque com diferimento total a alíquota é declaratória; contador ajusta sem deploy
+- A NF-e de **entrada** (compra do produtor, CFOP 1102/1159) **continua em CST 41** — não foi tocada
+- **Carta de Correção Eletrônica** (`lib/focusnfe/carta-correcao.ts`): `POST /v2/nfe/{ref}/carta_correcao`. Botão **CC-e** na tela `/comercializacao/fiscal` em toda NF-e autorizada, com modal mostrando o histórico de cartas da nota e link para XML/PDF de cada uma
+- Validação do texto no formato que a SEFAZ aceita (15–1000 caracteres, sem caractere de controle nem espaço duplo) e trava no limite de 20 cartas por nota
+- **Migration 091**: tabela `nfe_eventos` (histórico de eventos pós-autorização, guardando **inclusive as tentativas recusadas**) + as duas colunas de diferimento em `organizacoes`
+- **Testado em homologação (30/07)**: NF-e nº 8/série 2 (chave `...081909301570`) **autorizada, SEFAZ 100** — R$ 25.500 a 20,5%, vICMSOp 5.227,50 / vICMSDif 5.227,50 / vICMS 0,00. Sem rejeição 352, que era o risco do CST 51
+- Duas CC-e registradas sobre essa nota (**SEFAZ 135**), confirmando os campos de resposta da Focus: `numero_carta_correcao`, `caminho_xml_carta_correcao`, `caminho_pdf_carta_correcao`, e `status: 'autorizado'`
+- Alíquota de **20,5% confirmada pelo contador** (30/07) — o default da migration fica como está
+- Verificado que a SEFAZ-BA em homologação **aceita a razão social real do destinatário** (nota nº 9 autorizada com o nome da Olam): não é preciso forçar o texto "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO" no emissor, ao contrário do que se supunha
+- Nos minutos seguintes à autorização a SEFAZ devolve **rejeição 494** (nota ainda não propagada no ambiente de eventos) — tratada com mensagem explicando que é para aguardar, em vez de expor o erro cru
+- ⚠️ **A CC-e não corrige CST, valores, alíquota, base de cálculo nem destinatário** (Ajuste SINIEF 07/05, art. 7º §1º-A). A nota 20 (Olam, lote 005) saiu com CST 41 e isso **não é corrigível por carta** — o CST 51 vale só para notas emitidas daqui pra frente
+
+## 2026-07-27 / 2026-07-28
+
+> Sessão de trabalho **Grok (xAI / Grok Build)** com Giorgio Correia — produção COOPAIBI (`nexcoop.com.br`).
+
+### fix(caixa): sessão órfã + abertura dupla na comercialização (Grok)
+- **Caso real (Luan de Jesus, 27/07):** abriu caixa no fluxo normal (`/comercializacao/caixa`); ao voltar ao dashboard aparecia "Caixa fechado" e ele abriu de novo → 2 sessões no mesmo dia; saídas de R$ 3.220 ficaram na 2ª (fechada com saldo R$ 1.520,20) e a 1ª ficou aberta sem movimentos (saldo fantasma R$ 4.740,20)
+- **Dado:** sessão órfã `c3def072…` fechada manualmente no banco (obs. de auditoria); continuidade do Luan restabelecida em R$ 1.520,20 (confirmado na reabertura de 28/07)
+- **`abrirCaixa`** (`lib/comercializacao/caixa.actions.ts`): idempotente — se já existe sessão `aberta` do operador, retorna `ja_aberto: true` sem INSERT; trata corrida e violação de unique
+- **`getSaldoResponsabilidadeComercializacao`**: prefere sessão **aberta** se existir; senão a mais recente (antes pegava só a última por `created_at` e podia reportar "fechado" com outra ainda aberta)
+- **Dashboard comercialização**: lê `sessoes_caixa` via `createAdminClient` (mesmo padrão do abrir); `minhaSessao` por id; badge distingue meu caixa vs caixas da org
+- **Migration 090** (`sessoes_caixa_unica_aberta_por_usuario`): índice único parcial `(org, usuario) WHERE aberta` — **aplicada em produção 28/07/2026**. **Não** bloqueia loja + comercialização no mesmo usuário (módulos/tabelas distintas)
+
+### fix(fiscal): reconsulta NF-e de saída + ZIP/e-mail estável (Grok)
+- NF-e saída Olam (lote 005) ficou `processando` no NexCoop com Focus já **AUTORIZADA** (nº 20) — reconsulta curta (~9s) sem sync posterior de saída
+- `sincronizarNfeSaida` / batch processando; polling de emissão ampliado; reconsulta ao abrir fiscal e tela do lote; botão "Sincronizar"
+- ZIP/e-mail do lote: `POST /api/comercializacao/lote-zip` (evita `Failed to find Server Action` pós-redeploy); download separado de e-mail; URLs Focus/XML corrigidas; erros SMTP legíveis
+- SMTP: host alinhado ao console Zoho (`smtp.zoho.com`), envs `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM`
+
+### Commits principais (main)
+- `69acd25` reconsulta NF-e saída + ZIP e-mail
+- `925f538` / `f93fe05` SMTP Zoho
+- `a426aa8` / `dee9958` API route lote-zip
+- `c4b8ee6` / `7c57072` caixa sem duplicata + migration 090
+
 ## 2026-07-19
 
 ### feat(dashboard): KPIs clicáveis — A receber, Filiados, A pagar, Docs vencendo, Inadimplentes

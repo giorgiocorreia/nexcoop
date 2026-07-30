@@ -127,7 +127,37 @@ const urlConsulta = `${baseUrl}/v2/nfe/${referencia}`
 // Após emitir, polling até sair de 'processando':
 // GET /v2/nfe/{referencia} → status: 'autorizado' | 'rejeitado' | 'processando'
 // Polling a cada 5s, timeout em 2min
+
+// ICMS da SAÍDA: CST 51 (diferimento), NÃO 41. Desde a migration 091.
+// O CST 51 exige o grupo de diferimento no item — e vICMSDif tem que ser
+// EXATAMENTE vICMSOp × pDif, senão a SEFAZ devolve rejeição 352.
+// Alíquota e % vêm de organizacoes.com_nfe_saida_aliquota_icms /
+// com_nfe_saida_perc_diferimento (padrão 20,50% e 100%).
+icms_situacao_tributaria: '51',
+icms_modalidade_base_calculo: '3',   // valor da operação
+icms_base_calculo: valorItem,
+icms_aliquota: aliquotaIcms,
+icms_valor_operacao: vICMSOp,        // base × alíquota
+icms_percentual_diferimento: pDif,
+icms_valor_diferido: vICMSDif,       // vICMSOp × pDif
+icms_valor: vICMSOp - vICMSDif,      // 0 quando pDif = 100
+
+// A NF-e de ENTRADA (compra do produtor, CFOP 1102/1159) segue em CST 41.
 ```
+
+## Carta de Correção (CC-e) — evento 110110
+
+```typescript
+// POST /v2/nfe/{referencia}/carta_correcao  body: { correcao: string }
+// Resposta: status 'registrado', numero_carta_correcao,
+//           caminho_xml_carta_correcao, caminho_pdf_carta_correcao
+// Implementado em lib/focusnfe/carta-correcao.ts
+```
+
+NÃO corrige valores, base de cálculo, alíquota, CST, destinatário nem data de
+emissão (Ajuste SINIEF 07/05, art. 7º §1º-A). Máximo de 20 por nota, e **cada
+carta substitui as anteriores** — a válida é sempre a última. Todo evento fica
+registrado em `nfe_eventos`, inclusive as tentativas recusadas.
 
 ## Fluxo completo de emissão
 

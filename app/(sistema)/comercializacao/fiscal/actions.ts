@@ -89,6 +89,89 @@ export async function cancelarNfe(chave: string, justificativa: string) {
   }
 }
 
+export type EventoNfe = {
+  id: string
+  tipo: string
+  sequencia: number | null
+  texto: string
+  status: string
+  xml_url: string | null
+  pdf_url: string | null
+  mensagem_sefaz: string | null
+  criado_em: string
+}
+
+/** Histórico de eventos (CC-e) de uma NF-e de saída. */
+export async function listarEventosNfeAction(vendaId: string): Promise<EventoNfe[]> {
+  const orgId = await getOrganizacaoId()
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from('nfe_eventos')
+    .select('id, tipo, sequencia, texto, status, xml_url, pdf_url, mensagem_sefaz, criado_em')
+    .eq('organizacao_id', orgId)
+    .eq('venda_id', vendaId)
+    .order('criado_em', { ascending: false })
+
+  return (data ?? []) as EventoNfe[]
+}
+
+/**
+ * Emite Carta de Correção Eletrônica para uma NF-e de saída autorizada.
+ *
+ * A CC-e não corrige valores, alíquota, CST nem destinatário (Ajuste SINIEF
+ * 07/05) — a validação disso é do usuário, aqui só garantimos que a nota está
+ * autorizada e que o texto atende ao formato exigido pela SEFAZ.
+ */
+export async function emitirCartaCorrecaoAction(vendaId: string, correcao: string) {
+  const usuario = await getUsuarioLogado()
+  const orgId = usuario.organizacao_id as string
+  const supabase = createAdminClient()
+
+  const { validarCorrecao, normalizarCorrecao, emitirCartaCorrecao } =
+    await import('@/lib/focusnfe/carta-correcao')
+
+  const erroTexto = validarCorrecao(correcao)
+  if (erroTexto) return { sucesso: false, erro: erroTexto }
+
+  const { data: venda } = await supabase
+    .from('vendas_externas')
+    .select('id, status_nfe, chave_nfe, numero_nfe, serie_nfe')
+    .eq('id', vendaId)
+    .eq('organizacao_id', orgId)
+    .single()
+
+  if (!venda) return { sucesso: false, erro: 'NF-e não encontrada' }
+  if (venda.status_nfe !== 'autorizada') {
+    return { sucesso: false, erro: 'Só é possível emitir CC-e de NF-e autorizada.' }
+  }
+
+  const { referenciaNfeSaida } = await import('@/lib/focusnfe/emitir-nfe-saida')
+  const referencia = referenciaNfeSaida(orgId, venda.id)
+
+  const resultado = await emitirCartaCorrecao({ referencia, correcao })
+
+  // Registra a tentativa mesmo quando falha — o histórico do que foi enviado
+  // à SEFAZ é justamente o que a tabela existe para guardar.
+  await supabase.from('nfe_eventos').insert({
+    organizacao_id: orgId,
+    venda_id: venda.id,
+    tipo: 'carta_correcao',
+    referencia,
+    chave_nfe: venda.chave_nfe,
+    sequencia: resultado.sequencia ?? null,
+    texto: resultado.correcao ?? normalizarCorrecao(correcao),
+    status: resultado.sucesso ? 'registrado' : 'erro',
+    xml_url: resultado.xml_url ?? null,
+    pdf_url: resultado.pdf_url ?? null,
+    mensagem_sefaz: resultado.mensagem_sefaz ?? resultado.erro ?? null,
+    criado_por: usuario.id,
+  } as any)
+
+  revalidatePath('/comercializacao/fiscal')
+  return resultado
+}
+
 export async function buscarDocsLoteAction(loteId: string) {
   const supabase = createAdminClient()
   const usuario = await getUsuarioLogado()
