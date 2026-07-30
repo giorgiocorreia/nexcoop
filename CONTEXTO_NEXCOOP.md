@@ -1,4 +1,4 @@
-# Contexto NexCoop — 16/07/2026
+# Contexto NexCoop — 28/07/2026
 
 > Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
 
@@ -6,8 +6,20 @@
 - **Org teste:** COOPAIBI — org_id `3ad97dc2-f87f-4e67-950e-387854d5bccc`
 - **Super admin:** gio.pessoal@gmail.com
 - **Org admin:** giorgio@coopaibi.com.br
-- **IA:** claude-haiku-4-5-20251001 via ANTHROPIC_API_KEY
+- **IA / agentes:** Claude (sessões anteriores); **Grok (xAI / Grok Build)** — sessão 27–28/07/2026 (fiscal NF-e, SMTP, caixa Luan, migration 090)
 - **Produção:** nexcoop.com.br
+
+## 27–28/07/2026 — Grok (xAI)
+
+### Caixa comercialização (Luan / COOPAIBI)
+- Bug: reabertura com dashboard "fechado" gerava 2 sessões; saldo/saídas na sessão errada
+- Fix app + migration **090** (1 aberta por operador **só** em `sessoes_caixa`)
+- **Independente da Loja:** mesmo usuário pode ter `loja_caixas` aberto + `sessoes_caixa` aberta ao mesmo tempo
+- 090 **aplicada** em produção (28/07)
+
+### Fiscal / Focus
+- Reconsulta NF-e de saída; Olam lote 005 sincronizado (autorizada nº 20)
+- ZIP/e-mail via `/api/comercializacao/lote-zip`; SMTP Zoho `smtp.zoho.com`
 
 ## O que foi feito (jul/2026)
 

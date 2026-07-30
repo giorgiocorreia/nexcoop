@@ -72,7 +72,9 @@
 
 | 089 | `cooperado_carteirinhas` (NOVA) — carteirinha de identificação do filiado (física/PDF e digital) com QR code de verificação pública ao vivo (`/v/{codigo}`, sem cache de status). `codigo` opaco (12 alfanuméricos, CHECK, UNIQUE) — nunca UUID nem CPF, evita enumeração/vazamento de PII pela URL. Índice único parcial `uq_carteirinha_ativa_por_cooperado` (cooperado_id) WHERE revogada_em IS NULL — no máximo uma via ativa por cooperado, 2ª via exige revogar a anterior. `valida_ate` é só a validade impressa no cartão, NUNCA a autoridade da verificação (essa é sempre o status ao vivo). RLS: SELECT membros da org, INSERT/UPDATE/DELETE só admin (padrão 079/085) — leitura pública de `/v/{codigo}` NÃO usa essas policies, é servida via `createAdminClient()` no server; `anon` não recebe policy nenhuma. Sem backfill de emissão — é ato administrativo da Fase 3. Regra de negócio (não implementada no banco, decisão do Giorgio 24/07/2026): `inadimplente` conta como ATIVO na carteirinha, vínculo não expõe situação financeira |
 
-**Próxima migration:** 090
+| 090 | **Aplicada em produção 28/07/2026.** Índice único parcial `sessoes_caixa_unica_aberta_por_usuario` em `(organizacao_id, usuario_id) WHERE status = 'aberta'` — no máximo **uma sessão de caixa de comercialização aberta por operador**. **Não** se aplica a `loja_caixas` (módulo Loja é independente: o mesmo usuário pode ter loja + comercialização abertos ao mesmo tempo). Contexto: Luan (COOPAIBI, 27/07) abriu no fluxo normal, o dashboard mostrou "Caixa fechado" e reabriu → 2 sessões; operações (R$ 3.220) ficaram numa e a outra órfã distorceu o saldo. Implementado por **Grok (xAI / Grok Build)** em 27–28/07/2026, com o Giorgio |
+
+**Próxima migration:** 091
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
@@ -104,6 +106,7 @@
 
 ### Comercialização
 - `sessoes_caixa`, `aportes_sangrias`, `saldos_produto`
+  - **Regra (090):** no máx. 1 sessão `status='aberta'` por `(organizacao_id, usuario_id)` — índice único parcial. Loja (`loja_caixas`) é tabela separada e **não** entra nessa trava
 - `notas_entrega`, `contas_produtor`
 - `lotes` — codigo, peso_total_kg, status (aberto|em_venda|entregue), produto_descricao, data_fechamento, safra_id (nullable), produto_id (nullable)
 - `movimentacoes_conta` — tipo='entrega' vincula ao lote via lote_id; campos +chave_nfe_entrada, +xml_nfe_entrada

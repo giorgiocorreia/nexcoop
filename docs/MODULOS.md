@@ -164,6 +164,7 @@ e `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`.
 - Relatório Saídas de Caixa (`/comercializacao/relatorios/saidas-caixa`): filtros aditivos combináveis (tipo/forma/produtor + mês/ano), PDF A4, cobre saques/avulsas/sangrias/ajustes; KPI "Pagamentos a produtores" no dashboard (18/07/2026)
 - Saídas avulsas visíveis em Operações do dia + fix de data (coluna `date` não recua mais um dia por fuso) (18/07/2026)
 - Resultado por safra reescrito (realizado + marcação a mercado, `vw_resultado_comercializacao`) + KPI "Resultado Comercialização" no dashboard; fix `saldos_produtor_snapshot` congelado desde a 052; fix FUNRURAL indevido em transferência interna; fix composição de lote sem gravar `lote_itens` (migrations 082/083/084, 19/07/2026)
+- Anti-duplicata de sessão de caixa + reconsulta NF-e saída + ZIP/e-mail estável (migration **090**, **Grok / xAI**, 27–28/07/2026): 1 `sessoes_caixa` aberta por operador; loja e comercialização continuam independentes
 
 ### ❌ Pendente
 - saldo_kg em contas_produtor (estoque à ordem)

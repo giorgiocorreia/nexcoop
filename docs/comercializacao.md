@@ -1,6 +1,7 @@
 # Módulo Comercialização — documento de continuidade
 
-Handoff para retomar o módulo em outro chat. Atualizado em 2026-07-19.
+Handoff para retomar o módulo em outro chat. Atualizado em **2026-07-28**
+(Grok / xAI + Giorgio).
 Foca no que é carga-pesada para continuar: modelo de dados, mecânica de saldo,
 pipeline de cotações/Índice Nex e pendências abertas. Para status macro do
 produto, ver `docs/MODULOS.md`; para schema completo, `docs/SCHEMA.md`.
@@ -65,6 +66,33 @@ financeiro continua incremental (INSERT-only), inalterado.
 
 `saldos_produto` é lida por 4 fluxos — se mexer nela, conferir todos:
 `produtores.actions.ts`, `caixa.actions.ts`, `extrato-produtor.ts`, `notas.ts`.
+
+---
+
+## 1.0. Sessões de caixa (comercialização) — continuidade e anti-duplicata (090, 2026-07-28)
+
+**Autor da correção:** Grok (xAI / Grok Build), com Giorgio — caso real COOPAIBI / Luan de Jesus (27/07/2026).
+
+### Tabelas
+- **Comercialização:** `sessoes_caixa` (`status` = `aberta` | `fechada`)
+- **Loja:** `loja_caixas` (`status` = `aberto` | `fechado`) — **módulo separado**
+
+### Regra de unicidade (migration 090 — aplicada em produção)
+- No máximo **uma** `sessoes_caixa` com `status='aberta'` por `(organizacao_id, usuario_id)`
+- Índice: `sessoes_caixa_unica_aberta_por_usuario`
+- **Não** impede o mesmo usuário de ter caixa de **loja** aberto ao mesmo tempo
+
+### App
+- `abrirCaixa()` — se já há aberta, retorna `{ success: true, ja_aberto: true, sessao_id }` sem criar outra
+- `getSaldoResponsabilidadeComercializacao` — prefere sessão aberta; senão a mais recente
+- Dashboard hub — lista abertos via admin client; `minhaSessao` por id da sessão
+
+### Sintoma histórico (não repetir)
+Dashboard "Caixa fechado" + botão abrir com sessão já aberta → 2ª sessão → operações numa, órfã na outra → saldo errado na UI.
+
+### ZIP / NF-e saída (mesma sessão Grok)
+- Reconsulta Focus para `status_nfe=processando` em `vendas_externas`
+- Pacote fiscal do lote: `POST /api/comercializacao/lote-zip` (não server-action hash)
 
 ---
 
