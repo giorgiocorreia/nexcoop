@@ -74,7 +74,9 @@
 
 | 090 | **Aplicada em produção 28/07/2026.** Índice único parcial `sessoes_caixa_unica_aberta_por_usuario` em `(organizacao_id, usuario_id) WHERE status = 'aberta'` — no máximo **uma sessão de caixa de comercialização aberta por operador**. **Não** se aplica a `loja_caixas` (módulo Loja é independente: o mesmo usuário pode ter loja + comercialização abertos ao mesmo tempo). Contexto: Luan (COOPAIBI, 27/07) abriu no fluxo normal, o dashboard mostrou "Caixa fechado" e reabriu → 2 sessões; operações (R$ 3.220) ficaram numa e a outra órfã distorceu o saldo. Implementado por **Grok (xAI / Grok Build)** em 27–28/07/2026, com o Giorgio |
 
-**Próxima migration:** 091
+| 091 | **Aplicada em produção 30/07/2026.** `nfe_eventos` (NOVA) — eventos pós-autorização da NF-e de saída (`vendas_externas`): hoje carta de correção, com `cancelamento` já no CHECK. Uma linha por **tentativa**, inclusive as recusadas (`status='erro'`, default proposital) — guardar o que foi enviado à SEFAZ é a razão de ser da tabela, nada é sobrescrito. `sequencia` = nSeqEvento; a mesma NF-e aceita até 20 cartas e **cada uma substitui as anteriores**, então a válida é sempre a de maior sequência. RLS: SELECT membros da org; **nenhuma policy de escrita** — emitir evento fiscal é ato de servidor, sempre via `createAdminClient()` na server action. + `organizacoes.com_nfe_saida_aliquota_icms` (default 20.50) e `com_nfe_saida_perc_diferimento` (default 100.00), que alimentam o CST 51 na saída |
+
+**Próxima migration:** 092
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

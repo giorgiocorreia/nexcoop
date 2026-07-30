@@ -96,6 +96,90 @@ Dashboard "Caixa fechado" + botão abrir com sessão já aberta → 2ª sessão 
 
 ---
 
+## 1.0.1. NF-e de saída: ICMS diferido (CST 51) e Carta de Correção (091, 2026-07-30)
+
+### CST 51 — o que o diferimento exige
+
+A saída da comercialização emitia **CST 41** (não tributada). O diferimento do
+ICMS **foi concedido à COOPAIBI pelo estado da Bahia**, então a classificação
+correta é **CST 51 (diferimento)**.
+
+CST 51 não é só trocar o código: o item passa a exigir o grupo de diferimento, e
+o valor diferido tem que ser **exatamente** `vICMSOp × pDif`. Fora disso a SEFAZ
+devolve **rejeição 352**. Por isso o arredondamento é feito em `vICMSOp` primeiro
+e o diferido deriva dele — nunca do valor bruto do item:
+
+```ts
+const icmsValorOperacao = Number((valor_total * aliquotaIcms / 100).toFixed(2))
+const icmsValorDiferido = Number((icmsValorOperacao * percDiferimento / 100).toFixed(2))
+const icmsValorDevido   = Number((icmsValorOperacao - icmsValorDiferido).toFixed(2))
+```
+
+Os **totais da nota** também mudam: com CST 51 o item tem base de cálculo (com 41
+era zero), e o ICMS total é só a parcela não diferida.
+
+Alíquota (**20,5%**, confirmada pelo contador em 30/07) e percentual (**100%**)
+vêm de `organizacoes.com_nfe_saida_aliquota_icms` / `com_nfe_saida_perc_diferimento`.
+Com diferimento total o valor a recolher é zero, então a alíquota é
+**declaratória** — o contador ajusta sem deploy.
+
+**Verificado em homologação (30/07):** NF-e nº 8/série 2 autorizada (SEFAZ 100)
+com vICMSOp 5.227,50 / vICMSDif 5.227,50 / vICMS 0,00, sem rejeição 352.
+
+### CST por produto — desenhado e adiado
+
+`produtos.cst_icms`, `ncm`, `cfop_saida_interna` etc. existem desde a **048**, são
+até selecionados em `emitir-nfe-saida.ts`, mas **nenhum código lê o valor** e
+todos estão `NULL`. O emissor cobre tudo com constante (descrição, código, NCM
+18010000, CFOP 5102, CST). Hoje isso é inofensivo — o catálogo tem **um** produto
+(Amêndoas secas de cacau) e os 5 lotes são mono-produto.
+
+Regra do Giorgio: **CST 51 só para agrícola com diferimento solicitado junto ao
+estado**; os demais em 41. O plano era `produtos.cst_icms` virar a fonte (NULL →
+41), com backfill do cacau para 51. **Adiado a pedido dele em 30/07/2026.**
+Quando entrar o segundo produto, não é só o CST que sai errado — NCM, CFOP e
+descrição também. A correção completa é emitir **um item por `lote_item`**.
+
+### Carta de Correção Eletrônica (CC-e)
+
+`POST /v2/nfe/{referencia}/carta_correcao` com `{ correcao }`. Campos confirmados
+na resposta (testados em homologação, não inferidos da doc): `status: 'autorizado'`
+com `status_sefaz` 135, `numero_carta_correcao`, `caminho_xml_carta_correcao`,
+`caminho_pdf_carta_correcao`. As URLs de PDF/XML da Focus são **públicas**, sem
+token — por isso podem ir direto para o comprador.
+
+Limites que o código aplica:
+
+- **15 a 1000 caracteres**, sem caractere de controle nem espaço duplo — a
+  contagem na UI normaliza igual à SEFAZ, senão o usuário fecha os 15 com espaços
+- **Máximo 20 cartas por nota**, e **cada uma substitui as anteriores**: a nova
+  precisa repetir o que ainda vale das antigas
+- **Rejeição 494** nos minutos seguintes à autorização é só propagação da nota no
+  ambiente de eventos — tratada com mensagem pedindo para aguardar, não é erro do
+  texto
+
+**A CC-e não corrige** valores, base de cálculo, alíquota, CST, destinatário nem
+datas (Ajuste SINIEF 07/05, art. 7º §1º-A). Nuance real: entre CST 41 e 51 com
+100% de diferimento o ICMS destacado é **zero nos dois**, então o argumento de
+"variável que determina o valor do imposto" é fraco — mas a carta **não altera o
+XML** da nota, apenas anexa um evento. Uma CC-e é registro público na SEFAZ e
+**não pode ser cancelada**, só substituída.
+
+Caso real: nota **20/001 (Olam, lote 005, 27/07)** saiu com CST 41; a Olam pediu a
+carta para lastrear a própria escrituração. Carta nº 1 registrada em 30/07.
+
+### Onde vive
+
+- `lib/focusnfe/carta-correcao.ts` — emissão, normalização e validação do texto
+- `lib/comercializacao/cce-email.ts` — baixa PDF/XML da Focus e envia ao comprador
+- `POST /api/comercializacao/cce-email` — rota HTTP, **não** server action (mesmo
+  motivo do lote-zip: hash de action quebra na página aberta durante deploy)
+- `nfe_eventos` — histórico, incluindo tentativas recusadas
+- Botão **CC-e** em `/comercializacao/fiscal`, só em nota autorizada; no sucesso o
+  modal vira painel de confirmação com PDF, XML e envio por e-mail
+
+---
+
 ## 1.1. Resultado por safra — modelo realizado + marcação a mercado (082/083/084, 2026-07-19)
 
 `/comercializacao/resultado` e o KPI "Resultado Comercialização" do dashboard
