@@ -67,14 +67,18 @@ export async function getDashboardComercializacao(organizacaoId: string) {
   for (const sessao of sessoesRaw ?? []) {
     const { data: movimentos } = await admin
       .from('aportes_sangrias')
-      .select('tipo, valor')
+      .select('tipo, valor, forma_pagamento')
       .eq('sessao_caixa_id', sessao.id)
 
+    // Só espécie entra no saldo físico do caixa — cota paga em pix/cartão grava
+    // aqui (migration 063) mas nunca passou pela gaveta. Mesmo critério de
+    // getSaldoResponsabilidadeComercializacao.
     let aportes = 0
     let sangrias = 0
     for (const m of movimentos ?? []) {
-      if (m.tipo === 'aporte') aportes += Number(m.valor)
-      else sangrias += Number(m.valor)
+      if (m.tipo === 'aporte') {
+        if ((m as any).forma_pagamento === 'especie') aportes += Number(m.valor)
+      } else sangrias += Number(m.valor)
     }
 
     const saldoInicial = Number((sessao as any).saldo_inicial_especie ?? 0)

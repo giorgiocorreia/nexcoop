@@ -52,7 +52,7 @@ export async function getSaldoResponsabilidadeComercializacao(
   const [{ data: aportesSangrias }, { data: movimentacoes }, { data: lancamentos }] = await Promise.all([
     supabase
       .from('aportes_sangrias')
-      .select('tipo, valor')
+      .select('tipo, valor, forma_pagamento')
       .eq('sessao_caixa_id', sessao.id),
     supabase
       .from('movimentacoes_conta')
@@ -65,8 +65,12 @@ export async function getSaldoResponsabilidadeComercializacao(
       .eq('sessao_caixa_id', sessao.id),
   ])
 
+  // Só aporte em espécie é cédula na gaveta. Entrada de cota paga em pix/cartão
+  // grava aqui com forma_pagamento correspondente (migration 063) e não passa pelo
+  // caixa físico — somar tudo inflava a custódia do atendente e reaparecia como
+  // saldo_inicial da próxima abertura. Sangria é sempre espécie (dinheiro saindo).
   const totalAportes = (aportesSangrias ?? [])
-    .filter(a => a.tipo === 'aporte')
+    .filter(a => a.tipo === 'aporte' && (a as any).forma_pagamento === 'especie')
     .reduce((acc, a) => acc + Number(a.valor), 0)
   const totalSangrias = (aportesSangrias ?? [])
     .filter(a => a.tipo === 'sangria')
