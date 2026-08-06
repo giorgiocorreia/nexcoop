@@ -69,6 +69,8 @@ export interface Organizacao {
   loja_nfce_serie:        string | null
   loja_nfe_saida_serie:   string | null
   ultimo_numero_ficha:    number
+  // migration 092 — talão de recibos avulsos (independente da ficha de pesagem)
+  ultimo_numero_recibo:   number
   // migration 082
   aliquota_funrural: number
   // migration 091 — diferimento do ICMS na NF-e de saída da comercialização (CST 51)
@@ -318,6 +320,27 @@ export interface CooperadoCarteirinha {
   revogada_em: string | null
   motivo_revogacao: string | null
   emitida_por: string | null
+  criado_em: string
+  atualizado_em: string
+}
+
+/** Recibo avulso emitido na tela Impressos (migration 092). O PDF é sempre
+ *  regenerado a partir desta linha — nada é armazenado como arquivo. */
+export interface Recibo {
+  id: string
+  organizacao_id: string
+  numero: number
+  tipo: 'prestacao_servico' | 'pagamento' | 'aluguel' | 'doacao' | 'adiantamento' | 'diaria_rural' | 'outros'
+  direcao: 'recebemos' | 'pagamos'
+  pessoa_nome: string
+  /** Só dígitos: 11 (CPF) ou 14 (CNPJ). A máscara é aplicada na exibição. */
+  pessoa_cpf: string | null
+  valor: number
+  descricao: string
+  emitido_em: string
+  emitido_por: string | null
+  cancelado_em: string | null
+  motivo_cancelamento: string | null
   criado_em: string
   atualizado_em: string
 }
@@ -1582,6 +1605,7 @@ export type Database = {
       site_conteudos:              TableDef<SiteConteudo>
       // ── Carteirinha do filiado (089) ──────────────────────────────────────
       cooperado_carteirinhas:      TableDef<CooperadoCarteirinha>
+      recibos:                     TableDef<Recibo>
       // ── Eventos de NF-e: CC-e (091) ───────────────────────────────────────
       nfe_eventos:                 TableDef<NfeEvento>
     }

@@ -69,3 +69,14 @@ export function podeVerEstoqueLoja(usuario: UsuarioPermissao): boolean {
 export function podeAutorizarDescontoExtra(usuario: UsuarioPermissao): boolean {
   return temAlgumaFuncao(usuario, ['admin', 'gerente_loja'])
 }
+
+// ── Impressos ────────────────────────────────────────────────────────────────
+
+/**
+ * Emitir recibo queima numeração sequencial da org e produz documento
+ * contábil assinável — restrito a admin e ao operador de comercialização
+ * (caixa_cacau), que é quem atende o balcão na tela Impressos.
+ */
+export function podeEmitirRecibo(usuario: UsuarioPermissao): boolean {
+  return temAlgumaFuncao(usuario, ['admin', 'caixa_cacau'])
+}

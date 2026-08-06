@@ -76,7 +76,9 @@
 
 | 091 | **Aplicada em produção 30/07/2026.** `nfe_eventos` (NOVA) — eventos pós-autorização da NF-e de saída (`vendas_externas`): hoje carta de correção, com `cancelamento` já no CHECK. Uma linha por **tentativa**, inclusive as recusadas (`status='erro'`, default proposital) — guardar o que foi enviado à SEFAZ é a razão de ser da tabela, nada é sobrescrito. `sequencia` = nSeqEvento; a mesma NF-e aceita até 20 cartas e **cada uma substitui as anteriores**, então a válida é sempre a de maior sequência. RLS: SELECT membros da org; **nenhuma policy de escrita** — emitir evento fiscal é ato de servidor, sempre via `createAdminClient()` na server action. + `organizacoes.com_nfe_saida_aliquota_icms` (default 20.50) e `com_nfe_saida_perc_diferimento` (default 100.00), que alimentam o CST 51 na saída |
 
-**Próxima migration:** 092
+| 092 | **NÃO aplicada ainda** (criada 06/08/2026). `recibos` (NOVA) — recibos avulsos gerados na tela Impressos, PDF A4 com 2 vias e linha de corte. Uma linha por recibo emitido; **o PDF nunca é armazenado**, é sempre regenerado a partir da linha. Snapshot do que a pessoa assinou (`pessoa_nome`, `pessoa_cpf`, `valor`, `descricao`, `tipo`, `direcao`) para a 2ª via sair idêntica; o cabeçalho da cooperativa é lido **ao vivo** de `organizacoes`. `direcao` ('recebemos' \| 'pagamos') define o texto impresso e quem assina — derivada do tipo em `lib/pdf/recibo-utils.ts`, mas gravada porque a regra do tipo pode mudar. Recibo emitido **nunca** é editado nem apagado: errou → `cancelado_em`, e o número fica queimado. + `organizacoes.ultimo_numero_recibo` (default 0), reservado por **compare-and-swap** na action `gerarRecibo` (`UPDATE ... WHERE ultimo_numero_recibo = <valor lido>`), com `uq_recibo_numero_por_org` como rede final — talão independente de `ultimo_numero_ficha`. RLS: SELECT membros da org; **nenhuma policy de escrita** (emitir queima numeração, é ato de servidor via `createAdminClient()`) |
+
+**Próxima migration:** 093
 
 ### Comercialização — observações (22/06/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'

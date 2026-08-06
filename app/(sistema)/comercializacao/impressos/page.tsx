@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { reservarFichasPesagem } from "./actions"
 import { gerarFichasPesagemPDF } from "@/lib/pdf/fichasPesagem"
+import { ReciboModal } from "./ReciboModal"
 import { Btn } from "@/components/ui/Btn"
 import { PageLayout } from "@/components/comercializacao/ui/PageLayout"
 import { Modal } from "@/components/comercializacao/ui/Modal"
@@ -11,6 +12,7 @@ import { COM_C } from "@/components/comercializacao/ui/tokens"
 
 export default function ImpressosPage() {
   const [modalAberto, setModalAberto] = useState(false)
+  const [reciboAberto, setReciboAberto] = useState(false)
   const [paginas, setPaginas] = useState(1)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -76,7 +78,19 @@ export default function ImpressosPage() {
           subtitulo="Admissão de cooperado · Cooperado Pleno e Colaborador · PDF para impressão"
           badges={<span />}
         />
+
+        <ListRow
+          onClick={() => setReciboAberto(true)}
+          icone="ti-receipt"
+          iconeBg={COM_C.marromLt}
+          iconeCor={COM_C.marrom}
+          titulo="Recibo"
+          subtitulo="2 vias na mesma folha A4 · Numeração automática · Valor por extenso"
+          badges={<span />}
+        />
       </div>
+
+      {reciboAberto && <ReciboModal onClose={() => setReciboAberto(false)} />}
 
       {modalAberto && (
         <Modal
