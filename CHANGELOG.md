@@ -2,6 +2,14 @@
 
 ## 2026-08-06
 
+### change(caixa): aporte simples na comercialização não pede mais senha
+- `registrarAporteSangria` (`lib/comercializacao/caixa.actions.ts`): **aporte de dinheiro solto na própria gaveta** deixa de exigir admin autorizador + senha. O modal passa a mostrar só valor e observações
+- **Racional:** aporte simples não debita ninguém e só *aumenta* a responsabilidade de quem opera o caixa — ele vai ter que prestar contas do valor no fechamento
+- **Continuam pedindo senha**, de propósito: **sangria** (dinheiro saindo da gaveta) e **aporte por transferência** (Loja→Comercialização ou entre atendentes), onde a senha é a prova de consentimento de quem *perde* o dinheiro, não burocracia
+- `autorizado_por` no aporte simples passa a ser o **próprio executor** — gravar um admin que não autorizou nada seria falsear a auditoria
+- ⚠️ **Buraco fechado no caminho:** o `signInWithPassword` era, na prática, a única coisa que validava `sessao_id`. A action nunca conferiu se a sessão era da mesma org nem de quem estava lançando. Agora `sessoes_caixa` é conferida **sempre** (org + status `aberta`, e no aporte simples também a titularidade), inclusive nos fluxos que mantiveram a senha
+- Nenhum fluxo existente quebra: a UI já só passava a sessão aberta do próprio usuário (`getSessaoAberta`)
+
 ### feat(impressos): gerador de recibos com 2 vias em A4
 - **Tela** `/comercializacao/impressos` ganha o item **Recibo**, abrindo modal (`ReciboModal.tsx`) com tipo, competência, direção, nome, CPF/CNPJ, valor e descrição
 - **PDF** (`lib/pdf/recibo.ts`): A4 retrato com **duas vias idênticas na mesma folha** separadas por tracejado "corte aqui" — via de cima para o pagador, de baixo para o recebedor. Cabeçalho com logo, razão social, CNPJ e endereço da org; caixa com `RECIBO Nº 00001` e o valor em destaque; local/data e linha de assinatura com nome e documento de quem recebeu

@@ -412,16 +412,23 @@ export default function CaixaPage() {
     setSaldoOrigemLoja(resp.saldo_atual_especie)
   }
 
+  // Aporte de dinheiro solto na própria gaveta: não debita ninguém e só aumenta
+  // a responsabilidade de quem opera o caixa, então não pede senha (06/08/2026).
+  // Sangria e transferência (que debita o caixa de outro) continuam pedindo.
+  const aporteTransferencia =
+    formAporte.tipo === 'aporte' &&
+    (formAporte.origemModulo === 'loja' || formAporte.origemModulo === 'comercializacao')
+  const aporteSimples = formAporte.tipo === 'aporte' && formAporte.origemModulo === 'dinheiro'
+
   async function handleAporteSangria() {
     if (!sessao || !formAporte.valor) return
-    const transferencia = formAporte.tipo === 'aporte' && (formAporte.origemModulo === 'loja' || formAporte.origemModulo === 'comercializacao')
-    if (transferencia) {
+    if (aporteTransferencia) {
       if (!formAporte.origemAtendenteId || !formAporte.origemEmail || !formAporte.admin_senha) return
-    } else {
+    } else if (!aporteSimples) {
       if (!formAporte.admin_id || !formAporte.admin_senha) return
     }
     const admin = admins.find(a => a.id === formAporte.admin_id)
-    if (!transferencia && !admin) return
+    if (!aporteTransferencia && !aporteSimples && !admin) return
     setSalvandoAporte(true)
     setErroAporte('')
     try {
@@ -429,10 +436,16 @@ export default function CaixaPage() {
         sessao_id: sessao.id,
         tipo: formAporte.tipo,
         valor: parseFloat(formAporte.valor),
-        admin_email: transferencia ? formAporte.origemEmail : admin!.email,
-        admin_senha: formAporte.admin_senha,
         observacoes: formAporte.observacoes || undefined,
-        ...(transferencia
+        // Aporte simples não manda credencial: a action autoriza pelo dono do
+        // próprio caixa (ou admin) e grava `autorizado_por` = quem executou.
+        ...(aporteSimples
+          ? {}
+          : {
+              admin_email: aporteTransferencia ? formAporte.origemEmail : admin!.email,
+              admin_senha: formAporte.admin_senha,
+            }),
+        ...(aporteTransferencia
           ? { origem: { modulo: formAporte.origemModulo as 'loja' | 'comercializacao', atendente_origem_id: formAporte.origemAtendenteId } }
           : {}),
       })
@@ -994,10 +1007,12 @@ export default function CaixaPage() {
             <>
               <Btn variante="cinza" onClick={() => setModalAporte(false)}>Cancelar</Btn>
               <Btn variante="marrom" icone="ti-check" disabled={
-                salvandoAporte || !formAporte.valor || !formAporte.admin_senha ||
-                (formAporte.tipo === 'aporte' && formAporte.origemModulo !== 'dinheiro'
-                  ? !formAporte.origemAtendenteId || !formAporte.origemEmail
-                  : !formAporte.admin_id)
+                salvandoAporte || !formAporte.valor ||
+                (aporteSimples
+                  ? false
+                  : !formAporte.admin_senha || (aporteTransferencia
+                      ? !formAporte.origemAtendenteId || !formAporte.origemEmail
+                      : !formAporte.admin_id))
               } onClick={handleAporteSangria}>
                 {salvandoAporte ? 'Processando...' : 'Confirmar'}
               </Btn>
@@ -1034,7 +1049,7 @@ export default function CaixaPage() {
                 </Select>
               </Field>
             )}
-            {formAporte.tipo === 'aporte' && formAporte.origemModulo !== 'dinheiro' ? (
+            {aporteTransferencia ? (
               <>
                 <Field label={`De qual atendente (${formAporte.origemModulo === 'loja' ? 'Loja' : 'Comercialização'}) *`}>
                   <Select value={formAporte.origemAtendenteId} onChange={e => selecionarAtendenteOrigem(e.target.value)}>
@@ -1060,6 +1075,10 @@ export default function CaixaPage() {
                     onChange={e => setFormAporte(f => ({ ...f, admin_senha: e.target.value }))} />
                 </Field>
               </>
+            ) : aporteSimples ? (
+              <div style={{ fontSize: 12, color: COM_C.txtSub }}>
+                O valor entra no seu caixa e passa a fazer parte da sua responsabilidade no fechamento.
+              </div>
             ) : (
               <>
                 <Field label="Admin autorizador *">

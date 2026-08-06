@@ -800,8 +800,10 @@ export async function registrarAporteSangria(params: {
   sessao_id: string
   tipo: 'aporte' | 'sangria'
   valor: number
-  admin_email: string
-  admin_senha: string
+  // Opcionais porque o aporte simples não pede senha (ver `aporteSimples`
+  // abaixo). Obrigatórios em sangria e em aporte por transferência.
+  admin_email?: string
+  admin_senha?: string
   observacoes?: string
   // Transferência: em vez de aporte em dinheiro solto, puxa de um caixa da
   // Loja OU de outra sessão da própria Comercialização (outro atendente) —
@@ -812,25 +814,76 @@ export async function registrarAporteSangria(params: {
   const usuario = await getUsuarioLogado()
   const supabase = createAdminClient()
 
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabasePublic = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { data: authData, error: authError } = await supabasePublic.auth.signInWithPassword({
-    email: params.admin_email,
-    password: params.admin_senha
-  })
-  if (authError || !authData.user) throw new Error('Credenciais inválidas.')
+  /**
+   * Aporte de dinheiro solto na própria gaveta: não debita ninguém e só
+   * AUMENTA a responsabilidade de quem opera o caixa (ele vai ter que prestar
+   * contas desse valor no fechamento). Por isso dispensa senha — decisão do
+   * Giorgio, 06/08/2026.
+   *
+   * Sangria (dinheiro saindo) e aporte por transferência (debita o caixa de
+   * outra pessoa) continuam exigindo reautenticação: lá a senha é a prova de
+   * consentimento de quem perde o dinheiro, não burocracia.
+   */
+  const aporteSimples = params.tipo === 'aporte' && !params.origem
 
-  const { data: adminUser } = await supabase
-    .from('usuarios')
-    .select('id, funcoes, organizacao_id')
-    .eq('id', authData.user.id)
+  // A senha era, na prática, a única coisa que validava `sessao_id` — sem ela
+  // um id de outra org ou de outro operador entraria direto. Agora a sessão é
+  // conferida sempre, inclusive nos fluxos que mantiveram a senha.
+  const { data: sessaoAlvo } = await supabase
+    .from('sessoes_caixa')
+    .select('id, usuario_id, organizacao_id, status')
+    .eq('id', params.sessao_id)
     .single()
 
-  if (!adminUser) throw new Error('Usuário não encontrado.')
-  if (adminUser.organizacao_id !== usuario.organizacao_id) throw new Error('Admin de outra organização.')
+  if (!sessaoAlvo) throw new Error('Sessão de caixa não encontrada.')
+  if (sessaoAlvo.organizacao_id !== usuario.organizacao_id) {
+    throw new Error('Sessão de caixa de outra organização.')
+  }
+  if (sessaoAlvo.status !== 'aberta') {
+    throw new Error('Essa sessão de caixa não está aberta.')
+  }
+
+  let adminUser: { id: string; funcoes: string[] | null; organizacao_id: string | null }
+
+  if (aporteSimples) {
+    // Sem senha, quem autoriza é quem executa — e só no próprio caixa (admin
+    // pode em qualquer um da org). Gravar outra coisa em `autorizado_por`
+    // seria inventar uma autorização que ninguém deu.
+    const isAdmin = !!usuario.funcoes?.includes('admin')
+    if (sessaoAlvo.usuario_id !== usuario.id && !isAdmin) {
+      throw new Error('Você só pode lançar aporte no seu próprio caixa.')
+    }
+    adminUser = {
+      id: usuario.id,
+      funcoes: usuario.funcoes ?? null,
+      organizacao_id: usuario.organizacao_id as string | null,
+    }
+  } else {
+    if (!params.admin_email || !params.admin_senha) {
+      throw new Error('Informe e-mail e senha para autorizar.')
+    }
+
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabasePublic = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { data: authData, error: authError } = await supabasePublic.auth.signInWithPassword({
+      email: params.admin_email,
+      password: params.admin_senha
+    })
+    if (authError || !authData.user) throw new Error('Credenciais inválidas.')
+
+    const { data: encontrado } = await supabase
+      .from('usuarios')
+      .select('id, funcoes, organizacao_id')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (!encontrado) throw new Error('Usuário não encontrado.')
+    if (encontrado.organizacao_id !== usuario.organizacao_id) throw new Error('Admin de outra organização.')
+    adminUser = encontrado
+  }
 
   if (params.origem) {
     if (params.origem.modulo === 'comercializacao' && params.origem.atendente_origem_id === usuario.id) {
@@ -853,7 +906,9 @@ export async function registrarAporteSangria(params: {
         throw new Error('Autorização precisa ser de um admin ou do próprio atendente dono do caixa de origem.')
       }
     }
-  } else {
+  } else if (!aporteSimples) {
+    // Sangria: continua exigindo senha de admin. O aporte simples já foi
+    // autorizado acima (dono do próprio caixa ou admin), sem senha.
     if (!adminUser.funcoes?.includes('admin')) throw new Error('Usuário não tem permissão de admin.')
   }
 
