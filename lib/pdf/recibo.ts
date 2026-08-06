@@ -5,6 +5,7 @@ import {
   assinante,
   formatarMoeda,
   fraseAbertura,
+  formatarCompetencia,
   labelTipo,
   localEData,
   mascararDocumento,
@@ -31,6 +32,8 @@ export interface GerarReciboParams {
   valor: number
   descricao: string
   emitidoEm: Date
+  /** Competência no formato date do Postgres ("AAAA-MM-01"). null = não imprime. */
+  competencia: string | null
   org: OrgRecibo
 }
 
@@ -81,7 +84,7 @@ interface CtxVia {
 
 function desenharVia(ctx: CtxVia & { y: number; rotulo: string }) {
   const { page, fontRegular, fontBold, fontItalic, logoImage, cor, params, y: base, rotulo } = ctx
-  const { numero, tipo, direcao, pessoaNome, pessoaDoc, valor, descricao, emitidoEm, org } = params
+  const { numero, tipo, direcao, pessoaNome, pessoaDoc, valor, descricao, emitidoEm, competencia, org } = params
 
   const cinza = rgb(0.45, 0.45, 0.45)
   const cinzaClaro = rgb(0.8, 0.8, 0.8)
@@ -151,11 +154,17 @@ function desenharVia(ctx: CtxVia & { y: number; rotulo: string }) {
 
   centralizar(page, `RECIBO - ${sanitizar(labelTipo(tipo)).toUpperCase()}`, fontBold, 12, x, w, yTitulo, preto)
 
+  // Competência logo abaixo do título — só aparece quando informada.
+  const competenciaStr = formatarCompetencia(competencia)
+  if (competenciaStr) {
+    centralizar(page, `Competencia: ${competenciaStr}`, fontRegular, 8.5, x, w, yTitulo - 12, cinza)
+  }
+
   // ── Corpo ─────────────────────────────────────────────────────────────────
   // Piso do corpo: 20pt acima da linha de local/data (base + 62), para o texto
   // nunca encostar na assinatura por mais longa que seja a descrição.
   const yMinCorpo = base + 82
-  let yCorpo = yTitulo - 26
+  let yCorpo = yTitulo - (competenciaStr ? 38 : 26)
 
   const abertura = sanitizar(fraseAbertura({
     direcao,

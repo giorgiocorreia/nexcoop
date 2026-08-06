@@ -6,6 +6,7 @@ import {
   type DirecaoRecibo,
   type TipoRecibo,
   apenasDigitos,
+  competenciaParaData,
   documentoValido,
 } from "@/lib/pdf/recibo-utils"
 import type { OrgRecibo } from "@/lib/pdf/recibo"
@@ -69,11 +70,20 @@ export interface GerarReciboInput {
   pessoaDoc: string
   valor: number
   descricao: string
+  /** "AAAA-MM" vindo do input type="month". Vazio = sem competência. */
+  competencia: string
 }
 
 export type GerarReciboResultado =
   | { ok: false; erro: string }
-  | { ok: true; numero: number; emitidoEm: string; org: OrgRecibo }
+  | {
+      ok: true
+      numero: number
+      emitidoEm: string
+      /** "AAAA-MM-01" ou null — é o que o PDF imprime. */
+      competencia: string | null
+      org: OrgRecibo
+    }
 
 const TIPOS_VALIDOS: TipoRecibo[] = [
   "prestacao_servico", "pagamento", "aluguel",
@@ -130,6 +140,10 @@ export async function gerarRecibo(input: GerarReciboInput): Promise<GerarReciboR
   }
   if (!documentoValido(doc)) return { ok: false, erro: "CPF/CNPJ inválido" }
 
+  const competenciaInput = (input.competencia ?? "").trim()
+  const competencia = competenciaInput ? competenciaParaData(competenciaInput) : null
+  if (competenciaInput && !competencia) return { ok: false, erro: "Competência inválida" }
+
   const valor = Math.round((Number(input.valor) + Number.EPSILON) * 100) / 100
   if (!Number.isFinite(valor) || valor <= 0) return { ok: false, erro: "Informe um valor maior que zero" }
   if (valor > 99_999_999.99) return { ok: false, erro: "Valor acima do limite do recibo" }
@@ -146,6 +160,7 @@ export async function gerarRecibo(input: GerarReciboInput): Promise<GerarReciboR
   // ── Reserva do número + gravação ──────────────────────────────────────────
   let numero = 0
   let emitidoEm = ""
+  let competenciaGravada: string | null = null
   let ultimoConhecido = orgData.ultimo_numero_recibo ?? 0
 
   for (let tentativa = 0; tentativa < 5; tentativa++) {
@@ -181,9 +196,10 @@ export async function gerarRecibo(input: GerarReciboInput): Promise<GerarReciboR
         pessoa_cpf: doc.length > 0 ? doc : null,
         valor,
         descricao,
+        competencia,
         emitido_por: user.id,
       })
-      .select("numero, emitido_em")
+      .select("numero, emitido_em, competencia")
       .single()
 
     if (erroInsert) {
@@ -197,6 +213,7 @@ export async function gerarRecibo(input: GerarReciboInput): Promise<GerarReciboR
 
     numero = recibo.numero
     emitidoEm = recibo.emitido_em
+    competenciaGravada = recibo.competencia
     break
   }
 
@@ -214,6 +231,7 @@ export async function gerarRecibo(input: GerarReciboInput): Promise<GerarReciboR
     ok: true,
     numero,
     emitidoEm,
+    competencia: competenciaGravada,
     org: {
       nome: orgData.nome,
       cnpj: orgData.cnpj,

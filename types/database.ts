@@ -337,6 +337,9 @@ export interface Recibo {
   pessoa_cpf: string | null
   valor: number
   descricao: string
+  /** Mês de referência (migration 093), sempre com dia 01. NÃO é a data de
+   *  emissão — emitir em 03/09 um recibo da competência 2026-08-01 é normal. */
+  competencia: string | null
   emitido_em: string
   emitido_por: string | null
   cancelado_em: string | null

@@ -32,6 +32,8 @@ export function ReciboModal({ onClose }: Props) {
   // então digitar "1234" vira R$ 12,34 sem o usuário caçar a vírgula.
   const [centavos, setCentavos] = useState(0)
   const [descricao, setDescricao] = useState(DESCRICAO_SUGERIDA.prestacao_servico)
+  // "AAAA-MM" do input type="month". Começa no mês corrente, que é o caso comum.
+  const [competencia, setCompetencia] = useState(() => new Date().toISOString().slice(0, 7))
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -70,6 +72,7 @@ export function ReciboModal({ onClose }: Props) {
         pessoaDoc: doc,
         valor,
         descricao: descricao.trim(),
+        competencia,
       })
       if (!resultado.ok) { setErro(resultado.erro); return }
 
@@ -82,6 +85,7 @@ export function ReciboModal({ onClose }: Props) {
         valor,
         descricao: descricao.trim(),
         emitidoEm: new Date(resultado.emitidoEm),
+        competencia: resultado.competencia,
         org: resultado.org,
       })
 
@@ -122,6 +126,17 @@ export function ReciboModal({ onClose }: Props) {
               <option key={t.valor} value={t.valor}>{t.label}</option>
             ))}
           </Select>
+        </Field>
+
+        <Field
+          label="Competência"
+          hint="Mês a que o recibo se refere — não é a data de emissão. Deixe vazio se não se aplica."
+        >
+          <Input
+            type="month"
+            value={competencia}
+            onChange={e => setCompetencia(e.target.value)}
+          />
         </Field>
 
         <Field

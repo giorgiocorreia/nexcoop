@@ -222,6 +222,28 @@ export function formatarMoeda(valor: number): string {
   return `R$ ${milhar},${String(centavos).padStart(2, '0')}`
 }
 
+/**
+ * Competência "2026-08-01" (date do Postgres) → "08/2026".
+ *
+ * Trabalha na string de propósito: `new Date('2026-08-01')` é interpretado
+ * como UTC e, em fuso negativo como o do Brasil, volta para 31/07 — a
+ * competência apareceria no mês errado.
+ */
+export function formatarCompetencia(competencia: string | null): string | null {
+  if (!competencia) return null
+  const m = /^(\d{4})-(\d{2})/.exec(competencia)
+  return m ? `${m[2]}/${m[1]}` : null
+}
+
+/** Input `type="month"` devolve "AAAA-MM" — vira o primeiro dia do mês. */
+export function competenciaParaData(mesAno: string): string | null {
+  const m = /^(\d{4})-(\d{2})$/.exec((mesAno ?? '').trim())
+  if (!m) return null
+  const mes = Number(m[2])
+  if (mes < 1 || mes > 12) return null
+  return `${m[1]}-${m[2]}-01`
+}
+
 const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
