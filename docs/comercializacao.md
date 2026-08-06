@@ -302,6 +302,50 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
 
 ---
 
+## 3.1. Impressos — Ficha de Pesagem e Recibo (092/093, 2026-08-06)
+
+Tela `/comercializacao/impressos`. Cada item gera um PDF pronto pra impressão
+com pdf-lib **rodando no navegador** — a server action só reserva numeração e
+devolve os dados do cabeçalho, nunca o arquivo.
+
+### Onde vive
+- `app/(sistema)/comercializacao/impressos/page.tsx` — lista de impressos
+- `.../ReciboModal.tsx` — formulário do recibo
+- `.../actions.ts` — `reservarFichasPesagem`, `gerarRecibo`
+- `lib/pdf/fichasPesagem.ts` — 8 fichas por A4
+- `lib/pdf/recibo.ts` — recibo A4, 2 vias + linha de corte
+- `lib/pdf/recibo-utils.ts` — funções puras (extenso, CPF/CNPJ, competência,
+  direção por tipo). **Não** vive em arquivo `"use server"` (regra 5)
+
+### Recibo — o que é snapshot e o que é ao vivo
+Congelado em `recibos` (a 2ª via tem que sair idêntica ao papel assinado):
+`pessoa_nome`, `pessoa_cpf`, `valor`, `descricao`, `tipo`, `direcao`,
+`competencia`.
+
+Lido **ao vivo** de `organizacoes` a cada geração: razão social, CNPJ,
+endereço, logo, `cor_primaria`. Mudou o cadastro da cooperativa, a reimpressão
+sai com o dado atual — o emitente continua sendo o mesmo CNPJ.
+
+O **valor por extenso** também é derivado a cada geração, nunca gravado: duas
+fontes de verdade para o mesmo número acabariam divergindo.
+
+### Direção (`recebemos` / `pagamos`)
+Define o texto impresso e **quem assina** — sempre quem recebeu o dinheiro.
+Vem do tipo (`DIRECAO_PADRAO`), o usuário pode inverter no modal, e o valor
+escolhido **é gravado**: a regra padrão do tipo pode mudar depois, a via já
+assinada não pode.
+
+### Numeração
+`organizacoes.ultimo_numero_recibo`, reservado por **compare-and-swap** na
+action (`UPDATE … WHERE ultimo_numero_recibo = <valor lido>`), com retry e
+`uq_recibo_numero_por_org` como rede final. Talão independente do da Ficha de
+Pesagem. Número de recibo cancelado fica **queimado** — a sequência não é
+reaproveitada.
+
+⚠️ **A Ficha de Pesagem NÃO tem essa trava**: `reservarFichasPesagem` ainda faz
+read-then-update em `ultimo_numero_ficha`. Dois usuários gerando fichas ao
+mesmo tempo podem receber a mesma faixa. Pendente (seção 4).
+
 ## 4. Pendências abertas
 
 - [x] **Rodar a migration 064** no SQL Editor do Supabase — aplicada em
@@ -321,6 +365,14 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
       3. Insert de `estorno` corrigido (colunas + `usuario_id`). O UPDATE manual
          do saldo **fica** porque o trigger não mexe em `saldo_financeiro` para
          tipo `estorno` (só produto). `npx tsc --noEmit` OK.
+- [ ] **Numeração da Ficha de Pesagem sem trava** (`reservarFichasPesagem`,
+      `app/(sistema)/comercializacao/impressos/actions.ts`): read-then-update em
+      `ultimo_numero_ficha`, dois usuários simultâneos pegam a mesma faixa.
+      Aplicar o mesmo compare-and-swap já usado em `gerarRecibo` (seção 3.1).
+- [ ] **Recibos — tela de histórico/reimpressão**: tabela e policy de SELECT já
+      existem (092), falta a lista.
+- [ ] **Recibos — cancelamento**: colunas `cancelado_em` /
+      `motivo_cancelamento` existem, sem UI.
 - [ ] **Decisão de fonte do ICE** (ver seção 3): contrato + licença.
 - [ ] Rodapé do Índice Nex cita `NOAA` e `CFTC` — não verifiquei se há código
       alimentando essas fontes ou se é só texto aspiracional.
@@ -343,7 +395,15 @@ ficha do contrato, análise técnica por timeframe e curva CCc1..CCc5.
   nunca entra em composição de lote.
 - **Coluna `date` pura nunca passa por `new Date()`** pra exibição — vira
   meia-noite UTC e recua um dia em Brasília. Usar `fmtDataSaida`
-  (`saidas-caixa-utils.ts`) ou formatar direto da string.
+  (`saidas-caixa-utils.ts`) ou formatar direto da string. Mesma armadilha em
+  `recibos.competencia`: `new Date('2026-08-01').getMonth()` devolve **julho**
+  no fuso daqui, e a competência sairia impressa no mês errado — por isso
+  `formatarCompetencia`/`competenciaParaData` (`lib/pdf/recibo-utils.ts`) são
+  string-to-string, sem `Date` no meio.
+- **pdf-lib com fonte padrão usa WinAnsi**: acento português passa, mas emoji
+  ou aspas curvas coladas de um Word fazem o `embedFont` **lançar exceção**.
+  Todo texto livre que entra num PDF precisa passar por sanitização (ver
+  `sanitizar` em `lib/pdf/recibo.ts`).
 - **`getOperacoesHoje` agrega 3 fontes** (movimentacoes_conta + aportes_sangrias
   + lancamentos da sessão) — nova fonte de dinheiro no caixa precisa entrar lá,
   senão "o dinheiro some" da lista de operações do dia.

@@ -12,7 +12,7 @@
 | Super Admin | ✅ Completo | 04/07/2026 — UI redesign |
 | Captação (CRM/Kanban + Radar CAR/Bahia) | ✅ Completo | 04/07/2026 — UI redesign |
 | Contábil (migrations 015–024, 061; 13 telas) | ✅ Completo | 04/07/2026 — UI + classificação automática |
-| Comercialização / Caixa Cacau | ✅ Completo | 19/07/2026 — resultado por safra reescrito (realizado + marcação a mercado, migrations 082/083/084) |
+| Comercialização / Caixa Cacau | ✅ Completo | 06/08/2026 — gerador de recibos em Impressos (migrations 092/093) |
 | NF-e entrada via Focus NFe | ✅ Produção | 16/07/2026 — emitindo em produção (não homologação) |
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
 | Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
@@ -166,9 +166,12 @@ e `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`.
 - Resultado por safra reescrito (realizado + marcação a mercado, `vw_resultado_comercializacao`) + KPI "Resultado Comercialização" no dashboard; fix `saldos_produtor_snapshot` congelado desde a 052; fix FUNRURAL indevido em transferência interna; fix composição de lote sem gravar `lote_itens` (migrations 082/083/084, 19/07/2026)
 - Anti-duplicata de sessão de caixa + reconsulta NF-e saída + ZIP/e-mail estável (migration **090**, **Grok / xAI**, 27–28/07/2026): 1 `sessoes_caixa` aberta por operador; loja e comercialização continuam independentes
 - NF-e de saída com **ICMS diferido (CST 51)** + **Carta de Correção Eletrônica** (migration **091**, 30/07/2026): botão CC-e na tela fiscal com histórico, PDF/XML e envio por e-mail ao comprador; `nfe_eventos` registra inclusive as tentativas recusadas. NF-e de **entrada** segue em CST 41
+- **Gerador de recibos** em `/comercializacao/impressos` (migrations **092/093**, 06/08/2026): PDF A4 com 2 vias na mesma folha + linha de corte, numeração sequencial por org (compare-and-swap), valor por extenso, competência mês/ano, e texto/assinatura que invertem conforme quem recebeu o dinheiro. Detalhes em `docs/comercializacao.md` §3.1
 
 ### ❌ Pendente
 - saldo_kg em contas_produtor (estoque à ordem)
+- Recibos: tela de histórico/reimpressão e cancelamento (schema pronto, falta UI)
+- Ficha de Pesagem: numeração ainda sem trava de concorrência (o recibo já tem)
 - KPI Custo total: quantidade × cotação (não soma valor_pago)
 - DRE integrado (comercialização + loja + custos operacionais) — chat dedicado com Marcos
 

@@ -1,4 +1,4 @@
-# Contexto NexCoop — 28/07/2026
+# Contexto NexCoop — 06/08/2026
 
 > Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
 
@@ -8,6 +8,18 @@
 - **Org admin:** giorgio@coopaibi.com.br
 - **IA / agentes:** Claude (sessões anteriores); **Grok (xAI / Grok Build)** — sessão 27–28/07/2026 (fiscal NF-e, SMTP, caixa Luan, migration 090)
 - **Produção:** nexcoop.com.br
+
+## 06/08/2026 — Recibos (Impressos)
+
+- Gerador de recibos em `/comercializacao/impressos`: modal → PDF A4 com
+  **2 vias na mesma folha** + linha de corte
+- **Migrations 092 e 093 aplicadas em produção (06/08)** — `recibos`,
+  `organizacoes.ultimo_numero_recibo`, `recibos.competencia`
+- Direção (`recebemos`/`pagamos`) vem do tipo mas é gravada — define o texto
+  impresso e quem assina
+- Numeração por compare-and-swap; **a Ficha de Pesagem continua sem essa
+  trava** (pendência)
+- Detalhes em `docs/comercializacao.md` §3.1
 
 ## 27–28/07/2026 — Grok (xAI)
 
@@ -76,6 +88,9 @@ import {
 - [ ] Segurança — auditoria: item #2 (escopo de módulo do parceiro contábil por request) e #5 (assinatura do webhook WhatsApp)
 - [ ] Smoke test dos fluxos novos (venda antecipada, transferência interna, quebra de peso)
 - [ ] Marcos (Contabahia): dados fiscais da loja (NCMs, CSTs, CSC NFC-e)
+- [ ] Recibos: imprimir um de verdade e conferir layout/cabeçalho na impressora
+- [ ] Recibos: tela de histórico/reimpressão e botão de cancelar (colunas já existem)
+- [ ] Ficha de Pesagem: numeração sem trava (mesmo bug de concorrência que o recibo evita)
 
 
 ## IDs críticos

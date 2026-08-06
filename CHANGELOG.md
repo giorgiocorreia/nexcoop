@@ -1,5 +1,23 @@
 # NexCoop — Changelog
 
+## 2026-08-06
+
+### feat(impressos): gerador de recibos com 2 vias em A4
+- **Tela** `/comercializacao/impressos` ganha o item **Recibo**, abrindo modal (`ReciboModal.tsx`) com tipo, competência, direção, nome, CPF/CNPJ, valor e descrição
+- **PDF** (`lib/pdf/recibo.ts`): A4 retrato com **duas vias idênticas na mesma folha** separadas por tracejado "corte aqui" — via de cima para o pagador, de baixo para o recebedor. Cabeçalho com logo, razão social, CNPJ e endereço da org; caixa com `RECIBO Nº 00001` e o valor em destaque; local/data e linha de assinatura com nome e documento de quem recebeu
+- **Cabeçalho da cooperativa é lido AO VIVO** de `organizacoes` a cada geração (inclusive `cor_primaria`, que colore o traço) — só os dados da pessoa e do ato são snapshot. Mudou o endereço da cooperativa, a reimpressão sai com o endereço atual, que é o correto: o emitente é o mesmo CNPJ
+- **`direcao` controlada pelo tipo** (`DIRECAO_PADRAO` em `recibo-utils.ts`): prestação de serviço, diária e adiantamento imprimem "Eu, FULANO, recebi de COOPAIBI…" (fulano assina); pagamento, aluguel e doação imprimem "Recebemos de FULANO…" (cooperativa assina). Dá pra inverter no modal, e **a escolha é gravada** — a 2ª via precisa sair idêntica mesmo que a regra padrão do tipo mude depois
+- **Descrição sugerida por tipo**, editável; a sugestão só é reescrita enquanto o usuário não tiver digitado nada próprio
+- **Valor por extenso** derivado do valor a cada geração, nunca gravado (duas fontes de verdade divergiriam). Regras que os testes pegaram: "um milhão **de** reais" mas "um milhão **e** duzentos mil reais"; "mil e duzentos" mas "mil duzentos e trinta e quatro"
+- **Migration 092**: `recibos` + `organizacoes.ultimo_numero_recibo`. Numeração reservada por **compare-and-swap** (`UPDATE … WHERE ultimo_numero_recibo = <valor lido>`), com `uq_recibo_numero_por_org` como rede final — dois operadores emitindo ao mesmo tempo não pegam o mesmo número. Talão independente do da Ficha de Pesagem
+- **Migration 093**: `recibos.competencia` (date, dia sempre 01 por CHECK) — mês a que o recibo se refere, **separado de `emitido_em`**: emitir em setembro um recibo de agosto é o caso normal, e é a competência que a contabilidade usa pra alocar a despesa. `date` em vez de texto `MM/AAAA` pra permitir filtro/agrupamento por período. Opcional; quando vazia, a linha não é impressa
+- **Sem policy de escrita** em `recibos`: emitir queima numeração sequencial, é ato de servidor via `createAdminClient()`. SELECT liberado pros membros da org (base pra tela de histórico, ainda não construída)
+- **Recibo emitido nunca é editado nem apagado** — errou, cancela (`cancelado_em`) e emite outro; o número fica queimado
+- Permissão em `podeEmitirRecibo` (`lib/permissoes.ts`): `admin` + `caixa_cacau`
+- **Descrição limitada a 500 caracteres** no modal e na action; o gerador ainda trunca com reticências como backstop, para texto longo nunca invadir a linha de assinatura
+- Texto sanitizado para **WinAnsi** antes de ir pro pdf-lib — emoji ou aspas curvas coladas de um Word quebrariam o `embedFont`
+- **Ambas as migrations aplicadas em produção em 06/08/2026**
+
 ## 2026-07-30
 
 ### feat(fiscal): ICMS diferido (CST 51) na saída + Carta de Correção
