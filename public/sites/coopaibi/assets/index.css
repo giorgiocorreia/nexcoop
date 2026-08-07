@@ -90,10 +90,11 @@
 .stat-label { font-size: 11px; color: rgba(255,255,255,.72); text-transform: uppercase; letter-spacing: .6px; margin-top: 3px; font-family: 'Montserrat', sans-serif; }
 
 /* ── SOBRE / PROBLEMA ── */
+.about-section { background: var(--gp); overflow: hidden; }
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
-.about-img-wrap { position: relative; display: flex; justify-content: center; }
-.about-logo { width: 300px; height: 300px; object-fit: contain; border-radius: 50%; border: 5px solid var(--gp); box-shadow: 0 10px 48px rgba(46,139,46,.22); }
-.about-badge { position: absolute; bottom: -10px; right: 10px; background: var(--g1); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 12px; font-weight: 700; text-align: center; font-family: 'Montserrat', sans-serif; }
+.about-img-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
+.about-logo { width: 300px; height: 300px; object-fit: contain; }
+.about-badge { position: static; background: var(--g1); color: #fff; padding: 10px 22px; border-radius: var(--radius); font-size: 12px; font-weight: 700; text-align: center; font-family: 'Montserrat', sans-serif; white-space: nowrap; display: inline-block; margin-top: 12px; }
 .about-badge span { display: block; font-size: 20px; font-weight: 900; color: var(--glt); }
 .about-list { display: flex; flex-direction: column; gap: 18px; margin-top: 28px; }
 .about-item { display: flex; gap: 14px; align-items: flex-start; }
@@ -231,6 +232,7 @@
   .stats-inner { grid-template-columns: repeat(2,1fr); }
   .about-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-logo { width: 220px; height: 220px; }
+  .about-badge { display: block; width: fit-content; margin: 12px auto 0; }
   .sistema-grid { grid-template-columns: 1fr 1fr; }
   .nums-grid { grid-template-columns: repeat(2,1fr); }
   .impacto-grid { grid-template-columns: 1fr; }

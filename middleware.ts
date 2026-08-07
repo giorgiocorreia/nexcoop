@@ -24,9 +24,29 @@ const RAIZ_ESPELHO_COOPAIBI = '/sites/coopaibi'
 // a integração destas rotas com o NexCoop e remover o encaminhamento.
 const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 
-// Páginas PHP navegáveis — o visitante vai pro site antigo e vê o conteúdo
-// real (produtos, vídeos, eventos vindos do MySQL).
-const PHP_NAVEGACAO_COOPAIBI = new Set(['loja.php', 'videos.php', 'acoes.php', 'admin/login.php'])
+// Páginas .php JÁ REFEITAS aqui — mapeiam pro arquivo estático equivalente
+// em public/sites/coopaibi/. O site original é PHP, então os links internos
+// apontam pra .php; refazer uma página é gerar o .html e mover a entrada
+// daqui de PHP_NAVEGACAO_COOPAIBI (abaixo) pra este mapa.
+//
+// index.php foi gerado por scripts/espelho-coopaibi/gerar-index.mjs a partir
+// do index.php original + o conteúdo do ticker de notícias, e conferido byte
+// a byte contra o que o cPanel serve.
+const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
+  'index.php': 'index.html',
+}
+
+// Páginas PHP ainda NÃO refeitas — o visitante vai pro site antigo e vê o
+// conteúdo real (produtos, vídeos, eventos, notícias vindos do MySQL).
+// Conforme cada uma for refeita, sai daqui e entra em PHP_REFEITAS_COOPAIBI.
+const PHP_NAVEGACAO_COOPAIBI = new Set([
+  'loja.php',
+  'videos.php',
+  'acoes.php',
+  'cacau.php',
+  'noticias.php',
+  'admin/login.php',
+])
 
 // Endpoints chamados por fetch() de dentro do HTML — precisam de rewrite
 // (proxy), não redirect: 307/308 preservariam o método, mas o fetch é
@@ -64,12 +84,22 @@ export async function middleware(request: NextRequest) {
     if (PHP_ENDPOINT_COOPAIBI.has(caminhoEspelho)) {
       return NextResponse.rewrite(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI))
     }
-    // Páginas PHP: manda o visitante pro site antigo (307 preserva método e
-    // não fica em cache de navegador, o que importa porque estas rotas vão
-    // deixar de redirecionar conforme a integração avançar).
+    // Páginas PHP ainda não refeitas: manda o visitante pro site antigo (307
+    // preserva método e não fica em cache de navegador, o que importa porque
+    // estas rotas vão deixar de redirecionar conforme a integração avançar).
     if (PHP_NAVEGACAO_COOPAIBI.has(caminhoEspelho)) {
       return NextResponse.redirect(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI), 307)
     }
+    // Páginas .php já refeitas: servem o .html equivalente, mantendo a URL
+    // .php que os links internos do site original usam. Vale nas duas portas
+    // de entrada — inclusive no acesso direto por /sites/coopaibi/index.php.
+    const refeita = PHP_REFEITAS_COOPAIBI[caminhoEspelho]
+    if (refeita) {
+      const url = request.nextUrl.clone()
+      url.pathname = `${RAIZ_ESPELHO_COOPAIBI}/${refeita}`
+      return NextResponse.rewrite(url)
+    }
+
     // No domínio próprio, mapeia pro arquivo estático correspondente. A raiz
     // ("/") serve o index.html, e os caminhos relativos do HTML resolvem
     // sozinhos porque a URL do navegador continua na raiz do site.

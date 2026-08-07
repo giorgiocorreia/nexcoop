@@ -6,7 +6,7 @@
   <title>Compradores Mundiais de Cacau — COOPAIBI 2026</title>
   <meta name="description" content="Mapeamento estratégico dos maiores importadores e processadores globais de cacau. Elaborado pela COOPAIBI para subsidiar estratégia comercial e captação de recursos." />
   <link rel="stylesheet" href="assets/style.css" />
-  <link rel="icon" href="assets/logo-coopaibi.jpeg" type="image/jpeg" />
+  <link rel="icon" href="assets/logo-coopaibi.png" type="image/jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -139,18 +139,7 @@
 <body>
 
   <div class="ribbon">
-    <span>🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta</span>
-  <div class="lang-selector" id="lang-selector">
-    <button class="lang-btn ativo" id="btn-pt" onclick="selecionarIdioma('pt', this)" title="Português">
-      <img src="https://flagcdn.com/w40/br.png" alt="Brasil" />
-      PT
-    </button>
-    <button class="lang-btn" id="btn-en" onclick="selecionarIdioma('en', this)" title="English">
-      <img src="https://flagcdn.com/w40/gb.png" alt="England" />
-      EN
-    </button>
-  </div>
-  </div>
+    <span>🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta</span></div>
 
   <div class="topbar">
     <div class="container">
@@ -160,38 +149,144 @@
     </div>
   </div>
 
-  <nav class="navbar">
+  <nav class="navbar" style="position:relative">
     <div class="container">
       <a href="index.html" class="nav-brand">
-        <img src="assets/logo-coopaibi.jpeg" alt="Logo COOPAIBI" />
+        <img src="assets/logo-coopaibi.png" alt="Logo COOPAIBI" />
         <div class="nav-brand-text">
           <strong>COOPAIBI</strong>
           <span>Cooperativa Mista Agropecuária de Ibirataia</span>
         </div>
       </a>
-      <div class="nav-links">
-        <a href="index.html">Início</a>
-        <a href="index.html#sobre">O Projeto</a>
-        <a href="acoes.php" class="active">Ações</a>
-        <a href="loja.php">Loja</a>
-        <a href="videos.php">Vídeos</a>
-        <a href="parceiro.html">Seja Parceiro</a>
-        <a href="admin/login.php">Intranet</a>
+            <div class="nav-links">
+        <a href="index.html" class="nav-item ">Início</a>
+
+        <!-- SOBRE dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-item nav-dropdown-btn">
+            Sobre <span class="nav-arrow">▾</span>
+          </button>
+          <div class="nav-dropdown-menu">
+            <a href="#sobre" class="nav-dd-item">
+              <span class="nav-dd-icon icon-projeto"></span>
+              <div>
+                <strong>O Projeto</strong>
+                <span>Cacau que Refloresta</span>
+              </div>
+            </a>
+            <a href="#sistema" class="nav-dd-item">
+              <span class="nav-dd-icon icon-cabruca"></span>
+              <div>
+                <strong>Sistema Cabruca</strong>
+                <span>Agrofloresta e Mata Atlântica</span>
+              </div>
+            </a>
+            <a href="#impacto" class="nav-dd-item">
+              <span class="nav-dd-icon icon-impacto"></span>
+              <div>
+                <strong>Impacto</strong>
+                <span>Indicadores verificáveis</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- SERVIÇOS dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-item nav-dropdown-btn">
+            Serviços <span class="nav-arrow">▾</span>
+          </button>
+          <div class="nav-dropdown-menu">
+            <a href="loja.php" class="nav-dd-item ">
+              <span class="nav-dd-icon icon-loja"></span>
+              <div>
+                <strong>Loja Agropecuária</strong>
+                <span>Insumos e produtos rurais</span>
+              </div>
+            </a>
+            <a href="cacau.php" class="nav-dd-item ">
+              <span class="nav-dd-icon icon-cacau"></span>
+              <div>
+                <strong>Compra de Cacau</strong>
+                <span>Preços e agendamento</span>
+              </div>
+            </a>
+            <a href="videos.php" class="nav-dd-item ">
+              <span class="nav-dd-icon icon-videos"></span>
+              <div>
+                <strong>Vídeos</strong>
+                <span>Palestras e eventos</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- AÇÕES -->
+        <a href="acoes.php" class="nav-item active">Ações</a>
+
+        <!-- SEJA PARCEIRO -->
+        <a href="parceiro.html" class="nav-item ">Seja Parceiro</a>
+
+        <!-- INTRANET -->
+        <a href="admin/login.php" class="nav-item ">Intranet</a>
+
+        <!-- CTA -->
         <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
       </div>
       <button class="nav-toggle" onclick="toggleMenu()" aria-label="Menu">☰</button>
     </div>
-    <div class="nav-mobile" id="nav-mobile">
-      <a href="index.html">Início</a>
-      <a href="index.html#sobre">O Projeto</a>
-      <a href="acoes.php">Ações</a>
-      <a href="loja.php">Loja</a>
-      <a href="videos.php">Vídeos</a>
+        <div class="nav-mobile" id="nav-mobile">
+      <div class="nav-mobile-section">
+        <div class="nav-mobile-title">Início</div>
+        <a href="index.html">Página Inicial</a>
+      </div>
+      <div class="nav-mobile-section">
+        <div class="nav-mobile-title">Sobre</div>
+        <a href="#sobre">O Projeto</a>
+        <a href="#sistema">Sistema Cabruca</a>
+        <a href="#impacto">Impacto</a>
+      </div>
+      <div class="nav-mobile-section">
+        <div class="nav-mobile-title">Serviços</div>
+        <a href="loja.php">🛒 Loja Agropecuária</a>
+        <a href="cacau.php">🍫 Compra de Cacau</a>
+        <a href="videos.php">🎬 Vídeos</a>
+      </div>
+      <div class="nav-mobile-section">
+        <div class="nav-mobile-title">Mais</div>
+        <a href="acoes.php">Ações</a>
         <a href="parceiro.html">Seja Parceiro</a>
-      <a href="admin/login.php">Intranet</a>
-      <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
+        <a href="admin/login.php">Intranet</a>
+      </div>
+      <a href="cooperado.html" class="nav-cta" style="margin:12px 16px;display:block;text-align:center">Seja Cooperado</a>
     </div>
   </nav>
+  <!-- TICKER TRADINGVIEW -->
+  <div style="background:#0f2a0f;border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="display:flex;align-items:stretch;height:46px">
+      <div style="background:#1a5c1a;color:#fff;font-size:10px;font-weight:800;padding:0 14px;display:flex;align-items:center;font-family:'Montserrat',sans-serif;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">📈 Mercado</div>
+      <div style="flex:1;overflow:hidden">
+        <div class="tradingview-widget-container" style="height:46px">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+          {
+            "symbols": [
+              {"proName": "CAPITALCOM:COCOA", "title": "Cacau"},
+              {"proName": "FX_IDC:USDBRL", "title": "USD/BRL"},
+              {"proName": "CAPITALCOM:COFFEE", "title": "Café"},
+              {"proName": "CAPITALCOM:SOYBEANS", "title": "Soja"}
+            ],
+            "showSymbolLogo": false,
+            "isTransparent": true,
+            "displayMode": "adaptive",
+            "colorTheme": "dark",
+            "locale": "pt_BR"
+          }
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- BREADCRUMB -->
   <div class="breadcrumb">
@@ -692,63 +787,6 @@
       setTimeout(coletarItens, 800);
     });
 
-    function isVisivel(el) {
-      if (!el) return false;
-      var s = window.getComputedStyle(el);
-      return s.display !== "none" && s.visibility !== "hidden";
-    }
-
-    function deveIgnorar(txt) {
-      if (!txt || txt.length < 3) return true;
-      if (/^[\d\s\.,;:\-\+\%\(\)\[\]\{\}\/\\@#!\?=\*&·•→]+$/.test(txt)) return true;
-      if (/^https?:\/\//.test(txt)) return true;
-      if (/^[\w\.-]+@[\w\.-]+/.test(txt)) return true;
-      return false;
-    }
-
-    function coletarItens() {
-      itens = [];
-      var vistos = {};
-
-      // 1. Tratar headings (h1-h4) como bloco completo
-      document.querySelectorAll("h1,h2,h3,h4").forEach(function(el) {
-        if (!isVisivel(el)) return;
-        if (el.closest && el.closest(".lang-selector")) return;
-        var txt = (el.innerText || el.textContent).trim().replace(/\s+/g, " ");
-        if (deveIgnorar(txt) || vistos[txt]) return;
-        vistos[txt] = true;
-        var emEl  = el.querySelector("em");
-        itens.push({
-          tipo:       "heading",
-          el:         el,
-          original:   txt,
-          emOriginal: emEl ? emEl.textContent.trim() : null,
-          innerHTML:  el.innerHTML
-        });
-      });
-
-      // 2. Demais nós de texto
-      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-      var no;
-      while ((no = walker.nextNode())) {
-        var pai = no.parentNode;
-        if (!pai) continue;
-        var tag = pai.nodeName.toLowerCase();
-        if (/^(script|style|noscript|h1|h2|h3|h4|svg|path|iframe)$/.test(tag)) continue;
-        if (!isVisivel(pai)) continue;
-        if (pai.closest && pai.closest(".lang-selector")) continue;
-        var txt = no.nodeValue.trim();
-        if (deveIgnorar(txt) || vistos[txt]) {
-          if (vistos[txt] && !deveIgnorar(txt)) {
-            itens.push({ tipo: "dup", node: no, original: no.nodeValue, ref: txt });
-          }
-          continue;
-        }
-        vistos[txt] = true;
-        itens.push({ tipo: "texto", node: no, original: no.nodeValue });
-      }
-    }
-
     function aplicar(mapa) {
       itens.forEach(function(item) {
         if (item.tipo === "heading") {
@@ -890,5 +928,73 @@
     };
   })();
   </script>
+  <script>
+  (function() {
+    document.querySelectorAll('.nav-dropdown').forEach(function(dd) {
+      dd.addEventListener('mouseenter', function() { dd.classList.add('ativo'); });
+      dd.addEventListener('mouseleave', function() { dd.classList.remove('ativo'); });
+    });
+  })();
+  </script>
+
+  <!-- BOTÃO TRADUTOR -->
+  <button class="gt-btn" onclick="document.getElementById('gt-popup').classList.add('aberto')" title="Traduzir página">
+    <img src="https://flagcdn.com/w40/br.png" id="gt-flag" alt="Idioma" />
+    <span id="gt-label">PT</span>
+  </button>
+
+  <!-- POPUP DE IDIOMAS -->
+  <div class="gt-popup" id="gt-popup" onclick="if(event.target===this)this.classList.remove('aberto')">
+    <div class="gt-popup-box">
+      <button class="gt-lang-btn" onclick="traduzirPara('pt','BR','PT')">
+        <img src="https://flagcdn.com/w80/br.png" alt="Português" />
+        Português
+      </button>
+      <button class="gt-lang-btn" onclick="traduzirPara('en','GB','EN')">
+        <img src="https://flagcdn.com/w80/gb.png" alt="English" />
+        English
+      </button>
+      <button class="gt-lang-btn" onclick="traduzirPara('es','ES','ES')">
+        <img src="https://flagcdn.com/w80/es.png" alt="Español" />
+        Español
+      </button>
+    </div>
+  </div>
+
+  <!-- GOOGLE TRANSLATE SCRIPT -->
+  <div id="google_translate_element" style="display:none"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'pt',
+        includedLanguages: 'en,es,pt',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+    function traduzirPara(lang, flagCode, label) {
+      document.getElementById('gt-popup').classList.remove('aberto');
+      document.getElementById('gt-flag').src = 'https://flagcdn.com/w40/' + flagCode.toLowerCase() + '.png';
+      document.getElementById('gt-label').textContent = label;
+      if (lang === 'pt') {
+        // Remover cookie do Google Translate e recarregar
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname + ';';
+        location.reload();
+        return;
+      }
+      // Definir cookie para o idioma escolhido
+      document.cookie = 'googtrans=/pt/' + lang + '; path=/';
+      document.cookie = 'googtrans=/pt/' + lang + '; path=/; domain=.' + location.hostname;
+      var sel = document.querySelector('.goog-te-combo');
+      if (sel) {
+        sel.value = lang;
+        sel.dispatchEvent(new Event('change'));
+      } else {
+        setTimeout(function(){ traduzirPara(lang, flagCode, label); }, 600);
+      }
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

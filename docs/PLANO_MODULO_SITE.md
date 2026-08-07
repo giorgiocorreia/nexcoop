@@ -154,6 +154,62 @@ exigência era não perder uma linha do que está publicado.
   `translate.php`) via rewrite/proxy pro cPanel: os formulários e a tradução
   PT/EN seguem funcionando como hoje (o porte React tinha perdido os dois).
 
+### Correção de 07/08/2026 — a pasta do Dropbox estava desatualizada
+
+O primeiro espelho foi montado a partir de
+`Dropbox/.../Site/coopaibi-site` (21/05). **Essa pasta NÃO é o que está no
+ar.** O site em produção evoluiu depois disso e ganhou: ticker de mercado
+(widget TradingView), menus dropdown, `noticias.php` (com slug por matéria),
+`cacau.php`, e a home virou `index.php`. Tradução passou de botões PT/EN +
+`translate.php` pro Google Translate Element. O logo virou `.png`.
+
+Os arquivos da versão atual estão espalhados em TRÊS pastas, e nenhuma
+sozinha tem o site completo:
+
+| Arquivo | Onde está a versão que confere com o ar |
+|---|---|
+| `index.php`, `noticias.php`, `acoes.php`, `cacau.php`, `loja.php`, `videos.php` | `C:\COOPAIBI_LOCAL\Site` |
+| `cooperado.html`, `parceiro.html`, `style.css`, `noticias.sql` | `C:\COOPAIBI_LOCAL\Site` |
+| `index.css`, `logo-coopaibi.png`, `logo-evento-cacau26.jpeg`, `relatorio-compradores.html` | `C:\COOPAIBI_LOCAL\Site\Part 1` |
+| `homens-de-barro.html`, `acoes.css`, `cooperado.css`, `parceiro.css`, `loja.css` | Dropbox `coopaibi-site` (só aqui) |
+
+**Antes de usar qualquer cópia local, conferir sha256 contra
+`https://coopaibi.com.br/<arquivo>`.** Foi assim que o erro apareceu, e é o
+único jeito de não repeti-lo. O cPanel é a fonte da verdade; o Dropbox não
+recebe os uploads feitos por FileZilla.
+
+### Refazer as páginas PHP — uma por uma
+
+PHP não roda na Vercel, então cada página `.php` precisa virar `.html`. O
+roteamento em `middleware.ts` tem dois conjuntos que governam isso:
+
+- `PHP_REFEITAS_COOPAIBI` — mapa `.php → .html` das já refeitas. A URL `.php`
+  é preservada, porque é o que os links internos do site original usam.
+- `PHP_NAVEGACAO_COOPAIBI` — as que ainda faltam, redirecionadas (307) pro
+  cPanel, onde funcionam de verdade.
+
+Refazer uma página = gerar o `.html`, conferir contra o ar, e mover a entrada
+de um conjunto pro outro.
+
+| Página | Tabelas MySQL de que depende | Situação |
+|---|---|---|
+| `index.php` | `noticias` (8 títulos do ticker) | ✅ refeita em 07/08 |
+| `noticias.php` | `noticias` | pendente |
+| `cacau.php` | `cacau_precos` | pendente |
+| `acoes.php` | `acoes_eventos` | pendente |
+| `videos.php` | `videos` | pendente |
+| `loja.php` | `promocoes`, `categorias`, `produtos` | pendente |
+
+**index.php (feita):** `scripts/espelho-coopaibi/gerar-index.mjs` remove o
+cabeçalho PHP e substitui o único trecho dinâmico (o ticker) pelo conteúdo
+renderizado, conferindo o resultado byte a byte contra o ar. Deu idêntico —
+40.995 bytes, mesmo sha256. O ticker tem 1 notícia hoje, com slug
+`lei-municipal-n-12982025-...`, diferente do seed de `noticias.sql`
+(`lei-municipal-1298-2025`): a matéria foi cadastrada pelo admin.
+
+O dado ainda vem congelado do cPanel. Ligá-lo no banco do NexCoop é a etapa
+seguinte, e é o que transforma o espelho em módulo de verdade.
+
 ### ⚠ Bloqueio conhecido para a virada de DNS
 
 `LEGADO_COOPAIBI` em `middleware.ts` aponta pra `https://coopaibi.com.br`,
