@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmt } from '@/lib/fmt'
 import {
   listarEntradasContabil,
-  kpisEntradasContabil,
   exportarXmlsEntradasContabil,
 } from './actions'
 import { ContentCard } from '@/components/comercializacao/ui/ContentCard'
@@ -69,12 +68,17 @@ export default function ContabilNfeEntradas() {
     setLoading(true)
     setErro(null)
     try {
-      const [rows, k] = await Promise.all([
-        listarEntradasContabil(),
-        kpisEntradasContabil(),
-      ])
-      setLista((rows as Entrada[]) ?? [])
-      setKpis(k)
+      const rows = ((await listarEntradasContabil()) as Entrada[]) ?? []
+      setLista(rows)
+      const autorizadas = rows.filter(
+        r => r.status === 'autorizada' || r.status === 'emitida',
+      )
+      setKpis({
+        total: rows.length,
+        autorizadas: autorizadas.length,
+        processando: rows.filter(r => r.status === 'processando').length,
+        valorTotal: autorizadas.reduce((s, r) => s + Number(r.valor_total ?? 0), 0),
+      })
       setSelecionados(new Set())
     } catch (e: any) {
       setErro(e?.message ?? 'Erro ao carregar entradas')
