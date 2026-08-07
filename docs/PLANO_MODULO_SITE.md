@@ -196,9 +196,9 @@ de um conjunto pro outro.
 | `index.php` | `noticias` (8 títulos) | `site_conteudos` | ⏸ espelho congelado |
 | `cacau.php` | `cacau_precos` | **`cotacoes`** | ✅ **integrada** 07/08 |
 | `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | ✅ **integrada** 07/08 |
-| `noticias.php` | `noticias` | `site_conteudos` (falta campo) | pendente |
-| `videos.php` | `videos` | `site_conteudos` (falta campo) | pendente |
-| `acoes.php` | `acoes_eventos` — **vazia** | — | ✅ **espelho** 07/08 (nada a integrar) |
+| `noticias.php` | `noticias` | **`site_conteudos`** tipo `noticia` | ✅ **integrada** 07/08 |
+| `videos.php` | `videos` | **`site_conteudos`** tipo `video` | ✅ **integrada** 07/08 |
+| `acoes.php` | `acoes_eventos` — **vazia** | — | ✅ rota 07/08 (só pela faixa) |
 | `biblioteca.php` | `biblioteca` | — | página órfã (link para enviar) |
 
 ### O que o dump de 07/08 revelou
@@ -286,6 +286,33 @@ módulo Loja que a vitrine consome.
 Uma foto por produto, como no site antigo (`produtos.foto`). PDV e estoque
 ficam **fora** do escopo por ora — são telas de uso diário que acabaram de
 passar pela blindagem da migration 094.
+
+**noticias.php e videos.php (integradas):** dependem da migration 095 e do
+seed `supabase/seeds/003_coopaibi_site_conteudos.sql`. Notícias tem dois
+modos, como no original: lista e matéria aberta por `?slug=` — o slug é o
+mesmo que o site já publicava, para não quebrar link compartilhado; slug
+inexistente cai na lista em vez de página vazia. Vídeos mantém `?cat=` e
+`?busca=`, com o destaque encabeçando só a visão sem filtro.
+
+**acoes.php:** virou rota sem ter dado a integrar, só para receber a faixa
+rolante. O conteúdo segue sendo a captura fiel.
+
+### Faixa de topo padronizada (melhoria, 07/08)
+
+No site original só a home e Notícias tinham a faixa rolante
+(`ribbon ribbon-ticker`); Loja, Cacau, Ações e Vídeos ficavam com faixa
+estática de texto fixo. Por decisão do Giorgio, todas passam a rolar com as
+notícias — **é melhoria sobre o publicado, não espelho**, e só ficou
+possível quando as notícias foram para `site_conteudos`.
+
+Implementação em `lib/site/coopaibi/ticker.ts`, compartilhada pelas cinco
+rotas. Os títulos saem duplicados de propósito: a animação desliza -50% da
+largura, então a segunda cópia entra pela direita quando a primeira sai —
+sem ela o letreiro pisca a cada volta. Sem notícia cadastrada, a faixa
+estática original volta, que é melhor que uma faixa vazia deslizando.
+
+O CSS que faz rolar já estava no `style.css` espelhado; nada de estilo
+precisou mudar.
 
 ### Pendências de dado descobertas em 07/08
 

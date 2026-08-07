@@ -24,7 +24,7 @@ BEGIN
   -- O slug é o que o site já publica hoje em /noticias.php?slug=... — mantê-lo
   -- preserva qualquer link que a cooperativa tenha compartilhado.
   INSERT INTO site_conteudos
-    (organizacao_id, tipo, titulo, slug, descricao, conteudo, destaque, ativo, ordem)
+    (organizacao_id, tipo, titulo, slug, descricao, conteudo, imagem_url, destaque, ativo, ordem)
   VALUES (
     org_coopaibi,
     'noticia',
@@ -32,11 +32,23 @@ BEGIN
     'lei-municipal-n-12982025-coopaibi-declarada-de-utilidade-publica',
     'A Câmara Municipal de Ibirataia aprovou por unanimidade a Lei nº 1.298/2025, declarando a COOPAIBI de Utilidade Pública Municipal.',
     '<p>A Câmara Municipal de Ibirataia aprovou por unanimidade a Lei nº 1.298/2025, declarando a Cooperativa Mista Agropecuária de Ibirataia — COOPAIBI — de Utilidade Pública Municipal. O reconhecimento reforça a credibilidade institucional da cooperativa junto a patrocinadores e parceiros nacionais e internacionais, e consolida seu papel no desenvolvimento sustentável da agricultura familiar no Médio Rio de Contas.</p>',
+    -- A imagem veio do cPanel (uploads/noticias/) e está copiada byte a byte
+    -- em public/sites/coopaibi/uploads/. Caminho absoluto do próprio site,
+    -- para não depender do cPanel continuar no ar depois da virada de DNS.
+    '/sites/coopaibi/uploads/noticias/noticia_6a14aeecd5d5f.webp',
     true,
     true,
     0
   )
   ON CONFLICT (organizacao_id, slug) WHERE slug IS NOT NULL DO NOTHING;
+
+  -- Se a notícia já tinha sido inserida sem imagem (primeira execução deste
+  -- seed, antes de eu notar que o site publica uma), preenche agora.
+  UPDATE site_conteudos
+     SET imagem_url = '/sites/coopaibi/uploads/noticias/noticia_6a14aeecd5d5f.webp'
+   WHERE organizacao_id = org_coopaibi
+     AND slug = 'lei-municipal-n-12982025-coopaibi-declarada-de-utilidade-publica'
+     AND imagem_url IS NULL;
 
   -- ── VÍDEOS ────────────────────────────────────────────────────────────────
   -- Atenção: no MySQL, os vídeos 2 e 3 ("Parte 2" e "Parte Final") apontam

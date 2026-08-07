@@ -1,5 +1,8 @@
 import { buscarProdutosLojaVitrine, type ProdutoVitrine } from '@/lib/site/queries'
 import { LOJA_PARTES } from '@/components/site/custom/coopaibi/content/loja-partes'
+import { buscarNoticiasTicker, montarFaixaTicker } from './ticker'
+
+const FAIXA_FIXA = '🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta'
 
 // Monta a Loja do site da COOPAIBI a partir de `loja_produtos` — o cadastro
 // de verdade, o mesmo que o PDV e o estoque usam.
@@ -144,7 +147,10 @@ export interface FiltroLoja {
 }
 
 export async function montarPaginaLoja(orgId: string, filtro: FiltroLoja): Promise<string> {
-  const todos = await buscarProdutosLojaVitrine(orgId)
+  const [todos, noticias] = await Promise.all([
+    buscarProdutosLojaVitrine(orgId),
+    buscarNoticiasTicker(orgId),
+  ])
   const categorias = agruparCategorias(todos)
 
   const catAtiva = filtro.cat ? chaveCategoria(filtro.cat) : ''
@@ -212,6 +218,12 @@ ${barraCategorias(categorias, catAtiva)}
     )
     .join('\n            ')
 
-  const [p0, p1, p2, p3] = LOJA_PARTES
-  return p0 + esc(filtro.busca) + p1 + catalogo + p2 + categoriasRodape + p3
+  const [p0, p1, p2, p3, p4] = LOJA_PARTES
+  return (
+    p0 + montarFaixaTicker(noticias, FAIXA_FIXA) +
+    p1 + esc(filtro.busca) +
+    p2 + catalogo +
+    p3 + categoriasRodape +
+    p4
+  )
 }

@@ -1,5 +1,8 @@
 import { buscarCotacoesVitrine } from '@/lib/site/queries'
 import { CACAU_PARTES } from '@/components/site/custom/coopaibi/content/cacau-partes'
+import { buscarNoticiasTicker, montarFaixaTicker } from './ticker'
+
+const FAIXA_FIXA = '🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta'
 
 // Monta a página Compra de Cacau do site da COOPAIBI com o preço vivo.
 //
@@ -49,16 +52,23 @@ function carimbo(iso: string, formato: 'curto' | 'longo'): string {
 }
 
 export async function montarPaginaCacau(orgId: string): Promise<string> {
-  const cotacoes = await buscarCotacoesVitrine(orgId)
+  const [cotacoes, noticias] = await Promise.all([
+    buscarCotacoesVitrine(orgId),
+    buscarNoticiasTicker(orgId),
+  ])
   const c = cotacoes[0]
 
-  const [p0, p1, p2, p3, p4] = CACAU_PARTES
+  const [p0, p1, p2, p3, p4, p5] = CACAU_PARTES
+  const faixa = montarFaixaTicker(noticias, FAIXA_FIXA)
 
   // Sem cotação vigente a página não inventa número: os blocos de preço
   // somem e sobra o convite a consultar a cooperativa. Mostrar zero, ou o
   // valor velho, seria pior do que não mostrar.
   if (!c) {
-    return p0 + '' + p1 + '' + p2 + 'Consulte a cooperativa para o preço do dia' + p3 + '' + p4
+    return (
+      p0 + faixa + p1 + '' + p2 + '' + p3 +
+      'Consulte a cooperativa para o preço do dia' + p4 + '' + p5
+    )
   }
 
   const nome = esc(c.produto_nome)
@@ -102,5 +112,7 @@ export async function montarPaginaCacau(orgId: string): Promise<string> {
           </div>
           <div class="preco-update">🕐 ${carimbo(c.vigente_a_partir_de, 'longo')}</div>`
 
-  return p0 + updateHero + p1 + precosHero + p2 + updateTabela + p3 + linhaPrecoBase + p4
+  return (
+    p0 + faixa + p1 + updateHero + p2 + precosHero + p3 + updateTabela + p4 + linhaPrecoBase + p5
+  )
 }

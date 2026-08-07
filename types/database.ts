@@ -730,6 +730,14 @@ export interface SiteConteudo {
   ativo:          boolean
   criado_em:      string
   atualizado_em:  string
+  // Migration 095 — o que faltava para portar noticias.php e videos.php do
+  // site da COOPAIBI. `descricao` continua sendo o resumo/chamada;
+  // `conteudo` é o texto integral, que só a notícia usa.
+  slug:           string | null
+  conteudo:       string | null
+  youtube_id:     string | null
+  categoria:      string | null
+  destaque:       boolean
 }
 
 export interface LojaEstoqueMovimento {

@@ -114,6 +114,28 @@ export async function buscarConteudosPorTipo(
     .eq('organizacao_id', orgId)
     .eq('tipo', tipo)
     .eq('ativo', true)
+    // Destaque primeiro, como o site original fazia (ORDER BY destaque DESC):
+    // a notícia em evidência abre a lista, o vídeo em destaque encabeça a
+    // galeria. Depois `ordem`, e o mais recente desempata.
+    .order('destaque', { ascending: false })
     .order('ordem', { ascending: true })
+    .order('criado_em', { ascending: false })
   return (data as SiteConteudo[] | null) ?? []
+}
+
+// Uma notícia pela URL própria (site/noticias.php?slug=...). Só ativa: link
+// compartilhado de notícia despublicada tem que deixar de abrir.
+export async function buscarConteudoPorSlug(
+  orgId: string,
+  slug: string
+): Promise<SiteConteudo | null> {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('site_conteudos')
+    .select('*')
+    .eq('organizacao_id', orgId)
+    .eq('slug', slug)
+    .eq('ativo', true)
+    .maybeSingle()
+  return (data as SiteConteudo | null) ?? null
 }

@@ -44,12 +44,6 @@ const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 // a byte contra o que o cPanel serve.
 const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
   'index.php': 'index.html',
-  // Ações não tem o que integrar: `acoes_eventos` está VAZIA no MySQL e o
-  // 8º Festival do AgroChocolate que a página mostra é hardcoded no
-  // acoes.php. Captura fiel resolve a página inteira. Se um dia a
-  // cooperativa passar a cadastrar eventos, aí ela migra para o mapa de
-  // integradas, lendo `site_conteudos` tipo 'evento'.
-  'acoes.php': 'acoes.html',
 }
 
 // Páginas .php JÁ INTEGRADAS ao banco do NexCoop — vão para uma rota do
@@ -65,14 +59,24 @@ const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
   // O site tinha MySQL próprio, com um único produto cadastrado à mão,
   // enquanto a Loja opera com 27.
   'loja.php': 'loja',
+  // Notícias saem de `site_conteudos` (tipo 'noticia', migration 095). O
+  // ?slug= continua sendo o mesmo parâmetro do site original, para não
+  // quebrar link já compartilhado.
+  'noticias.php': 'noticias',
+  // Galeria sai de `site_conteudos` (tipo 'video'), com o youtube_id que a
+  // 095 trouxe. ?cat= e ?busca= seguem sendo os parâmetros originais.
+  'videos.php': 'videos',
+  // Ações é a única sem dado próprio a integrar: `acoes_eventos` está VAZIA
+  // no MySQL e o 8º Festival que a página mostra é hardcoded no acoes.php.
+  // Virou rota mesmo assim, só para ganhar a faixa rolante de notícias que
+  // agora vale em todas as páginas. Se um dia a cooperativa cadastrar
+  // eventos, é `site_conteudos` tipo 'evento' que entra aqui.
+  'acoes.php': 'acoes',
 }
 
-// Páginas PHP ainda NÃO refeitas — o visitante vai pro site antigo e vê o
-// conteúdo real (produtos, vídeos, eventos, notícias vindos do MySQL).
-// Conforme cada uma for refeita, sai daqui e entra em PHP_REFEITAS_COOPAIBI.
+// Páginas PHP que continuam no cPanel — o visitante é redirecionado para lá.
+// Conforme cada uma for refeita, sai daqui e entra num dos mapas acima.
 const PHP_NAVEGACAO_COOPAIBI = new Set([
-  'videos.php',
-  'noticias.php',
   // O admin PHP continua no cPanel de propósito: quem cadastra produto,
   // preço e notícia passou a ser o painel do NexCoop. Ele existe só
   // enquanto o site antigo estiver no ar.
