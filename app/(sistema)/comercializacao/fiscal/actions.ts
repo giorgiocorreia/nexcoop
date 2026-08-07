@@ -5,6 +5,16 @@ import { getOrganizacaoId } from '@/lib/auth'
 import { focusDelete } from '@/lib/focusnfe/client'
 import { revalidatePath } from 'next/cache'
 
+/** Status de NF-e de saída que entram na listagem fiscal (nunca rascunho). */
+const STATUS_NFE_SAIDA_LISTA = [
+  'autorizada',
+  'processando',
+  'cancelada',
+  'rejeitada',
+  'devolvida',
+  'erro',
+] as const
+
 export async function listarNfeSaida() {
   const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
@@ -19,7 +29,7 @@ export async function listarNfeSaida() {
       lotes(codigo, produto_descricao, safras(ano))
     `)
     .eq('organizacao_id', orgId)
-    .not('status_nfe', 'is', null)
+    .in('status_nfe', [...STATUS_NFE_SAIDA_LISTA])
     .order('data_emissao_nfe', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -34,7 +44,7 @@ export async function kpisNfeSaida() {
     .from('vendas_externas')
     .select('status_nfe, valor_bruto')
     .eq('organizacao_id', orgId)
-    .not('status_nfe', 'is', null)
+    .in('status_nfe', [...STATUS_NFE_SAIDA_LISTA])
 
   const rows = data ?? []
   const autorizadas = rows.filter(r => r.status_nfe === 'autorizada').length

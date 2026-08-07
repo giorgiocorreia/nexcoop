@@ -41,12 +41,21 @@ export async function GET(req: NextRequest) {
       // 'processando' entra na lista para permitir a consulta manual do status
       // na Focus (botão Consultar → /api/nfe/sincronizar) — sem isso a nota
       // que fica presa em processamento nunca sai desse estado.
-      .in("status", ["autorizada", "emitida", "processando"])
+      // 'emitida' sem chave/número (legado) não entra — polui a lista fiscal.
+      .in("status", ["autorizada", "processando"])
       .order("created_at", { ascending: false })
 
     if (error) return NextResponse.json([], { status: 500 })
 
-    return NextResponse.json(data ?? [])
+    // Só notas com identificação real ou ainda em processamento na SEFAZ
+    const rows = (data ?? []).filter(
+      (n: any) =>
+        n.status === "processando" ||
+        n.chave_nfe ||
+        n.numero_nfe,
+    )
+
+    return NextResponse.json(rows)
   } catch {
     return NextResponse.json([], { status: 500 })
   }
