@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -629,7 +629,7 @@ export default function Sidebar({
     if (isSuperAdmin)
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
     if (isParceiroAcessandoOrg) {
-      const grupos: React.ReactNode[] = []
+      const grupos: ReactNode[] = []
       // form: limpa cookie parceiro_org_id (Link sozinho deixaria no modo cliente)
       grupos.push(
         <div key="meu-escritorio" style={{ marginBottom: '0.5rem' }}>
