@@ -1,4 +1,5 @@
-﻿import { createClient } from '@/lib/supabase/server'
+﻿import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import type { Lancamento, Assembleia, Documento } from '@/types/database'
@@ -42,7 +43,14 @@ export default async function DashboardPage() {
       .eq('usuario_id', user.id)
       .eq('ativo', true)
       .maybeSingle()
-    if (prof) redirect('/escritorio')
+    if (prof) {
+      const cookieStore = await cookies()
+      // Dentro da org cliente → home do contábil; senão painel do escritório
+      if (cookieStore.get('parceiro_org_id')?.value) {
+        redirect('/contabil/plano-de-contas')
+      }
+      redirect('/escritorio')
+    }
   }
 
   // Redireciona para /loja se usuário tem exclusivamente funções da loja

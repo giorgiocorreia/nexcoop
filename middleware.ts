@@ -395,7 +395,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    // Contador externo: não tem linha em usuarios — home é /escritorio
+    // Contador externo: não usa o dashboard da cooperativa
     if (!usuarioFuncoes) {
       const { data: profDash } = await supabase
         .from('profissionais_parceiros')
@@ -405,7 +405,11 @@ export async function middleware(request: NextRequest) {
         .maybeSingle()
       if (profDash) {
         const url = request.nextUrl.clone()
-        url.pathname = '/escritorio'
+        // Dentro do módulo contábil da org cliente → home contábil
+        // Fora (só escritório) → painel do parceiro
+        url.pathname = request.cookies.get('parceiro_org_id')?.value
+          ? '/contabil/plano-de-contas'
+          : '/escritorio'
         return NextResponse.redirect(url)
       }
     }
@@ -422,6 +426,41 @@ export async function middleware(request: NextRequest) {
       if (funcoes.includes('caixa_loja') || funcoes.includes('gerente_loja') || funcoes.includes('estoquista_loja')) {
         const url = request.nextUrl.clone()
         url.pathname = '/loja'
+        return NextResponse.redirect(url)
+      }
+    }
+  }
+
+  // Parceiro acessando org: bloquear rotas da cooperativa fora do escopo contábil/financeiro/fiscal
+  if (user && !isRSC && request.cookies.get('parceiro_org_id')?.value) {
+    const { data: usuarioRow } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!usuarioRow) {
+      const bloqueadas = [
+        '/dashboard',
+        '/cooperados',
+        '/assembleias',
+        '/documentos',
+        '/configuracoes',
+        '/mensalidades',
+        '/producao',
+        '/captacao',
+        '/loja',
+        '/admin',
+      ]
+      const bloqueada = bloqueadas.some(
+        (p) => pathname === p || pathname.startsWith(p + '/'),
+      )
+      // Comercialização: só fiscal se tiver flag (gate fino nas páginas); resto bloqueia
+      const comBloqueada =
+        pathname.startsWith('/comercializacao') &&
+        !pathname.startsWith('/comercializacao/fiscal')
+      if (bloqueada || comBloqueada) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/contabil/plano-de-contas'
         return NextResponse.redirect(url)
       }
     }
