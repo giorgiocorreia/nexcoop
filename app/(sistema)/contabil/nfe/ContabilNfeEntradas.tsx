@@ -3,7 +3,7 @@
 /**
  * Contábil — lista de NF-e de entrada (consulta).
  * Layout alinhado a ContabilNfeSaidas (KPIs + filtros).
- * Exportar XMLs com seleção (todas ou algumas).
+ * Exportar XMLs: 1º clique ativa seleção; 2º exporta as marcadas.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -17,7 +17,7 @@ import { KpiCard } from '@/components/comercializacao/ui/KpiCard'
 import { Badge } from '@/components/comercializacao/ui/Badge'
 import { EmptyState } from '@/components/comercializacao/ui/EmptyState'
 import { Input, Select } from '@/components/comercializacao/ui/Field'
-import { COM_C } from '@/components/comercializacao/ui/tokens'
+import { COM_C, inputStyle } from '@/components/comercializacao/ui/tokens'
 import { Btn } from '@/components/ui/Btn'
 
 type Entrada = {
@@ -41,6 +41,23 @@ const STATUS_ENT: Record<string, { label: string; bg: string; cor: string }> = {
   processando: { label: 'Processando', bg: COM_C.laranjaLt, cor: COM_C.laranja },
 }
 
+/** Altura alinhada ao Input/Select (padding 10px + fonte 14 + borda). */
+const BTN_FILTRO: React.CSSProperties = {
+  ...inputStyle,
+  width: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+  fontWeight: 600,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  color: '#fff',
+  background: '#92400e',
+  border: '1px solid #92400e',
+  padding: '10px 16px',
+  fontSize: 14,
+}
+
 function base64ToBlob(b64: string, type: string) {
   const bin = atob(b64)
   const bytes = new Uint8Array(bin.length)
@@ -59,6 +76,8 @@ export default function ContabilNfeEntradas() {
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('')
+  /** false = checkboxes ocultos; 1º clique em Exportar ativa o modo */
+  const [modoSelecao, setModoSelecao] = useState(false)
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
   const [exportando, setExportando] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
@@ -80,6 +99,7 @@ export default function ContabilNfeEntradas() {
         valorTotal: autorizadas.reduce((s, r) => s + Number(r.valor_total ?? 0), 0),
       })
       setSelecionados(new Set())
+      setModoSelecao(false)
     } catch (e: any) {
       setErro(e?.message ?? 'Erro ao carregar entradas')
     } finally {
@@ -137,15 +157,32 @@ export default function ContabilNfeEntradas() {
     }
   }
 
-  async function handleExportarXmls() {
-    const ids = Array.from(selecionados)
-    if (!ids.length) {
-      setErro('Selecione ao menos uma NF-e para exportar.')
-      return
-    }
-    setExportando(true)
+  function cancelarSelecao() {
+    setModoSelecao(false)
+    setSelecionados(new Set())
     setErro(null)
     setMsg(null)
+  }
+
+  async function handleCliqueExportar() {
+    setErro(null)
+    setMsg(null)
+
+    // 1º passo: entrar no modo seleção e orientar o usuário
+    if (!modoSelecao) {
+      setModoSelecao(true)
+      setMsg('Marque as notas que deseja exportar e clique em Exportar XMLs de novo.')
+      return
+    }
+
+    // 2º passo: precisa ter itens marcados
+    const ids = Array.from(selecionados)
+    if (!ids.length) {
+      setErro('Marque ao menos uma nota na lista (ou use o checkbox do cabeçalho para marcar todas).')
+      return
+    }
+
+    setExportando(true)
     try {
       const res = await exportarXmlsEntradasContabil(ids)
       const blob = base64ToBlob(res.zipBase64, 'application/zip')
@@ -160,6 +197,8 @@ export default function ContabilNfeEntradas() {
           ? `${res.incluidos} XML(s) no ZIP. ${res.falhas.length} sem arquivo.`
           : `${res.incluidos} XML(s) exportado(s).`,
       )
+      setModoSelecao(false)
+      setSelecionados(new Set())
     } catch (e: any) {
       setErro(e?.message ?? 'Erro ao exportar XMLs')
     } finally {
@@ -175,6 +214,14 @@ export default function ContabilNfeEntradas() {
     )
   }
 
+  const labelExportar = exportando
+    ? 'Exportando…'
+    : !modoSelecao
+      ? 'Exportar XMLs'
+      : selecionados.size > 0
+        ? `Exportar XMLs (${selecionados.size})`
+        : 'Exportar XMLs'
+
   return (
     <>
       {msg && (
@@ -183,15 +230,17 @@ export default function ContabilNfeEntradas() {
             marginBottom: 12,
             padding: '10px 14px',
             borderRadius: 8,
-            background: COM_C.verdeLt,
-            color: COM_C.verde,
+            background: modoSelecao && selecionados.size === 0 ? '#E0F2FE' : COM_C.verdeLt,
+            color: modoSelecao && selecionados.size === 0 ? '#075985' : COM_C.verde,
             fontSize: 13,
             display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
           }}
         >
           <span>{msg}</span>
-          <button type="button" onClick={() => setMsg(null)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>
+          <button type="button" onClick={() => setMsg(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'inherit', flexShrink: 0 }}>
             ×
           </button>
         </div>
@@ -236,7 +285,7 @@ export default function ContabilNfeEntradas() {
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <Input
             placeholder="Buscar produtor, nº, chave, CFOP…"
@@ -251,17 +300,36 @@ export default function ContabilNfeEntradas() {
             <option value="processando">Processando</option>
           </Select>
         </div>
-        <Btn
-          variante="marrom"
-          tamanho="sm"
-          icone="ti-file-zip"
-          disabled={exportando || selecionados.size === 0}
-          onClick={handleExportarXmls}
+        <button
+          type="button"
+          disabled={exportando || !lista.length}
+          onClick={handleCliqueExportar}
+          style={{
+            ...BTN_FILTRO,
+            opacity: exportando || !lista.length ? 0.55 : 1,
+            cursor: exportando || !lista.length ? 'not-allowed' : 'pointer',
+          }}
         >
-          {exportando
-            ? 'Exportando…'
-            : `Exportar XMLs${selecionados.size ? ` (${selecionados.size})` : ''}`}
-        </Btn>
+          <i className="ti ti-file-zip" style={{ fontSize: 16 }} />
+          {labelExportar}
+        </button>
+        {modoSelecao && (
+          <button
+            type="button"
+            onClick={cancelarSelecao}
+            style={{
+              ...inputStyle,
+              width: 'auto',
+              fontWeight: 600,
+              cursor: 'pointer',
+              color: COM_C.txt,
+              background: '#fff',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Cancelar
+          </button>
+        )}
       </div>
 
       {!lista.length ? (
@@ -272,15 +340,17 @@ export default function ContabilNfeEntradas() {
             <table className="com-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ width: 40, textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={todosFiltradosMarcados}
-                      onChange={toggleTodosFiltrados}
-                      title="Selecionar todas (filtro atual)"
-                      style={{ width: 16, height: 16, cursor: 'pointer' }}
-                    />
-                  </th>
+                  {modoSelecao && (
+                    <th style={{ width: 40, textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={todosFiltradosMarcados}
+                        onChange={toggleTodosFiltrados}
+                        title="Selecionar todas (filtro atual)"
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                    </th>
+                  )}
                   {['Data', 'Produtor', 'NF-e', 'CFOP', 'Kg', 'Valor', 'Status', 'Docs'].map(h => (
                     <th key={h} style={{ textAlign: h === 'Docs' ? 'right' : 'left' }}>
                       {h}
@@ -291,7 +361,10 @@ export default function ContabilNfeEntradas() {
               <tbody>
                 {filtradas.length === 0 && (
                   <tr>
-                    <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: COM_C.txtSub }}>
+                    <td
+                      colSpan={modoSelecao ? 9 : 8}
+                      style={{ padding: '2rem', textAlign: 'center', color: COM_C.txtSub }}
+                    >
                       Nenhuma NF-e neste filtro
                     </td>
                   </tr>
@@ -304,15 +377,21 @@ export default function ContabilNfeEntradas() {
                     cor: COM_C.txtSub,
                   }
                   return (
-                    <tr key={n.id}>
-                      <td style={{ textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={selecionados.has(n.id)}
-                          onChange={() => toggleUm(n.id)}
-                          style={{ width: 16, height: 16, cursor: 'pointer' }}
-                        />
-                      </td>
+                    <tr
+                      key={n.id}
+                      onClick={modoSelecao ? () => toggleUm(n.id) : undefined}
+                      style={modoSelecao ? { cursor: 'pointer' } : undefined}
+                    >
+                      {modoSelecao && (
+                        <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selecionados.has(n.id)}
+                            onChange={() => toggleUm(n.id)}
+                            style={{ width: 16, height: 16, cursor: 'pointer' }}
+                          />
+                        </td>
+                      )}
                       <td style={{ color: COM_C.txtSub }}>{fmt.data(n.created_at)}</td>
                       <td style={{ fontWeight: 600 }}>{n.produtores?.nome ?? '—'}</td>
                       <td style={{ fontFamily: 'monospace', fontSize: 11 }}>
@@ -326,7 +405,7 @@ export default function ContabilNfeEntradas() {
                       <td>
                         <Badge label={st.label} bg={st.bg} cor={st.cor} dot />
                       </td>
-                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                         {n.xml_url && (
                           <Btn variante="verde" tamanho="sm" onClick={() => window.open(n.xml_url!, '_blank')}>
                             XML
@@ -349,7 +428,7 @@ export default function ContabilNfeEntradas() {
               </tbody>
             </table>
           </div>
-          {selecionados.size > 0 && (
+          {modoSelecao && (
             <div
               style={{
                 padding: '10px 16px',
@@ -361,17 +440,21 @@ export default function ContabilNfeEntradas() {
                 alignItems: 'center',
                 flexWrap: 'wrap',
                 gap: 8,
+                background: '#F0F9FF',
               }}
             >
               <span>
-                {selecionados.size} selecionada(s)
-                {todosFiltradosMarcados && filtradas.length > 0
-                  ? ' · todas do filtro atual'
-                  : ''}
+                {selecionados.size === 0
+                  ? 'Nenhuma nota marcada — marque as caixas ou use o checkbox do cabeçalho.'
+                  : `${selecionados.size} selecionada(s)${
+                      todosFiltradosMarcados && filtradas.length > 0
+                        ? ' · todas do filtro atual'
+                        : ''
+                    }`}
               </span>
               <button
                 type="button"
-                onClick={() => setSelecionados(new Set())}
+                onClick={cancelarSelecao}
                 style={{
                   border: 'none',
                   background: 'none',
@@ -381,7 +464,7 @@ export default function ContabilNfeEntradas() {
                   fontSize: 12,
                 }}
               >
-                Limpar seleção
+                Cancelar seleção
               </button>
             </div>
           )}
