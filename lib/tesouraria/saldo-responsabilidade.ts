@@ -103,14 +103,33 @@ export async function getSaldoResponsabilidadeLoja(
 }> {
   const supabase = createAdminClient()
 
-  const { data: caixa } = await supabase
+  // Preferir caixa ABERTO se existir — senão o último por aberto_em.
+  // Mesma correção já feita na Comercialização (ver acima): pegando só o mais
+  // recente, um caixa órfão aberto + um fechamento posterior faziam a leitura
+  // vir do caixa errado — status "fechado" com caixa aberto, e o saldo herdado
+  // na abertura seguinte saía do caixa que não era o de trabalho.
+  const { data: caixaAberto } = await supabase
     .from('loja_caixas')
     .select('id, status, valor_abertura')
     .eq('org_id', orgId)
     .eq('usuario_id', usuarioId)
-    .order('aberto_em', { ascending: false })
+    .eq('status', 'aberto')
+    .order('aberto_em', { ascending: true })
     .limit(1)
     .maybeSingle()
+
+  let caixa = caixaAberto
+  if (!caixa) {
+    const { data: caixaRecente } = await supabase
+      .from('loja_caixas')
+      .select('id, status, valor_abertura')
+      .eq('org_id', orgId)
+      .eq('usuario_id', usuarioId)
+      .order('aberto_em', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    caixa = caixaRecente
+  }
 
   if (!caixa) {
     return { caixa_id: null, status_caixa: null, saldo_atual_especie: 0 }
@@ -124,14 +143,18 @@ export async function getSaldoResponsabilidadeLoja(
       .neq('status', 'cancelada'),
     (supabase as any)
       .from('loja_sangrias')
-      .select('tipo, valor')
+      .select('tipo, valor, forma_pagamento')
       .eq('caixa_id', caixa.id),
   ])
 
   const totalVendasEspecie = ((vendas ?? []) as { pago_especie: number | null }[])
     .reduce((acc, v) => acc + Number(v.pago_especie ?? 0), 0)
-  const totalAportes = ((sangrias ?? []) as { tipo: string; valor: number }[])
-    .filter(s => s.tipo === 'aporte')
+  // Só aporte em espécie é cédula na gaveta (migration 094, espelha a 063 da
+  // Comercialização). Aporte por pix/cartão não passa pelo caixa físico —
+  // somar tudo inflaria a custódia do operador e reapareceria como valor de
+  // abertura do dia seguinte. Sangria é sempre espécie.
+  const totalAportes = ((sangrias ?? []) as { tipo: string; valor: number; forma_pagamento?: string | null }[])
+    .filter(s => s.tipo === 'aporte' && (s.forma_pagamento ?? 'especie') === 'especie')
     .reduce((acc, s) => acc + Number(s.valor), 0)
   const totalSangrias = ((sangrias ?? []) as { tipo: string; valor: number }[])
     .filter(s => s.tipo === 'sangria')

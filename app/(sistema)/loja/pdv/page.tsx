@@ -240,7 +240,10 @@ export default function PDVPage() {
     setAbrindoCaixa(false)
     if ('error' in res) { toast('error', res.error); return }
     setCaixa({ id: res.caixaId, usuario_id: usuarioId, valor_abertura: res.valorAbertura, aberto_em: new Date().toISOString(), status: 'aberto' })
-    toast('info', 'Caixa aberto com sucesso.')
+    // `jaAberto`: a action é idempotente e devolveu o caixa que já estava
+    // aberto em vez de criar outro. Avisar em vez de dizer "aberto com
+    // sucesso" — senão o operador acha que começou um caixa novo.
+    toast('info', res.jaAberto ? 'Você já tinha um caixa aberto — retomando.' : 'Caixa aberto com sucesso.')
   }
 
   async function handleFinalizarVenda(pagamento: PagamentoVenda) {
@@ -309,20 +312,46 @@ export default function PDVPage() {
     setSaldoOrigemComercial(resp.saldo_atual_especie)
   }
 
-  function handleSangriaClick() {
+  function limparFormSangria() {
+    setSangriaValor(''); setSangriaObs('')
+    setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId(''); setSaldoOrigemComercial(null)
+  }
+
+  async function handleSangriaClick() {
     const valor = parseFloat(sangriaValor.replace(',', '.')) || 0
     const transferencia = sangriaTipo === 'aporte' && sangriaOrigemModulo !== 'dinheiro' && sangriaOrigemAtendenteId
+
+    // Aporte de dinheiro solto na própria gaveta: não debita ninguém e só
+    // aumenta a responsabilidade de quem opera o caixa, então vai direto, sem
+    // modal de autorização. Mesma regra da Comercialização (06/08/2026).
+    // Sangria e aporte por transferência continuam exigindo senha — lá a
+    // autorização é o consentimento de quem PERDE o dinheiro.
+    if (sangriaTipo === 'aporte' && !transferencia) {
+      if (!orgId || !usuarioId || !caixa || valor <= 0) return
+      const res = await registrarSangriaLoja(
+        orgId, caixa.id, 'aporte', valor, usuarioId, usuarioId, sangriaObs || undefined
+      )
+      if ('error' in res) { toast('error', res.error); return }
+      limparFormSangria()
+      setModal(null)
+      toast('info', 'Aporte registrado.')
+      return
+    }
+
     setPendenciaOrigemAtendenteId(transferencia ? sangriaOrigemAtendenteId : null)
     setPendencia({
       tipo: 'sangria',
       descricao: `${sangriaTipo === 'sangria' ? 'Sangria' : 'Aporte'} de ${fmtReal(valor)} solicitado.`,
       onAutorizado: async (autId) => {
         if (!orgId || !usuarioId || !caixa) return
-        await registrarSangriaLoja(
+        const res = await registrarSangriaLoja(
           orgId, caixa.id, sangriaTipo, valor, autId, usuarioId, sangriaObs || undefined,
           transferencia ? { modulo: sangriaOrigemModulo as 'comercializacao' | 'loja', atendente_origem_id: sangriaOrigemAtendenteId } : undefined
         )
-        setSangriaValor(''); setSangriaObs(''); setSangriaOrigemModulo('dinheiro'); setSangriaOrigemAtendenteId(''); setSaldoOrigemComercial(null)
+        // O retorno era descartado: erro de saldo insuficiente ou caixa fechado
+        // fechava o modal como se tivesse dado certo.
+        if ('error' in res) { toast('error', res.error); return }
+        limparFormSangria()
         setModal(null); setPendencia(null)
       },
     })
@@ -667,6 +696,11 @@ export default function PDVPage() {
                       </div>
                     )}
                   </>
+                )}
+                {sangriaOrigemModulo === 'dinheiro' && (
+                  <div style={{ fontSize: 12, color: '#78716C', marginBottom: 12, lineHeight: 1.45 }}>
+                    O valor entra no seu caixa e passa a fazer parte da sua responsabilidade no fechamento — não precisa de autorização.
+                  </div>
                 )}
               </>
             )}

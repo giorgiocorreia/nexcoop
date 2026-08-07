@@ -2,6 +2,18 @@
 
 ## 2026-08-06
 
+### fix(loja): blindagem do caixa — continuidade de saldo que não fecha
+Comparação lado a lado com o caixa da Comercialização. A Loja **já tinha** o essencial da continuidade (valor de abertura calculado pelo sistema em `abrirCaixaLoja`, `saldo_final_especie` calculado em `fecharCaixaLoja`, contagem física só como auditoria) — o que faltava eram as travas que impedem essa continuidade de ler o caixa errado.
+
+- **`getSaldoResponsabilidadeLoja` lia o caixa mais recente por `aberto_em`, sem preferir o ABERTO** (`lib/tesouraria/saldo-responsabilidade.ts`). Com um caixa órfão aberto + um fechamento posterior, o saldo herdado na abertura seguinte vinha do caixa errado. É exatamente a correção já feita na Comercialização — agora as duas leituras são simétricas
+- **`.maybeSingle()` erra quando a consulta devolve 2 linhas, e o erro era descartado** em `getCaixaLojaAbertoDoOperador` e `abrirCaixaLoja`: com 2 caixas abertos virava `caixa = null`, o PDV mostrava "caixa fechado" com caixa aberto, o operador clicava em abrir e — como a checagem de duplicata sofria do mesmo problema — criava **mais um**. Ciclo idêntico ao do Luan na Comercialização (090), só que sem trava no banco. Agora `.order().limit(1)`, cujo pior caso é pegar o caixa mais antigo, que é o de trabalho
+- **`abrirCaixaLoja` virou idempotente**: já existindo caixa aberto, **devolve** ele com `jaAberto: true` em vez de retornar erro (espelha `abrirCaixa` da Comercialização). Trata também a corrida do índice único. O PDV avisa "Você já tinha um caixa aberto — retomando"
+- **`registrarSangriaLoja` não validava nada**: qualquer `caixa_id` entrava, de outra org ou já fechado, e caía no saldo de continuidade daquele operador. Agora confere org, status `aberto` e titularidade (admin pode em qualquer um) — mesmo buraco fechado hoje em `registrarAporteSangria`
+- **Retorno de `registrarSangriaLoja` era descartado no PDV**: erro de saldo insuficiente ou caixa fechado fechava o modal como se tivesse dado certo. Agora exibe o erro
+- **Aporte simples no PDV não pede mais autorização**, alinhando com a Comercialização (mesma sessão): não debita ninguém e só aumenta a responsabilidade de quem opera o caixa. **Sangria e aporte por transferência continuam exigindo senha** — lá a autorização é o consentimento de quem *perde* o dinheiro
+- **Migration 094**: índice único parcial `loja_caixas_unico_aberto_por_usuario` + `loja_sangrias.forma_pagamento`. Diagnóstico em produção antes de criar: zero `loja_caixas` abertos, índice aplica limpo
+- **Caixa da Comercialização não foi alterado** — a leitura completa não revelou falha lá que exigisse mexer
+
 ### change(caixa): aporte simples na comercialização não pede mais senha
 - `registrarAporteSangria` (`lib/comercializacao/caixa.actions.ts`): **aporte de dinheiro solto na própria gaveta** deixa de exigir admin autorizador + senha. O modal passa a mostrar só valor e observações
 - **Racional:** aporte simples não debita ninguém e só *aumenta* a responsabilidade de quem opera o caixa — ele vai ter que prestar contas do valor no fechamento

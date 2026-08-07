@@ -587,6 +587,9 @@ export interface LojaSangria {
   executado_por:    string
   observacoes:      string | null
   created_at:       string
+  /** Migration 094 — como o APORTE entrou. Só 'especie' é cédula na gaveta e
+   *  entra no saldo de responsabilidade. Sangria é sempre espécie e ignora. */
+  forma_pagamento:  'especie' | 'pix' | 'cartao'
   origem_transferencia?:        'comercializacao' | 'loja' | null
   referencia_transferencia_id?: string | null
 }

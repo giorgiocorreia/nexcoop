@@ -34,6 +34,22 @@ Todos os módulos usam o kit em `components/nexcoop/ui/`:
 
 ## Loja Agropecuária — Fase 6 (em andamento)
 
+### Blindagem do caixa (migration 094, 06/08/2026)
+Paridade com o caixa da Comercialização. A continuidade (fechamento de hoje =
+abertura de amanhã) já existia; faltavam as travas que impedem ela de ler o
+caixa errado — ver `docs/comercializacao.md` §1.0 para o lado espelhado.
+- **1 caixa aberto por operador** (`loja_caixas_unico_aberto_por_usuario`).
+  Loja e Comercialização seguem **independentes**: o mesmo usuário pode ter os
+  dois abertos ao mesmo tempo
+- `getSaldoResponsabilidadeLoja` passa a **preferir o caixa aberto** em vez do
+  mais recente — com órfão aberto + fechamento posterior o saldo herdado saía
+  do caixa errado
+- `abrirCaixaLoja` **idempotente** (devolve `jaAberto` em vez de erro); fim do
+  `.maybeSingle()` que errava com 2 caixas abertos e virava "caixa fechado"
+- `registrarSangriaLoja` valida org, status e titularidade do caixa
+- `loja_sangrias.forma_pagamento`: só aporte em **espécie** é cédula na gaveta
+- Aporte simples no PDV **não pede autorização**; sangria e transferência sim
+
 ### Concluído (23/06/2026)
 - Migration 040: NCM/CFOP em loja_produtos, colunas fiscais em organizacoes, loja_notas_fiscais
 - Migration 041: campos de pagamento completo em loja_vendas

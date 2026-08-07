@@ -480,12 +480,19 @@ async function baixarParcelaCompra(params: {
 // precisa ser aberto antes.
 export async function getCaixaLojaAbertoDoOperador(orgId: string, usuarioId: string): Promise<{ caixa_id: string | null }> {
   const admin = createAdminClient()
+  // `.limit(1)` + ordenação, nunca `.maybeSingle()` sem limite: com 2 caixas
+  // abertos (possível antes da migration 094) o maybeSingle ERRA, o erro era
+  // descartado aqui e virava caixa_id null — o PDV mostrava "caixa fechado"
+  // com caixa aberto e o operador abria mais um. Com limit, o pior caso é
+  // pegar o mais antigo, que é justamente o caixa de trabalho.
   const { data: caixa } = await admin
     .from('loja_caixas')
     .select('id')
     .eq('org_id', orgId)
     .eq('usuario_id', usuarioId)
     .eq('status', 'aberto')
+    .order('aberto_em', { ascending: true })
+    .limit(1)
     .maybeSingle()
   return { caixa_id: caixa?.id ?? null }
 }
@@ -1010,18 +1017,27 @@ import type {
 export async function abrirCaixaLoja(
   orgId: string,
   usuarioId: string
-): Promise<{ caixaId: string; valorAbertura: number } | { error: string }> {
+): Promise<{ caixaId: string; valorAbertura: number; jaAberto?: boolean } | { error: string }> {
   const admin = createAdminClient()
 
+  // Idempotência (espelha `abrirCaixa` da Comercialização): se já existe caixa
+  // aberto, DEVOLVE ele em vez de dar erro. Erro aqui era o gatilho do ciclo
+  // ruim — a tela mostrava "caixa fechado" por outro motivo, o operador
+  // clicava em abrir, tomava erro e ficava sem caminho, ou pior, com a
+  // checagem furada (maybeSingle com 2 linhas) abria um caixa a mais.
   const { data: aberto } = await admin
     .from('loja_caixas')
-    .select('id')
+    .select('id, valor_abertura')
     .eq('org_id', orgId)
     .eq('usuario_id', usuarioId)
     .eq('status', 'aberto')
+    .order('aberto_em', { ascending: true })
+    .limit(1)
     .maybeSingle()
 
-  if (aberto) return { error: 'Você já possui um caixa aberto.' }
+  if (aberto) {
+    return { caixaId: aberto.id, valorAbertura: Number(aberto.valor_abertura ?? 0), jaAberto: true }
+  }
 
   // Continuidade travada: valor de abertura nunca é digitado — é sempre o
   // saldo sob responsabilidade do usuário calculado pelo sistema (herda do
@@ -1036,7 +1052,27 @@ export async function abrirCaixaLoja(
     .select('id')
     .single()
 
-  if (error || !data) return { error: 'Erro ao abrir caixa.' }
+  if (error || !data) {
+    // Corrida ou índice único (migration 094): outro request abriu no meio.
+    // Devolve o caixa que venceu em vez de erro — o operador não fica travado
+    // e, principalmente, não acaba com dois caixas.
+    const { data: corrida } = await admin
+      .from('loja_caixas')
+      .select('id, valor_abertura')
+      .eq('org_id', orgId)
+      .eq('usuario_id', usuarioId)
+      .eq('status', 'aberto')
+      .order('aberto_em', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (corrida) {
+      return { caixaId: corrida.id, valorAbertura: Number(corrida.valor_abertura ?? 0), jaAberto: true }
+    }
+    if (error && /unique|duplicate|loja_caixas_unico_aberto/i.test(error.message)) {
+      return { error: 'Já existe um caixa aberto para este operador.' }
+    }
+    return { error: 'Erro ao abrir caixa.' }
+  }
 
   await registrarLog({ org_id: orgId, usuario_id: usuarioId, modulo: 'loja', acao: 'loja_caixa_aberto', dados_depois: { caixa_id: data.id, valor_abertura: valorAbertura } })
 
@@ -1511,6 +1547,32 @@ export async function registrarSangriaLoja(
   if (origem?.modulo === 'loja' && origem.atendente_origem_id === executado_por) {
     return { error: 'Não é possível transferir do seu próprio caixa da Loja pra ele mesmo.' }
   }
+
+  // O caixa de destino nunca era validado: qualquer caixa_id entrava, de
+  // outra org ou já fechado, e o valor ia direto pro saldo de continuidade
+  // daquele operador. Mesmo buraco que existia em registrarAporteSangria na
+  // Comercialização (fechado em 06/08).
+  const { data: caixaDestino } = await admin
+    .from('loja_caixas')
+    .select('id, org_id, usuario_id, status')
+    .eq('id', caixaId)
+    .maybeSingle()
+
+  if (!caixaDestino) return { error: 'Caixa não encontrado.' }
+  if (caixaDestino.org_id !== orgId) return { error: 'Caixa de outra organização.' }
+  if (caixaDestino.status !== 'aberto') return { error: 'Esse caixa não está aberto.' }
+  if (caixaDestino.usuario_id !== executado_por) {
+    const { data: quemExecuta } = await admin
+      .from('usuarios')
+      .select('funcoes')
+      .eq('id', executado_por)
+      .maybeSingle()
+    if (!quemExecuta?.funcoes?.includes('admin')) {
+      return { error: 'Você só pode lançar aporte/sangria no seu próprio caixa.' }
+    }
+  }
+
+  if (valor <= 0) return { error: 'Informe um valor maior que zero.' }
 
   let referenciaTransferenciaId: string | null = null
   // Sessão aberta da Comercialização debitada na transferência — precisa ter o
