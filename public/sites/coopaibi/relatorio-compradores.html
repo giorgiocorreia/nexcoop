@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compradores Mundiais de Cacau — COOPAIBI 2026</title>
+  <meta name="description" content="Mapeamento estratégico dos maiores importadores e processadores globais de cacau. Elaborado pela COOPAIBI para subsidiar estratégia comercial e captação de recursos." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" href="assets/logo-coopaibi.jpeg" type="image/jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── BASE DO RELATÓRIO ── */
+    body { font-family: 'Open Sans', sans-serif; background: #ffffff; color: #1c1c1c; line-height: 1.7; font-size: 14px; }
+
+    :root {
+      --bd: #3B1F0A; --bm: #6B3A1F; --bl: #A0522D;
+      --gold: #C8922A; --gl: #F5D88A;
+      --cream: #FDF8F0; --green: #2E7D32; --green-light: #E8F5E9;
+      --gray: #F5F5F5; --text: #2C1810; --tl: #6B4C3B;
+    }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb { background: #fff; border-bottom: 1px solid #d4e8c4; padding: 10px 0; font-size: 12px; }
+    .breadcrumb .container { display: flex; align-items: center; gap: 8px; color: #555; flex-wrap: wrap; }
+    .breadcrumb a { color: var(--green); font-weight: 600; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { color: #bbb; }
+
+    /* ── CAPA ── */
+    .cover {
+      background: linear-gradient(160deg, #3B1F0A 0%, #6B3A1F 60%, #C8922A 100%);
+      color: #fff; padding: 72px 0 56px;
+      position: relative; overflow: hidden;
+    }
+    .cover::before { content:''; position:absolute; top:-60px; right:-60px; width:400px; height:400px; border-radius:50%; background:rgba(255,255,255,.04); }
+    .cover::after  { content:''; position:absolute; bottom:-80px; left:30%; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,.03); }
+    .cover-inner { position: relative; z-index: 2; }
+    .cover-label { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gl); margin-bottom: 16px; }
+    .cover h1 { font-family: 'Montserrat', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.2; margin-bottom: 14px; max-width: 700px; }
+    .cover .subtitle { font-size: 15px; color: rgba(255,255,255,.78); max-width: 640px; margin-bottom: 32px; line-height: 1.7; }
+    .cover-meta { display: flex; gap: 36px; flex-wrap: wrap; }
+    .cover-meta-item { font-size: 12px; color: rgba(255,255,255,.65); }
+    .cover-meta-item strong { display: block; font-size: 13px; color: #fff; margin-bottom: 2px; }
+
+    /* ── CORPO ── */
+    .rel-body { max-width: 980px; margin: 0 auto; padding: 52px 24px; }
+
+    /* ── SEÇÃO ── */
+    .rel-section { margin-bottom: 60px; }
+    .rel-section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 22px; font-weight: 700; color: #1a5c1a;
+      border-left: 5px solid var(--gold);
+      padding-left: 14px; margin-bottom: 24px;
+    }
+    .rel-intro { color: #555; margin-bottom: 28px; max-width: 820px; border-bottom: 1px solid #d4e8c4; padding-bottom: 18px; }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 32px; }
+    .sum-card { background: #fff; border: 1px solid #d4e8c4; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(59,31,10,.05); }
+    .sum-card .big { font-size: 30px; font-weight: 800; color: #1a5c1a; font-family: 'Montserrat', sans-serif; }
+    .sum-card .label { font-size: 11px; color: #555; margin-top: 5px; text-transform: uppercase; letter-spacing: .5px; line-height: 1.4; }
+
+    /* ── CALLOUT ── */
+    .callout { border-left: 5px solid var(--gold); background: #f5faf0; padding: 18px 22px; border-radius: 0 10px 10px 0; margin: 20px 0; font-size: 13.5px; line-height: 1.65; }
+    .callout strong { color: #2e8b2e; }
+    .callout.green-box { border-left-color: var(--green); background: var(--green-light); }
+    .callout.green-box strong { color: var(--green); }
+
+    /* ── ALERT ── */
+    .alert { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 10px; padding: 16px 20px; margin-top: 20px; font-size: 13px; color: #5D4037; line-height: 1.65; }
+    .alert strong { color: #6D4C41; }
+
+    /* ── CARDS DE EMPRESA ── */
+    .cards { display: flex; flex-direction: column; gap: 22px; }
+    .card { background: #fff; border-radius: 14px; border: 1px solid #d4e8c4; box-shadow: 0 2px 12px rgba(59,31,10,.06); overflow: hidden; }
+    .card-header { display: flex; align-items: center; gap: 18px; padding: 20px 24px; border-bottom: 1px solid #F0E4D5; flex-wrap: wrap; }
+    .card-rank { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Montserrat', sans-serif; }
+    .card-rank.green { background: var(--green); }
+    .card-rank.blue  { background: #1565C0; }
+    .card-title-block { flex: 1; min-width: 160px; }
+    .card-company { font-size: 17px; font-weight: 700; color: #1a5c1a; }
+    .card-country { font-size: 12px; color: #555; margin-top: 2px; }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; font-weight: 600; letter-spacing: .5px; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; }
+    .tag-amend    { background: #FEF3E2; color: #A05C1A; border: 1px solid #F5D099; }
+    .tag-manteiga { background: #E8F4FD; color: #1565C0; border: 1px solid #BBDEFB; }
+    .tag-liquor   { background: #F3E5F5; color: #6A1B9A; border: 1px solid #E1BEE7; }
+    .tag-torta    { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+    .tag-po       { background: #FBE9E7; color: #BF360C; border: 1px solid #FFCCBC; }
+    .tag-fino     { background: #FFFDE7; color: #F57F17; border: 1px solid #FFF59D; }
+    .card-body { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .card-cell { padding: 16px 24px; border-right: 1px solid #e0ead0; }
+    .card-cell:last-child { border-right: none; }
+    .card-cell-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 5px; }
+    .card-cell-value { font-size: 13px; color: #1c1c1c; line-height: 1.55; }
+    .card-cell-value a { color: #2e8b2e; }
+    .card-cell-value a:hover { text-decoration: underline; }
+    .card-note { background: var(--gray); padding: 12px 24px; font-size: 12.5px; color: #555; border-top: 1px solid #F0E4D5; line-height: 1.6; }
+    .card-note strong { color: #2e8b2e; }
+
+    /* ── TABELAS ── */
+    .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #d4e8c4; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--bd); color: #fff; padding: 13px 16px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-align: left; }
+    tbody tr:nth-child(even) { background: #f8faf8; }
+    tbody tr:hover { background: #f5faf0; }
+    tbody td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #d4e8c4; vertical-align: top; }
+    tbody td a { color: #2e8b2e; }
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .pill-eu { background: #E3F2FD; color: #0D47A1; }
+    .pill-am { background: #E8F5E9; color: #1B5E20; }
+    .pill-as { background: #FFF3E0; color: #E65100; }
+
+    /* ── RODAPÉ DO RELATÓRIO ── */
+    .rel-footer { background: var(--bd); color: rgba(255,255,255,.65); text-align: center; padding: 28px 24px; font-size: 12px; line-height: 1.8; margin-top: 20px; }
+    .rel-footer strong { color: var(--gl); }
+
+    /* ── PRINT ── */
+    .no-print { }
+    @media print {
+      .navbar, .topbar, .ribbon, .breadcrumb, .no-print { display: none !important; }
+      body { font-size: 12px; background: #fff; }
+      .cover { padding: 40px 24px; }
+      .cover h1 { font-size: 28px; }
+    }
+
+    /* ── RESPONSIVO ── */
+    @media (max-width: 700px) {
+      .cover h1 { font-size: 26px; }
+      .card-body { grid-template-columns: 1fr; }
+      .card-cell { border-right: none; border-bottom: 1px solid #F0E4D5; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .card-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ribbon">
+    <span>🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta</span>
+  <div class="lang-selector" id="lang-selector">
+    <button class="lang-btn ativo" id="btn-pt" onclick="selecionarIdioma('pt', this)" title="Português">
+      <img src="https://flagcdn.com/w40/br.png" alt="Brasil" />
+      PT
+    </button>
+    <button class="lang-btn" id="btn-en" onclick="selecionarIdioma('en', this)" title="English">
+      <img src="https://flagcdn.com/w40/gb.png" alt="England" />
+      EN
+    </button>
+  </div>
+  </div>
+
+  <div class="topbar">
+    <div class="container">
+      <span>📍 Av. Aurelino Coelho Lima, nº 10 — Centro, Ibirataia/BA</span>
+      <span>📞 Loja: (73) 9 9976-8420 · Compra de Cacau: (73) 9 9862-9960</span>
+      <span>✉ contato@coopaibi.com.br</span>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo-coopaibi.jpeg" alt="Logo COOPAIBI" />
+        <div class="nav-brand-text">
+          <strong>COOPAIBI</strong>
+          <span>Cooperativa Mista Agropecuária de Ibirataia</span>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="index.html#sobre">O Projeto</a>
+        <a href="acoes.php" class="active">Ações</a>
+        <a href="loja.php">Loja</a>
+        <a href="videos.php">Vídeos</a>
+        <a href="parceiro.html">Seja Parceiro</a>
+        <a href="admin/login.php">Intranet</a>
+        <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
+      </div>
+      <button class="nav-toggle" onclick="toggleMenu()" aria-label="Menu">☰</button>
+    </div>
+    <div class="nav-mobile" id="nav-mobile">
+      <a href="index.html">Início</a>
+      <a href="index.html#sobre">O Projeto</a>
+      <a href="acoes.php">Ações</a>
+      <a href="loja.php">Loja</a>
+      <a href="videos.php">Vídeos</a>
+        <a href="parceiro.html">Seja Parceiro</a>
+      <a href="admin/login.php">Intranet</a>
+      <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
+    </div>
+  </nav>
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb">
+    <div class="container">
+      <a href="index.html">Início</a>
+      <span>/</span>
+      <a href="acoes.php">Ações</a>
+      <span>/</span>
+      Relatório: Compradores Mundiais de Cacau
+    </div>
+  </div>
+
+  <!-- CAPA -->
+  <div class="cover">
+    <div class="container cover-inner">
+      <div class="cover-label">🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia</div>
+      <h1>Principais Compradores Mundiais de Cacau</h1>
+      <p class="subtitle">
+        Mapeamento estratégico dos maiores importadores e processadores globais de amêndoas,
+        manteiga, licor, torta e pó de cacau — com dados de volume, contato e oportunidades
+        para o cacau fino e de aroma do Sul da Bahia.
+      </p>
+      <div class="cover-meta">
+        <div class="cover-meta-item"><strong>Elaborado por</strong>COOPAIBI — Setor de Captação de Recursos</div>
+        <div class="cover-meta-item"><strong>Data</strong>Maio de 2026</div>
+        <div class="cover-meta-item"><strong>Destinatário</strong>COOPAIBI — Ibirataia / BA</div>
+        <div class="cover-meta-item"><strong>Classificação ICCO</strong>Cacau 100% Fino e de Aroma (desde 2019)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AÇÕES DE NAVEGAÇÃO / IMPRESSÃO -->
+  <div style="background:#fff;border-bottom:1px solid #EDE0D0;padding:12px 0;" class="no-print">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <span style="font-size:13px;color:#888;">📄 Relatório de Inteligência de Mercado · 7 seções · Maio 2026</span>
+      <div style="display:flex;gap:10px;">
+        <button onclick="window.print()" style="padding:8px 18px;border-radius:20px;border:1.5px solid #C8922A;background:#FEF9F2;color:#6B3A1F;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">🖨 Imprimir / Salvar PDF</button>
+        <a href="acoes.php" style="padding:8px 18px;border-radius:20px;border:1.5px solid #ccc;background:#fff;color:#555;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;">← Voltar para Ações</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CORPO -->
+  <div class="rel-body">
+
+    <!-- 1. PANORAMA -->
+    <div class="rel-section">
+      <div class="rel-section-title">1. Panorama do Mercado Global</div>
+      <p class="rel-intro">
+        A produção mundial de cacau na safra 2024/25 deve alcançar <strong>4,84 milhões de toneladas</strong>, com crescimento de 7,8% em relação ao ciclo anterior. Os EUA e a Europa concentram mais da metade das importações globais.
+        O Brasil, reconhecido desde 2019 pela ICCO como exportador de <strong>100% cacau fino e de aroma</strong>, ocupa posição privilegiada de prêmio de qualidade — o produto fino pode valer até 3 vezes mais que o cacau bulk africano.
+      </p>
+      <div class="summary-grid">
+        <div class="sum-card">
+          <div class="big">54,7%</div>
+          <div class="label">das amêndoas mundiais importadas pela União Europeia em 2023</div>
+        </div>
+        <div class="sum-card">
+          <div class="big">4,84 Mi t</div>
+          <div class="label">Produção mundial de cacau 2024/25</div>
+        </div>
+        <div class="sum-card">
+          <div class="big">3×</div>
+          <div class="label">Prêmio de preço do cacau fino vs. bulk africano</div>
+        </div>
+      </div>
+      <div class="callout green-box">
+        <strong>🌱 Vantagem COOPAIBI:</strong> O cacau produzido em sistema cabruca / agroflorestal do Sul da Bahia — certificado fino e de aroma — atende ao EUDR (Regulamento Anti-desmatamento da UE), ampliando o acesso ao mercado europeu de alta exigência e alto valor.
+      </div>
+    </div>
+
+    <!-- 2. PROCESSADORAS -->
+    <div class="rel-section">
+      <div class="rel-section-title">2. Grandes Processadoras Mundiais — Compradores de Amêndoas in Natura</div>
+      <p class="rel-intro">
+        Estas empresas compram amêndoas brutas para transformar em manteiga, licor, torta e pó de cacau. São os principais <em>off-takers</em> globais com unidades na Bahia e no mundo.
+      </p>
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank">1</div>
+            <div class="card-title-block">
+              <div class="card-company">Barry Callebaut AG</div>
+              <div class="card-country">🇨🇭 Suíça / Bélgica — Maior processador de cacau e chocolate do mundo</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-manteiga">Manteiga</span>
+              <span class="tag tag-liquor">Licor</span>
+              <span class="tag tag-torta">Torta/Pó</span>
+              <span class="tag tag-fino">Fino/Aroma</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume Anual Estimado</div>
+              <div class="card-cell-value"><strong>~700.000 t</strong> cacau processado/ano (global). No Brasil: ~80–100 mil t/ano via unidade em Ilhéus/BA.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato Comercial</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://www.barry-callebaut.com" target="_blank">barry-callebaut.com</a><br>
+                📧 Supplier Relations: <a href="https://www.barry-callebaut.com/en/contact" target="_blank">Formulário online</a><br>
+                📍 Brasil (Ilhéus/BA): (11) 2123-xxxx
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Programa de Fornecedores</div>
+              <div class="card-cell-value"><strong>Forever Chocolate</strong> — meta de 100% cacau rastreável. Prioridade para cooperativas certificadas.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Oportunidade COOPAIBI:</strong> Barry Callebaut busca fornecedores com rastreabilidade e certificação socioambiental (Rainforest Alliance, UTZ). O sistema cabruca agroflorestal da COOPAIBI é elegível ao programa "Cocoa Horizons".</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank">2</div>
+            <div class="card-title-block">
+              <div class="card-company">Cargill Cocoa &amp; Chocolate</div>
+              <div class="card-country">🇺🇸 EUA — 2ª maior processadora mundial</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-manteiga">Manteiga</span>
+              <span class="tag tag-liquor">Licor</span>
+              <span class="tag tag-torta">Torta/Pó</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume Anual Estimado</div>
+              <div class="card-cell-value"><strong>~500.000 t</strong> processadas/ano globalmente. Brasil: ~70–90 mil t via Ilhéus/BA. Expandiu armazéns para compra direta nas fazendas.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato Comercial</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://www.cargill.com/food-beverage/na/cocoa-chocolate" target="_blank">cargill.com/cocoa</a><br>
+                📧 <a href="https://www.cargill.com/contact-us" target="_blank">Formulário de fornecedores</a><br>
+                📍 Brasil: Av. Brigadeiro Faria Lima, SP
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Política de Compra</div>
+              <div class="card-cell-value">Mover-se para <strong>compras diretas nas fazendas</strong> (hoje 20% do volume). Busca rastreabilidade e conformidade EUDR.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Oportunidade COOPAIBI:</strong> A Cargill abriu novos armazéns no Sul da Bahia para compra direta. Cooperativas organizadas e com rastreabilidade têm preferência de compra com prêmio.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank">3</div>
+            <div class="card-title-block">
+              <div class="card-company">Olam Agri (Olam Cocoa)</div>
+              <div class="card-country">🇸🇬 Singapura — 3ª maior processadora global</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-manteiga">Manteiga</span>
+              <span class="tag tag-liquor">Licor</span>
+              <span class="tag tag-torta">Torta/Pó</span>
+              <span class="tag tag-fino">Fino/Aroma</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume Anual Estimado</div>
+              <div class="card-cell-value"><strong>~400.000 t</strong> processadas globalmente/ano. Brasil: ~50–70 mil t/ano via unidade em Ilhéus/BA (Olam Agrícola Ltda).</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato Comercial</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://www.olamgroup.com/products/food-staples-packaging/cocoa.html" target="_blank">olamgroup.com/cocoa</a><br>
+                📧 cocoa@olamnet.com<br>
+                📍 Brasil: Ilhéus, Bahia
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Programas de Sustentabilidade</div>
+              <div class="card-cell-value"><strong>AtSource</strong> — plataforma de rastreabilidade. Bônus por sustentabilidade e compra direta de cooperativas.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Oportunidade COOPAIBI:</strong> Olam tem interesse específico em cacau com créditos de carbono e SAF (sistemas agroflorestais). Altamente compatível com os critérios da plataforma AtSource.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank green">4</div>
+            <div class="card-title-block">
+              <div class="card-company">IBC – Indústria Brasileira de Cacau</div>
+              <div class="card-country">🇧🇷 Brasil (Ilhéus/BA) — Nova associada à AIPC (2024)</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-manteiga">Manteiga</span>
+              <span class="tag tag-liquor">Licor</span>
+              <span class="tag tag-torta">Torta/Pó</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume Anual Estimado</div>
+              <div class="card-cell-value"><strong>~10–30 mil t</strong>/ano. Em expansão, foco no mercado brasileiro e exportações para América do Sul.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato</div>
+              <div class="card-cell-value">
+                📍 Ilhéus, Bahia<br>
+                🌐 <a href="https://aipc.com.br" target="_blank">aipc.com.br</a><br>
+                📞 Contato via AIPC
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Perfil de Compra</div>
+              <div class="card-cell-value"><strong>Maior abertura para parcerias com cooperativas locais</strong> da Bahia. Menos burocracia que as multinacionais.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Oportunidade COOPAIBI:</strong> Empresa nacional com sede próxima. Ideal para relação de fornecimento direto sem atravessadores, com maior poder de negociação.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. TRADERS -->
+    <div class="rel-section">
+      <div class="rel-section-title">3. Traders Internacionais — Compradores de Cacau in Natura e Derivados</div>
+      <p class="rel-intro">
+        Além das processadoras, um grupo de <em>trading companies</em> compra cacau in natura e derivados diretamente de cooperativas e exportadores para revender a indústrias chocolateiras no mundo todo.
+      </p>
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank" style="background:#1565C0">T1</div>
+            <div class="card-title-block">
+              <div class="card-company">Touton S.A.</div>
+              <div class="card-country">🇫🇷 França (Bordeaux) — +150 anos de experiência em cacau fino</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-liquor">Licor (Gana)</span>
+              <span class="tag tag-fino">Fino/Aroma</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume / Foco</div>
+              <div class="card-cell-value">Especialista em cacau fino e de aroma. Comprador relevante para origens certificadas como o Brasil.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://touton.com" target="_blank">touton.com</a><br>
+                📧 cocoa@touton.com<br>
+                📍 33, quai de Bacalan — 33300 Bordeaux, França
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Por que contatar</div>
+              <div class="card-cell-value">Touton valoriza <strong>origem rastreável, sustentabilidade e cacau fino</strong>. Cacau certificado ICCO da Bahia é exatamente o perfil que pagam prêmio.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Estratégia:</strong> Apresentar o cacau agroflorestal COOPAIBI como "Mata Atlântica Origin" — diferencial de biodiversidade e carbono que a Touton pode comunicar aos seus clientes europeus.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank" style="background:#1565C0">T2</div>
+            <div class="card-title-block">
+              <div class="card-company">ECOM Agroindustrial Corp.</div>
+              <div class="card-country">🇨🇭 Suíça — Um dos maiores traders globais de café e cacau</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-fino">Fino/Aroma</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume / Presença</div>
+              <div class="card-cell-value">Opera em mais de 40 países. Presente no Brasil via escritórios comerciais. Compra amêndoas para revenda a processadores europeus e americanos.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://www.ecomtrading.com" target="_blank">ecomtrading.com</a><br>
+                📧 cocoa.origination@ecomtrading.com<br>
+                📍 Schulhausstrasse 30, Männedorf — Suíça
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Diferencial</div>
+              <div class="card-cell-value">Programa <strong>ECOM Positive Impacts</strong> — paga prêmio por práticas sustentáveis e cacau certificado Rainforest Alliance.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Estratégia:</strong> ECOM é um canal de acesso direto ao mercado europeu sem passar pelas 3 grandes processadoras. Boa alternativa para diversificar compradores da COOPAIBI.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank" style="background:#1565C0">T3</div>
+            <div class="card-title-block">
+              <div class="card-company">Sucres et Denrées (Sucden)</div>
+              <div class="card-country">🇫🇷 França — Trader independente de soft commodities</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+              <span class="tag tag-manteiga">Manteiga</span>
+              <span class="tag tag-torta">Pó/Torta</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume / Presença</div>
+              <div class="card-cell-value">Opera em 25 países, clientes em 100. Trader em bolsas de cacau de Londres e Nova York. Compra e revende derivados além das amêndoas.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://www.sucden.com" target="_blank">sucden.com</a><br>
+                📧 cocoa@sucden.com<br>
+                📍 7 Rue de la Paix, 75002 Paris — França
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Perfil</div>
+              <div class="card-cell-value">Trader versátil que trabalha tanto amêndoas quanto derivados (manteiga, pó). Interessante para quando a COOPAIBI iniciar beneficiamento próprio.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-rank" style="background:#1565C0">T4</div>
+            <div class="card-title-block">
+              <div class="card-company">COFCO International</div>
+              <div class="card-country">🇨🇳 China (sede em Genebra) — Maior empresa agrícola da China, com presença no Brasil</div>
+            </div>
+            <div class="card-tags">
+              <span class="tag tag-amend">Amêndoas</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-cell">
+              <div class="card-cell-label">Volume / Presença</div>
+              <div class="card-cell-value">Opera em 35 países, presença confirmada no Brasil (SP). Interesse crescente em cacau para suprir mercado consumidor chinês em expansão.</div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Contato Brasil</div>
+              <div class="card-cell-value">
+                🌐 <a href="https://br.cofcointernational.com" target="_blank">br.cofcointernational.com</a><br>
+                📍 Rua Sansão Alves dos Santos, 400 — 2º andar, São Paulo/SP
+              </div>
+            </div>
+            <div class="card-cell">
+              <div class="card-cell-label">Mercado Alvo</div>
+              <div class="card-cell-value">Acesso privilegiado ao <strong>mercado chinês</strong> — o maior crescimento em consumo de chocolate no mundo para a próxima década.</div>
+            </div>
+          </div>
+          <div class="card-note"><strong>💡 Estratégia:</strong> A China é o mercado em maior expansão para chocolate e cosméticos com manteiga de cacau. COFCO é o canal mais direto para acessar esse mercado.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 4. PAÍSES IMPORTADORES -->
+    <div class="rel-section">
+      <div class="rel-section-title">4. Maiores Países Importadores — Amêndoas e Derivados (2023–2024)</div>
+      <p class="rel-intro">Dados consolidados das importações globais de cacau in natura e seus derivados industriais.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>País</th><th>Região</th><th>% Amêndoas Globais</th><th>Principais Produtos</th><th>Observações Estratégicas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>1</strong></td><td><strong>🇳🇱 Países Baixos</strong></td><td><span class="pill pill-eu">Europa</span></td><td><strong>~17%</strong></td><td>Amêndoas, manteiga, licor, pó</td><td>Principal hub de processamento mundial. Porto de Rotterdam — porta de entrada para toda Europa.</td></tr>
+            <tr><td><strong>2</strong></td><td><strong>🇩🇪 Alemanha</strong></td><td><span class="pill pill-eu">Europa</span></td><td><strong>~14%</strong></td><td>Amêndoas, manteiga, licor, pó</td><td>2º maior processador europeu. Sede de Barry Callebaut Europa e grandes chocolateiras (Ritter Sport, Lindt alemã).</td></tr>
+            <tr><td><strong>3</strong></td><td><strong>🇧🇪 Bélgica</strong></td><td><span class="pill pill-eu">Europa</span></td><td><strong>~11%</strong></td><td>Amêndoas, chocolate premium</td><td>Capital mundial do chocolate fino. Alta valorização por cacau certificado e de origem rastreável.</td></tr>
+            <tr><td><strong>4</strong></td><td><strong>🇺🇸 Estados Unidos</strong></td><td><span class="pill pill-am">Américas</span></td><td><strong>~12,5%</strong></td><td>Amêndoas, manteiga, licor, pó</td><td>Maior mercado consumidor de chocolate do mundo. Compradores: Hershey, Mars, Mondelez EUA.</td></tr>
+            <tr><td><strong>5</strong></td><td><strong>🇫🇷 França</strong></td><td><span class="pill pill-eu">Europa</span></td><td><strong>~6%</strong></td><td>Amêndoas, manteiga, chocolate artesanal</td><td>Mercado premium de chocolates artesanais (bean-to-bar). Muito receptivo ao cacau fino do Sul da Bahia.</td></tr>
+            <tr><td><strong>6</strong></td><td><strong>🇬🇧 Reino Unido</strong></td><td><span class="pill pill-eu">Europa</span></td><td><strong>~4%</strong></td><td>Manteiga, pó, licor</td><td>Cadbury (Mondelez) é o maior comprador local. Crescimento rápido do segmento artesanal bean-to-bar.</td></tr>
+            <tr><td><strong>7</strong></td><td><strong>🇦🇷 Argentina</strong></td><td><span class="pill pill-am">Américas</span></td><td><strong>~3%</strong></td><td>Pó, manteiga, amêndoas</td><td><strong>Maior destino atual das exportações brasileiras de derivados de cacau em 2025.</strong> Acesso fácil por modal rodoviário.</td></tr>
+            <tr><td><strong>8</strong></td><td><strong>🇨🇱 Chile</strong></td><td><span class="pill pill-am">Américas</span></td><td><strong>~2%</strong></td><td>Pó, manteiga</td><td>2º maior comprador de derivados brasileiros em 2025. Forte crescimento do mercado de chocolates premium.</td></tr>
+            <tr><td><strong>9</strong></td><td><strong>🇨🇳 China</strong></td><td><span class="pill pill-as">Ásia</span></td><td><strong>~3% e crescendo</strong></td><td>Manteiga (cosméticos), pó, licor</td><td>Mercado em maior expansão do mundo. Forte demanda por manteiga de cacau para cosméticos e consumo de chocolate crescendo 15%/ano.</td></tr>
+            <tr><td><strong>10</strong></td><td><strong>🇯🇵 Japão</strong></td><td><span class="pill pill-as">Ásia</span></td><td><strong>~2%</strong></td><td>Amêndoas premium, manteiga</td><td>Mercado altamente exigente em qualidade. Paga os mais altos prêmios por cacau fino e de aroma rastreável.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:20px">
+        <strong>📌 Dado-chave para a COOPAIBI:</strong> A União Europeia (Holanda + Alemanha + Bélgica) importou <strong>54,7% de todas as amêndoas mundiais</strong> em 2023. Esses três países juntos representam mais de 40% das importações globais — são o mercado prioritário para o cacau fino do Sul da Bahia.
+      </div>
+    </div>
+
+    <!-- 5. CHOCOLATEIRAS -->
+    <div class="rel-section">
+      <div class="rel-section-title">5. Indústrias Chocolateiras — Compradores Finais de Derivados</div>
+      <p class="rel-intro">
+        Estas empresas compram principalmente manteiga, licor e pó de cacau — os derivados que a COOPAIBI poderá produzir futuramente após instalar equipamentos de beneficiamento.
+      </p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>Empresa</th><th>País</th><th>Volume Cacau/Ano</th><th>Produtos que Compra</th><th>Portal de Fornecedores</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>🍫 Nestlé</strong></td><td>🇨🇭 Suíça</td><td>~500.000 t equiv.</td><td>Manteiga, licor, pó</td><td><a href="https://www.nestle.com/csv/responsible-sourcing/cocoa" target="_blank">nestle.com/cocoa</a> | Programa Cocoa Plan</td></tr>
+            <tr><td><strong>🍫 Mars Wrigley</strong></td><td>🇺🇸 EUA</td><td>~450.000 t equiv.</td><td>Licor, manteiga, pó</td><td><a href="https://www.mars.com/sustainability/cocoa" target="_blank">mars.com/cocoa</a> | Cocoa for Generations</td></tr>
+            <tr><td><strong>🍫 Mondelez (Cadbury)</strong></td><td>🇺🇸 EUA</td><td>~350.000 t equiv.</td><td>Manteiga, licor, pó, amêndoas</td><td><a href="https://www.mondelezinternational.com/cocoa-life" target="_blank">mondelezinternational.com</a> | Cocoa Life</td></tr>
+            <tr><td><strong>🍫 Ferrero (Nutella)</strong></td><td>🇮🇹 Itália</td><td>~150.000 t equiv.</td><td>Pasta/licor, manteiga, pó</td><td><a href="https://www.ferrero.com/sustainability/cocoa" target="_blank">ferrero.com/cocoa</a></td></tr>
+            <tr><td><strong>🍫 Lindt &amp; Sprüngli</strong></td><td>🇨🇭 Suíça</td><td>~100.000 t equiv.</td><td><strong>Amêndoas finas</strong>, licor, manteiga</td><td><a href="https://www.lindt-cocoa-foundation.org" target="_blank">lindt-cocoa-foundation.org</a> — Interesse em cacau fino</td></tr>
+            <tr><td><strong>🍫 Hershey</strong></td><td>🇺🇸 EUA</td><td>~200.000 t equiv.</td><td>Pó, manteiga, licor</td><td><a href="https://www.thehersheycompany.com/en_us/home/sustainability/cocoa.html" target="_blank">thehersheycompany.com</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout green-box" style="margin-top:20px">
+        <strong>🎯 Estratégia de acesso:</strong> As grandes chocolateiras (Nestlé, Mars, Mondelez) geralmente compram via processadoras intermediárias (Barry Callebaut, Cargill, Olam). A <strong>Lindt é exceção</strong>: busca fornecimento direto de cacau fino certificado para sua linha premium, sendo um potencial comprador direto para a COOPAIBI.
+      </div>
+    </div>
+
+    <!-- 6. RECOMENDAÇÕES -->
+    <div class="rel-section">
+      <div class="rel-section-title">6. Recomendações Estratégicas para a COOPAIBI</div>
+      <div class="callout" style="margin-bottom:18px">
+        <strong>🥇 Curto Prazo (0–12 meses) — Venda de Amêndoas:</strong><br>
+        Priorizar negociação direta com <strong>Cargill e Olam</strong>, que têm armazéns no Sul da Bahia e buscam ampliar compras diretas de cooperativas. Apresentar o projeto agroflorestal como diferencial de rastreabilidade e EUDR. Solicitar cadastro como fornecedor via AIPC (aipc.com.br).
+      </div>
+      <div class="callout" style="margin-bottom:18px">
+        <strong>🥈 Médio Prazo (1–3 anos) — Exportação Direta:</strong><br>
+        Formalizar contato com traders europeus <strong>Touton S.A.</strong> e <strong>ECOM</strong>, que pagam prêmio por cacau fino e de aroma rastreável. Obter certificações Rainforest Alliance ou UTZ (pré-requisito para acesso ao mercado europeu premium). Apresentar como "Cacau Mata Atlântica — Agroflorestal com Crédito de Carbono".
+      </div>
+      <div class="callout green-box" style="margin-bottom:18px">
+        <strong>🥉 Longo Prazo (3–5 anos) — Derivados e Mercado Asiático:</strong><br>
+        Após instalação de equipamentos de beneficiamento: contatar <strong>Sucden</strong> (manteiga/pó para Europa) e <strong>COFCO International</strong> (São Paulo) para acesso ao crescente mercado chinês. Explorar mercado japonês via missão comercial (APEX-Brasil apoia exportadores de cacau fino).
+      </div>
+      <div class="alert">
+        <strong>⚠️ Atenção — Regulamento EUDR (União Europeia):</strong> A partir de 2025/2026, a UE exige que 100% do cacau importado seja rastreável e livre de desmatamento. O sistema agroflorestal da COOPAIBI em áreas de pastagem degradada é plenamente compatível e representa um <strong>diferencial competitivo frente a cacaueiros africanos</strong> que enfrentam restrições crescentes. Preparar a documentação georreferenciada já.
+      </div>
+    </div>
+
+    <!-- 7. FONTES -->
+    <div class="rel-section">
+      <div class="rel-section-title">7. Fontes e Referências</div>
+      <p style="font-size:12.5px;color:var(--tl);line-height:2.2;">
+        ICCO — International Cocoa Organization (2024/2025) &nbsp;•&nbsp;
+        AIPC — Associação Nacional das Indústrias Processadoras de Cacau (2024/2025) &nbsp;•&nbsp;
+        Banco do Nordeste / ETENE — Caderno Setorial Cacau (junho/2025) &nbsp;•&nbsp;
+        FAOSTAT (2024) &nbsp;•&nbsp;
+        Comex Stat / MAPA — Agrostat (2024) &nbsp;•&nbsp;
+        IBGE — Produção agrícola cacau 2024 &nbsp;•&nbsp;
+        AGL Cargo — Exportações brasileiras de cacau (2024) &nbsp;•&nbsp;
+        AgroAdvance — Maiores produtores de cacau 2025 &nbsp;•&nbsp;
+        Vidal (2025) — Tabelas exportadores/importadores mundiais.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- RODAPÉ DO RELATÓRIO -->
+  <div class="rel-footer">
+    <strong>COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia</strong><br>
+    CNPJ 54.305.114/0001-79 &nbsp;|&nbsp; contato@coopaibi.com.br &nbsp;|&nbsp; Av. Aurelino Coelho Lima, nº 10 — Centro, Ibirataia/BA — CEP 45.580-000<br><br>
+    <em>Este relatório foi elaborado com base em dados públicos de 2024–2026 como subsídio para estratégia comercial e captação de recursos. Volumes são estimativas de mercado.</em>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('nav-mobile').classList.toggle('open');
+    }
+    document.querySelectorAll('.nav-mobile a').forEach(function(a) {
+      a.addEventListener('click', function() {
+        document.getElementById('nav-mobile').classList.remove('open');
+      });
+    });
+  </script>
+
+
+  <!-- BOTÃO FLUTUANTE WHATSAPP -->
+  <a href="https://wa.me/5571999783992?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20COOPAIBI%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es." 
+     class="whatsapp-float" target="_blank" rel="noopener" aria-label="Fale conosco pelo WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.122 1.528 5.855L.057 23.885c-.066.254.166.486.42.42l6.03-1.471A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.877 9.877 0 0 1-5.031-1.378l-.36-.214-3.735.979.995-3.638-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.467 0 9.9 4.432 9.9 9.9 0 5.467-4.433 9.9-9.9 9.9z"/>
+    </svg>
+    <span class="whatsapp-tooltip">Fale conosco</span>
+  </a>
+
+  <!-- SCRIPT TRADUÇÃO -->
+  <script>
+  (function() {
+    var idiomaAtual = "pt";
+    var itens     = []; // {tipo, node|el, original, emOriginal}
+    var cacheEN   = null;
+
+    window.addEventListener("load", function() {
+      setTimeout(coletarItens, 800);
+    });
+
+    function isVisivel(el) {
+      if (!el) return false;
+      var s = window.getComputedStyle(el);
+      return s.display !== "none" && s.visibility !== "hidden";
+    }
+
+    function deveIgnorar(txt) {
+      if (!txt || txt.length < 3) return true;
+      if (/^[\d\s\.,;:\-\+\%\(\)\[\]\{\}\/\\@#!\?=\*&·•→]+$/.test(txt)) return true;
+      if (/^https?:\/\//.test(txt)) return true;
+      if (/^[\w\.-]+@[\w\.-]+/.test(txt)) return true;
+      return false;
+    }
+
+    function coletarItens() {
+      itens = [];
+      var vistos = {};
+
+      // 1. Tratar headings (h1-h4) como bloco completo
+      document.querySelectorAll("h1,h2,h3,h4").forEach(function(el) {
+        if (!isVisivel(el)) return;
+        if (el.closest && el.closest(".lang-selector")) return;
+        var txt = (el.innerText || el.textContent).trim().replace(/\s+/g, " ");
+        if (deveIgnorar(txt) || vistos[txt]) return;
+        vistos[txt] = true;
+        var emEl  = el.querySelector("em");
+        itens.push({
+          tipo:       "heading",
+          el:         el,
+          original:   txt,
+          emOriginal: emEl ? emEl.textContent.trim() : null,
+          innerHTML:  el.innerHTML
+        });
+      });
+
+      // 2. Demais nós de texto
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+      var no;
+      while ((no = walker.nextNode())) {
+        var pai = no.parentNode;
+        if (!pai) continue;
+        var tag = pai.nodeName.toLowerCase();
+        if (/^(script|style|noscript|h1|h2|h3|h4|svg|path|iframe)$/.test(tag)) continue;
+        if (!isVisivel(pai)) continue;
+        if (pai.closest && pai.closest(".lang-selector")) continue;
+        var txt = no.nodeValue.trim();
+        if (deveIgnorar(txt) || vistos[txt]) {
+          if (vistos[txt] && !deveIgnorar(txt)) {
+            itens.push({ tipo: "dup", node: no, original: no.nodeValue, ref: txt });
+          }
+          continue;
+        }
+        vistos[txt] = true;
+        itens.push({ tipo: "texto", node: no, original: no.nodeValue });
+      }
+    }
+
+    function aplicar(mapa) {
+      itens.forEach(function(item) {
+        if (item.tipo === "heading") {
+          var trad = mapa[item.original];
+          if (!trad) return;
+          if (item.emOriginal) {
+            var emTrad = mapa[item.emOriginal] || item.emOriginal;
+            // Substituir a palavra em dentro da frase traduzida por <em>
+            var escapado = emTrad.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            var novo = trad.replace(new RegExp(escapado, "i"), "<em>" + emTrad + "</em>");
+            item.el.innerHTML = novo !== trad ? novo : "<em>" + trad + "</em>";
+          } else {
+            item.el.textContent = trad;
+          }
+        } else if (item.tipo === "texto") {
+          var trad = mapa[item.original.trim()];
+          if (trad) item.node.nodeValue = item.node.nodeValue.replace(item.original.trim(), trad);
+        } else if (item.tipo === "dup") {
+          var trad = mapa[item.ref];
+          if (trad) item.node.nodeValue = item.node.nodeValue.replace(item.ref, trad);
+        }
+      });
+    }
+
+    function restaurar() {
+      itens.forEach(function(item) {
+        if (item.tipo === "heading") {
+          item.el.innerHTML = item.innerHTML;
+        } else if (item.tipo === "texto" || item.tipo === "dup") {
+          item.node.nodeValue = item.original;
+        }
+      });
+    }
+
+    window.selecionarIdioma = function(lang, btn) {
+      if (lang === idiomaAtual) return;
+
+      document.querySelectorAll(".lang-btn").forEach(function(b) { b.classList.remove("ativo"); });
+      btn.classList.add("ativo");
+
+      if (lang === "pt") {
+        restaurar();
+        idiomaAtual = "pt";
+        return;
+      }
+
+      if (cacheEN) {
+        aplicar(cacheEN);
+        idiomaAtual = lang;
+        return;
+      }
+
+      var labelOriginal = btn.innerHTML;
+      btn.innerHTML = "⏳";
+      btn.disabled = true;
+
+      coletarItens();
+
+      // Montar textos únicos para traduzir
+      var textos = {};
+      var idx = 0;
+      itens.forEach(function(item) {
+        if (item.tipo === "heading" || item.tipo === "texto") {
+          var key = "n" + idx++;
+          item._key = key;
+          textos[key] = item.tipo === "heading" ? item.original : item.original.trim();
+          // Se heading tem em, traduzir também o texto do em separadamente
+          if (item.tipo === "heading" && item.emOriginal) {
+            var emKey = "e" + idx++;
+            item._emKey = emKey;
+            textos[emKey] = item.emOriginal;
+          }
+        }
+      });
+
+      var chaves     = Object.keys(textos);
+      var tamLote    = 150;
+      var totalLotes = Math.ceil(chaves.length / tamLote);
+      var resultado  = {};
+      var feitos     = 0;
+
+      function enviarLote(i) {
+        var lote = {};
+        var ini  = i * tamLote;
+        var fim  = Math.min(ini + tamLote, chaves.length);
+        for (var j = ini; j < fim; j++) lote[chaves[j]] = textos[chaves[j]];
+
+        fetch("translate.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lang: lang, textos: lote })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok) Object.assign(resultado, res.traduzidos);
+          feitos++;
+          if (feitos < totalLotes) {
+            setTimeout(function() { enviarLote(i + 1); }, 100);
+          } else {
+            // Montar mapa texto→tradução
+            var mapa = {};
+            itens.forEach(function(item) {
+              if (item._key && resultado[item._key]) {
+                var orig = item.tipo === "heading" ? item.original : item.original.trim();
+                mapa[orig] = resultado[item._key];
+              }
+              if (item._emKey && resultado[item._emKey] && item.emOriginal) {
+                mapa[item.emOriginal] = resultado[item._emKey];
+              }
+            });
+            // Duplicatas herdam do mapa
+            itens.forEach(function(item) {
+              if (item.tipo === "dup" && mapa[item.ref]) {
+                mapa[item.ref] = mapa[item.ref];
+              }
+            });
+            cacheEN = mapa;
+            aplicar(mapa);
+            idiomaAtual = lang;
+            btn.innerHTML = labelOriginal;
+            btn.disabled  = false;
+          }
+        })
+        .catch(function() {
+          feitos++;
+          if (feitos >= totalLotes) {
+            btn.innerHTML = labelOriginal;
+            btn.disabled  = false;
+          }
+        });
+      }
+
+      if (totalLotes === 0) {
+        btn.innerHTML = labelOriginal;
+        btn.disabled  = false;
+        return;
+      }
+      enviarLote(0);
+    };
+  })();
+  </script>
+</body>
+</html>

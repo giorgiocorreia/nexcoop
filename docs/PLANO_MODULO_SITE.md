@@ -124,6 +124,50 @@ site_leads + tela (leads hoje em site_conteudos inativo — paliativo);
 painel de edição; tradução PT/EN (translate.php não portado); publicação e
 virada de DNS (checklist MX).
 
+## Implementado em 07/08/2026 — espelho fiel substitui o porte React
+
+**Decisão:** publicar no domínio próprio uma cópia BYTE A BYTE do site que
+está no ar em cPanel, e só então integrar com o NexCoop gradativamente. O
+porte React de 19/07 passa a ser matéria-prima da integração, não o que é
+servido — motivo: a fidelidade dele é verificável só por inspeção, e a
+exigência era não perder uma linha do que está publicado.
+
+- **Arquivos**: `public/sites/coopaibi/` — 6 HTML + 6 CSS + 2 imagens,
+  copiados sem nenhuma edição de `Dropbox/Giorgio/COOPAIBI_Drop/Site/coopaibi-site`
+  (a cópia da RAIZ, de 21/05/2026, não a de `public_html/`, de 19/05, que é
+  um snapshot anterior e não tem admin/, acoes.php, videos.php).
+  **Não editar esses arquivos** — a fidelidade é verificável por sha256
+  contra a origem, e foi (14/14 idênticos, inclusive nos bytes servidos).
+- **Roteamento** (`middleware.ts`, bloco "Espelho fiel da COOPAIBI"): duas
+  portas de entrada — o domínio próprio (`coopaibi.com.br`) e o caminho
+  direto `/sites/coopaibi/*`, que funciona sem DNS. Fica ANTES do gate de
+  auth; sem isso o CSS cairia no redirect de login (`.css` não é exceção no
+  matcher).
+- **Imagens** (`next.config.mjs`, rewrite de `/assets/*`): o matcher do
+  middleware pula extensões de imagem, então os dois logos precisam dessa
+  regra separada. Deliberadamente estreita, pra não colidir com o rewrite
+  do middleware.
+- **Loja / Vídeos / Ações** continuam no cPanel (redirect 307). Dependem do
+  MySQL `coopaibi_loja`, que não existe aqui — não há dump em lugar nenhum
+  da pasta do Dropbox, só o schema e um evento semeado.
+- **Endpoints PHP** (`enviar-cooperado.php`, `enviar-parceria.php`,
+  `translate.php`) via rewrite/proxy pro cPanel: os formulários e a tradução
+  PT/EN seguem funcionando como hoje (o porte React tinha perdido os dois).
+
+### ⚠ Bloqueio conhecido para a virada de DNS
+
+`LEGADO_COOPAIBI` em `middleware.ts` aponta pra `https://coopaibi.com.br`,
+que hoje resolve pro cPanel. **No instante em que o domínio apontar pra
+Vercel, isso vira um laço Vercel→Vercel** e derruba Loja/Vídeos/Ações e os
+formulários. Antes da virada, uma das duas:
+1. apontar `LEGADO_COOPAIBI` pra um host que continue no cPanel
+   (ex.: `antigo.coopaibi.com.br`), ou
+2. concluir a integração dessas rotas com o NexCoop e remover o
+   encaminhamento.
+
+Some junto o checklist de MX já registrado acima — o e-mail
+`contato@coopaibi.com.br` é pra onde os dois formulários mandam.
+
 ## Fora de escopo (por enquanto)
 - Editor visual arrastar-e-soltar — template com seções ligáveis basta.
 - Blog/notícias — avaliar depois do piloto.

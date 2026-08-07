@@ -1,0 +1,13 @@
+# Espelho fiel do site legado da COOPAIBI — cópia BYTE A BYTE do que está no
+# ar em cPanel (ver docs/PLANO_MODULO_SITE.md). Os arquivos originais usam
+# CRLF, e este repositório roda com core.autocrlf=true no Windows.
+#
+# Sem estas regras o Git normalizaria CRLF -> LF ao gravar e a Vercel (que
+# builda em Linux) publicaria arquivos com bytes diferentes do original —
+# invisível na tela, mas quebrando a garantia de fidelidade verificável por
+# sha256, que é a razão de ser deste espelho.
+#
+# -text desliga qualquer conversão de fim de linha na entrada e na saída:
+# o que está no disco é o que vai pro commit e o que sai no checkout, em
+# qualquer sistema operacional.
+public/sites/coopaibi/** -text

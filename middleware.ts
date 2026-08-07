@@ -6,6 +6,35 @@ import { extrairSlugDoHost } from '@/lib/site/site-utils'
 // reservados em extrairSlugDoHost: www/app/api) viram site público de org.
 const DOMINIO_BASE = 'nexcoop.com.br'
 
+// ── Espelho fiel do site legado da COOPAIBI ────────────────────────────
+// Os arquivos em public/sites/coopaibi/ são cópia BYTE A BYTE do site em
+// produção no cPanel (Dropbox/.../coopaibi-site). Não editar: a fidelidade
+// é verificável por sha256 contra a origem. Tudo que o site precisa e que
+// não é arquivo estático é resolvido aqui, sem tocar no HTML.
+const HOSTS_ESPELHO_COOPAIBI = new Set(['coopaibi.com.br', 'www.coopaibi.com.br'])
+const RAIZ_ESPELHO_COOPAIBI = '/sites/coopaibi'
+
+// Host do site antigo em cPanel, que segue servindo as 3 páginas dinâmicas
+// (dependem do MySQL coopaibi_loja, que não existe aqui) e os endpoints PHP.
+//
+// ⚠ TROCAR ANTES DE VIRAR O DNS: hoje aponta pro próprio coopaibi.com.br,
+// que ainda resolve pro cPanel. No momento em que o domínio passar pra
+// Vercel isto vira um laço (Vercel → Vercel). Antes da virada, apontar pra
+// um host que continue no cPanel (ex.: antigo.coopaibi.com.br) ou concluir
+// a integração destas rotas com o NexCoop e remover o encaminhamento.
+const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
+
+// Páginas PHP navegáveis — o visitante vai pro site antigo e vê o conteúdo
+// real (produtos, vídeos, eventos vindos do MySQL).
+const PHP_NAVEGACAO_COOPAIBI = new Set(['loja.php', 'videos.php', 'acoes.php', 'admin/login.php'])
+
+// Endpoints chamados por fetch() de dentro do HTML — precisam de rewrite
+// (proxy), não redirect: 307/308 preservariam o método, mas o fetch é
+// same-origin relativo e um redirect cross-origin acrescentaria pré-flight
+// CORS sem necessidade. Com proxy os formulários de cooperado/parceria e o
+// tradutor PT/EN continuam funcionando exatamente como hoje.
+const PHP_ENDPOINT_COOPAIBI = new Set(['enviar-cooperado.php', 'enviar-parceria.php', 'translate.php'])
+
 export async function middleware(request: NextRequest) {
   // ── Módulo Site: resolução por Host ──────────────────────────────────
   // Roda ANTES de qualquer coisa de auth — o site público é servido pro
@@ -15,6 +44,47 @@ export async function middleware(request: NextRequest) {
   // segue pro fluxo normal do app logo abaixo, sem alteração de
   // comportamento.
   const hostname = (request.headers.get('host') ?? '').split(':')[0]
+
+  // ── Espelho fiel da COOPAIBI ──────────────────────────────────────────
+  // Roda antes de tudo (inclusive do rewrite por slug e do gate de auth).
+  // Duas portas de entrada pro mesmo espelho:
+  //   1. o domínio próprio (coopaibi.com.br/...) — quando o DNS virar;
+  //   2. o caminho direto (/sites/coopaibi/...) — usável desde já, sem DNS.
+  // `caminhoEspelho` é o caminho RELATIVO à raiz do site, que é como o HTML
+  // original referencia tudo ("assets/style.css", "loja.php", "index.html").
+  const ehHostEspelho = HOSTS_ESPELHO_COOPAIBI.has(hostname)
+  const caminhoEspelho = ehHostEspelho
+    ? request.nextUrl.pathname.replace(/^\/+/, '')
+    : request.nextUrl.pathname.startsWith(`${RAIZ_ESPELHO_COOPAIBI}/`)
+      ? request.nextUrl.pathname.slice(RAIZ_ESPELHO_COOPAIBI.length + 1)
+      : null
+
+  if (caminhoEspelho !== null) {
+    // Endpoints PHP: proxy pro cPanel, preservando método e corpo.
+    if (PHP_ENDPOINT_COOPAIBI.has(caminhoEspelho)) {
+      return NextResponse.rewrite(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI))
+    }
+    // Páginas PHP: manda o visitante pro site antigo (307 preserva método e
+    // não fica em cache de navegador, o que importa porque estas rotas vão
+    // deixar de redirecionar conforme a integração avançar).
+    if (PHP_NAVEGACAO_COOPAIBI.has(caminhoEspelho)) {
+      return NextResponse.redirect(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI), 307)
+    }
+    // No domínio próprio, mapeia pro arquivo estático correspondente. A raiz
+    // ("/") serve o index.html, e os caminhos relativos do HTML resolvem
+    // sozinhos porque a URL do navegador continua na raiz do site.
+    if (ehHostEspelho) {
+      const url = request.nextUrl.clone()
+      url.pathname = caminhoEspelho === ''
+        ? `${RAIZ_ESPELHO_COOPAIBI}/index.html`
+        : `${RAIZ_ESPELHO_COOPAIBI}/${caminhoEspelho}`
+      return NextResponse.rewrite(url)
+    }
+    // Acesso direto por /sites/coopaibi/* — o arquivo estático já está no
+    // caminho pedido; segue sem auth (é conteúdo público).
+    return NextResponse.next()
+  }
+
   const slugSite = extrairSlugDoHost(hostname, DOMINIO_BASE)
   // Atalho de desenvolvimento: em localhost/127.0.0.1, sem precisar editar
   // o arquivo hosts, usar ?siteSlug=coopaibi na URL pra pré-visualizar o

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seja um Cooperado — COOPAIBI | Cacau que Refloresta</title>
+  <meta name="description" content="Junte-se à COOPAIBI e faça parte do Projeto Cacau que Refloresta — restaurando a Mata Atlântica e gerando renda sustentável em Ibirataia/BA." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/cooperado.css" />
+  <link rel="icon" href="assets/logo-coopaibi.jpeg" type="image/jpeg" />
+</head>
+<body>
+
+  <div class="ribbon">
+    <span>🏆 Lei Municipal nº 1.298/2025 — COOPAIBI declarada de Utilidade Pública | Ibirataia/BA</span>
+  <div class="lang-selector" id="lang-selector">
+    <button class="lang-btn ativo" id="btn-pt" onclick="selecionarIdioma('pt', this)" title="Português">
+      <img src="https://flagcdn.com/w40/br.png" alt="Brasil" />
+      PT
+    </button>
+    <button class="lang-btn" id="btn-en" onclick="selecionarIdioma('en', this)" title="English">
+      <img src="https://flagcdn.com/w40/gb.png" alt="England" />
+      EN
+    </button>
+  </div>
+  </div>
+
+  <div class="topbar">
+    <div class="container">
+      <span>📍 Av. Aurelino Coelho Lima, nº 10 — Centro, Ibirataia/BA</span>
+      <span>📞 Loja: (73) 9 9976-8420 · Compra de Cacau: (73) 9 9862-9960</span>
+      <span>✉ contato@coopaibi.com.br</span>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo-coopaibi.jpeg" alt="Logo COOPAIBI" />
+        <div class="nav-brand-text">
+          <strong>COOPAIBI</strong>
+          <span>Cooperativa Mista Agropecuária de Ibirataia</span>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="index.html#sobre">O Projeto</a>
+        <a href="acoes.php">Ações</a>
+        <a href="loja.php">Loja</a>
+        <a href="videos.php">Vídeos</a>
+        <a href="parceiro.html">Seja Parceiro</a>
+        <a href="admin/login.php">Intranet</a>
+        <a href="cooperado.html" class="nav-cta active">Seja Cooperado</a>
+      </div>
+      <button class="nav-toggle" onclick="toggleMenu()" aria-label="Menu">☰</button>
+    </div>
+    <div class="nav-mobile" id="nav-mobile">
+      <a href="index.html">Início</a>
+      <a href="index.html#sobre">O Projeto</a>
+      <a href="acoes.php">Ações</a>
+      <a href="loja.php">Loja</a>
+      <a href="videos.php">Vídeos</a>
+        <a href="parceiro.html">Seja Parceiro</a>
+      <a href="admin/login.php">Intranet</a>
+      <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="coop-hero">
+    <div class="container coop-hero-inner">
+      <div class="coop-pill">🌿 Cooperativismo de verdade</div>
+      <h1>Seja um Cooperado <em>COOPAIBI</em></h1>
+      <p>Junte-se à cooperativa que está restaurando a Mata Atlântica e transformando a cacauicultura de Ibirataia. Acesse o Projeto Cacau que Refloresta, produza com técnica, conserve a floresta e gere renda sustentável.</p>
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS STRIP -->
+  <div class="benef-strip">
+    <div class="container benef-inner">
+      <div class="benef-item">
+        <span class="benef-icon">🌱</span>
+        <strong>Mudas a preço justo</strong>
+        <span>R$ 4,00 — até 70% abaixo do mercado</span>
+      </div>
+      <div class="benef-item">
+        <span class="benef-icon">🐝</span>
+        <strong>Apicultura integrada</strong>
+        <span>Colmeias + renda com mel de floresta</span>
+      </div>
+      <div class="benef-item">
+        <span class="benef-icon">🧑‍🌾</span>
+        <strong>Assistência técnica</strong>
+        <span>Agrônomo + capacitação em campo</span>
+      </div>
+      <div class="benef-item">
+        <span class="benef-icon">🌳</span>
+        <strong>Floresta produtiva</strong>
+        <span>Sistema cabruca — cacau + nativas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO A PASSO -->
+  <section class="section steps-section">
+    <div class="container">
+      <div class="sec-tag">Como se associar</div>
+      <h2 class="sec-title">4 passos para ser <em>cooperado</em></h2>
+      <p class="sec-sub">O processo é simples, transparente e pensado para facilitar o acesso de qualquer produtor rural de Ibirataia e região.</p>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Preencha a proposta</h3>
+          <p>Solicite o formulário de adesão na sede da COOPAIBI ou envie seu interesse pelo formulário abaixo. Você precisará de um cooperado proponente.</p>
+          <div class="step-arrow">›</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Curso de cooperativismo</h3>
+          <p>Participe do curso básico ministrado pela COOPAIBI. Breve, prático e obrigatório para que todos conheçam seus direitos e deveres como cooperado.</p>
+          <div class="step-arrow">›</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Aprovação e quota-parte</h3>
+          <p>O Conselho de Administração analisa sua proposta. Após aprovação, você subscreve ao menos 1 quota-parte de R$ 1.500,00 e assina o livro de matrícula.</p>
+          <div class="step-arrow">›</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <h3>Bem-vindo ao Projeto!</h3>
+          <p>Você terá acesso ao Projeto Cacau que Refloresta: mudas clonadas a R$ 4,00, 900 plantas/ha, espécies nativas, apicultura integrada e assistência técnica permanente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIPOS DE COOPERADO -->
+  <section class="section tipos-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="sec-tag">Perfis de cooperado</div>
+        <h2 class="sec-title">Quem pode <em>ingressar</em></h2>
+        <p class="sec-sub">A COOPAIBI é aberta a diferentes perfis de produtores e entidades ligadas à agropecuária de Ibirataia e região.</p>
+      </div>
+      <div class="tipos-grid">
+        <div class="tipo-card">
+          <div class="tipo-badge">👤 Agricultor familiar</div>
+          <h3>Produtor rural individual</h3>
+          <ul>
+            <li>Agricultores familiares (Lei nº 11.326/2006)</li>
+            <li>Produção em imóvel próprio ou ocupação legítima</li>
+            <li>Prioridade para mulheres, jovens e idosos</li>
+            <li>Mínimo de 1 quota-parte de R$ 1.500,00</li>
+            <li>Voz e voto plenos nas assembleias</li>
+          </ul>
+        </div>
+        <div class="tipo-card tipo-destaque">
+          <div class="tipo-badge tipo-badge-dest">🏘 Associação produtiva</div>
+          <h3>Grupos e associações</h3>
+          <ul>
+            <li>Associações que exploram atividade agropecuária</li>
+            <li>Beneficiamento e industrialização comunitária</li>
+            <li>Prioridade às associações de Ibirataia</li>
+            <li>A cada 10 cooperados: 1 quota-parte representada</li>
+            <li>Representação pelo Presidente ou diretoria eleita</li>
+          </ul>
+        </div>
+        <div class="tipo-card">
+          <div class="tipo-badge">🏢 Pessoa jurídica</div>
+          <h3>Empresas e entidades</h3>
+          <ul>
+            <li>Admissão excepcional pelo Conselho de Administração</li>
+            <li>Ligação às atividades agropecuárias da região</li>
+            <li>Representação por pessoa natural designada</li>
+            <li>Atividades não conflitantes com os objetivos sociais</li>
+            <li>Responsabilidade solidária conforme Estatuto</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMULÁRIO + ASIDE -->
+  <section class="section form-section" id="formulario">
+    <div class="container form-inner">
+      <div class="form-left">
+        <div class="sec-tag">Formulário de interesse</div>
+        <h2 class="sec-title">Manifeste seu <em>interesse</em></h2>
+        <p class="sec-sub">Preencha o formulário e nossa equipe entrará em contato em até 2 dias úteis para orientar os próximos passos da sua adesão.</p>
+
+        <div class="form-aside">
+          <h3>Por que ser cooperado?</h3>
+          <p>Na COOPAIBI, você não é cliente — é dono. Cada decisão é tomada em conjunto, cada resultado é compartilhado.</p>
+          <div class="aside-list">
+            <div class="aside-item">
+              <div class="aside-dot">🌿</div>
+              <div>
+                <strong>Acesso ao Projeto Cacau que Refloresta</strong>
+                <p>Mudas clonadas certificadas, 900 plantas/ha, espécies nativas, sistema cabruca e assistência técnica contínua.</p>
+              </div>
+            </div>
+            <div class="aside-item">
+              <div class="aside-dot">🐝</div>
+              <div>
+                <strong>Apicultura e subprodutos</strong>
+                <p>Colmeias integradas aumentam até 30% a produtividade do cacau e geram renda adicional com mel de floresta (~R$ 4.000/ano).</p>
+              </div>
+            </div>
+            <div class="aside-item">
+              <div class="aside-dot">📣</div>
+              <div>
+                <strong>Voz e voto nas assembleias</strong>
+                <p>Participe das decisões, proponha melhorias e vote nas diretrizes da cooperativa.</p>
+              </div>
+            </div>
+          </div>
+          <div class="aside-divider"></div>
+          <div class="aside-contact">
+            <strong>Dúvidas? Fale conosco</strong>
+            <a href="mailto:contato@coopaibi.com.br">✉ contato@coopaibi.com.br</a>
+            <a href="tel:5573999768420">📞 Loja: (73) 9 9976-8420</a>
+            <a href="tel:5573998629960">📞 Compra de Cacau: (73) 9 9862-9960</a>
+            <span>📍 Av. Aurelino Coelho Lima, nº 10 — Centro, Ibirataia/BA</span>
+            <span style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5)">Presidente: João Matheus de Araújo Silva</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-right">
+        <div class="form-card">
+          <h2>Quero ser cooperado</h2>
+          <p>Preencha seus dados e entraremos em contato em até 2 dias úteis.</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f-nome">Nome completo *</label>
+              <input type="text" id="f-nome" placeholder="Seu nome completo" />
+            </div>
+            <div class="form-group">
+              <label for="f-cpf">CPF / CNPJ *</label>
+              <input type="text" id="f-cpf" placeholder="000.000.000-00" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f-tel">Telefone / WhatsApp *</label>
+              <input type="tel" id="f-tel" placeholder="(73) 9 0000-0000" />
+            </div>
+            <div class="form-group">
+              <label for="f-email">E-mail</label>
+              <input type="email" id="f-email" placeholder="seu@email.com" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="f-local">Localidade / Comunidade *</label>
+            <input type="text" id="f-local" placeholder="Bairro, sítio ou comunidade rural" />
+          </div>
+          <div class="form-group">
+            <label for="f-area">Área disponível para o projeto (ha)</label>
+            <input type="text" id="f-area" placeholder="Ex.: 1 hectare de pastagem degradada" />
+          </div>
+          <div class="form-group">
+            <label for="f-perfil">Perfil de cooperado *</label>
+            <select id="f-perfil">
+              <option value="">Selecione seu perfil...</option>
+              <option>Agricultor familiar individual</option>
+              <option>Grupo / Associação produtiva</option>
+              <option>Pessoa jurídica / Empresa</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-ativ">Atividade principal na propriedade</label>
+            <select id="f-ativ">
+              <option value="">Selecione...</option>
+              <option>Cacauicultura</option>
+              <option>Pecuária / Pasto abandonado</option>
+              <option>Fruticultura</option>
+              <option>Agricultura diversificada</option>
+              <option>Apicultura</option>
+              <option>Outra atividade agropecuária</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-msg">Mensagem / Observações</label>
+            <textarea id="f-msg" rows="4" placeholder="Conte brevemente sobre sua propriedade, área disponível ou dúvidas sobre a adesão..."></textarea>
+          </div>
+          <div class="check-row">
+            <input type="checkbox" id="f-termo" />
+            <label for="f-termo">Declaro que li e concordo com as condições de adesão à COOPAIBI e autorizo o contato pela equipe da cooperativa.</label>
+          </div>
+          <button class="btn-enviar" onclick="enviarForm()">
+            Enviar manifestação de interesse →
+          </button>
+          <p class="form-note">Seus dados são usados apenas para contato de adesão. Nenhuma informação é compartilhada com terceiros.</p>
+          <div class="success-box" id="success-box">
+            <div class="success-icon">✅</div>
+            <h3>Recebemos seu interesse!</h3>
+            <p>Em breve nossa equipe entrará em contato pelo telefone ou e-mail informado. Bem-vindo à família COOPAIBI e ao Projeto Cacau que Refloresta!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOCUMENTAÇÃO -->
+  <section class="section req-section" id="docs">
+    <div class="container">
+      <div class="sec-tag">Documentação</div>
+      <h2 class="sec-title">O que você <em>precisará</em> apresentar</h2>
+      <p class="sec-sub">Documentos básicos para formalizar sua adesão na sede da COOPAIBI.</p>
+      <div class="req-grid">
+        <div class="req-card">
+          <div class="req-icon">🪪</div>
+          <div>
+            <h4>Documento de identidade</h4>
+            <p>RG ou CNH válidos. Para pessoa jurídica, contrato social e documentos dos representantes legais.</p>
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">📋</div>
+          <div>
+            <h4>CPF / CNPJ</h4>
+            <p>CPF do titular ou CNPJ da associação/empresa. Para agricultores familiares, DAP/CAF é bem-vinda.</p>
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">📍</div>
+          <div>
+            <h4>Comprovante de residência</h4>
+            <p>Conta de água, luz ou correspondência em nome do requerente com endereço atualizado.</p>
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">🌾</div>
+          <div>
+            <h4>Comprovante da atividade rural</h4>
+            <p>Nota fiscal de venda, declaração do sindicato rural ou outro documento que comprove a atividade agropecuária.</p>
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">💰</div>
+          <div>
+            <h4>Quota-parte inicial</h4>
+            <p>Subscrição mínima de R$ 1.500,00 em quota-parte do capital social, conforme deliberação do Conselho de Administração.</p>
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">🤝</div>
+          <div>
+            <h4>Cooperado proponente</h4>
+            <p>A proposta de adesão deve ser assinada por você e por um cooperado já filiado à COOPAIBI como proponente.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FAIXA -->
+  <div class="cta-faixa">
+    <div class="container cta-faixa-inner">
+      <div>
+        <h2>Pronto para reflorir com o cacau?</h2>
+        <p>Preencha o formulário acima ou venha pessoalmente à nossa sede em Ibirataia.</p>
+      </div>
+      <a href="#formulario" class="btn-primary">Preencher formulário →</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="assets/logo-coopaibi.jpeg" alt="COOPAIBI" />
+          <p>Cooperativa Mista Agropecuária de Ibirataia — restaurando a Mata Atlântica e fortalecendo a agricultura familiar no sul da Bahia, Brasil.</p>
+          <div class="social-row" style="margin-top:16px">
+            <a href="#" class="social-btn" aria-label="Facebook">f</a>
+            <a href="#" class="social-btn" aria-label="Instagram">in</a>
+            <a href="#" class="social-btn" aria-label="YouTube">▶</a>
+            <a href="#" class="social-btn" aria-label="WhatsApp">w</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Navegação</h4>
+          <ul>
+            <li><a href="index.html">Página Inicial</a></li>
+            <li><a href="index.html#sobre">O Problema</a></li>
+            <li><a href="index.html#sistema">Sistema Cabruca</a></li>
+            <li><a href="index.html#parceria">Seja Parceiro</a></li>
+            <li><a href="cooperado.html">Seja Cooperado</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Adesão</h4>
+          <ul>
+            <li><a href="#formulario">Formulário de Interesse</a></li>
+            <li><a href="#passos">Como se Associar</a></li>
+            <li><a href="#tipos">Perfis de Cooperado</a></li>
+            <li><a href="#docs">Documentação Necessária</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contato</h4>
+          <p>
+            Av. Aurelino Coelho Lima, nº 10<br>
+            Bairro Centro — Ibirataia/BA<br>
+            CEP: 45.580-000 — Brasil<br><br>
+            <a href="tel:5573999768420" style="color:rgba(255,255,255,.75)">📞 Loja: (73) 9 9976-8420</a><br>
+            <a href="tel:5573998629960" style="color:rgba(255,255,255,.75)">📞 Compra de Cacau: (73) 9 9862-9960</a><br>
+            <a href="mailto:contato@coopaibi.com.br" style="color:var(--glt)">contato@coopaibi.com.br</a><br><br>
+            CNPJ: 54.305.114/0001-79<br>
+            Presidente: João Matheus de Araújo Silva
+          </p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 <span>COOPAIBI</span> — Todos os direitos reservados. | CNPJ 54.305.114/0001-79</p>
+        <p style="color:rgba(255,255,255,.25);font-size:11px">Ibirataia, Bahia, Brasil · Projeto Cacau que Refloresta</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('nav-mobile').classList.toggle('open');
+    }
+    document.querySelectorAll('.nav-mobile a').forEach(function(a) {
+      a.addEventListener('click', function() {
+        document.getElementById('nav-mobile').classList.remove('open');
+      });
+    });
+    function enviarForm() {
+      var nome   = document.getElementById('f-nome').value.trim();
+      var tel    = document.getElementById('f-tel').value.trim();
+      var local  = document.getElementById('f-local').value.trim();
+      var perfil = document.getElementById('f-perfil').value;
+      var termo  = document.getElementById('f-termo').checked;
+      if (!nome || !tel || !local || !perfil) {
+        alert('Por favor, preencha todos os campos obrigatórios (*).');
+        return;
+      }
+      if (!termo) {
+        alert('Por favor, aceite os termos de adesão para continuar.');
+        return;
+      }
+      var btn = document.querySelector('.btn-enviar');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      var dados = new FormData();
+      dados.append('nome',   nome);
+      dados.append('cpf',    document.getElementById('f-cpf').value.trim());
+      dados.append('tel',    tel);
+      dados.append('email',  document.getElementById('f-email').value.trim());
+      dados.append('local',  local);
+      dados.append('area',   document.getElementById('f-area') ? document.getElementById('f-area').value.trim() : '');
+      dados.append('perfil', perfil);
+      dados.append('ativ',   document.getElementById('f-ativ').value);
+      dados.append('msg',    document.getElementById('f-msg').value.trim());
+      fetch('enviar-cooperado.php', { method: 'POST', body: dados })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok) {
+            var box = document.getElementById('success-box');
+            box.classList.add('show');
+            btn.style.background = '#888';
+            btn.style.cursor = 'default';
+            btn.textContent = '✓ Enviado com sucesso!';
+            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            alert('Erro: ' + res.erro);
+            btn.disabled = false;
+            btn.textContent = 'Enviar manifestação de interesse →';
+          }
+        })
+        .catch(function() {
+          alert('Falha de conexão. Tente novamente ou entre em contato pelo telefone.');
+          btn.disabled = false;
+          btn.textContent = 'Enviar manifestação de interesse →';
+        });
+    }
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.step-card,.tipo-card,.req-card').forEach(function(el) {
+      obs.observe(el);
+    });
+  </script>
+
+
+  <!-- BOTÃO FLUTUANTE WHATSAPP -->
+  <a href="https://wa.me/5571999783992?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20COOPAIBI%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es." 
+     class="whatsapp-float" target="_blank" rel="noopener" aria-label="Fale conosco pelo WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.122 1.528 5.855L.057 23.885c-.066.254.166.486.42.42l6.03-1.471A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.877 9.877 0 0 1-5.031-1.378l-.36-.214-3.735.979.995-3.638-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.467 0 9.9 4.432 9.9 9.9 0 5.467-4.433 9.9-9.9 9.9z"/>
+    </svg>
+    <span class="whatsapp-tooltip">Fale conosco</span>
+  </a>
+
+  <!-- SCRIPT TRADUÇÃO -->
+  <script>
+  (function() {
+    var idiomaAtual = "pt";
+    var itens     = []; // {tipo, node|el, original, emOriginal}
+    var cacheEN   = null;
+
+    window.addEventListener("load", function() {
+      setTimeout(coletarItens, 800);
+    });
+
+    function isVisivel(el) {
+      if (!el) return false;
+      var s = window.getComputedStyle(el);
+      return s.display !== "none" && s.visibility !== "hidden";
+    }
+
+    function deveIgnorar(txt) {
+      if (!txt || txt.length < 3) return true;
+      if (/^[\d\s\.,;:\-\+\%\(\)\[\]\{\}\/\\@#!\?=\*&·•→]+$/.test(txt)) return true;
+      if (/^https?:\/\//.test(txt)) return true;
+      if (/^[\w\.-]+@[\w\.-]+/.test(txt)) return true;
+      return false;
+    }
+
+    function coletarItens() {
+      itens = [];
+      var vistos = {};
+
+      // 1. Tratar headings (h1-h4) como bloco completo
+      document.querySelectorAll("h1,h2,h3,h4").forEach(function(el) {
+        if (!isVisivel(el)) return;
+        if (el.closest && el.closest(".lang-selector")) return;
+        var txt = (el.innerText || el.textContent).trim().replace(/\s+/g, " ");
+        if (deveIgnorar(txt) || vistos[txt]) return;
+        vistos[txt] = true;
+        var emEl  = el.querySelector("em");
+        itens.push({
+          tipo:       "heading",
+          el:         el,
+          original:   txt,
+          emOriginal: emEl ? emEl.textContent.trim() : null,
+          innerHTML:  el.innerHTML
+        });
+      });
+
+      // 2. Demais nós de texto
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+      var no;
+      while ((no = walker.nextNode())) {
+        var pai = no.parentNode;
+        if (!pai) continue;
+        var tag = pai.nodeName.toLowerCase();
+        if (/^(script|style|noscript|h1|h2|h3|h4|svg|path|iframe)$/.test(tag)) continue;
+        if (!isVisivel(pai)) continue;
+        if (pai.closest && pai.closest(".lang-selector")) continue;
+        var txt = no.nodeValue.trim();
+        if (deveIgnorar(txt) || vistos[txt]) {
+          if (vistos[txt] && !deveIgnorar(txt)) {
+            itens.push({ tipo: "dup", node: no, original: no.nodeValue, ref: txt });
+          }
+          continue;
+        }
+        vistos[txt] = true;
+        itens.push({ tipo: "texto", node: no, original: no.nodeValue });
+      }
+    }
+
+    function aplicar(mapa) {
+      itens.forEach(function(item) {
+        if (item.tipo === "heading") {
+          var trad = mapa[item.original];
+          if (!trad) return;
+          if (item.emOriginal) {
+            var emTrad = mapa[item.emOriginal] || item.emOriginal;
+            // Substituir a palavra em dentro da frase traduzida por <em>
+            var escapado = emTrad.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            var novo = trad.replace(new RegExp(escapado, "i"), "<em>" + emTrad + "</em>");
+            item.el.innerHTML = novo !== trad ? novo : "<em>" + trad + "</em>";
+          } else {
+            item.el.textContent = trad;
+          }
+        } else if (item.tipo === "texto") {
+          var trad = mapa[item.original.trim()];
+          if (trad) item.node.nodeValue = item.node.nodeValue.replace(item.original.trim(), trad);
+        } else if (item.tipo === "dup") {
+          var trad = mapa[item.ref];
+          if (trad) item.node.nodeValue = item.node.nodeValue.replace(item.ref, trad);
+        }
+      });
+    }
+
+    function restaurar() {
+      itens.forEach(function(item) {
+        if (item.tipo === "heading") {
+          item.el.innerHTML = item.innerHTML;
+        } else if (item.tipo === "texto" || item.tipo === "dup") {
+          item.node.nodeValue = item.original;
+        }
+      });
+    }
+
+    window.selecionarIdioma = function(lang, btn) {
+      if (lang === idiomaAtual) return;
+
+      document.querySelectorAll(".lang-btn").forEach(function(b) { b.classList.remove("ativo"); });
+      btn.classList.add("ativo");
+
+      if (lang === "pt") {
+        restaurar();
+        idiomaAtual = "pt";
+        return;
+      }
+
+      if (cacheEN) {
+        aplicar(cacheEN);
+        idiomaAtual = lang;
+        return;
+      }
+
+      var labelOriginal = btn.innerHTML;
+      btn.innerHTML = "⏳";
+      btn.disabled = true;
+
+      coletarItens();
+
+      // Montar textos únicos para traduzir
+      var textos = {};
+      var idx = 0;
+      itens.forEach(function(item) {
+        if (item.tipo === "heading" || item.tipo === "texto") {
+          var key = "n" + idx++;
+          item._key = key;
+          textos[key] = item.tipo === "heading" ? item.original : item.original.trim();
+          // Se heading tem em, traduzir também o texto do em separadamente
+          if (item.tipo === "heading" && item.emOriginal) {
+            var emKey = "e" + idx++;
+            item._emKey = emKey;
+            textos[emKey] = item.emOriginal;
+          }
+        }
+      });
+
+      var chaves     = Object.keys(textos);
+      var tamLote    = 150;
+      var totalLotes = Math.ceil(chaves.length / tamLote);
+      var resultado  = {};
+      var feitos     = 0;
+
+      function enviarLote(i) {
+        var lote = {};
+        var ini  = i * tamLote;
+        var fim  = Math.min(ini + tamLote, chaves.length);
+        for (var j = ini; j < fim; j++) lote[chaves[j]] = textos[chaves[j]];
+
+        fetch("translate.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lang: lang, textos: lote })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok) Object.assign(resultado, res.traduzidos);
+          feitos++;
+          if (feitos < totalLotes) {
+            setTimeout(function() { enviarLote(i + 1); }, 100);
+          } else {
+            // Montar mapa texto→tradução
+            var mapa = {};
+            itens.forEach(function(item) {
+              if (item._key && resultado[item._key]) {
+                var orig = item.tipo === "heading" ? item.original : item.original.trim();
+                mapa[orig] = resultado[item._key];
+              }
+              if (item._emKey && resultado[item._emKey] && item.emOriginal) {
+                mapa[item.emOriginal] = resultado[item._emKey];
+              }
+            });
+            // Duplicatas herdam do mapa
+            itens.forEach(function(item) {
+              if (item.tipo === "dup" && mapa[item.ref]) {
+                mapa[item.ref] = mapa[item.ref];
+              }
+            });
+            cacheEN = mapa;
+            aplicar(mapa);
+            idiomaAtual = lang;
+            btn.innerHTML = labelOriginal;
+            btn.disabled  = false;
+          }
+        })
+        .catch(function() {
+          feitos++;
+          if (feitos >= totalLotes) {
+            btn.innerHTML = labelOriginal;
+            btn.disabled  = false;
+          }
+        });
+      }
+
+      if (totalLotes === 0) {
+        btn.innerHTML = labelOriginal;
+        btn.disabled  = false;
+        return;
+      }
+      enviarLote(0);
+    };
+  })();
+  </script>
+</body>
+</html>
