@@ -47,9 +47,13 @@ const nextConfig = {
         // vão. É deliberadamente estreito (/assets/*, e só nos hosts da
         // COOPAIBI) pra não colidir com o rewrite do middleware: o que ele
         // já reescreveu vira /sites/coopaibi/... e deixa de casar aqui.
+        // Os hosts aqui têm que espelhar HOSTS_ESPELHO_COOPAIBI do
+        // middleware.ts — inclusive coopaibi-site.vercel.app, o endereço de
+        // trabalho usado enquanto o DNS não vira. Sem ele os dois logos dão
+        // 404 justamente onde o site é conferido.
         {
           source: '/assets/:arquivo*',
-          has: [{ type: 'host', value: '(www\\.)?coopaibi\\.com\\.br' }],
+          has: [{ type: 'host', value: '((www\\.)?coopaibi\\.com\\.br|coopaibi-site\\.vercel\\.app)' }],
           destination: '/sites/coopaibi/assets/:arquivo*',
         },
       ],

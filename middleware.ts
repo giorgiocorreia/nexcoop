@@ -11,7 +11,17 @@ const DOMINIO_BASE = 'nexcoop.com.br'
 // produção no cPanel (Dropbox/.../coopaibi-site). Não editar: a fidelidade
 // é verificável por sha256 contra a origem. Tudo que o site precisa e que
 // não é arquivo estático é resolvido aqui, sem tocar no HTML.
-const HOSTS_ESPELHO_COOPAIBI = new Set(['coopaibi.com.br', 'www.coopaibi.com.br'])
+// coopaibi-site.vercel.app é o endereço de trabalho — é por ele que o site
+// é conferido enquanto o DNS não vira. Precisa vir ANTES de
+// extrairSlugDoHost, que casa o padrão <slug>-site.vercel.app e mandaria
+// esse host pro template React em app/(site-org)/[slug] (o porte de 19/07,
+// que segue no repositório como matéria-prima da integração, mas não é mais
+// o que se publica).
+const HOSTS_ESPELHO_COOPAIBI = new Set([
+  'coopaibi.com.br',
+  'www.coopaibi.com.br',
+  'coopaibi-site.vercel.app',
+])
 const RAIZ_ESPELHO_COOPAIBI = '/sites/coopaibi'
 
 // Host do site antigo em cPanel, que segue servindo as 3 páginas dinâmicas
