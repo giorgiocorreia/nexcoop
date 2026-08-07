@@ -195,7 +195,7 @@ de um conjunto pro outro.
 |---|---|---|---|
 | `index.php` | `noticias` (8 títulos) | `site_conteudos` | ⏸ espelho congelado |
 | `cacau.php` | `cacau_precos` | **`cotacoes`** | ✅ **integrada** 07/08 |
-| `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | pendente |
+| `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | ✅ **integrada** 07/08 |
 | `noticias.php` | `noticias` | `site_conteudos` (falta campo) | pendente |
 | `videos.php` | `videos` | `site_conteudos` (falta campo) | pendente |
 | `acoes.php` | `acoes_eventos` — **vazia** | — | conteúdo é hardcoded; só espelho |
@@ -242,6 +242,46 @@ cooperado, parados desde 24/05. `cotacoes` traz R$ 18,66 e R$ 19,33 desde
 23/07 — quase R$ 5/kg de diferença numa página que produtor consulta para
 decidir onde vender. Agora acompanha sozinha cada cotação nova. Cache de
 5 min (`s-maxage=300`), mesma janela do resto do módulo.
+
+**loja.php (integrada):** encerra a duplicação de cadastro — problema nº 1
+deste plano. Catálogo sai de `loja_produtos`, o mesmo cadastro do PDV e do
+estoque: **27 produtos ativos** contra o único que chegou a ser cadastrado
+no MySQL do site. Produto novo aparece sozinho; desativado some. Categoria
+nova entra na barra lateral e no rodapé sem intervenção, porque as duas são
+derivadas dos produtos.
+
+Única página do espelho com ESTADO: `?cat=` e `?busca=`, os mesmos
+parâmetros do site original — os links da barra lateral e o formulário de
+busca continuam apontando para `loja.php`, sem tocar no HTML capturado.
+
+Três coisas que exigiram decisão:
+
+- **Categorias sujas.** `categoria` é texto livre e o cadastro tem
+  "Nutrição Animal" (12), "Nutrição animal" (6), "nutrição animal" (4),
+  "Acessório" (3), "Acessorio" (1) e "Ferramenta" (1). São 3 categorias
+  gravadas de 6 jeitos. O agrupamento normaliza caixa e acento e exibe a
+  grafia mais frequente; sem isso a barra lateral mostraria seis.
+  **Vale limpar o cadastro** — a normalização é remendo, não conserto.
+- **Busca sem acento nos dois lados.** Existe "Ração Peixe" e "Racao Peixe"
+  no mesmo catálogo; comparar cru fazia a busca por "ração" achar 11 dos 12.
+- **`loja_produtos` não tem foto, descrição nem destaque**, que o card do
+  site usava. Sem foto cai no marcador 🌱 que o próprio site já usava; sem
+  destaque, a seção "Em destaque" some (já era condicional no original).
+  `desconto_cooperado` é o caminho inverso — informação que o site não tinha
+  e a página já prometia ("Cooperados têm condições especiais").
+
+### Pendências de dado descobertas em 07/08
+
+- **Número de WhatsApp divergente.** O site usa `(73) 9 9862-9960` no
+  topbar, rodapé e links `tel:` (index, cooperado, ações), mas o botão
+  "WhatsApp direto" da página Compra de Cacau usa `(73) 99986-2960` — os
+  mesmos dígitos trocados de lugar. Um dos dois está errado, e o da página
+  de cacau é o único lugar com aquela forma. **Não corrigido**: só a
+  cooperativa sabe qual é o certo, e telefone errado é pior que
+  inconsistente. Nota: a integração WhatsApp do NexCoop (Evolution) está
+  configurada com `5573999693548`, que é um terceiro número.
+- **Categorias da Loja** com grafia inconsistente (ver acima).
+- **`biblioteca`** tem 2 linhas para o mesmo PDF — cadastro duplicado.
 
 **Ferramenta:** `scripts/espelho-coopaibi/gerar-pagina.mjs <fonte.php> <url>
 <saida.html>`. Ele captura o HTML renderizado do cPanel — única fonte que

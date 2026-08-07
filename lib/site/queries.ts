@@ -96,7 +96,10 @@ export async function buscarProdutosLojaVitrine(orgId: string): Promise<ProdutoV
     .eq('org_id', orgId)
     .eq('ativo', true)
     .order('nome')
-    .limit(24)
+    // A vitrine do template mostra uma amostra, mas a Loja da COOPAIBI é o
+    // catálogo inteiro, com filtro por categoria e busca — cortar em 24
+    // escondia 3 dos 27 produtos ativos e faria a contagem do filtro mentir.
+    .limit(500)
   return (data as unknown as ProdutoVitrine[] | null) ?? []
 }
 

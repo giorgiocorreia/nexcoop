@@ -55,13 +55,16 @@ const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
   // que ficou parado em 24/05/2026 com R$ 14,00/kg enquanto a cooperativa
   // já pagava R$ 18,66.
   'cacau.php': 'cacau',
+  // Catálogo sai de `loja_produtos`, o mesmo cadastro do PDV e do estoque.
+  // O site tinha MySQL próprio, com um único produto cadastrado à mão,
+  // enquanto a Loja opera com 27.
+  'loja.php': 'loja',
 }
 
 // Páginas PHP ainda NÃO refeitas — o visitante vai pro site antigo e vê o
 // conteúdo real (produtos, vídeos, eventos, notícias vindos do MySQL).
 // Conforme cada uma for refeita, sai daqui e entra em PHP_REFEITAS_COOPAIBI.
 const PHP_NAVEGACAO_COOPAIBI = new Set([
-  'loja.php',
   'videos.php',
   'acoes.php',
   'noticias.php',
