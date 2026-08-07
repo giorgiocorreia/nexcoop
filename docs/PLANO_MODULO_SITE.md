@@ -198,7 +198,7 @@ de um conjunto pro outro.
 | `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | ✅ **integrada** 07/08 |
 | `noticias.php` | `noticias` | `site_conteudos` (falta campo) | pendente |
 | `videos.php` | `videos` | `site_conteudos` (falta campo) | pendente |
-| `acoes.php` | `acoes_eventos` — **vazia** | — | conteúdo é hardcoded; só espelho |
+| `acoes.php` | `acoes_eventos` — **vazia** | — | ✅ **espelho** 07/08 (nada a integrar) |
 | `biblioteca.php` | `biblioteca` | — | página órfã (link para enviar) |
 
 ### O que o dump de 07/08 revelou
@@ -269,6 +269,23 @@ Três coisas que exigiram decisão:
   destaque, a seção "Em destaque" some (já era condicional no original).
   `desconto_cooperado` é o caminho inverso — informação que o site não tinha
   e a página já prometia ("Cooperados têm condições especiais").
+
+### Decidido em 07/08 — foto de produto na Loja (depois do site)
+
+Aprovado com escopo **cadastro + vitrine**, para começar depois que as três
+páginas restantes saírem do cPanel. Não é ajuste do site: é feature do
+módulo Loja que a vitrine consome.
+
+1. Migration (próxima livre) com `loja_produtos.foto_url`
+2. Bucket no Supabase Storage, com política de leitura pública
+3. Campo de upload na tela de produto da Loja — reaproveitar o
+   redimensionamento no navegador de `lib/cooperados/foto-imagem.ts`, que já
+   existe para foto de cooperado e evita subir arquivo de câmera inteiro
+4. Card da vitrine troca o marcador 🌱 pela imagem (`lib/site/coopaibi/loja.ts`)
+
+Uma foto por produto, como no site antigo (`produtos.foto`). PDV e estoque
+ficam **fora** do escopo por ora — são telas de uso diário que acabaram de
+passar pela blindagem da migration 094.
 
 ### Pendências de dado descobertas em 07/08
 
