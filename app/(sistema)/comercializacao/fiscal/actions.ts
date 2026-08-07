@@ -265,7 +265,6 @@ export async function sincronizarNfeSaidaAction(vendaId: string) {
   })
   revalidatePath('/comercializacao/fiscal')
   revalidatePath('/comercializacao/lotes')
-  revalidatePath('/contabil/nfe')
   return resultado
 }
 
@@ -283,6 +282,5 @@ export async function sincronizarNfesSaidaProcessandoAction() {
   })
   revalidatePath('/comercializacao/fiscal')
   revalidatePath('/comercializacao/lotes')
-  revalidatePath('/contabil/nfe')
   return resumo
 }

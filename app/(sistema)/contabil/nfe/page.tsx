@@ -1,16 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext } from '@/lib/supabase/impersonation'
 import { redirect } from 'next/navigation'
-import ContabilNfeClient from './ContabilNfeClient'
+import ContabilNfeHub from './ContabilNfeHub'
 
-export const metadata = { title: 'NF-e — NexCoop' }
+export const metadata = { title: 'NF-e — Contábil — NexCoop' }
 
 /**
- * Módulo Contábil — consulta de NF-e emitidas.
- * Página própria (não reutiliza o hub operacional de /comercializacao/fiscal):
- * sem Cancelar, sem CC-e, sem ações de lote/caixa.
+ * Módulo Contábil — NF-e (consulta).
+ * Código 100% em app/(sistema)/contabil/nfe/* — não importa
+ * comercializacao/fiscal/* (páginas independentes).
  */
-export default async function NFePage() {
+export default async function ContabilNfePage() {
   const supabaseAuth = await createClient()
   const {
     data: { user },
@@ -20,5 +20,5 @@ export default async function NFePage() {
   const ctx = await getOrgContext()
   if (!ctx) redirect('/escritorio')
 
-  return <ContabilNfeClient orgId={ctx.orgId} />
+  return <ContabilNfeHub orgId={ctx.orgId} />
 }

@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * Hub operacional de Documentos Fiscais — Comercialização.
+ * Independente de app/(sistema)/contabil/nfe/* (Cancelar, CC-e, Docs de lote).
+ */
+
 import { useEffect, useState } from "react"
 import FiscalNfeClient from "./FiscalNfeClient"
 import FiscalEntradasClient from "./FiscalEntradasClient"
@@ -11,20 +16,7 @@ import { listarDevolucoesAction } from "@/lib/comercializacao/devolucao"
 
 type Aba = "saidas" | "entradas" | "devolucoes"
 
-export default function FiscalHubClient({
-  orgId,
-  modulo,
-  breadcrumbLabel = "Fiscal",
-  titulo = "Documentos Fiscais",
-  subtitulo = "NF-e emitidas — saídas, entradas e devoluções",
-}: {
-  orgId: string
-  /** Módulo pai no breadcrumb (ex.: Contábil). Padrão: Comercialização */
-  modulo?: { label: string; href: string }
-  breadcrumbLabel?: string
-  titulo?: string
-  subtitulo?: string
-}) {
+export default function FiscalHubClient({ orgId }: { orgId: string }) {
   const [aba, setAba] = useState<Aba>("saidas")
   const [badges, setBadges] = useState({ saidas: 0, entradas: 0, devolucoes: 0 })
 
@@ -62,11 +54,10 @@ export default function FiscalHubClient({
 
   return (
     <PageLayout
-      titulo={titulo}
-      subtitulo={subtitulo}
+      titulo="Documentos Fiscais"
+      subtitulo="NF-e e devoluções — operação (emissão, cancelamento, CC-e)"
       icone="ti-file-invoice"
-      modulo={modulo}
-      breadcrumb={[{ label: breadcrumbLabel }]}
+      breadcrumb={[{ label: "Fiscal" }]}
       fullHeight
     >
       <Tabs tabs={abas} ativa={aba} onChange={(id) => setAba(id as Aba)} />
