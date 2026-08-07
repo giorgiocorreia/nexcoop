@@ -184,7 +184,8 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
 
   if (isParceiro || isContador)
     grupos.push({
-      grupo: 'Escritório',
+      // Deixa explícito que é o escritório DO PARCEIRO, não do cliente
+      grupo: 'Meu escritório',
       itens: [
         { label: 'Painel',          href: '/escritorio',                 icone: '🏦' },
         { label: 'Equipe',          href: '/escritorio/equipe',          icone: '👥' },
@@ -221,11 +222,15 @@ const FUNCAO_LABEL: Record<string, string> = {
 interface Props {
   usuario: (Usuario & { organizacao: Organizacao | null }) | null
   isParceiro?: boolean
+  /** Razão social do escritório contábil do parceiro */
   orgNome?: string
   isParceiroAcessandoOrg?: boolean
   modulosAcesso?: string[]
   /** Nome do profissional parceiro (servidor) — evita "Usuário" no rodapé */
   parceiroNome?: string
+  /** Cliente que o parceiro está atendendo (modo módulo contábil) */
+  clienteNome?: string
+  clienteLogo?: string | null
   collapsed?: boolean
   onToggleCollapse?: () => void
 }
@@ -279,6 +284,8 @@ export default function Sidebar({
   isParceiroAcessandoOrg,
   modulosAcesso,
   parceiroNome,
+  clienteNome,
+  clienteLogo,
 }: Props) {
   const pathname = usePathname()
   const router   = useRouter()
@@ -622,13 +629,17 @@ export default function Sidebar({
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
     if (isParceiroAcessandoOrg) {
       const grupos = []
+      // Atalho claro de volta ao painel do próprio escritório
+      grupos.push(renderGrupo('Meu escritório', [
+        { label: '← Voltar ao painel', href: '/escritorio', icone: '🏦' },
+      ]))
       if (modulosAcesso?.includes('financeiro_leitura'))
-        grupos.push(renderGrupo('Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
+        grupos.push(renderGrupo('Cliente · Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
       if (modulosAcesso?.includes('fiscal_comercializacao'))
-        grupos.push(renderGrupo('Comercialização', [
+        grupos.push(renderGrupo('Cliente · Comercialização', [
           { label: 'Notas Fiscais', href: '/comercializacao/fiscal', icone: '🧾' },
         ]))
-      grupos.push(renderGrupo('Contábil', [
+      grupos.push(renderGrupo('Cliente · Contábil', [
         ...CONTABIL_ITENS,
         { label: 'De/Para Contas', href: '/contabil/depara', icone: '🔀' },
       ]))
@@ -717,20 +728,46 @@ export default function Sidebar({
       {collapsed ? (
         <div style={{ ...HERO_BOX, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <div style={{ ...HERO_CHIP, padding: 4 }}>
-            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 30, height: 30, objectFit: 'contain' }} />
+            {isParceiroAcessandoOrg && clienteLogo ? (
+              <img src={clienteLogo} alt={clienteNome || 'Cliente'} style={{ width: 30, height: 30, objectFit: 'contain' }} />
+            ) : (
+              <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 30, height: 30, objectFit: 'contain' }} />
+            )}
+          </div>
+          <ToggleBtn />
+        </div>
+      ) : isParceiroAcessandoOrg ? (
+        /* Parceiro atendendo um cliente: NexCoop + logo da org cliente */
+        <div style={{ ...HERO_BOX, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px' }}>
+          <div style={{ ...HERO_CHIP, padding: '4px 8px', minWidth: 0, flex: 1 }}>
+            <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ height: 36, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ width: 1, height: 28, background: BORDA, flexShrink: 0 }} />
+            {clienteLogo ? (
+              <img
+                src={clienteLogo}
+                alt={clienteNome || 'Cliente'}
+                title={clienteNome}
+                style={{ height: 36, width: 'auto', maxWidth: 64, objectFit: 'contain' }}
+              />
+            ) : (
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0D2B5E', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {clienteNome || 'Cliente'}
+              </span>
+            )}
           </div>
           <ToggleBtn />
         </div>
       ) : isParceiro ? (
+        /* Painel do próprio escritório contábil */
         <div style={{ ...HERO_BOX, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px' }}>
           <div style={{ ...HERO_CHIP, padding: 4 }}>
             <img src="/images/logo-nexcoop-vertical.png" alt="NexCoop" style={{ width: 40, height: 40, objectFit: 'contain' }} />
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: HERO.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {orgNomeProp}
+              {orgNomeProp || 'Meu escritório'}
             </div>
-            <div style={{ fontSize: 11, color: HERO.txtSub, marginTop: 1 }}>Escritório Parceiro</div>
+            <div style={{ fontSize: 11, color: HERO.txtSub, marginTop: 1 }}>Meu escritório contábil</div>
           </div>
           <ToggleBtn />
         </div>
@@ -783,17 +820,29 @@ export default function Sidebar({
       {!collapsed && (
         <div style={{ borderTop: `1px solid ${SB.borda}`, padding: '0.75rem 1rem' }}>
           {ehParceiroUi ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
-                {(nomeDisplay || parceiroNome)?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {nomeDisplay || parceiroNome || 'Usuário'}
-                  </div>
-                  <div style={{ fontSize: 11, color: SB.txtSub }}>Parceiro</div>
-                </Link>
+            <div style={{ marginBottom: '8px' }}>
+              {isParceiroAcessandoOrg && clienteNome && (
+                <div style={{
+                  fontSize: 10, fontWeight: 600, color: SB.txtSub, textTransform: 'uppercase',
+                  letterSpacing: '0.5px', marginBottom: 6, padding: '0 2px',
+                }}>
+                  Atendendo · {clienteNome}
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
+                  {(nomeDisplay || parceiroNome)?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {nomeDisplay || parceiroNome || 'Usuário'}
+                    </div>
+                    <div style={{ fontSize: 11, color: SB.txtSub }}>
+                      {isParceiroAcessandoOrg ? 'Contador · meu escritório' : 'Meu escritório'}
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
           ) : (

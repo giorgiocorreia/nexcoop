@@ -68,6 +68,8 @@ export default async function SistemaLayout({
   let nomeParceiro = ''
   let isParceiroAcessandoOrg = false
   let modulosAcessoParceiro: string[] = []
+  let clienteNome = ''
+  let clienteLogo: string | null = null
 
   if (parceiroStatus && user) {
     const adminSupabase = createAdminClient()
@@ -82,9 +84,8 @@ export default async function SistemaLayout({
     const profs = profNome ?? []
     if (profs.length > 0) {
       nomeParceiro = (profs[0] as any).nome || ''
-      if (!parceiroOrgId) {
-        nomeEmpresaParceira = ((profs[0] as any).empresa as any)?.razao_social || ''
-      }
+      // Nome do escritório do parceiro — sempre disponível (painel e modo cliente)
+      nomeEmpresaParceira = ((profs[0] as any).empresa as any)?.razao_social || ''
     }
 
     if (parceiroOrgId) {
@@ -97,6 +98,10 @@ export default async function SistemaLayout({
       if (parceiroOrgRes.data) {
         organizacao = parceiroOrgRes.data
         isParceiroAcessandoOrg = true
+        clienteNome = (parceiroOrgRes.data as any).nome_curto
+          || (parceiroOrgRes.data as any).nome
+          || ''
+        clienteLogo = (parceiroOrgRes.data as any).logo_url || null
         const vinculo = profs.find((v: any) => v.empresa?.org_id === parceiroOrgId)
         const empresa = vinculo?.empresa as { modulos_acesso?: string[] } | undefined
         modulosAcessoParceiro = [...(empresa?.modulos_acesso ?? [])]
@@ -135,26 +140,37 @@ export default async function SistemaLayout({
       <Sidebar
         usuario={usuarioComOrg}
         isParceiro={parceiroStatus && !isParceiroAcessandoOrg}
-        orgNome={parceiroStatus && !isParceiroAcessandoOrg ? nomeEmpresaParceira : undefined}
+        orgNome={parceiroStatus ? nomeEmpresaParceira : undefined}
         isParceiroAcessandoOrg={isParceiroAcessandoOrg}
         modulosAcesso={modulosAcessoParceiro}
         parceiroNome={parceiroStatus ? nomeParceiro : undefined}
+        clienteNome={isParceiroAcessandoOrg ? clienteNome : undefined}
+        clienteLogo={isParceiroAcessandoOrg ? clienteLogo : undefined}
       />
       <MainContent>
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>
 
-        {/* Parceiro no módulo da org: botão flutuante (não empurra o header
-            verde — antes o nxc-sys-banner full-width desalinhava o topo da sidebar). */}
+        {/* Parceiro no cliente: chip com nome da org + volta ao MEU escritório
+            (flutuante — não empurra o header verde). */}
         {isParceiroAcessandoOrg && organizacao && (
-          <div
-            className="nxc-parceiro-voltar"
-            title={`Módulo contábil: ${(organizacao as any).nome}`}
-          >
+          <div className="nxc-parceiro-voltar">
+            <div className="nxc-parceiro-voltar__chip" title={`Atendendo: ${clienteNome || (organizacao as any).nome}`}>
+              {clienteLogo ? (
+                <img src={clienteLogo} alt="" className="nxc-parceiro-voltar__logo" />
+              ) : null}
+              <span className="nxc-parceiro-voltar__cliente">
+                {clienteNome || (organizacao as any).nome_curto || (organizacao as any).nome}
+              </span>
+            </div>
             <form action={sairDaOrgParceiro}>
-              <button type="submit" className="nxc-parceiro-voltar__btn">
-                ← Voltar ao Escritório
+              <button
+                type="submit"
+                className="nxc-parceiro-voltar__btn"
+                title={nomeEmpresaParceira ? `Voltar para ${nomeEmpresaParceira}` : 'Voltar ao meu escritório'}
+              >
+                ← Meu escritório
               </button>
             </form>
           </div>

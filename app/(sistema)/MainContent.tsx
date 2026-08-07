@@ -83,15 +83,45 @@ export default function MainContent({ children }: { children: React.ReactNode })
           .nxc-sys-banner__action { align-self: flex-start; }
         }
 
-        /* Parceiro: não ocupa linha acima do HERO (mantém header alinhado à sidebar) */
+        /* Parceiro no cliente: chip da org + botão “Meu escritório” (não empurra o HERO) */
         .nxc-parceiro-voltar {
           position: fixed;
-          top: calc(12px + env(safe-area-inset-top, 0px));
+          top: calc(10px + env(safe-area-inset-top, 0px));
           right: calc(16px + env(safe-area-inset-right, 0px));
           z-index: 90;
+          display: flex;
+          align-items: center;
+          gap: 8px;
           pointer-events: none;
         }
-        .nxc-parceiro-voltar form { pointer-events: auto; }
+        .nxc-parceiro-voltar form,
+        .nxc-parceiro-voltar__chip { pointer-events: auto; }
+        .nxc-parceiro-voltar__chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          max-width: min(220px, 40vw);
+          padding: 6px 12px 6px 8px;
+          background: rgba(255,255,255,0.96);
+          border: 1px solid rgba(15,118,110,0.35);
+          border-radius: 999px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+        }
+        .nxc-parceiro-voltar__logo {
+          height: 26px;
+          width: auto;
+          max-width: 40px;
+          object-fit: contain;
+          flex-shrink: 0;
+        }
+        .nxc-parceiro-voltar__cliente {
+          font-size: 12px;
+          font-weight: 700;
+          color: #065f46;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
         .nxc-parceiro-voltar__btn {
           font-size: 12px;
           font-weight: 600;
@@ -99,7 +129,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
           background: #fff;
           border: 1px solid #0F766E;
           border-radius: 8px;
-          padding: 7px 14px;
+          padding: 8px 14px;
           cursor: pointer;
           box-shadow: 0 2px 10px rgba(0,0,0,0.12);
           white-space: nowrap;
@@ -111,7 +141,11 @@ export default function MainContent({ children }: { children: React.ReactNode })
           .nxc-parceiro-voltar {
             top: calc(58px + env(safe-area-inset-top, 0px));
             right: 10px;
+            left: 56px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
           }
+          .nxc-parceiro-voltar__chip { max-width: 45%; }
           .nxc-parceiro-voltar__btn {
             font-size: 11px;
             padding: 6px 10px;
