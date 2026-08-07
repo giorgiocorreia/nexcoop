@@ -6,7 +6,7 @@
 |---|---|---|
 | Autenticação / Onboarding | ✅ Completo | — |
 | Cooperados / Filiados | ✅ Completo | 24/07/2026 — foto do cooperado (bucket `avatares`) + card de carteirinha na ficha + emissão/impressão em lote na lista |
-| Tesouraria (continuidade + transferência entre caixas + custódia) | ✅ Completo | 18/07/2026 — migrations 073/074; saldos exibidos corrigidos |
+| Tesouraria (continuidade + transferência entre caixas + custódia) | ✅ Completo | 06/08/2026 — leitura de saldo da Loja passa a preferir o caixa **aberto** (migration 094); antes pegava o mais recente e o saldo herdado saía do caixa errado |
 | Financeiro / Assembleias / Documentos / Mensalidades | ✅ Completo | 04/07/2026 — UI redesign |
 | Stripe (modo teste) | ✅ Completo | — |
 | Super Admin | ✅ Completo | 04/07/2026 — UI redesign |
@@ -17,7 +17,7 @@
 | Dashboard Admin (cotação cacau + TradingView) | ✅ Completo | 04/07/2026 — UI redesign |
 | Audit logs | ✅ Completo | 04/07/2026 — UI redesign |
 | Gestão de usuários | ✅ Completo | 04/07/2026 — UI redesign |
-| Loja Agropecuária Fases 0–5 | ✅ Completo | 18/07/2026 — contas a pagar com parcelas (079/080) + transferência entre caixas |
+| Loja Agropecuária Fases 0–5 | ✅ Completo | 06/08/2026 — blindagem do caixa (migration 094): 1 aberto por operador, abertura idempotente, validação na sangria |
 | Loja Agropecuária Fase 6 (fiscal) | 🔄 Parcial | 23/06/2026 |
 | Escritório (portal contador) | ✅ Completo | 04/07/2026 — UI redesign |
 | Landing page | ✅ Completo | 04/07/2026 |

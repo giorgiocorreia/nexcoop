@@ -23,6 +23,32 @@
   construídos e não são pendência; o schema suporta se um dia for pedido
 - Detalhes em `docs/comercializacao.md` §3.1
 
+## 06/08/2026 — Caixa: aporte sem senha e blindagem da Loja
+
+### Aporte simples não pede mais senha (os dois módulos)
+- Aporte de dinheiro solto na própria gaveta vai direto: não debita ninguém e
+  só **aumenta** a responsabilidade de quem opera o caixa
+- **Sangria e aporte por transferência continuam pedindo senha** — lá a
+  autorização é o consentimento de quem *perde* o dinheiro, não burocracia
+- `autorizado_por` no aporte simples passa a ser o próprio executor
+
+### Blindagem do caixa da Loja (migration 094, aplicada 06/08)
+Paridade com a Comercialização. A continuidade (fechamento de hoje = abertura
+de amanhã) **já existia** na Loja; o que faltava eram as travas que impediam
+essa leitura de pegar o caixa errado:
+- 1 caixa aberto por operador (`loja_caixas_unico_aberto_por_usuario`)
+- `getSaldoResponsabilidadeLoja` passa a **preferir o caixa aberto** em vez do
+  mais recente — com órfão aberto + fechamento posterior, o saldo herdado saía
+  do caixa que não era o de trabalho
+- fim do `.maybeSingle()` que **erra com 2 linhas**: o erro era engolido e
+  virava "caixa fechado" com caixa aberto, levando o operador a abrir mais um
+  (ciclo do caso Luan, sem a trava da 090)
+- `abrirCaixaLoja` idempotente; `registrarSangriaLoja` valida org/status/dono
+- `loja_sangrias.forma_pagamento` — só aporte em espécie é cédula na gaveta
+
+**Loja e Comercialização seguem independentes:** o mesmo usuário pode ter os
+dois caixas abertos ao mesmo tempo. A trava é por módulo.
+
 ## 27–28/07/2026 — Grok (xAI)
 
 ### Caixa comercialização (Luan / COOPAIBI)
@@ -90,6 +116,9 @@ import {
 - [ ] Segurança — auditoria: item #2 (escopo de módulo do parceiro contábil por request) e #5 (assinatura do webhook WhatsApp)
 - [ ] Smoke test dos fluxos novos (venda antecipada, transferência interna, quebra de peso)
 - [ ] Marcos (Contabahia): dados fiscais da loja (NCMs, CSTs, CSC NFC-e)
+- [ ] Smoke test de uso da sessão 06/08: imprimir um recibo de verdade
+      (layout/cabeçalho na impressora) e abrir/fechar um caixa da Loja pra ver
+      o saldo final virando abertura no dia seguinte
 
 
 ## IDs críticos
