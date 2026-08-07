@@ -40,9 +40,12 @@ interface FocusNfeResponse {
 
 export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<{
   sucesso: boolean
+  /** true = enviada à Focus, mas SEFAZ ainda não devolveu autorização */
+  processando?: boolean
   nota_id?: string
   chave_nfe?: string
   danfe_url?: string
+  numero_nfe?: string
   erro?: string
 }> {
   const supabase = createAdminClient()
@@ -307,18 +310,20 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
             .from('notas_entrega')
             .update({
               status: 'autorizada' as any,
-              chave_nfe: consultaResp.chave_nfe,
-              numero_nfe: consultaResp.numero,
-              xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal, FOCUS_MOD),
-              danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD),
+              chave_nfe: consultaResp.chave_nfe ?? null,
+              numero_nfe: consultaResp.numero != null ? String(consultaResp.numero) : null,
+              xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
+              danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD) ?? null,
               emitido_em: new Date().toISOString(),
             })
             .eq('id', notaRecord.id)
 
           return {
             sucesso: true,
+            processando: false,
             nota_id: notaRecord.id,
             chave_nfe: consultaResp.chave_nfe,
+            numero_nfe: consultaResp.numero != null ? String(consultaResp.numero) : undefined,
             danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD),
           }
         }
@@ -338,9 +343,10 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   let statusFocus = focusResposta.status
   let respostaFinal = focusResposta
 
-  // Se ainda processando, faz polling (até 3 tentativas, 3s entre cada)
+  // Polling mais longo: SEFAZ em horário de pico costuma passar de 9s.
+  // Antes eram 3×3s e o modal marcava "sucesso" mesmo sem autorização real.
   if (statusFocus === 'processando_autorizacao') {
-    for (let tentativa = 0; tentativa < 3; tentativa++) {
+    for (let tentativa = 0; tentativa < 12; tentativa++) {
       await sleep(3000)
       try {
         respostaFinal = await consultarNfeEntrada(referencia)
@@ -353,34 +359,45 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
   }
 
   if (statusFocus === 'autorizado') {
-    await supabase
+    const { error: upErr } = await supabase
       .from('notas_entrega')
       .update({
         status: 'autorizada' as any,
-        chave_nfe: respostaFinal.chave_nfe,
-        numero_nfe: respostaFinal.numero,
-        xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal, FOCUS_MOD),
-        danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD),
+        chave_nfe: respostaFinal.chave_nfe ?? null,
+        numero_nfe: respostaFinal.numero != null ? String(respostaFinal.numero) : null,
+        xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
+        danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD) ?? null,
         emitido_em: new Date().toISOString(),
       })
       .eq('id', notaRecord.id)
 
+    if (upErr) {
+      console.error('[emitirNfeEntrada] falha ao gravar autorizada:', upErr.message)
+    }
+
     return {
       sucesso: true,
+      processando: false,
       nota_id: notaRecord.id,
       chave_nfe: respostaFinal.chave_nfe,
+      numero_nfe: respostaFinal.numero != null ? String(respostaFinal.numero) : undefined,
       danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD),
     }
   }
 
   if (statusFocus === 'processando_autorizacao' || statusFocus === 'autorizado_em_contingencia') {
-    // Ainda processando após as tentativas — salva e retorna para consulta posterior
+    // Ainda processando — NÃO tratar como "autorizada" no cliente.
+    // O modal deve continuar consultando (getNfeStatus) até autorizar.
     await supabase
       .from('notas_entrega')
       .update({ status: 'processando' as any })
       .eq('id', notaRecord.id)
 
-    return { sucesso: true, nota_id: notaRecord.id }
+    return {
+      sucesso: true,
+      processando: true,
+      nota_id: notaRecord.id,
+    }
   }
 
   // Rejeitada ou erro

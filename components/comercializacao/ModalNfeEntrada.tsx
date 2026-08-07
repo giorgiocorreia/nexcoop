@@ -17,7 +17,8 @@ interface ModalNfeEntradaProps {
 }
 
 export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaProps) {
-  const [status, setStatus] = useState<'pergunta' | 'preco' | 'emitindo' | 'sucesso' | 'erro'>('pergunta')
+  // 'aguardando_sefaz' = enviada à Focus, ainda sem chave (NÃO é "autorizada")
+  const [status, setStatus] = useState<'pergunta' | 'preco' | 'emitindo' | 'aguardando_sefaz' | 'sucesso' | 'erro'>('pergunta')
   const [cotacoes, setCotacoes] = useState<{ preco_cooperado: number; preco_externo: number } | null>(null)
   const [precoEscolhido, setPrecoEscolhido] = useState<'cooperado' | 'externo' | 'manual'>('externo')
   const [precoManual, setPrecoManual] = useState('')
@@ -26,6 +27,50 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
   const [erro, setErro] = useState<string | null>(null)
   const [produtorConjuge, setProdutorConjuge] = useState<{ titular_nome: string; conjuge_nome: string | null; conjuge_cpf: string | null } | null>(null)
   const [emitirComo, setEmitirComo] = useState<'titular' | 'conjuge'>('titular')
+
+  // Continua consultando a SEFAZ até autorizar (corrige banco que ficava em processando)
+  useEffect(() => {
+    if (status !== 'aguardando_sefaz') return
+    let cancelado = false
+    let tentativas = 0
+    const max = 20 // ~100s
+
+    const tick = async () => {
+      if (cancelado) return
+      tentativas++
+      try {
+        const nota = await getNfeStatus(movimentacao_id)
+        if (cancelado) return
+        if (nota?.status === 'autorizada' && (nota.chave_nfe || nota.danfe_url)) {
+          setChaveNfe((nota.chave_nfe as string | null) ?? null)
+          setDanfeUrl((nota.danfe_url as string | null) ?? null)
+          setStatus('sucesso')
+          return
+        }
+        if (nota?.status === 'rejeitada' || nota?.status === 'erro') {
+          setErro((nota as any).motivo_rejeicao ?? 'NF-e rejeitada pela SEFAZ')
+          setStatus('erro')
+          return
+        }
+      } catch {
+        /* tenta de novo */
+      }
+      if (tentativas >= max) {
+        setErro(
+          'A SEFAZ ainda não confirmou a autorização. A nota ficou como "processando" — abra Contábil → NF-e → Entradas e use "Sincronizar com SEFAZ".',
+        )
+        setStatus('erro')
+        return
+      }
+      setTimeout(tick, 5000)
+    }
+
+    const t = setTimeout(tick, 2000)
+    return () => {
+      cancelado = true
+      clearTimeout(t)
+    }
+  }, [status, movimentacao_id])
 
   async function handleIrParaPreco() {
     setStatus('preco')
@@ -53,10 +98,13 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
       }
 
       const resultado = await emitirNfeEntradaAction(movimentacao_id, preco, emitirComo)
-      if (resultado.sucesso) {
+      // Só "autorizada" com chave/DANFE. Antes: sucesso:true + processando virava tela verde errada.
+      if (resultado.sucesso && resultado.chave_nfe && !resultado.processando) {
         setDanfeUrl(resultado.danfe_url ?? null)
         setChaveNfe(resultado.chave_nfe ?? null)
         setStatus('sucesso')
+      } else if (resultado.sucesso && (resultado.processando || !resultado.chave_nfe)) {
+        setStatus('aguardando_sefaz')
       } else {
         setErro(resultado.erro ?? 'Erro ao emitir NF-e')
         setStatus('erro')
@@ -238,7 +286,7 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
           </>
         )}
 
-        {/* Emitindo */}
+        {/* Emitindo (envio + polling inicial no servidor) */}
         {status === 'emitindo' && (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
@@ -247,7 +295,24 @@ export function ModalNfeEntrada({ movimentacao_id, onClose }: ModalNfeEntradaPro
           </div>
         )}
 
-        {/* Sucesso */}
+        {/* Enviada, aguardando SEFAZ — ainda NÃO autorizada no banco */}
+        {status === 'aguardando_sefaz' && (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
+            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '8px' }}>
+              Aguardando SEFAZ…
+            </div>
+            <div style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '20px', lineHeight: 1.45 }}>
+              A nota foi enviada e ainda está em processamento.
+              Não feche esta janela — vamos atualizar o status automaticamente.
+            </div>
+            <Btn variante="cinza" onClick={onClose} style={{ width: '100%', justifyContent: 'center' }}>
+              Fechar e consultar depois
+            </Btn>
+          </div>
+        )}
+
+        {/* Sucesso — só com chave (autorização real gravada) */}
         {status === 'sucesso' && (
           <>
             <div style={{ fontSize: '32px', marginBottom: '12px', textAlign: 'center' }}>✅</div>
