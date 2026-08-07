@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getOrgContext } from '@/lib/supabase/impersonation'
 import { focusGet, urlCompleta } from '@/lib/focusnfe/client'
 
 export async function POST(req: NextRequest) {
@@ -15,8 +16,15 @@ export async function POST(req: NextRequest) {
     .from('usuarios')
     .select('organizacao_id')
     .eq('id', user.id)
-    .single()
-  if (!usuario?.organizacao_id) {
+    .maybeSingle()
+
+  // Org do usuário da cooperativa OU parceiro contábil (cookie parceiro_org_id)
+  let orgId = usuario?.organizacao_id as string | null | undefined
+  if (!orgId) {
+    const ctx = await getOrgContext()
+    orgId = ctx?.orgId
+  }
+  if (!orgId) {
     return NextResponse.json({ sucesso: false, erro: 'Não autenticado' }, { status: 401 })
   }
 
@@ -32,7 +40,7 @@ export async function POST(req: NextRequest) {
     .from('notas_entrega')
     .select('id, referencia')
     .eq('id', nota_id)
-    .eq('organizacao_id', usuario.organizacao_id)
+    .eq('organizacao_id', orgId)
     .maybeSingle()
   if (!nota) {
     return NextResponse.json({ sucesso: false, erro: 'Nota não encontrada' }, { status: 404 })
@@ -48,19 +56,40 @@ export async function POST(req: NextRequest) {
       await supabase
         .from('notas_entrega')
         .update({
-          status: 'emitida',
+          // autorizada = status canônico das notas emitidas com sucesso
+          status: 'autorizada',
           chave_nfe: resposta.chave_nfe,
           numero_nfe: resposta.numero,
           xml_url: urlCompleta(resposta.caminho_xml_nota_fiscal),
           danfe_url: urlCompleta(resposta.caminho_danfe),
         })
         .eq('id', nota_id)
-        .eq('organizacao_id', usuario.organizacao_id)
+        .eq('organizacao_id', orgId)
 
       return NextResponse.json({ sucesso: true, chave_nfe: resposta.chave_nfe })
     }
 
-    return NextResponse.json({ sucesso: false, status: resposta.status })
+    // SEFAZ ainda processando — mantém status local
+    if (resposta.status === 'processando_autorizacao') {
+      return NextResponse.json({
+        sucesso: false,
+        status: 'processando',
+        erro: 'Ainda em processamento na SEFAZ. Tente novamente em instantes.',
+      })
+    }
+
+    // Erro/rejeição na Focus — marca local para não ficar eterno em "processando"
+    const motivo =
+      resposta.erros?.map((e: any) => `${e.codigo}: ${e.mensagem}`).join('; ') ||
+      resposta.mensagem_sefaz ||
+      String(resposta.status || 'erro')
+    await supabase
+      .from('notas_entrega')
+      .update({ status: 'rejeitada', motivo_rejeicao: motivo })
+      .eq('id', nota_id)
+      .eq('organizacao_id', orgId)
+
+    return NextResponse.json({ sucesso: false, status: resposta.status, erro: motivo })
   } catch (e: any) {
     return NextResponse.json({ sucesso: false, erro: e.message })
   }

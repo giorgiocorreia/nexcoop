@@ -38,22 +38,29 @@ export async function GET(req: NextRequest) {
         produtores (nome, cpf)
       `)
       .eq("organizacao_id", orgId)
-      // 'processando' entra na lista para permitir a consulta manual do status
-      // na Focus (botão Consultar → /api/nfe/sincronizar) — sem isso a nota
-      // que fica presa em processamento nunca sai desse estado.
-      // 'emitida' sem chave/número (legado) não entra — polui a lista fiscal.
-      .in("status", ["autorizada", "processando"])
+      // autorizada/emitida = emitidas com sucesso; processando = ainda na SEFAZ
+      // (só as recentes — as antigas sem chave são emissão incompleta e poluem
+      // a lista fiscal do contador).
+      .in("status", ["autorizada", "emitida", "processando"])
       .order("created_at", { ascending: false })
 
     if (error) return NextResponse.json([], { status: 500 })
 
-    // Só notas com identificação real ou ainda em processamento na SEFAZ
-    const rows = (data ?? []).filter(
-      (n: any) =>
-        n.status === "processando" ||
-        n.chave_nfe ||
-        n.numero_nfe,
-    )
+    const agora = Date.now()
+    const JANELA_PROCESSANDO_MS = 48 * 60 * 60 * 1000 // 48h
+
+    const rows = (data ?? []).filter((n: any) => {
+      // Notas realmente emitidas (têm chave ou número)
+      if (n.chave_nfe || n.numero_nfe) {
+        return n.status === "autorizada" || n.status === "emitida"
+      }
+      // Processando sem chave: só se for recente (ainda faz sentido consultar)
+      if (n.status === "processando") {
+        const criado = new Date(n.created_at).getTime()
+        return Number.isFinite(criado) && agora - criado <= JANELA_PROCESSANDO_MS
+      }
+      return false
+    })
 
     return NextResponse.json(rows)
   } catch {
