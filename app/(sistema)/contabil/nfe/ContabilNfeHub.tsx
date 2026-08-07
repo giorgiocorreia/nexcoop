@@ -71,7 +71,7 @@ export default function ContabilNfeHub({ orgId }: { orgId: string }) {
   return (
     <PageLayout
       titulo="NF-e — Notas Fiscais"
-      subtitulo="Consulta contábil das notas emitidas (sem cancelamento nem CC-e)"
+      subtitulo="Consulta contábil das notas emitidas"
       icone="ti-file-invoice"
       modulo={MODULO_CONTABIL}
       breadcrumb={[{ label: 'NF-e' }]}
