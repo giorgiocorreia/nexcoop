@@ -108,24 +108,34 @@ export async function getNfeStatus(movimentacao_id: string) {
         const danfe_url = urlCompleta(resposta.caminho_danfe, 'comercializacao')
         const xml_url = urlCompleta(resposta.caminho_xml_nota_fiscal, 'comercializacao')
 
-        await supabase
+        // Coluna no banco é emitida_em (não emitido_em) — o typo fazia o
+        // update falhar (PGRST204) e a UI ainda assim mostrava "autorizada".
+        const { error: upErr } = await supabase
           .from('notas_entrega')
           .update({
             status: 'autorizada' as any,
-            chave_nfe: resposta.chave_nfe,
+            chave_nfe: resposta.chave_nfe ?? null,
             numero_nfe: resposta.numero != null ? String(resposta.numero) : null,
-            xml_url,
-            danfe_url,
-            emitido_em: new Date().toISOString(),
+            xml_url: xml_url ?? null,
+            danfe_url: danfe_url ?? null,
+            emitida_em: new Date().toISOString(),
           })
           .eq('id', data.id)
 
+        if (upErr) {
+          console.error('[getNfeStatus] falha ao gravar autorizada:', upErr.message)
+          // Ainda devolve autorizada se a SEFAZ confirmou, mas sem persistir
+          // o botão Reimprimir não deve mentir no próximo reload
+        }
+
         return {
           ...data,
-          status: 'autorizada',
-          chave_nfe: resposta.chave_nfe ?? null,
-          numero_nfe: resposta.numero != null ? String(resposta.numero) : null,
-          danfe_url: danfe_url ?? null,
+          status: upErr ? data.status : 'autorizada',
+          chave_nfe: upErr ? data.chave_nfe : (resposta.chave_nfe ?? null),
+          numero_nfe: upErr
+            ? data.numero_nfe
+            : (resposta.numero != null ? String(resposta.numero) : null),
+          danfe_url: upErr ? data.danfe_url : (danfe_url ?? null),
         }
       }
 

@@ -314,7 +314,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
               numero_nfe: consultaResp.numero != null ? String(consultaResp.numero) : null,
               xml_url: urlCompleta(consultaResp.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
               danfe_url: urlCompleta(consultaResp.caminho_danfe, FOCUS_MOD) ?? null,
-              emitido_em: new Date().toISOString(),
+              emitida_em: new Date().toISOString(),
             })
             .eq('id', notaRecord.id)
 
@@ -367,7 +367,7 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
         numero_nfe: respostaFinal.numero != null ? String(respostaFinal.numero) : null,
         xml_url: urlCompleta(respostaFinal.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
         danfe_url: urlCompleta(respostaFinal.caminho_danfe, FOCUS_MOD) ?? null,
-        emitido_em: new Date().toISOString(),
+        emitida_em: new Date().toISOString(),
       })
       .eq('id', notaRecord.id)
 
@@ -452,7 +452,7 @@ export async function sincronizarNfesEntradaProcessando(orgId: string): Promise<
       const resp = await consultarNfeEntrada(ref)
 
       if (resp.status === 'autorizado') {
-        await supabase
+        const { error: upErr } = await supabase
           .from('notas_entrega')
           .update({
             status: 'autorizada' as any,
@@ -460,9 +460,14 @@ export async function sincronizarNfesEntradaProcessando(orgId: string): Promise<
             numero_nfe: resp.numero != null ? String(resp.numero) : null,
             xml_url: urlCompleta(resp.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
             danfe_url: urlCompleta(resp.caminho_danfe, FOCUS_MOD) ?? null,
-            emitido_em: new Date().toISOString(),
+            emitida_em: new Date().toISOString(),
           } as any)
           .eq('id', n.id)
+        if (upErr) {
+          console.error('[sync entradas] update falhou', n.id, upErr.message)
+          erros++
+          continue
+        }
         autorizadas++
         continue
       }
