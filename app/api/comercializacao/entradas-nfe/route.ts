@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       .from("notas_entrega")
       .select(`
         id, numero_nfe, serie, chave_nfe, status, created_at,
-        quantidade_kg, valor_total, cfop,
+        quantidade_kg, valor_total, cfop, xml_url, danfe_url,
         produtores (nome, cpf)
       `)
       .eq("organizacao_id", orgId)
