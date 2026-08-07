@@ -56,9 +56,6 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [ ] Portal filiado: cotas, documentos, assembleias (hoje só saldo + extrato PDF)
 - [ ] Gestão caixa físico avançada (origem/destino multi-conta — tesouraria básica feita)
 - [ ] Renomear cooperados → membros / terminologia dinâmica via `tipos_org` (hard-coded hoje)
-- [ ] Recibos: tela de **histórico/reimpressão** (tabela e policy de SELECT já existem na 092, falta a lista)
-- [ ] Recibos: botão de **cancelar** (colunas `cancelado_em`/`motivo_cancelamento` existem, sem UI)
-- [ ] **Ficha de Pesagem — numeração sem trava**: `reservarFichasPesagem` faz read-then-update em `ultimo_numero_ficha`; dois usuários simultâneos pegam a mesma faixa. Aplicar o compare-and-swap já usado em `gerarRecibo`
 - [ ] Teste smoke completo em produção pós-redesign
 
 ## 🔒 Segurança — auditoria 2026-07-12

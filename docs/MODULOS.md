@@ -186,8 +186,6 @@ e `docs/PLANO_RESULTADO_COMERCIALIZACAO.md`.
 
 ### ❌ Pendente
 - saldo_kg em contas_produtor (estoque à ordem)
-- Recibos: tela de histórico/reimpressão e cancelamento (schema pronto, falta UI)
-- Ficha de Pesagem: numeração ainda sem trava de concorrência (o recibo já tem)
 - KPI Custo total: quantidade × cotação (não soma valor_pago)
 - DRE integrado (comercialização + loja + custos operacionais) — chat dedicado com Marcos
 

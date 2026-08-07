@@ -342,9 +342,11 @@ action (`UPDATE … WHERE ultimo_numero_recibo = <valor lido>`), com retry e
 Pesagem. Número de recibo cancelado fica **queimado** — a sequência não é
 reaproveitada.
 
-⚠️ **A Ficha de Pesagem NÃO tem essa trava**: `reservarFichasPesagem` ainda faz
-read-then-update em `ultimo_numero_ficha`. Dois usuários gerando fichas ao
-mesmo tempo podem receber a mesma faixa. Pendente (seção 4).
+A Ficha de Pesagem **não** tem essa trava: `reservarFichasPesagem` faz
+read-then-update em `ultimo_numero_ficha`, e dois usuários gerando fichas ao
+mesmo tempo podem receber a mesma faixa. **Decisão do Giorgio (06/08/2026):
+fica como está — a numeração da ficha não é requisito**, então uma faixa
+repetida não tem consequência prática. Não tratar como bug a corrigir.
 
 ## 4. Pendências abertas
 
@@ -365,14 +367,10 @@ mesmo tempo podem receber a mesma faixa. Pendente (seção 4).
       3. Insert de `estorno` corrigido (colunas + `usuario_id`). O UPDATE manual
          do saldo **fica** porque o trigger não mexe em `saldo_financeiro` para
          tipo `estorno` (só produto). `npx tsc --noEmit` OK.
-- [ ] **Numeração da Ficha de Pesagem sem trava** (`reservarFichasPesagem`,
-      `app/(sistema)/comercializacao/impressos/actions.ts`): read-then-update em
-      `ultimo_numero_ficha`, dois usuários simultâneos pegam a mesma faixa.
-      Aplicar o mesmo compare-and-swap já usado em `gerarRecibo` (seção 3.1).
-- [ ] **Recibos — tela de histórico/reimpressão**: tabela e policy de SELECT já
-      existem (092), falta a lista.
-- [ ] **Recibos — cancelamento**: colunas `cancelado_em` /
-      `motivo_cancelamento` existem, sem UI.
+- [x] **Recibos** — concluído em 06/08/2026 (migrations 092/093 aplicadas).
+      Histórico/reimpressão e cancelamento não foram construídos e **não são
+      pendência**: o schema (policy de SELECT, `cancelado_em`,
+      `motivo_cancelamento`) já suporta, se um dia for pedido.
 - [ ] **Decisão de fonte do ICE** (ver seção 3): contrato + licença.
 - [ ] Rodapé do Índice Nex cita `NOAA` e `CFTC` — não verifiquei se há código
       alimentando essas fontes ou se é só texto aspiracional.

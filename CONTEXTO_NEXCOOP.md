@@ -17,8 +17,10 @@
   `organizacoes.ultimo_numero_recibo`, `recibos.competencia`
 - Direção (`recebemos`/`pagamos`) vem do tipo mas é gravada — define o texto
   impresso e quem assina
-- Numeração por compare-and-swap; **a Ficha de Pesagem continua sem essa
-  trava** (pendência)
+- Numeração por compare-and-swap. A Ficha de Pesagem não tem essa trava e
+  **fica assim de propósito** — numeração de ficha não é requisito (06/08)
+- **Recibos: concluído.** Histórico/reimpressão e cancelamento não foram
+  construídos e não são pendência; o schema suporta se um dia for pedido
 - Detalhes em `docs/comercializacao.md` §3.1
 
 ## 27–28/07/2026 — Grok (xAI)
@@ -88,9 +90,6 @@ import {
 - [ ] Segurança — auditoria: item #2 (escopo de módulo do parceiro contábil por request) e #5 (assinatura do webhook WhatsApp)
 - [ ] Smoke test dos fluxos novos (venda antecipada, transferência interna, quebra de peso)
 - [ ] Marcos (Contabahia): dados fiscais da loja (NCMs, CSTs, CSC NFC-e)
-- [ ] Recibos: imprimir um de verdade e conferir layout/cabeçalho na impressora
-- [ ] Recibos: tela de histórico/reimpressão e botão de cancelar (colunas já existem)
-- [ ] Ficha de Pesagem: numeração sem trava (mesmo bug de concorrência que o recibo evita)
 
 
 ## IDs críticos
