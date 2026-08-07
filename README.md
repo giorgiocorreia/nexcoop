@@ -14,6 +14,7 @@ SaaS multi-tenant para cooperativas e associações brasileiras.
 | [docs/SCHEMA.md](docs/SCHEMA.md) | Migrations e schema do banco |
 | [docs/MODULOS.md](docs/MODULOS.md) | Status de cada módulo |
 | [docs/PLANO_CONTABIL.md](docs/PLANO_CONTABIL.md) | Roadmap de melhoria do módulo contábil (código, banco, UX) |
+| [docs/PLANO_TESTES_CONTABIL.md](docs/PLANO_TESTES_CONTABIL.md) | Plano de testes do contábil, parceiro e NF-e (smoke + regressão) |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações |
 | [CONTEXTO_NEXCOOP.md](CONTEXTO_NEXCOOP.md) | Contexto rápido da sessão atual |
 | [PENDENCIAS.md](PENDENCIAS.md) | Checklist de pendências |

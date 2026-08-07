@@ -132,6 +132,7 @@ caixa errado — ver `docs/comercializacao.md` §1.0 para o lado espelhado.
 
 ### Roadmap / melhorias
 - Plano detalhado (código, banco, UX, SPED, cooperativa): **`docs/PLANO_CONTABIL.md`**
+- **Plano de testes** (personas, casos, smoke, regressão 07/08): **`docs/PLANO_TESTES_CONTABIL.md`**
 - P0: segurança de contexto do parceiro por request; hub contábil; período global; performance de balancete
 
 ### Pendente no módulo

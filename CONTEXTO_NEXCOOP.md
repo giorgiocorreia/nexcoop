@@ -1,7 +1,7 @@
 # Contexto NexCoop — 07/08/2026
 
 > Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md  
-> Roadmap contábil: **docs/PLANO_CONTABIL.md**
+> Roadmap contábil: **docs/PLANO_CONTABIL.md** · Testes: **docs/PLANO_TESTES_CONTABIL.md**
 
 ## Identificação rápida
 - **Org teste:** COOPAIBI — org_id `3ad97dc2-f87f-4e67-950e-387854d5bccc`
@@ -39,6 +39,7 @@
 
 ### Docs atualizados nesta sessão
 - `docs/PLANO_CONTABIL.md` (novo)
+- `docs/PLANO_TESTES_CONTABIL.md` (novo) — smoke, regressão, personas, casos
 - `docs/MODULOS.md`, `docs/SCHEMA.md`, `docs/ARQUITETURA.md`
 - `PENDENCIAS.md`, `CHANGELOG.md`, `README.md`, este arquivo
 

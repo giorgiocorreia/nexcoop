@@ -2,7 +2,8 @@
 
 > Diagnóstico e roadmap (código, banco, contabilidade cooperativa, UX).  
 > **Não é checklist de implementação imediata** — priorizar com o produto.  
-> Elaborado em **07/08/2026** (sessão Grok / revisão contábil + parceiro + NF-e).
+> Elaborado em **07/08/2026** (sessão Grok / revisão contábil + parceiro + NF-e).  
+> **Testes:** ver `docs/PLANO_TESTES_CONTABIL.md`.
 
 ## 1. Estado atual (resumo)
 
@@ -133,6 +134,7 @@
 ## 6. Relacionados
 
 - Status do módulo: `docs/MODULOS.md` § Contábil  
+- **Plano de testes:** `docs/PLANO_TESTES_CONTABIL.md`  
 - Schema: `docs/SCHEMA.md` (015–024, 061–062, `notas_entrega`)  
 - Segurança parceiro: `docs/AUDITORIA_SEGURANCA_2026-07-12.md`  
 - Sessão 07/08: `CONTEXTO_NEXCOOP.md`, `CHANGELOG.md`

@@ -96,6 +96,7 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [ ] **Dados:** re-sincronizar entradas históricas em `processando` sem chave (lotes 002–006) após deploy do fix — abrir Contábil → NF-e → Entradas ou lote e deixar o sync Focus gravar `autorizada`
 - [ ] Confirmar migration **062** (`acesso_fiscal`) no banco de produção
 - [ ] Roadmap médio/longo: `docs/PLANO_CONTABIL.md` (hub, período global, motor multi-linha, SPED formal, etc.)
+- [ ] Executar smoke contábil/parceiro: `docs/PLANO_TESTES_CONTABIL.md` §7 (e regressão bugs §8)
 - [ ] Segurança: revalidar `modulos_acesso` do parceiro **a cada request** (item já marcado x em auditoria; revalidar se regressão)
 
 ---

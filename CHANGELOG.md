@@ -25,6 +25,7 @@
 
 ### docs
 - Novo `docs/PLANO_CONTABIL.md` (roadmap código/banco/UX/SPED)
+- Novo `docs/PLANO_TESTES_CONTABIL.md` (personas, casos P0–P3, smoke 30–45 min, regressão bugs 07/08)
 - Atualizados: `docs/MODULOS.md`, `docs/SCHEMA.md`, `docs/ARQUITETURA.md`, `PENDENCIAS.md`, `CONTEXTO_NEXCOOP.md`, `README.md`
 
 ### Commits principais (main)
