@@ -1,9 +1,14 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUsuarioLogado } from '@/lib/auth'
-import { emitirNfeEntrada, consultarNfeEntrada } from '@/lib/focusnfe/emitir-nfe-entrada'
+import { getUsuarioLogado, getOrganizacaoId } from '@/lib/auth'
+import {
+  emitirNfeEntrada,
+  consultarNfeEntrada,
+  sincronizarNfesEntradaProcessando,
+} from '@/lib/focusnfe/emitir-nfe-entrada'
 import { urlCompleta } from '@/lib/focusnfe/client'
+import { revalidatePath } from 'next/cache'
 
 export async function emitirNfeEntradaAction(
   movimentacao_id: string,
@@ -100,15 +105,15 @@ export async function getNfeStatus(movimentacao_id: string) {
       const resposta = await consultarNfeEntrada(data.referencia as string)
 
       if (resposta.status === 'autorizado') {
-        const danfe_url = urlCompleta(resposta.caminho_danfe)
-        const xml_url = urlCompleta(resposta.caminho_xml_nota_fiscal)
+        const danfe_url = urlCompleta(resposta.caminho_danfe, 'comercializacao')
+        const xml_url = urlCompleta(resposta.caminho_xml_nota_fiscal, 'comercializacao')
 
         await supabase
           .from('notas_entrega')
           .update({
             status: 'autorizada' as any,
             chave_nfe: resposta.chave_nfe,
-            numero_nfe: resposta.numero,
+            numero_nfe: resposta.numero != null ? String(resposta.numero) : null,
             xml_url,
             danfe_url,
             emitido_em: new Date().toISOString(),
@@ -119,7 +124,7 @@ export async function getNfeStatus(movimentacao_id: string) {
           ...data,
           status: 'autorizada',
           chave_nfe: resposta.chave_nfe ?? null,
-          numero_nfe: resposta.numero ?? null,
+          numero_nfe: resposta.numero != null ? String(resposta.numero) : null,
           danfe_url: danfe_url ?? null,
         }
       }
@@ -143,4 +148,17 @@ export async function getNfeStatus(movimentacao_id: string) {
   }
 
   return data
+}
+
+/**
+ * Sincroniza em lote NF-e de entrada "processando" com a Focus/SEFAZ.
+ * Usado na lista fiscal (contábil e comercialização) e no fluxo de lotes.
+ */
+export async function sincronizarEntradasProcessandoAction() {
+  const orgId = await getOrganizacaoId()
+  const resumo = await sincronizarNfesEntradaProcessando(orgId)
+  revalidatePath('/comercializacao/fiscal')
+  revalidatePath('/contabil/nfe')
+  revalidatePath('/comercializacao/lotes')
+  return resumo
 }

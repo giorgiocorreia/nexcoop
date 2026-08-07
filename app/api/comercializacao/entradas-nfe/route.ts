@@ -46,19 +46,13 @@ export async function GET(req: NextRequest) {
 
     if (error) return NextResponse.json([], { status: 500 })
 
-    const agora = Date.now()
-    const JANELA_PROCESSANDO_MS = 48 * 60 * 60 * 1000 // 48h
-
+    // Após sync com Focus, autorizadas/emitidas têm chave ou número.
+    // Processando restante = ainda de fato na SEFAZ (ou Focus indisponível).
     const rows = (data ?? []).filter((n: any) => {
-      // Notas realmente emitidas (têm chave ou número)
-      if (n.chave_nfe || n.numero_nfe) {
-        return n.status === "autorizada" || n.status === "emitida"
+      if (n.status === "autorizada" || n.status === "emitida") {
+        return !!(n.chave_nfe || n.numero_nfe)
       }
-      // Processando sem chave: só se for recente (ainda faz sentido consultar)
-      if (n.status === "processando") {
-        const criado = new Date(n.created_at).getTime()
-        return Number.isFinite(criado) && agora - criado <= JANELA_PROCESSANDO_MS
-      }
+      if (n.status === "processando") return true
       return false
     })
 

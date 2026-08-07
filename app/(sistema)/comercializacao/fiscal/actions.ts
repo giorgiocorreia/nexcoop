@@ -203,6 +203,17 @@ export async function buscarDocsLoteAction(loteId: string) {
   const supabase = createAdminClient()
   const orgId = await getOrganizacaoId()
 
+  // Antes de montar o ZIP/docs do lote, sincroniza entradas processando
+  // (mesma falha de status que escondia NF-e de entrada já autorizadas).
+  try {
+    const { sincronizarNfesEntradaProcessando } = await import(
+      '@/lib/focusnfe/emitir-nfe-entrada'
+    )
+    await sincronizarNfesEntradaProcessando(orgId)
+  } catch {
+    /* segue com o que houver no banco */
+  }
+
   const { data: movs } = await supabase
     .from('movimentacoes_conta')
     .select('id')
@@ -215,7 +226,7 @@ export async function buscarDocsLoteAction(loteId: string) {
     .select('id, chave_nfe, numero_nfe, xml_url, quantidade_kg, produtores(nome)')
     .eq('organizacao_id', orgId)
     .in('movimentacao_id', movIds)
-    .eq('status', 'autorizada') : { data: [] }
+    .in('status', ['autorizada', 'emitida']) : { data: [] }
 
   return {
     notasEntrada: (notasEntrada ?? []).map((n: any) => ({

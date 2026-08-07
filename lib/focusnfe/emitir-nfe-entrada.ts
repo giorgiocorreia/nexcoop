@@ -400,3 +400,84 @@ export async function emitirNfeEntrada(params: EmitirNfeEntradaParams): Promise<
 export async function consultarNfeEntrada(referencia: string): Promise<FocusNfeResponse> {
   return focusGet<FocusNfeResponse>(`/v2/nfe/${referencia}`, FOCUS_MOD)
 }
+
+/**
+ * Reconsulta na Focus todas as NF-e de entrada da org com status local
+ * "processando" e atualiza o banco (autorizada / rejeitada).
+ *
+ * No fluxo de lotes a SEFAZ autoriza, mas se o polling do modal acabou
+ * antes da autorização (ou o usuário saiu da tela), a linha fica eternamente
+ * em processando sem chave/número — e a lista fiscal / ZIP do lote não as vê.
+ */
+export async function sincronizarNfesEntradaProcessando(orgId: string): Promise<{
+  total: number
+  autorizadas: number
+  rejeitadas: number
+  aindaProcessando: number
+  erros: number
+}> {
+  const supabase = createAdminClient()
+  const { data: pendentes } = await supabase
+    .from('notas_entrega')
+    .select('id, referencia')
+    .eq('organizacao_id', orgId)
+    .eq('status', 'processando' as any)
+    .not('referencia', 'is', null)
+
+  let autorizadas = 0
+  let rejeitadas = 0
+  let aindaProcessando = 0
+  let erros = 0
+
+  for (const n of pendentes ?? []) {
+    const ref = n.referencia as string
+    try {
+      const resp = await consultarNfeEntrada(ref)
+
+      if (resp.status === 'autorizado') {
+        await supabase
+          .from('notas_entrega')
+          .update({
+            status: 'autorizada' as any,
+            chave_nfe: resp.chave_nfe ?? null,
+            numero_nfe: resp.numero != null ? String(resp.numero) : null,
+            xml_url: urlCompleta(resp.caminho_xml_nota_fiscal, FOCUS_MOD) ?? null,
+            danfe_url: urlCompleta(resp.caminho_danfe, FOCUS_MOD) ?? null,
+            emitido_em: new Date().toISOString(),
+          } as any)
+          .eq('id', n.id)
+        autorizadas++
+        continue
+      }
+
+      if (
+        resp.status === 'erro_autorizacao' ||
+        resp.status === 'cancelado' ||
+        resp.status === 'denegado'
+      ) {
+        const motivo =
+          resp.erros?.map(e => `${e.codigo}: ${e.mensagem}`).join('; ') ||
+          resp.mensagem_sefaz ||
+          resp.status
+        await supabase
+          .from('notas_entrega')
+          .update({ status: 'rejeitada' as any, motivo_rejeicao: motivo } as any)
+          .eq('id', n.id)
+        rejeitadas++
+        continue
+      }
+
+      aindaProcessando++
+    } catch {
+      erros++
+    }
+  }
+
+  return {
+    total: pendentes?.length ?? 0,
+    autorizadas,
+    rejeitadas,
+    aindaProcessando,
+    erros,
+  }
+}
