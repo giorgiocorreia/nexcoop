@@ -145,21 +145,15 @@ export default async function SistemaLayout({
           <NavigationProgress />
         </Suspense>
 
-        {/* Banner parceiro acessando org */}
+        {/* Parceiro no módulo da org: botão flutuante (não empurra o header
+            verde — antes o nxc-sys-banner full-width desalinhava o topo da sidebar). */}
         {isParceiroAcessandoOrg && organizacao && (
-          <div className="nxc-sys-banner" style={{
-            background: '#E6F7F1', borderBottom: '1px solid #0F766E44',
-          }}>
-            <span className="nxc-sys-banner__text" style={{ color: '#065f46' }}>
-              📊 Módulo contábil:{' '}
-              <strong>{(organizacao as any).nome}</strong>
-            </span>
-            <form action={sairDaOrgParceiro} className="nxc-sys-banner__action">
-              <button type="submit" style={{
-                fontSize: 12, fontWeight: 600, color: '#065f46',
-                background: 'transparent', border: '1px solid #0F766E',
-                borderRadius: 6, padding: '4px 14px', cursor: 'pointer',
-              }}>
+          <div
+            className="nxc-parceiro-voltar"
+            title={`Módulo contábil: ${(organizacao as any).nome}`}
+          >
+            <form action={sairDaOrgParceiro}>
+              <button type="submit" className="nxc-parceiro-voltar__btn">
                 ← Voltar ao Escritório
               </button>
             </form>

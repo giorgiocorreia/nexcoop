@@ -67,7 +67,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
         .nxc-menu-btn:active { background: rgba(255,255,255,0.35); }
         .nxc-menu-btn i { font-size: 22px; color: #fff; line-height: 1; }
 
-        /* Banners de sistema (impersonation, senha, parceiro) */
+        /* Banners de sistema (impersonation, senha) — sticky no topo do main */
         .nxc-sys-banner {
           display: flex; align-items: center; justify-content: space-between;
           gap: 12px; padding: 10px 24px;
@@ -81,6 +81,41 @@ export default function MainContent({ children }: { children: React.ReactNode })
             padding: 10px 16px 10px 56px;
           }
           .nxc-sys-banner__action { align-self: flex-start; }
+        }
+
+        /* Parceiro: não ocupa linha acima do HERO (mantém header alinhado à sidebar) */
+        .nxc-parceiro-voltar {
+          position: fixed;
+          top: calc(12px + env(safe-area-inset-top, 0px));
+          right: calc(16px + env(safe-area-inset-right, 0px));
+          z-index: 90;
+          pointer-events: none;
+        }
+        .nxc-parceiro-voltar form { pointer-events: auto; }
+        .nxc-parceiro-voltar__btn {
+          font-size: 12px;
+          font-weight: 600;
+          color: #065f46;
+          background: #fff;
+          border: 1px solid #0F766E;
+          border-radius: 8px;
+          padding: 7px 14px;
+          cursor: pointer;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+          white-space: nowrap;
+        }
+        .nxc-parceiro-voltar__btn:hover {
+          background: #E6F7F1;
+        }
+        @media (max-width: 767px) {
+          .nxc-parceiro-voltar {
+            top: calc(58px + env(safe-area-inset-top, 0px));
+            right: 10px;
+          }
+          .nxc-parceiro-voltar__btn {
+            font-size: 11px;
+            padding: 6px 10px;
+          }
         }
 
         /* Mobile system-wide — só ≤767px; desktop intacto */
