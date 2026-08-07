@@ -94,6 +94,12 @@ Dashboard "Caixa fechado" + botão abrir com sessão já aberta → 2ª sessão 
 - Reconsulta Focus para `status_nfe=processando` em `vendas_externas`
 - Pacote fiscal do lote: `POST /api/comercializacao/lote-zip` (não server-action hash)
 
+### NF-e de entrada — gravação de autorização (07/08/2026)
+- Tabela `notas_entrega`: ao autorizar na SEFAZ, persistir status `autorizada`, chave, número, XML/DANFE e **`emitida_em`** (nunca `emitido_em` — coluna inexistente; UPDATE falhava e a UI do lote mostrava «Reimprimir NF-e» com banco em `processando`)
+- Modal de emissão: só exibir «NF-e autorizada» com chave; se ainda na SEFAZ → aguardar + polling (`getNfeStatus`)
+- Consulta contábil das notas: `/contabil/nfe` (sem cancelar/CC-e). Operação: `/comercializacao/fiscal`
+- Ver também `docs/MODULOS.md` § Contábil e `docs/PLANO_CONTABIL.md`
+
 ---
 
 ## 1.0.1. NF-e de saída: ICMS diferido (CST 51) e Carta de Correção (091, 2026-07-30)
