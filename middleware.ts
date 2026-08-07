@@ -44,6 +44,7 @@ const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 // a byte contra o que o cPanel serve.
 const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
   'index.php': 'index.html',
+  'cacau.php': 'cacau.html',
 }
 
 // Páginas PHP ainda NÃO refeitas — o visitante vai pro site antigo e vê o
@@ -53,7 +54,6 @@ const PHP_NAVEGACAO_COOPAIBI = new Set([
   'loja.php',
   'videos.php',
   'acoes.php',
-  'cacau.php',
   'noticias.php',
   'admin/login.php',
 ])
@@ -63,7 +63,15 @@ const PHP_NAVEGACAO_COOPAIBI = new Set([
 // same-origin relativo e um redirect cross-origin acrescentaria pré-flight
 // CORS sem necessidade. Com proxy os formulários de cooperado/parceria e o
 // tradutor PT/EN continuam funcionando exatamente como hoje.
-const PHP_ENDPOINT_COOPAIBI = new Set(['enviar-cooperado.php', 'enviar-parceria.php', 'translate.php'])
+const PHP_ENDPOINT_COOPAIBI = new Set([
+  'enviar-cooperado.php',
+  'enviar-parceria.php',
+  'translate.php',
+  // cacau.php: preço internacional do cacau (raspa Yahoo Finance/ICE no
+  // servidor, cache de 1h) e o POST do formulário de agendamento de entrega.
+  'cacau-preco-bolsa.php',
+  'enviar-agendamento-cacau.php',
+])
 
 export async function middleware(request: NextRequest) {
   // ── Módulo Site: resolução por Host ──────────────────────────────────

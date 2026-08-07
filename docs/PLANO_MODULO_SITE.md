@@ -194,11 +194,36 @@ de um conjunto pro outro.
 | Página | Tabelas MySQL de que depende | Situação |
 |---|---|---|
 | `index.php` | `noticias` (8 títulos do ticker) | ✅ refeita em 07/08 |
+| `cacau.php` | `cacau_precos` | ✅ refeita em 07/08 |
 | `noticias.php` | `noticias` | pendente |
-| `cacau.php` | `cacau_precos` | pendente |
 | `acoes.php` | `acoes_eventos` | pendente |
 | `videos.php` | `videos` | pendente |
 | `loja.php` | `promocoes`, `categorias`, `produtos` | pendente |
+
+**Ferramenta:** `scripts/espelho-coopaibi/gerar-pagina.mjs <fonte.php> <url>
+<saida.html>`. Ele captura o HTML renderizado do cPanel — única fonte que
+tem as linhas do MySQL dentro — mas **só grava se o fonte local
+corresponder ao que está publicado**: todo bloco de texto obrigatório do
+`.php` tem que aparecer na captura. É a trava que impede repetir o engano
+de publicar uma versão velha.
+
+Blocos dentro de `if`/`foreach` são tratados como condicionais e não contam
+como falha: o corpo de `<?php if ($msg_ok): ?>` só sai quando o formulário
+redireciona com `?agendamento=ok`.
+
+Ao final o script lista o que ficou congelado — consultas SQL, endpoints
+`.php` que precisam de proxy, e trechos com `date()` do servidor.
+
+**cacau.php (feita):** 13/13 blocos obrigatórios conferidos, saída idêntica
+byte a byte ao cPanel. Dois endpoints próprios entraram no proxy:
+`cacau-preco-bolsa.php` (preço internacional, raspa Yahoo Finance/ICE com
+cache de 1h) e `enviar-agendamento-cacau.php` (POST do agendamento de
+entrega).
+
+Quatro trechos com `date()` congelaram nesta captura: três exibem o
+`atualizado_em` de `cacau_precos` ("Preços do dia — 07/08 13:52") e um é o
+`min` do campo de data do formulário. O `min` congelado deixa escolher data
+passada conforme os dias correm — some quando a página for ligada no banco.
 
 **index.php (feita):** `scripts/espelho-coopaibi/gerar-index.mjs` remove o
 cabeçalho PHP e substitui o único trecho dinâmico (o ticker) pelo conteúdo
