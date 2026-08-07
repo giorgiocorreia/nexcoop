@@ -191,14 +191,57 @@ roteamento em `middleware.ts` tem dois conjuntos que governam isso:
 Refazer uma página = gerar o `.html`, conferir contra o ar, e mover a entrada
 de um conjunto pro outro.
 
-| Página | Tabelas MySQL de que depende | Situação |
-|---|---|---|
-| `index.php` | `noticias` (8 títulos do ticker) | ✅ refeita em 07/08 |
-| `cacau.php` | `cacau_precos` | ✅ refeita em 07/08 |
-| `noticias.php` | `noticias` | pendente |
-| `acoes.php` | `acoes_eventos` | pendente |
-| `videos.php` | `videos` | pendente |
-| `loja.php` | `promocoes`, `categorias`, `produtos` | pendente |
+| Página | Tabela MySQL | Equivalente no Supabase | Situação |
+|---|---|---|---|
+| `index.php` | `noticias` (8 títulos) | `site_conteudos` | ⏸ espelho congelado |
+| `cacau.php` | `cacau_precos` | **`cotacoes`** | ✅ **integrada** 07/08 |
+| `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | pendente |
+| `noticias.php` | `noticias` | `site_conteudos` (falta campo) | pendente |
+| `videos.php` | `videos` | `site_conteudos` (falta campo) | pendente |
+| `acoes.php` | `acoes_eventos` — **vazia** | — | conteúdo é hardcoded; só espelho |
+| `biblioteca.php` | `biblioteca` | — | página órfã (link para enviar) |
+
+### O que o dump de 07/08 revelou
+
+`coopaibi_loja` exportado (15,8 KB). **O conteúdo inteiro do site cabe em 6
+linhas**: 1 notícia, 3 vídeos, 1 produto, 1 categoria, 1 preço de cacau.
+`acoes_eventos` e `promocoes` estão **vazias** — o 8º Festival que aparece
+em Ações é hardcoded no `acoes.php`, então aquela página não tem o que
+integrar. Existe ainda uma tabela `biblioteca` (2 linhas, ambas o mesmo PDF
+do Projeto Cacau — cadastro duplicado) servindo a `biblioteca.php`, página
+fora do menu, criada para ter um link a enviar.
+
+Volume assim não justifica script de importação: recadastrar no painel do
+NexCoop é mais rápido e já grava no formato certo.
+
+O Supabase, em contrapartida, tem **mais e melhor**: 15+ produtos reais em
+`loja_produtos` (contra 1 no site) e cotação de 23/07 em `cotacoes`.
+
+### Padrão das páginas integradas — Route Handler, não page.tsx
+
+`app/(site-org)/[slug]/cacau/route.ts` devolve `text/html`, e não JSX.
+**Isto não é preferência:** a página tem seis blocos de `<script>` (ticker e
+gráfico do TradingView, fetch do preço da bolsa, menus dropdown, Google
+Translate) e **script inserido via `dangerouslySetInnerHTML` não executa** —
+regra do navegador para `innerHTML`. Em JSX as cinco funcionalidades caem de
+uma vez e teriam de ser reimplementadas, página a página. Devolvendo o
+documento inteiro, o navegador analisa HTML de verdade e tudo roda como
+sempre rodou.
+
+Consequência desejada: a rota não passa pelo layout de `(site-org)`, já que
+o documento capturado traz o próprio `<head>`, nav, rodapé e WhatsApp.
+
+Fluxo por página: capturar com `gerar-pagina.mjs` → dividir nos pontos
+dinâmicos com um `dividir-<pagina>.mjs` (falha alto se uma âncora sumir) →
+montar em `lib/site/coopaibi/<pagina>.ts` → expor pelo Route Handler → mover
+a entrada de `PHP_REFEITAS_COOPAIBI` para `PHP_INTEGRADAS_COOPAIBI` no
+middleware.
+
+**cacau.php (integrada):** o site publicava R$ 14,00/kg base e R$ 15,40
+cooperado, parados desde 24/05. `cotacoes` traz R$ 18,66 e R$ 19,33 desde
+23/07 — quase R$ 5/kg de diferença numa página que produtor consulta para
+decidir onde vender. Agora acompanha sozinha cada cotação nova. Cache de
+5 min (`s-maxage=300`), mesma janela do resto do módulo.
 
 **Ferramenta:** `scripts/espelho-coopaibi/gerar-pagina.mjs <fonte.php> <url>
 <saida.html>`. Ele captura o HTML renderizado do cPanel — única fonte que

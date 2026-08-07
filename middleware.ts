@@ -44,7 +44,17 @@ const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 // a byte contra o que o cPanel serve.
 const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
   'index.php': 'index.html',
-  'cacau.php': 'cacau.html',
+}
+
+// Páginas .php JÁ INTEGRADAS ao banco do NexCoop — vão para uma rota do
+// app, que devolve o mesmo HTML do site com os números vindos do Supabase.
+// É o destino de todas: o mapa acima (HTML congelado) é a parada
+// intermediária, este é a chegada.
+const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
+  // Preço do cacau sai de `cotacoes` em vez do cadastro próprio do site,
+  // que ficou parado em 24/05/2026 com R$ 14,00/kg enquanto a cooperativa
+  // já pagava R$ 18,66.
+  'cacau.php': 'cacau',
 }
 
 // Páginas PHP ainda NÃO refeitas — o visitante vai pro site antigo e vê o
@@ -108,6 +118,16 @@ export async function middleware(request: NextRequest) {
     if (PHP_NAVEGACAO_COOPAIBI.has(caminhoEspelho)) {
       return NextResponse.redirect(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI), 307)
     }
+    // Páginas .php já integradas ao banco: vão para a rota do app, que
+    // devolve o HTML com o dado vivo. Precisa vir ANTES das refeitas — uma
+    // página integrada não tem mais .html congelado a servir.
+    const integrada = PHP_INTEGRADAS_COOPAIBI[caminhoEspelho]
+    if (integrada) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/coopaibi/${integrada}`
+      return NextResponse.rewrite(url)
+    }
+
     // Páginas .php já refeitas: servem o .html equivalente, mantendo a URL
     // .php que os links internos do site original usam. Vale nas duas portas
     // de entrada — inclusive no acesso direto por /sites/coopaibi/index.php.
