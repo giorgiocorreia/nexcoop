@@ -46,7 +46,16 @@ const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 // mapa fica porque é a parada intermediária natural: ao portar uma página
 // nova, congelar primeiro e integrar depois separa "o HTML está fiel?" de
 // "o dado está certo?", que são dois problemas diferentes.
-const PHP_REFEITAS_COOPAIBI: Record<string, string> = {}
+const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
+  // Biblioteca — página fora do menu, criada para ter um link a enviar com
+  // o PDF do Projeto Cacau que Refloresta. Continua congelada porque a
+  // tabela `biblioteca` tem 2 linhas para o MESMO arquivo (cadastro
+  // duplicado) e nada além dele: integrar não traria nada.
+  //
+  // O filtro por categoria (?cat=) deixa de filtrar — serve sempre a mesma
+  // página. Com um documento só, não muda o que a pessoa vê.
+  'biblioteca.php': 'biblioteca.html',
+}
 
 // Páginas .php JÁ INTEGRADAS ao banco do NexCoop — vão para uma rota do
 // app, que devolve o mesmo HTML do site com os números vindos do Supabase.
@@ -83,27 +92,51 @@ const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
 
 // Páginas PHP que continuam no cPanel — o visitante é redirecionado para lá.
 // Conforme cada uma for refeita, sai daqui e entra num dos mapas acima.
-const PHP_NAVEGACAO_COOPAIBI = new Set([
-  // O admin PHP continua no cPanel de propósito: quem cadastra produto,
-  // preço e notícia passou a ser o painel do NexCoop. Ele existe só
-  // enquanto o site antigo estiver no ar.
-  'admin/login.php',
-])
+const PHP_NAVEGACAO_COOPAIBI = new Set<string>([])
+
+// Páginas .php que apontam para FORA do site — hoje só o admin antigo.
+//
+// O link "INTRANET" do menu ia para o painel PHP do cPanel, onde se
+// cadastrava produto, preço e notícia. Esse cadastro passou todo para o
+// NexCoop, então o link certo é o painel do NexCoop. Mandar para o cPanel
+// depois da virada seria um laço, e antes dela seria mandar a pessoa para
+// um admin que não alimenta mais nada.
+const PHP_EXTERNO_COOPAIBI: Record<string, string> = {
+  'admin/login.php': 'https://nexcoop.com.br/login',
+}
 
 // Endpoints chamados por fetch() de dentro do HTML — precisam de rewrite
 // (proxy), não redirect: 307/308 preservariam o método, mas o fetch é
 // same-origin relativo e um redirect cross-origin acrescentaria pré-flight
 // CORS sem necessidade. Com proxy os formulários de cooperado/parceria e o
 // tradutor PT/EN continuam funcionando exatamente como hoje.
-const PHP_ENDPOINT_COOPAIBI = new Set([
-  'enviar-cooperado.php',
-  'enviar-parceria.php',
-  'translate.php',
-  // cacau.php: preço internacional do cacau (raspa Yahoo Finance/ICE no
-  // servidor, cache de 1h) e o POST do formulário de agendamento de entrega.
-  'cacau-preco-bolsa.php',
-  'enviar-agendamento-cacau.php',
-])
+// Endpoints .php JÁ REIMPLEMENTADOS aqui — mapeiam para uma rota do app.
+// A URL .php é preservada porque é o que o HTML capturado chama; trocar
+// exigiria editar as páginas.
+//
+// Antes da virada de DNS eles eram proxy para o cPanel. Como a hospedagem
+// vai ficar só com o e-mail, tudo que não for e-mail tinha que sair de lá:
+// no instante em que o domínio apontar para a Vercel, um proxy para
+// coopaibi.com.br vira laço.
+const PHP_ENDPOINT_INTERNO_COOPAIBI: Record<string, string> = {
+  // Formulários: além de enviar o e-mail como o PHP fazia, gravam o lead em
+  // `site_leads` (migration 096). No cPanel o interessado virava mensagem
+  // na caixa de entrada e morria ali.
+  'enviar-cooperado.php': 'enviar/cooperado',
+  'enviar-parceria.php': 'enviar/parceria',
+  'enviar-agendamento-cacau.php': 'enviar/agendamento-cacau',
+  // Preço internacional do cacau (CC=F), com a mesma resposta JSON do PHP.
+  'cacau-preco-bolsa.php': 'cacau-bolsa',
+}
+
+// Endpoints que continuam no cPanel via proxy.
+//
+// `translate.php` NÃO está aqui: é código morto. A tradução do site passou a
+// ser o Google Translate Element (cookie googtrans, função traduzirPara);
+// a função antiga que chamava translate.php — selecionarIdioma — não é
+// chamada por nenhum onclick das páginas atuais. Sete páginas ainda trazem
+// o fetch no fonte, e nenhuma o executa.
+const PHP_ENDPOINT_COOPAIBI = new Set<string>([])
 
 export async function middleware(request: NextRequest) {
   // ── Módulo Site: resolução por Host ──────────────────────────────────
@@ -130,7 +163,24 @@ export async function middleware(request: NextRequest) {
       : null
 
   if (caminhoEspelho !== null) {
-    // Endpoints PHP: proxy pro cPanel, preservando método e corpo.
+    // Endpoints .php reimplementados aqui: viram rota do app. Rewrite (e não
+    // redirect) porque são POST de formulário — um redirect trocaria o
+    // método ou exigiria pré-flight CORS à toa.
+    const endpointInterno = PHP_ENDPOINT_INTERNO_COOPAIBI[caminhoEspelho]
+    if (endpointInterno) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/coopaibi/${endpointInterno}`
+      return NextResponse.rewrite(url)
+    }
+
+    // Páginas que apontam para fora — hoje só a Intranet, que virou o
+    // painel do NexCoop.
+    const externo = PHP_EXTERNO_COOPAIBI[caminhoEspelho]
+    if (externo) {
+      return NextResponse.redirect(externo, 307)
+    }
+    // Endpoints PHP que restaram no cPanel: proxy, preservando método e
+    // corpo. Vazio hoje — ver PHP_ENDPOINT_COOPAIBI.
     if (PHP_ENDPOINT_COOPAIBI.has(caminhoEspelho)) {
       return NextResponse.rewrite(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI))
     }
@@ -273,7 +323,18 @@ export async function middleware(request: NextRequest) {
   // Já autenticado tentando acessar login
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = isFiliadoLogin ? '/filiado/inicio' : '/dashboard'
+    if (isFiliadoLogin) {
+      url.pathname = '/filiado/inicio'
+    } else {
+      // Parceiro contábil (sem home na org) → portal do escritório
+      const { data: profLogin } = await supabase
+        .from('profissionais_parceiros')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle()
+      url.pathname = profLogin ? '/escritorio' : '/dashboard'
+    }
     return NextResponse.redirect(url)
   }
 
@@ -326,13 +387,28 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redireciona usuário operacional para o módulo correto
+  // Redireciona usuário operacional / parceiro para o módulo correto
   if (user && pathname === '/dashboard' && !isRSC) {
     const { data: usuarioFuncoes } = await supabase
       .from('usuarios')
       .select('funcoes, role')
       .eq('id', user.id)
       .maybeSingle()
+
+    // Contador externo: não tem linha em usuarios — home é /escritorio
+    if (!usuarioFuncoes) {
+      const { data: profDash } = await supabase
+        .from('profissionais_parceiros')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle()
+      if (profDash) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/escritorio'
+        return NextResponse.redirect(url)
+      }
+    }
 
     const funcoes: string[] = usuarioFuncoes?.funcoes ?? []
     const role = usuarioFuncoes?.role ?? ''

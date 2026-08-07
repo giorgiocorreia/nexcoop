@@ -55,6 +55,19 @@ function AuthForm({ onEmailClick }: { onEmailClick: () => void }) {
         setCarregando(false)
         return
       }
+
+      // Escritório parceiro (contador externo) não tem home no dashboard da org
+      const { data: prof } = await supabase
+        .from('profissionais_parceiros')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle()
+      if (prof && (redirect === '/dashboard' || !redirect)) {
+        router.push('/escritorio')
+        router.refresh()
+        return
+      }
     }
 
     router.push(redirect)

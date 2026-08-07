@@ -31,8 +31,19 @@ export default async function DashboardPage() {
     .from('usuarios')
     .select('role, funcoes, organizacao_id, organizacoes(tipo, modulos_ativos)')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
   if (usuarioData?.role === 'super_admin') redirect('/admin')
+
+  // Escritório parceiro (contador externo) não usa o dashboard da org
+  if (!usuarioData) {
+    const { data: prof } = await supabase
+      .from('profissionais_parceiros')
+      .select('id')
+      .eq('usuario_id', user.id)
+      .eq('ativo', true)
+      .maybeSingle()
+    if (prof) redirect('/escritorio')
+  }
 
   // Redireciona para /loja se usuário tem exclusivamente funções da loja
   const FUNCOES_LOJA = ['caixa_loja', 'gerente_loja', 'estoquista_loja']
