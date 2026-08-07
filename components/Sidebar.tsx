@@ -8,6 +8,7 @@ import type { Usuario, Organizacao } from '@/types/database'
 import { temModulo } from '@/lib/org'
 import { nomenclatura } from '@/lib/nomenclatura'
 import { HERO } from '@/components/nexcoop/ui'
+import { sairDaOrgParceiro } from '@/app/actions/parceiro'
 
 interface NavItem {
   label: string
@@ -628,11 +629,35 @@ export default function Sidebar({
     if (isSuperAdmin)
       return NAV_ADMIN.map(g => renderGrupo(g.grupo, g.itens))
     if (isParceiroAcessandoOrg) {
-      const grupos = []
-      // Atalho claro de volta ao painel do próprio escritório
-      grupos.push(renderGrupo('Meu escritório', [
-        { label: '← Voltar ao painel', href: '/escritorio', icone: '🏦' },
-      ]))
+      const grupos: React.ReactNode[] = []
+      // form: limpa cookie parceiro_org_id (Link sozinho deixaria no modo cliente)
+      grupos.push(
+        <div key="meu-escritorio" style={{ marginBottom: '0.5rem' }}>
+          {!collapsed && (
+            <div style={{ fontSize: '10px', fontWeight: '600', color: SB.txtSub, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0.5rem 1rem 0.25rem' }}>
+              Meu escritório
+            </div>
+          )}
+          <form action={sairDaOrgParceiro}>
+            <button
+              type="submit"
+              title="Sair do cliente e voltar ao painel do seu escritório"
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: collapsed ? '10px 0' : '9px 1rem',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: SB.txt, fontSize: 13, fontWeight: 500, textAlign: 'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = SB.hoverBg }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <span style={{ fontSize: 16 }}>🏦</span>
+              {!collapsed && <span>← Voltar ao painel</span>}
+            </button>
+          </form>
+        </div>,
+      )
       if (modulosAcesso?.includes('financeiro_leitura'))
         grupos.push(renderGrupo('Cliente · Financeiro', [{ label: 'Financeiro', href: '/financeiro', icone: '💰' }]))
       if (modulosAcesso?.includes('fiscal_comercializacao'))
