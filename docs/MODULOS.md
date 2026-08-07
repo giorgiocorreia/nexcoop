@@ -97,15 +97,50 @@ caixa errado — ver `docs/comercializacao.md` §1.0 para o lado espelhado.
 - CSTs ICMS/PIS/COFINS
 - Emissão real NF-e/NFC-e via Focus NFe
 
-## Contábil ✅
-Última atualização: 04/07/2026
+## Contábil 🔄
+Última atualização: 07/08/2026
 
-### Concluído
+### Concluído (base)
 - 13 telas com UI kit (`PageLayout` + `MODULO_CONTABIL` + `COM_C`)
 - Classificação automática na escrituração (migration 061, toggle em Sobras → Configurações)
 - Integração Financeiro → Contábil via `criarLancamento`:
   - Mensalidades, cotas (`quitarParcela`), comercialização, loja (compras + cancelamento venda)
-- De/Para continua exclusivo para exportação SPED (não classifica lançamentos)
+- De/Para exclusivo para exportação SPED (não classifica lançamentos do dia a dia)
+- SPED ECD **auxiliar** (`gerarSpedECD`) — base TXT, **não** entrega formal RFB
+
+### Concluído (07/08/2026 — parceiro + NF-e consulta)
+- **`/contabil/nfe` independente** de `/comercializacao/fiscal`:
+  - Código em `app/(sistema)/contabil/nfe/*` + `actions.ts` próprios
+  - Só consulta: sem Cancelar, sem CC-e, sem Docs de lote
+  - Abas: Saídas · Entradas · Devoluções
+  - Entradas: KPIs, busca/filtro, exportar XMLs em ZIP (seleção em 2 passos)
+  - Sync silencioso de entradas `processando` no load (Focus → `autorizada`)
+- **Fiscal operacional** permanece em `/comercializacao/fiscal` (cancelar, CC-e, ZIP lote, e-mail)
+- **Parceiro contábil (portal escritório)**
+  - Login comum `/login` → redireciona para `/escritorio` (não dashboard da coop)
+  - Cookie `parceiro_org_id` ao entrar no cliente; botão **«Meu escritório»** + chip com logo/nome da org
+  - Sidebar no cliente: logo NexCoop + logo da org; grupos «Cliente · Contábil»; atalho limpa cookie
+  - Painel do escritório: rótulo **«Meu escritório contábil»**
+- **Bugs NF-e de entrada (gravação)**
+  - Update usava coluna inexistente `emitido_em` → falhava (PGRST204); UI mostrava «autorizada»/Reimprimir e o banco ficava `processando` sem chave
+  - Correto: **`emitida_em`**
+  - Modal de emissão: só «NF-e autorizada» com chave; se SEFAZ ainda processa → «Aguardando SEFAZ» + polling
+
+### Contato escritório COOPAIBI (produção)
+- Empresa: Contabahia Soluções Empresariais (`empresas_parceiras`)
+- Responsável no sistema: **Érica Almeida** — `fiscal@contabahia.com.br` (antes Evely / ealmeida@…)
+
+### Roadmap / melhorias
+- Plano detalhado (código, banco, UX, SPED, cooperativa): **`docs/PLANO_CONTABIL.md`**
+- P0: segurança de contexto do parceiro por request; hub contábil; período global; performance de balancete
+
+### Pendente no módulo
+- Hub `/contabil` (dashboard do contador)
+- Plano de contas: botão «Nova Conta» funcional + edição/inativação
+- Drill-down demonstrações → razão
+- Amarração NF-e autorizada ↔ partidas (fila «sem escriturar»)
+- Verificar se migration **062** (`acesso_fiscal`) está de fato no banco de produção (código já não depende dela no select do parceiro)
+- Dados: entradas históricas ainda em `processando` sem chave — reconsultar Focus (abrir lote ou listar entradas contábil após deploy do fix `emitida_em`)
 
 ## Comercialização 🔄
 Última atualização: 19/07/2026

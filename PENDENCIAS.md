@@ -73,17 +73,31 @@ Lista de tarefas. Marque com `[x]` ao concluir.
 - [ ] Consolidar helpers de contexto (`getUsuarioLogado`, `getOrgContext`, `getCtx` da loja) num único `withOrg()` obrigatório
 - [ ] Testes de isolamento multi-tenant (org A não acessa recurso de org B)
 
-## 📋 Bloqueado — aguardando contador (Marcos/Contabahia)
+## 📋 Bloqueado — aguardando contador (Contabahia)
 
-> Revisado em 2026-07-16: comercialização está 100% resolvida fiscalmente —
-> NF-e entrada (CFOP 1159/1102) e saída (NCM 18010000, CST ICMS 041,
-> PIS/COFINS 72) emitindo em produção; CSC NFC-e de produção obtido.
-> O que resta é só da LOJA:
+> Contato no sistema (07/08/2026): **Érica Almeida** — `fiscal@contabahia.com.br`
+> (escritório Contabahia Soluções Empresariais, vinculado à COOPAIBI).
+>
+> Revisado em 2026-07-16: comercialização resolvida fiscalmente —
+> NF-e entrada (CFOP 1159/1102) e saída (NCM 18010000, CST ICMS 041 / depois 51
+> com diferimento em notas novas) emitindo em produção; CSC NFC-e de produção obtido.
+> O que resta de **dado fiscal da LOJA**:
 
 - NCMs dos produtos da loja (campo existe desde migration 040; falta o dado produto a produto)
 - CSTs ICMS/PIS/COFINS dos produtos da loja
 - Ligar emissão real de NFC-e no PDV da loja (config pronta em lib/loja/fiscal-actions.ts)
 
+## 📒 Contábil / parceiro — pós 07/08/2026
+
+- [x] `/contabil/nfe` separado de `/comercializacao/fiscal` (consulta vs operação)
+- [x] Export XML entradas com seleção guiada (2 cliques)
+- [x] Fix gravação NF-e entrada: coluna `emitida_em` (não `emitido_em`)
+- [x] UX parceiro: Meu escritório vs cliente (logo org, chip, cookie ao sair)
+- [ ] **Dados:** re-sincronizar entradas históricas em `processando` sem chave (lotes 002–006) após deploy do fix — abrir Contábil → NF-e → Entradas ou lote e deixar o sync Focus gravar `autorizada`
+- [ ] Confirmar migration **062** (`acesso_fiscal`) no banco de produção
+- [ ] Roadmap médio/longo: `docs/PLANO_CONTABIL.md` (hub, período global, motor multi-linha, SPED formal, etc.)
+- [ ] Segurança: revalidar `modulos_acesso` do parceiro **a cada request** (item já marcado x em auditoria; revalidar se regressão)
+
 ---
 
-> Atualizado em: 2026-07-16 — itens 1/2/3/4/5 da auditoria corrigidos; transferência interna + quebra de peso concluídas
+> Atualizado em: 2026-08-07 — sessão contábil/parceiro/NF-e (Grok); contato Contabahia = Érica

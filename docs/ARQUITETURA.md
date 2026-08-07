@@ -199,6 +199,9 @@ Cor de destaque por módulo (ícone do header + KPIs):
 | 2026-07-17 | Continuidade de caixa travada: abertura nunca é digitada, sempre o saldo sob responsabilidade recalculado das tabelas brutas (`lib/tesouraria/saldo-responsabilidade.ts`) | Elimina digitação errada/fraude na abertura; `valor_contado_especie` vira só auditoria (migration 074) |
 | 2026-07-17 | Transferência entre caixas com dupla ponta linkada por `referencia_transferencia_id` (uuid gerado em código, não-FK) | As duas pontas vivem em tabelas diferentes (`aportes_sangrias` × `loja_sangrias`); rollback da segunda ponta deleta a primeira pelo mesmo id (migration 073) |
 | 2026-07-04 | Redesign UI completo: Captação, Loja, Contábil, Configurações, Escritório, Perfil, Admin | Kit `components/nexcoop/ui` com `PageLayout` + `COM_C` em 52 arquivos |
+| 2026-08-07 | Contábil NF-e consulta **separada** da fiscal operacional (`/contabil/nfe` ≠ `/comercializacao/fiscal`) | Personas: contador consulta; operação cancela/CC-e no módulo comercialização |
+| 2026-08-07 | `notas_entrega`: gravar autorização em **`emitida_em`** (não `emitido_em`) | Typo fazia UPDATE falhar (PGRST204); UI «Reimprimir» vs banco `processando` |
+| 2026-08-07 | Parceiro: identidade «Meu escritório» vs cliente (logo org + chip + cookie) | Evita confundir painel do contador com a cooperativa atendida |
 | 2026-07-04 | Classificação automática escrituração + integração financeiro (mensalidades, cotas, loja) | Financeiro → Contábil em 2 camadas; migration 061 |
 | 2026-07-04 | Cônjuge em produtor/cooperado + NF-e entrada em nome do cônjuge | Migration 060 |
 | 2026-06-24 | Padrão visual sticky-header aplicado a todos os módulos (Loja, Dashboard, Cooperados, Financeiro, Mensalidades, Assembleias, Documentos) | Consistência de UX; PDV usa variante full-screen com margin no root div por causa de overflow:hidden |

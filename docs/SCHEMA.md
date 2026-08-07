@@ -36,7 +36,7 @@
 | 054–059 | vendas_devolucoes, trigger lote_status_pago, impressos_numeracao, lancamentos_sessao_caixa, fix RLS captação, colunas estruturadas oportunidade_logs |
 | 060 | cooperados/produtores: +conjuge_nome, +conjuge_cpf (+conjuge_ie_produtor_rural em produtores); notas_entrega: +destinatario_nome, +destinatario_cpf, +destinatario_ie, +emitido_como — permite emitir NF-e de entrada em nome do cônjuge |
 | 061 | configuracoes_contabeis: +classificacao_automatica BOOLEAN DEFAULT TRUE — toggle na escrituração automática Financeiro → Contábil |
-| 062 | empresas_parceiras: +acesso_fiscal BOOLEAN — parceiro contábil acessa /comercializacao/fiscal na org cliente |
+| 062 | empresas_parceiras: +acesso_fiscal BOOLEAN — parceiro contábil acessa /comercializacao/fiscal na org cliente. **Checar em produção:** se a coluna não existir, o PostgREST retorna 42703; reaplicar SQL da migration. Código do parceiro (07/08) evita selecionar a coluna no caminho crítico |
 | 063 | entradas_cota_caixa |
 | 064 | fix recompute de saldos_produto: trigger passa a RECALCULAR (SUM da ledger) em vez de incremental, cobre INSERT/UPDATE/DELETE |
 | 065 | contas_produtor: +CHECK saldo_financeiro >= 0 (venda antecipada — saldo de produto pode ficar negativo, saldo em R$ nunca) |
@@ -84,10 +84,16 @@
 
 **Próxima migration:** 095
 
-### Comercialização — observações (22/06/2026)
+### Comercialização — observações (22/06/2026; NF-e entrada revisada 07/08/2026)
 - notas_entrega.status: aceita 'autorizada' | 'processando' | 'rejeitada' | 'emitida' | 'cancelada'
 - notas_entrega: campos chave_nfe, numero_nfe, serie, xml_url, danfe_url, referencia,
   motivo_rejeicao, valor_unitario, valor_total, quantidade_kg, cfop, produtor_id já existem
+- **Data de emissão gravada na coluna `emitida_em`** (não existe `emitido_em` em `notas_entrega`).
+  Código que envia `emitido_em` no UPDATE falha com PGRST204 e deixa status `processando` sem chave
+  mesmo com SEFAZ autorizada (bug real 07/08 — UI «Reimprimir NF-e» vs lista contábil «processando»)
+- Migration **062** (`empresas_parceiras.acesso_fiscal`): documentada como aplicada; se o select
+  com `acesso_fiscal` quebrar em produção, reaplicar a 062. O portal parceiro (07/08) usa
+  `modulos_acesso` e não depende mais dessa coluna no `getOrgContext`
 - vendas_externas: campos fiscais chave_nfe, numero_nfe, serie_nfe, status_nfe,
   xml_nfe, data_emissao_nfe já existem (sem migration adicional)
 - `danfe_url` NÃO existe em vendas_externas — gerar URL via `https://focusnfe.com.br/danfe/{chave_nfe}`

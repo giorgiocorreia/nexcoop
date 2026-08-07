@@ -1,107 +1,57 @@
-# Contexto NexCoop — 06/08/2026
+# Contexto NexCoop — 07/08/2026
 
-> Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md
+> Detalhes permanentes em docs/ARQUITETURA.md | Schema em docs/SCHEMA.md | Módulos em docs/MODULOS.md  
+> Roadmap contábil: **docs/PLANO_CONTABIL.md**
 
 ## Identificação rápida
 - **Org teste:** COOPAIBI — org_id `3ad97dc2-f87f-4e67-950e-387854d5bccc`
 - **Super admin:** gio.pessoal@gmail.com
 - **Org admin:** giorgio@coopaibi.com.br
-- **IA / agentes:** Claude (sessões anteriores); **Grok (xAI / Grok Build)** — sessão 27–28/07/2026 (fiscal NF-e, SMTP, caixa Luan, migration 090)
+- **Parceiro contábil (produção):** Érica Almeida — `fiscal@contabahia.com.br` (Contabahia; nível responsável)
+- **IA / agentes:** Claude (sessões anteriores); **Grok (xAI / Grok Build)** — 27–28/07 fiscal/caixa; **07/08 contábil + parceiro + NF-e**
 - **Produção:** nexcoop.com.br
 
-## 06/08/2026 — Recibos (Impressos)
+## 07/08/2026 — Contábil, parceiro e NF-e (Grok)
 
-- Gerador de recibos em `/comercializacao/impressos`: modal → PDF A4 com
-  **2 vias na mesma folha** + linha de corte
-- **Migrations 092 e 093 aplicadas em produção (06/08)** — `recibos`,
-  `organizacoes.ultimo_numero_recibo`, `recibos.competencia`
-- Direção (`recebemos`/`pagamos`) vem do tipo mas é gravada — define o texto
-  impresso e quem assina
-- Numeração por compare-and-swap. A Ficha de Pesagem não tem essa trava e
-  **fica assim de propósito** — numeração de ficha não é requisito (06/08)
-- **Recibos: concluído.** Histórico/reimpressão e cancelamento não foram
-  construídos e não são pendência; o schema suporta se um dia for pedido
-- Detalhes em `docs/comercializacao.md` §3.1
+### Parceiro Contabahia
+- Conta atualizada: **Érica Almeida** / `fiscal@contabahia.com.br` (substitui Evely / ealmeida@…)
+- Login em `/login` (mesmo que a coop); pós-login parceiro → `/escritorio` (não dashboard da org)
+- Entrada no cliente: cookie `parceiro_org_id`; saída limpa cookie («Meu escritório» / form `sairDaOrgParceiro`)
+- UX: logo NexCoop + logo da org cliente; chip com nome da org; menu «Cliente · Contábil»; «Meu escritório contábil» no painel
+- Botão flutuante «← Meu escritório» (não empurra o header verde)
 
-## 06/08/2026 — Caixa: aporte sem senha e blindagem da Loja
+### NF-e — duas superfícies independentes
+| Rota | Papel |
+|------|--------|
+| `/contabil/nfe` | Consulta contábil (código só em `contabil/nfe/*`) — KPIs, export XML entradas, sem Cancelar/CC-e |
+| `/comercializacao/fiscal` | Operação (cancelar, CC-e, Docs/ZIP lote, e-mail) |
 
-### Aporte simples não pede mais senha (os dois módulos)
-- Aporte de dinheiro solto na própria gaveta vai direto: não debita ninguém e
-  só **aumenta** a responsabilidade de quem opera o caixa
-- **Sangria e aporte por transferência continuam pedindo senha** — lá a
-  autorização é o consentimento de quem *perde* o dinheiro, não burocracia
-- `autorizado_por` no aporte simples passa a ser o próprio executor
+### Bug crítico: entradas «autorizadas na UI» e `processando` no banco
+- Causa 1: modal tratava `sucesso: true` sem chave como «NF-e autorizada»
+- Causa 2: UPDATE usava coluna **`emitido_em`** (inexistente); correta é **`emitida_em`** → PGRST204
+- Fix: modal + polling; gravação em `emitida_em`; sync Focus no load de entradas contábeis
+- **Dados históricos** (lotes 002–006 etc.): ainda podem estar `processando` até re-sync em produção após deploy
 
-### Blindagem do caixa da Loja (migration 094, aplicada 06/08)
-Paridade com a Comercialização. A continuidade (fechamento de hoje = abertura
-de amanhã) **já existia** na Loja; o que faltava eram as travas que impediam
-essa leitura de pegar o caixa errado:
-- 1 caixa aberto por operador (`loja_caixas_unico_aberto_por_usuario`)
-- `getSaldoResponsabilidadeLoja` passa a **preferir o caixa aberto** em vez do
-  mais recente — com órfão aberto + fechamento posterior, o saldo herdado saía
-  do caixa que não era o de trabalho
-- fim do `.maybeSingle()` que **erra com 2 linhas**: o erro era engolido e
-  virava "caixa fechado" com caixa aberto, levando o operador a abrir mais um
-  (ciclo do caso Luan, sem a trava da 090)
-- `abrirCaixaLoja` idempotente; `registrarSangriaLoja` valida org/status/dono
-- `loja_sangrias.forma_pagamento` — só aporte em espécie é cédula na gaveta
+### Export XML entradas (contábil)
+- 1º clique em Exportar → mostra checkboxes + aviso
+- 2º clique → ZIP das marcadas
+- Botão com altura alinhada ao filtro de status
 
-**Loja e Comercialização seguem independentes:** o mesmo usuário pode ter os
-dois caixas abertos ao mesmo tempo. A trava é por módulo.
+### Docs atualizados nesta sessão
+- `docs/PLANO_CONTABIL.md` (novo)
+- `docs/MODULOS.md`, `docs/SCHEMA.md`, `docs/ARQUITETURA.md`
+- `PENDENCIAS.md`, `CHANGELOG.md`, `README.md`, este arquivo
 
-## 27–28/07/2026 — Grok (xAI)
+## 06/08/2026 — Recibos + caixa Loja
 
-### Caixa comercialização (Luan / COOPAIBI)
-- Bug: reabertura com dashboard "fechado" gerava 2 sessões; saldo/saídas na sessão errada
-- Fix app + migration **090** (1 aberta por operador **só** em `sessoes_caixa`)
-- **Independente da Loja:** mesmo usuário pode ter `loja_caixas` aberto + `sessoes_caixa` aberta ao mesmo tempo
-- 090 **aplicada** em produção (28/07)
+- Recibos em `/comercializacao/impressos` (migrations 092/093 em produção)
+- Caixa Loja: migration 094 (único aberto por usuário + forma_pagamento sangrias); aporte simples sem senha
+- Detalhes: `CHANGELOG.md` § 2026-08-06, `docs/comercializacao.md`
 
-### Fiscal / Focus
-- Reconsulta NF-e de saída; Olam lote 005 sincronizado (autorizada nº 20)
-- ZIP/e-mail via `/api/comercializacao/lote-zip`; SMTP Zoho `smtp.zoho.com`
+## 27–28/07/2026 — Grok (fiscal / caixa)
 
-## O que foi feito (jul/2026)
-
-### UI — redesign completo (commit `0556854`)
-Kit `components/nexcoop/ui/` aplicado em todos os módulos que ainda usavam headers locais:
-- Captação (`KanbanBoard`)
-- Loja (hub `LojaHubClient` + 16 subpáginas)
-- Contábil (13 telas)
-- Configurações, Escritório, Perfil, Organização, Parceiros, Admin
-
-### Fiscal — cônjuge produtor/cooperado (commit `90338fc`)
-- Colunas `conjuge_nome`, `conjuge_cpf` em cooperados/produtores
-- NF-e de entrada pode ser emitida em nome do titular ou do cônjuge
-- Migration 060 aplicada
-
-### Contábil — classificação automática (commit `912b331`)
-- `lib/contabil/classificacao-automatica.ts` — regras por palavra-chave + plano de contas
-- Hook em `criarLancamento` (financeiro)
-- Toggle em Contábil → Sobras → Configurações
-- Migration 061 aplicada
-
-### Parceiro contábil — acesso fiscal (migration 062)
-- Coluna `acesso_fiscal` em `empresas_parceiras`
-- Toggle em Configurações → Parceiros
-- Parceiro com flag ativa vê `/comercializacao/fiscal` na org cliente
-- Migration 062 aplicada em produção
-
-### Integração Financeiro → Contábil
-- Mensalidades, cotas, comercialização, loja (compras + cancelamento venda)
-- Modelo em 2 camadas: `lancamentos` (operacional) + `partidas` (escrituração)
-
-### Landing page (commit `16282a7`)
-- Mockups alinhados ao dashboard hub
-- CTA "Começar grátis" → `/cadastro`
-- WhatsApp unificado
-
-### 14–16/07/2026 — Comercialização, propriedades rurais e segurança
-- Venda antecipada — saldo negativo em produto, nunca em R$ (migration 065)
-- Propriedades rurais: lista completa no perfil do cooperado + botão Salvar em toda aba (migrations 066)
-- Transferência interna sem NF-e — comprador é empresa do próprio cooperado (migrations 067/068)
-- Quebra de peso em vendas — comprador paga peso recebido (migration 069)
-- Auditoria de segurança: itens 1/3/4 corrigidos (IDOR em vendas/lotes, `/api/nfe/sincronizar` sem auth, rota de debug pública removida)
+- Migration 090: 1 sessão aberta por operador em `sessoes_caixa` (não afeta loja)
+- Reconsulta NF-e saída; ZIP/e-mail lote; SMTP Zoho
 
 ## UI kit — uso obrigatório em telas novas
 
@@ -113,19 +63,17 @@ import {
 ```
 
 ## Pendências imediatas
-- [ ] Segurança — auditoria: item #2 (escopo de módulo do parceiro contábil por request) e #5 (assinatura do webhook WhatsApp)
-- [ ] Smoke test dos fluxos novos (venda antecipada, transferência interna, quebra de peso)
-- [ ] Marcos (Contabahia): dados fiscais da loja (NCMs, CSTs, CSC NFC-e)
-- [ ] Smoke test de uso da sessão 06/08: imprimir um recibo de verdade
-      (layout/cabeçalho na impressora) e abrir/fechar um caixa da Loja pra ver
-      o saldo final virando abertura no dia seguinte
-
+- [ ] Re-sync entradas `processando` sem chave (Focus) após deploy `emitida_em`
+- [ ] Confirmar coluna `empresas_parceiras.acesso_fiscal` (migration 062) em produção
+- [ ] NCMs/CSTs loja + NFC-e PDV (Contabahia / dados fiscais)
+- [ ] Segurança: escopo de módulo do parceiro por request (revalidar)
+- [ ] Roadmap contábil médio prazo: `docs/PLANO_CONTABIL.md`
 
 ## IDs críticos
 - COOPAIBI organizacao_id: `3ad97dc2-f87f-4e67-950e-387854d5bccc`
+- Contabahia empresa parceira (contabilidade): ver `empresas_parceiras` tipo `contabilidade` + org COOPAIBI
 
-## Workflow desta sessão
-1. Giorgio descreve → Claude planeja → Claude Code executa
-2. `npx tsc --noEmit` antes de todo commit
-3. Commit por feature completa
-4. Docs: atualizar ao fim de sessão ou conclusão de fase
+## Workflow
+1. Giorgio descreve → plano → execução
+2. `npx tsc --noEmit` antes de commit quando houver TypeScript crítico
+3. Commit por feature; docs ao fim da sessão

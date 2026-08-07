@@ -1,5 +1,39 @@
 # NexCoop — Changelog
 
+## 2026-08-07
+
+> Sessão **Grok (xAI / Grok Build)** — contábil, portal parceiro, NF-e entrada/consulta.
+
+### feat(contabil): NF-e de consulta independente da fiscal operacional
+- **`/contabil/nfe`**: hub próprio (`ContabilNfeHub`, Saídas / Entradas / Devoluções, `actions.ts` locais)
+- Sem Cancelar, CC-e ou Docs de lote — só consulta, KPIs e export
+- **`/comercializacao/fiscal`**: permanece o painel operacional (cancelar, CC-e, ZIP, e-mail)
+- Entradas: KPIs, busca/filtro, **exportar XMLs em ZIP** (1º clique ativa seleção; 2º exporta)
+- Sync silencioso Focus no load das entradas contábeis
+
+### fix(nfe-entrada): autorização real no banco
+- Coluna correta **`emitida_em`** (não `emitido_em`) — UPDATE falhava com PGRST204; UI «Reimprimir NF-e» com banco em `processando` sem chave
+- Modal: só «NF-e autorizada» com chave; se SEFAZ ainda processa → «Aguardando SEFAZ» + polling
+- Polling de emissão alongado; `getNfeStatus` / batch sync checam erro de update
+
+### feat(parceiro): Contabahia + identidade Meu escritório
+- Usuário responsável: **Érica Almeida** / `fiscal@contabahia.com.br`
+- Login → `/escritorio` para parceiro; dashboard da org bloqueado sem vínculo
+- No cliente: logo NexCoop + logo da org; chip com nome do cliente; **«← Meu escritório»** (limpa cookie)
+- Menu «Cliente · Contábil»; painel do contador «Meu escritório contábil»
+- Botão flutuante não empurra o header verde (alinhamento com a sidebar)
+
+### docs
+- Novo `docs/PLANO_CONTABIL.md` (roadmap código/banco/UX/SPED)
+- Atualizados: `docs/MODULOS.md`, `docs/SCHEMA.md`, `docs/ARQUITETURA.md`, `PENDENCIAS.md`, `CONTEXTO_NEXCOOP.md`, `README.md`
+
+### Commits principais (main)
+- `da94bf9` emitida_em
+- `c97960d` / `9f7992d` páginas contábil NF-e independentes
+- `9189bae` / `d86a454` export XML entradas
+- `74050c7` / `e3dd02a` / `05ed86f` UX parceiro e header
+- `7a2dee1` subtítulo contábil
+
 ## 2026-08-06
 
 ### fix(loja): blindagem do caixa — continuidade de saldo que não fecha

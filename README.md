@@ -13,8 +13,10 @@ SaaS multi-tenant para cooperativas e associações brasileiras.
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Regras permanentes, design system, padrões de código |
 | [docs/SCHEMA.md](docs/SCHEMA.md) | Migrations e schema do banco |
 | [docs/MODULOS.md](docs/MODULOS.md) | Status de cada módulo |
+| [docs/PLANO_CONTABIL.md](docs/PLANO_CONTABIL.md) | Roadmap de melhoria do módulo contábil (código, banco, UX) |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações |
 | [CONTEXTO_NEXCOOP.md](CONTEXTO_NEXCOOP.md) | Contexto rápido da sessão atual |
+| [PENDENCIAS.md](PENDENCIAS.md) | Checklist de pendências |
 
 ## Desenvolvimento local
 
@@ -46,9 +48,9 @@ Referência: `app/(sistema)/dashboard/DashboardClient.tsx`
 - Cooperados, Financeiro, Mensalidades, Assembleias, Documentos
 - Comercialização (cacau, lotes, NF-e)
 - Loja Agropecuária (PDV, estoque, compras)
-- Contábil (escrituração, DRE, balanço, SPED)
+- Contábil (escrituração, DRE, balanço, SPED auxiliar; NF-e consulta em `/contabil/nfe`)
 - Captação de recursos (CRM + Radar)
-- Configurações, Escritório (portal contador)
+- Configurações, Escritório (portal do contador parceiro — «Meu escritório»)
 
 ## Regras críticas
 
