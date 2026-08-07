@@ -13,6 +13,7 @@
 // Uso: node dividir.mjs <pagina> <entrada.html> <saida.ts>
 //   onde <pagina> é uma chave de CORTES abaixo.
 import { readFileSync, writeFileSync } from 'node:fs'
+import { aplicarCorrecoes } from './correcoes.mjs'
 
 // A faixa de topo é igual em todas as páginas internas: um <div class=
 // "ribbon"> com texto fixo, enquanto a home usa "ribbon ribbon-ticker" com
@@ -28,6 +29,19 @@ const CORTE_FAIXA = {
 }
 
 const CORTES = {
+  // A home já vinha com a faixa rolante no original — aqui só o miolo dela
+  // troca de origem, saindo do HTML congelado para site_conteudos.
+  index: [
+    {
+      nome: 'itens-ticker',
+      de: '<div class="ticker-inner" id="ticker-inner">',
+      ate: '</div>',
+      incluirInicio: false,
+      incluirFim: false,
+      descricao: 'títulos da faixa rolante (8 mais recentes, duplicados)',
+    },
+  ],
+
   cacau: [
     CORTE_FAIXA,
     {
@@ -111,7 +125,9 @@ if (!cortes) {
   process.exit(2)
 }
 
-const html = readFileSync(entradaPath, 'utf8')
+// Corrige os defeitos conhecidos do original ANTES de cortar: assim eles
+// entram nos pedaços gerados e não precisam ser reaplicados em runtime.
+const { html, aplicadas } = aplicarCorrecoes(readFileSync(entradaPath, 'utf8'), pagina)
 const partes = []
 const removidos = []
 let cursor = 0
@@ -157,6 +173,7 @@ ${partes.map((p) => '  ' + JSON.stringify(p)).join(',\n')},
 )
 
 console.log(`${pagina}: ${partes.length} pedaços, ${removidos.length} trechos removidos`)
+if (aplicadas.length) console.log(`  correções aplicadas: ${aplicadas.join(', ')}`)
 for (const r of removidos) {
   const amostra = r.texto.replace(/\s+/g, ' ').trim()
   console.log(`  ${r.nome.padEnd(20)} ${amostra.length > 90 ? amostra.slice(0, 90) + ' […]' : amostra || '(vazio)'}`)

@@ -42,15 +42,22 @@ const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
 // index.php foi gerado por scripts/espelho-coopaibi/gerar-index.mjs a partir
 // do index.php original + o conteúdo do ticker de notícias, e conferido byte
 // a byte contra o que o cPanel serve.
-const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
-  'index.php': 'index.html',
-}
+// Vazio hoje — todas as páginas passaram para PHP_INTEGRADAS_COOPAIBI. O
+// mapa fica porque é a parada intermediária natural: ao portar uma página
+// nova, congelar primeiro e integrar depois separa "o HTML está fiel?" de
+// "o dado está certo?", que são dois problemas diferentes.
+const PHP_REFEITAS_COOPAIBI: Record<string, string> = {}
 
 // Páginas .php JÁ INTEGRADAS ao banco do NexCoop — vão para uma rota do
 // app, que devolve o mesmo HTML do site com os números vindos do Supabase.
 // É o destino de todas: o mapa acima (HTML congelado) é a parada
 // intermediária, este é a chegada.
 const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
+  // A home sempre foi quase estática — o index.php tinha uma consulta só,
+  // buscando 8 títulos para a faixa. Rota separada (/inicio) porque
+  // app/(site-org)/[slug]/page.tsx já serve o TEMPLATE PADRÃO das demais
+  // orgs, e route.ts não coexiste com page.tsx no mesmo caminho.
+  'index.php': 'inicio',
   // Preço do cacau sai de `cotacoes` em vez do cadastro próprio do site,
   // que ficou parado em 24/05/2026 com R$ 14,00/kg enquanto a cooperativa
   // já pagava R$ 18,66.
@@ -154,12 +161,14 @@ export async function middleware(request: NextRequest) {
     }
 
     // No domínio próprio, mapeia pro arquivo estático correspondente. A raiz
-    // ("/") serve o index.html, e os caminhos relativos do HTML resolvem
+    // ("/") vai pra mesma rota que index.php — é a home, e servir a raiz de
+    // um arquivo congelado enquanto /index.php lê do banco deixaria as duas
+    // portas da mesma página fora de sincronia. Os demais caminhos resolvem
     // sozinhos porque a URL do navegador continua na raiz do site.
     if (ehHostEspelho) {
       const url = request.nextUrl.clone()
       url.pathname = caminhoEspelho === ''
-        ? `${RAIZ_ESPELHO_COOPAIBI}/index.html`
+        ? `/coopaibi/${PHP_INTEGRADAS_COOPAIBI['index.php']}`
         : `${RAIZ_ESPELHO_COOPAIBI}/${caminhoEspelho}`
       return NextResponse.rewrite(url)
     }

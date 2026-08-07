@@ -193,7 +193,7 @@ de um conjunto pro outro.
 
 | Página | Tabela MySQL | Equivalente no Supabase | Situação |
 |---|---|---|---|
-| `index.php` | `noticias` (8 títulos) | `site_conteudos` | ⏸ espelho congelado |
+| `index.php` | `noticias` (8 títulos) | **`site_conteudos`** | ✅ **integrada** 07/08 |
 | `cacau.php` | `cacau_precos` | **`cotacoes`** | ✅ **integrada** 07/08 |
 | `loja.php` | `produtos`, `categorias`, `promocoes` | **`loja_produtos`** | ✅ **integrada** 07/08 |
 | `noticias.php` | `noticias` | **`site_conteudos`** tipo `noticia` | ✅ **integrada** 07/08 |
@@ -313,6 +313,41 @@ estática original volta, que é melhor que uma faixa vazia deslizando.
 
 O CSS que faz rolar já estava no `style.css` espelhado; nada de estilo
 precisou mudar.
+
+### Correções sobre o original — `scripts/espelho-coopaibi/correcoes.mjs`
+
+A cópia byte a byte tinha um propósito: **não perder nada do que estava
+publicado**. Cumprido isso, corrigir o que está errado é o passo seguinte —
+a partir daqui o site deixa de ser cópia de propósito.
+
+As correções ficam num arquivo só, aplicadas **na geração**, nunca editadas
+à mão nos HTMLs. Motivo prático: os arquivos vêm de captura do cPanel e
+podem ser recapturados; correção manual se perderia na recaptura. Aplicadas
+na geração, sobrevivem — e a lista vira o registro do que diverge do
+original. `dividir.mjs` aplica nas páginas geradas; `corrigir-estaticos.mjs`
+nas servidas como arquivo.
+
+1. **`ancoras-do-menu-sobre`** — o dropdown "Sobre" aponta para `#sobre`,
+   `#sistema` e `#impacto`, âncoras que só existem na home. Em Loja,
+   Vídeos, Ações, Cooperado, Parceiro e Relatório o clique não fazia nada.
+   O `cacau.php` já usava a forma certa (`index.php#…`). A home é exceção
+   declarada: lá o link continua interno, senão recarrega a cada clique.
+
+2. **`navbar-nao-gruda-fora-da-home`** — o `style.css` manda a navbar grudar
+   (`sticky; top:0`), mas seis páginas trazem `style="position:relative"`
+   inline anulando. Home e Notícias não trazem, e nelas o menu acompanha a
+   rolagem. Em Ações o efeito era pior: a barra de filtros tem
+   `sticky; top:66px`, calibrado para encostar embaixo de uma navbar
+   grudada — sem ela, gruda sozinha com 66px de vão vazio ("menu voando",
+   relatado pelo Giorgio). **Muda o comportamento em 6 páginas**: o menu
+   passa a acompanhar a rolagem em todas, como já fazia na home.
+
+3. **`valor-do-contato-com-tamanho-de-icone`** — em `parceiro.html`,
+   `.parc-aside-item span { font-size:22px }` existe para o emoji do card,
+   mas pega qualquer `<span>` do bloco. E-mail e Telefone escapam porque o
+   valor é `<a>`; Presidente e Endereço usam `<span>` e saíam em 22px. O CSS
+   já previa a saída (`span.val { font-size:14px }`) — faltava a classe no
+   HTML.
 
 ### Pendências de dado descobertas em 07/08
 
