@@ -224,6 +224,8 @@ interface Props {
   orgNome?: string
   isParceiroAcessandoOrg?: boolean
   modulosAcesso?: string[]
+  /** Nome do profissional parceiro (servidor) — evita "Usuário" no rodapé */
+  parceiroNome?: string
   collapsed?: boolean
   onToggleCollapse?: () => void
 }
@@ -270,16 +272,27 @@ const HERO_CHIP: React.CSSProperties = {
   gap: 10, flexShrink: 0,
 }
 
-export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isParceiroAcessandoOrg, modulosAcesso }: Props) {
+export default function Sidebar({
+  usuario,
+  isParceiro,
+  orgNome: orgNomeProp,
+  isParceiroAcessandoOrg,
+  modulosAcesso,
+  parceiroNome,
+}: Props) {
   const pathname = usePathname()
   const router   = useRouter()
   const supabase = createClient()
 
   const [collapsed, setCollapsed] = useState(false)
-  const [nomeDisplay, setNomeDisplay] = useState(usuario?.nome_completo || '')
+  const [nomeDisplay, setNomeDisplay] = useState(
+    parceiroNome || usuario?.nome_completo || '',
+  )
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const ehParceiroUi = !!(isParceiro || isParceiroAcessandoOrg)
 
   function setMobileDrawer(open: boolean) {
     setMobileOpen(open)
@@ -332,20 +345,27 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
   }
 
   useEffect(() => {
-    if (!isParceiro) return
+    if (parceiroNome) {
+      setNomeDisplay(parceiroNome)
+      return
+    }
+    if (!ehParceiroUi) {
+      if (usuario?.nome_completo) setNomeDisplay(usuario.nome_completo)
+      return
+    }
+    // Fallback client (caso o layout não tenha passado o nome)
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
-      // Busca em paralelo: usuarios (fluxo invite) e profissionais_parceiros (fluxo senha direta)
       Promise.all([
         supabase.from('usuarios').select('nome_completo').eq('id', user.id).maybeSingle(),
-        supabase.from('profissionais_parceiros').select('nome').eq('usuario_id', user.id).maybeSingle(),
+        supabase.from('profissionais_parceiros').select('nome').eq('usuario_id', user.id).limit(1).maybeSingle(),
       ]).then(([{ data: u }, { data: p }]) => {
         const nome = u?.nome_completo || p?.nome
         if (nome) setNomeDisplay(nome)
       })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isParceiro])
+  }, [ehParceiroUi, parceiroNome, usuario?.nome_completo])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -762,14 +782,16 @@ export default function Sidebar({ usuario, isParceiro, orgNome: orgNomeProp, isP
       {/* Rodapé */}
       {!collapsed && (
         <div style={{ borderTop: `1px solid ${SB.borda}`, padding: '0.75rem 1rem' }}>
-          {isParceiro ? (
+          {ehParceiroUi ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#4840CC', flexShrink: 0 }}>
-                {nomeDisplay?.charAt(0).toUpperCase() || 'U'}
+                {(nomeDisplay || parceiroNome)?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <Link href="/escritorio/usuario" style={{ textDecoration: 'none' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDisplay || 'Usuário'}</div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: SB.ativoTxt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {nomeDisplay || parceiroNome || 'Usuário'}
+                  </div>
                   <div style={{ fontSize: 11, color: SB.txtSub }}>Parceiro</div>
                 </Link>
               </div>

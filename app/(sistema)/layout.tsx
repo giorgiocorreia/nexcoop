@@ -65,39 +65,42 @@ export default async function SistemaLayout({
   let impersonandoOrg = impersonatingOrgId ? orgRes.data : null
 
   let nomeEmpresaParceira = ''
+  let nomeParceiro = ''
   let isParceiroAcessandoOrg = false
   let modulosAcessoParceiro: string[] = []
 
   if (parceiroStatus && user) {
     const adminSupabase = createAdminClient()
 
+    // Nome do profissional — sempre no servidor (admin), sidebar não depende de RLS no client
+    const { data: profNome } = await adminSupabase
+      .from('profissionais_parceiros')
+      .select('nome, empresa:empresa_id(razao_social, org_id, modulos_acesso)')
+      .eq('usuario_id', user.id)
+      .eq('ativo', true)
+
+    const profs = profNome ?? []
+    if (profs.length > 0) {
+      nomeParceiro = (profs[0] as any).nome || ''
+      if (!parceiroOrgId) {
+        nomeEmpresaParceira = ((profs[0] as any).empresa as any)?.razao_social || ''
+      }
+    }
+
     if (parceiroOrgId) {
-      // Parceiro acessando org cliente — carrega org e modulos em paralelo
-      const [parceiroOrgRes, vinculoRes] = await Promise.all([
-        adminSupabase.from('organizacoes').select('*').eq('id', parceiroOrgId).single(),
-        adminSupabase
-          .from('profissionais_parceiros')
-          // Sem acesso_fiscal no select (coluna pode faltar se migration 062 não rodou)
-          .select('empresa:empresa_id(org_id, modulos_acesso)')
-          .eq('usuario_id', user.id)
-          .eq('ativo', true),
-      ])
+      // Parceiro acessando org cliente — carrega org e módulos
+      const parceiroOrgRes = await adminSupabase
+        .from('organizacoes')
+        .select('*')
+        .eq('id', parceiroOrgId)
+        .single()
       if (parceiroOrgRes.data) {
         organizacao = parceiroOrgRes.data
         isParceiroAcessandoOrg = true
-        const vinculo = (vinculoRes.data ?? []).find((v: any) => v.empresa?.org_id === parceiroOrgId)
+        const vinculo = profs.find((v: any) => v.empresa?.org_id === parceiroOrgId)
         const empresa = vinculo?.empresa as { modulos_acesso?: string[] } | undefined
         modulosAcessoParceiro = [...(empresa?.modulos_acesso ?? [])]
       }
-    } else {
-      // Modo escritório normal — busca nome da empresa parceira
-      const { data: empresaData } = await adminSupabase
-        .from('profissionais_parceiros')
-        .select('empresa:empresa_id(razao_social)')
-        .eq('usuario_id', user.id)
-        .eq('ativo', true)
-        .single()
-      nomeEmpresaParceira = (empresaData?.empresa as any)?.razao_social || ''
     }
   }
 
@@ -135,6 +138,7 @@ export default async function SistemaLayout({
         orgNome={parceiroStatus && !isParceiroAcessandoOrg ? nomeEmpresaParceira : undefined}
         isParceiroAcessandoOrg={isParceiroAcessandoOrg}
         modulosAcesso={modulosAcessoParceiro}
+        parceiroNome={parceiroStatus ? nomeParceiro : undefined}
       />
       <MainContent>
         <Suspense fallback={null}>
