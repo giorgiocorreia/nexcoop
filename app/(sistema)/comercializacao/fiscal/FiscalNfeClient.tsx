@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { fmt } from '@/lib/fmt'
+import { createClient } from '@/lib/supabase/client'
 import {
   cancelarNfe,
   buscarDocsLoteAction,
@@ -98,6 +99,7 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const [kpisState, setKpisState] = useState<Kpis>(kpisProp ?? { total: 0, autorizadas: 0, canceladas: 0, processando: 0, valorTotal: 0 })
   const [lista, setLista] = useState<NfeSaida[]>(nfesProp ?? [])
+  const [emailUsuario, setEmailUsuario] = useState('')
 
   useEffect(() => {
     if (!embedded) return
@@ -106,6 +108,17 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
       setKpisState(k)
     })
   }, [embedded])
+
+  // Email do usuário logado — sugestão no modal de envio de documentos
+  useEffect(() => {
+    let cancelado = false
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!cancelado && user?.email) setEmailUsuario(user.email)
+    })
+    return () => { cancelado = true }
+  }, [])
+
   const [erroModal, setErroModal] = useState<string | null>(null)
   const [modalDocs, setModalDocs] = useState<NfeSaida | null>(null)
   const [docsLote, setDocsLote] = useState<{ notasEntrada: any[]; notaSaida: any } | null>(null)
@@ -218,7 +231,9 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
   async function handleAbrirDocs(nfe: NfeSaida) {
     setModalDocs(nfe)
     setLoadingDocs(true)
-    setEmailEnvio((nfe as any).compradores?.email ?? '')
+    // Sugestão: e-mail do usuário logado; se vazio, e-mail do comprador
+    const emailComprador = (nfe as any).compradores?.email?.trim() || ''
+    setEmailEnvio(emailUsuario || emailComprador)
     try {
       const res = await buscarDocsLoteAction(nfe.lote_id!)
       setDocsLote(res)
@@ -872,8 +887,17 @@ export default function FiscalNfeClient({ nfes: nfesProp, kpis: kpisProp, embedd
                     type="email"
                     value={emailEnvio}
                     onChange={e => setEmailEnvio(e.target.value)}
-                    placeholder="email@exemplo.com"
+                    placeholder={emailUsuario || 'email@exemplo.com'}
+                    list="emails-sugeridos-docs-lote"
+                    autoComplete="email"
                   />
+                  <datalist id="emails-sugeridos-docs-lote">
+                    {emailUsuario && <option value={emailUsuario}>Meu e-mail</option>}
+                    {modalDocs?.compradores?.email &&
+                      modalDocs.compradores.email !== emailUsuario && (
+                        <option value={modalDocs.compradores.email}>Comprador</option>
+                      )}
+                  </datalist>
                 </Field>
                 {erroModal && (
                   <div style={{ background: COM_C.vermelhoLt, border: '1px solid #fecaca', borderRadius: 10, padding: '12px 14px', marginTop: 12, fontSize: 12, color: COM_C.vermelho }}>
