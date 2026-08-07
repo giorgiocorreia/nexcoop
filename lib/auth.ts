@@ -30,8 +30,28 @@ export async function getUsuarioLogado() {
   return usuario
 }
 
+/**
+ * Org do usuário logado. Para contador parceiro (sem linha em `usuarios`),
+ * usa o cookie `parceiro_org_id` via getOrgContext — necessário para
+ * /contabil/nfe e actions de comercialização/fiscal no modo escritório.
+ */
 export async function getOrganizacaoId(): Promise<string> {
-  const usuario = await getUsuarioLogado()
-  if (!usuario.organizacao_id) throw new Error('Organização não encontrada')
-  return usuario.organizacao_id
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Não autenticado')
+
+  const admin = createAdminClient()
+  const { data: usuario } = await admin
+    .from('usuarios')
+    .select('organizacao_id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (usuario?.organizacao_id) return usuario.organizacao_id as string
+
+  const { getOrgContext } = await import('@/lib/supabase/impersonation')
+  const ctx = await getOrgContext()
+  if (ctx?.orgId) return ctx.orgId
+
+  throw new Error('Organização não encontrada')
 }

@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUsuarioLogado, getOrganizacaoId } from '@/lib/auth'
+import { getOrganizacaoId } from '@/lib/auth'
 import { focusDelete } from '@/lib/focusnfe/client'
 import { revalidatePath } from 'next/cache'
 
@@ -52,8 +52,7 @@ export async function cancelarNfe(chave: string, justificativa: string) {
     return { sucesso: false, erro: 'Justificativa mínima de 15 caracteres' }
   }
 
-  const usuario = await getUsuarioLogado()
-  const orgId = usuario.organizacao_id as string
+  const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
 
   const { data: venda } = await supabase
@@ -139,9 +138,11 @@ export async function emitirCartaCorrecaoAction(
   vendaId: string,
   correcao: string,
 ): Promise<ResultadoCartaCorrecao> {
-  const usuario = await getUsuarioLogado()
-  const orgId = usuario.organizacao_id as string
+  const orgId = await getOrganizacaoId()
   const supabase = createAdminClient()
+  const { createClient } = await import('@/lib/supabase/server')
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
 
   const { validarCorrecao, normalizarCorrecao, emitirCartaCorrecao } =
     await import('@/lib/focusnfe/carta-correcao')
@@ -180,7 +181,7 @@ export async function emitirCartaCorrecaoAction(
     xml_url: resultado.xml_url ?? null,
     pdf_url: resultado.pdf_url ?? null,
     mensagem_sefaz: resultado.mensagem_sefaz ?? resultado.erro ?? null,
-    criado_por: usuario.id,
+    criado_por: user?.id ?? null,
   } as any).select('id').single()
 
   revalidatePath('/comercializacao/fiscal')
@@ -190,7 +191,7 @@ export async function emitirCartaCorrecaoAction(
 
 export async function buscarDocsLoteAction(loteId: string) {
   const supabase = createAdminClient()
-  const usuario = await getUsuarioLogado()
+  const orgId = await getOrganizacaoId()
 
   const { data: movs } = await supabase
     .from('movimentacoes_conta')
@@ -202,7 +203,7 @@ export async function buscarDocsLoteAction(loteId: string) {
   const { data: notasEntrada } = movIds.length > 0 ? await supabase
     .from('notas_entrega')
     .select('id, chave_nfe, numero_nfe, xml_url, quantidade_kg, produtores(nome)')
-    .eq('organizacao_id', usuario.organizacao_id as string)
+    .eq('organizacao_id', orgId)
     .in('movimentacao_id', movIds)
     .eq('status', 'autorizada') : { data: [] }
 
@@ -230,29 +231,37 @@ export async function enviarZipEmailAction(loteId: string, email: string) {
 
 /** Reconsulta uma NF-e de saída na Focus e atualiza o status local. */
 export async function sincronizarNfeSaidaAction(vendaId: string) {
-  const usuario = await getUsuarioLogado()
+  const orgId = await getOrganizacaoId()
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { sincronizarNfeSaida } = await import('@/lib/focusnfe/emitir-nfe-saida')
   const resultado = await sincronizarNfeSaida({
     vendaId,
-    organizacao_id: usuario.organizacao_id as string,
-    usuario_id: usuario.id,
-    usuario_email: usuario.email ?? undefined,
+    organizacao_id: orgId,
+    usuario_id: user?.id ?? orgId,
+    usuario_email: user?.email ?? undefined,
   })
   revalidatePath('/comercializacao/fiscal')
   revalidatePath('/comercializacao/lotes')
+  revalidatePath('/contabil/nfe')
   return resultado
 }
 
 /** Reconsulta todas as NF-e de saída com status processando da org. */
 export async function sincronizarNfesSaidaProcessandoAction() {
-  const usuario = await getUsuarioLogado()
+  const orgId = await getOrganizacaoId()
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { sincronizarNfesSaidaProcessando } = await import('@/lib/focusnfe/emitir-nfe-saida')
   const resumo = await sincronizarNfesSaidaProcessando({
-    organizacao_id: usuario.organizacao_id as string,
-    usuario_id: usuario.id,
-    usuario_email: usuario.email ?? undefined,
+    organizacao_id: orgId,
+    usuario_id: user?.id ?? orgId,
+    usuario_email: user?.email ?? undefined,
   })
   revalidatePath('/comercializacao/fiscal')
   revalidatePath('/comercializacao/lotes')
+  revalidatePath('/contabil/nfe')
   return resumo
 }

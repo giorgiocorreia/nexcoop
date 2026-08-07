@@ -15,15 +15,29 @@ const ABAS = [
   { id: "devolucoes" as const, label: "Devoluções",      icon: "ti-refresh-alert"  },
 ]
 
-export default function FiscalHubClient({ orgId }: { orgId: string }) {
+export default function FiscalHubClient({
+  orgId,
+  modulo,
+  breadcrumbLabel = "Fiscal",
+  titulo = "Documentos Fiscais",
+  subtitulo = "NF-e emitidas — saídas, entradas e devoluções",
+}: {
+  orgId: string
+  /** Módulo pai no breadcrumb (ex.: Contábil). Padrão: Comercialização */
+  modulo?: { label: string; href: string }
+  breadcrumbLabel?: string
+  titulo?: string
+  subtitulo?: string
+}) {
   const [aba, setAba] = useState<Aba>("saidas")
 
   return (
     <PageLayout
-      titulo="Documentos Fiscais"
-      subtitulo="NF-e e devoluções"
+      titulo={titulo}
+      subtitulo={subtitulo}
       icone="ti-file-invoice"
-      breadcrumb={[{ label: "Fiscal" }]}
+      modulo={modulo}
+      breadcrumb={[{ label: breadcrumbLabel }]}
       fullHeight
     >
       <Tabs tabs={ABAS} ativa={aba} onChange={(id) => setAba(id as Aba)} />
