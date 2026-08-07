@@ -11,7 +11,7 @@ export default async function CalendarioPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   return <CalendarioClient orgId={ctx.orgId} />
 }

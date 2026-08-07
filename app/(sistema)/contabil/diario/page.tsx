@@ -11,7 +11,7 @@ export default async function DiarioPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   return <DiarioClient orgId={ctx.orgId} />
 }

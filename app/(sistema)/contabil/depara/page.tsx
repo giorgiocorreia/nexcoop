@@ -12,7 +12,7 @@ export default async function DeParaPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   const { data: usuario } = await supabaseAuth
     .from('usuarios')

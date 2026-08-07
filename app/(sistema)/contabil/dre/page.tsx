@@ -12,7 +12,7 @@ export default async function DREPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   const { data: org } = await ctx.supabase
     .from('organizacoes')

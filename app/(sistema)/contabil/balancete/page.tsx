@@ -11,7 +11,7 @@ export default async function BalancetePage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   return <BalanceteClient orgId={ctx.orgId} />
 }

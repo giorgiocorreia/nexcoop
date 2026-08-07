@@ -77,7 +77,8 @@ export default async function SistemaLayout({
         adminSupabase.from('organizacoes').select('*').eq('id', parceiroOrgId).single(),
         adminSupabase
           .from('profissionais_parceiros')
-          .select('empresa:empresa_id(org_id, modulos_acesso, acesso_fiscal)')
+          // Sem acesso_fiscal no select (coluna pode faltar se migration 062 não rodou)
+          .select('empresa:empresa_id(org_id, modulos_acesso)')
           .eq('usuario_id', user.id)
           .eq('ativo', true),
       ])
@@ -85,9 +86,8 @@ export default async function SistemaLayout({
         organizacao = parceiroOrgRes.data
         isParceiroAcessandoOrg = true
         const vinculo = (vinculoRes.data ?? []).find((v: any) => v.empresa?.org_id === parceiroOrgId)
-        const empresa = vinculo?.empresa as { modulos_acesso?: string[]; acesso_fiscal?: boolean } | undefined
+        const empresa = vinculo?.empresa as { modulos_acesso?: string[] } | undefined
         modulosAcessoParceiro = [...(empresa?.modulos_acesso ?? [])]
-        if (empresa?.acesso_fiscal) modulosAcessoParceiro.push('fiscal_comercializacao')
       }
     } else {
       // Modo escritório normal — busca nome da empresa parceira

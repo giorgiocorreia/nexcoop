@@ -11,7 +11,7 @@ export default async function ExportacoesPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   return <ExportacoesClient orgId={ctx.orgId} userId={ctx.usuarioId} />
 }

@@ -11,7 +11,7 @@ export default async function BalancoPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   return <BalancoClient orgId={ctx.orgId} />
 }

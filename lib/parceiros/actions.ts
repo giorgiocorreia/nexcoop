@@ -84,10 +84,18 @@ export async function atualizarAcessoFiscalParceira(id: string, acessoFiscal: bo
     const idx = modulos.indexOf('fiscal_comercializacao')
     if (idx >= 0) modulos.splice(idx, 1)
   }
-  const { error } = await supabase
+  // Preferir gravar também acesso_fiscal se a coluna existir (migration 062).
+  // Em bases sem a coluna, cai só em modulos_acesso (flag fiscal_comercializacao).
+  let { error } = await supabase
     .from('empresas_parceiras')
     .update({ acesso_fiscal: acessoFiscal, modulos_acesso: modulos })
     .eq('id', id)
+  if (error?.message?.includes('acesso_fiscal') || error?.code === 'PGRST204') {
+    ;({ error } = await supabase
+      .from('empresas_parceiras')
+      .update({ modulos_acesso: modulos })
+      .eq('id', id))
+  }
   if (error) throw new Error(error.message)
   revalidatePath('/configuracoes')
 }

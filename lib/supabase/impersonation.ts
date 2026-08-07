@@ -48,11 +48,19 @@ export async function getOrgContext(): Promise<OrgContext | null> {
   const parceiroOrgId = cookieStore.get('parceiro_org_id')?.value ?? null
   if (parceiroOrgId) {
     const admin = createAdminClient()
-    const { data: vinculos } = await admin
+    // NÃO selecionar acesso_fiscal aqui: a coluna pode não existir em bases
+    // onde a migration 062 ainda não rodou — o select quebrava o contexto
+    // inteiro (ctx=null → /login → /dashboard → /contabil → loop).
+    // Flag fiscal vem de modulos_acesso contendo 'fiscal_comercializacao'.
+    const { data: vinculos, error: vinculoErr } = await admin
       .from('profissionais_parceiros')
-      .select('empresa:empresa_id(org_id, status, modulos_acesso, acesso_fiscal)')
+      .select('empresa:empresa_id(org_id, status, modulos_acesso)')
       .eq('usuario_id', user.id)
       .eq('ativo', true)
+
+    if (vinculoErr) {
+      console.error('[getOrgContext] parceiro vinculo:', vinculoErr.message)
+    }
 
     const vinculoValido: any = (vinculos ?? []).find((v: any) =>
       v.empresa?.org_id === parceiroOrgId &&
@@ -62,19 +70,25 @@ export async function getOrgContext(): Promise<OrgContext | null> {
     )
 
     if (vinculoValido) {
+      const mods = (vinculoValido.empresa.modulos_acesso as string[]) ?? []
       return {
         supabase: admin,
         orgId: parceiroOrgId,
         usuarioId: user.id,
         isImpersonating: false,
-        modulosPermitidos: vinculoValido.empresa.modulos_acesso as string[],
-        acessoFiscal: !!vinculoValido.empresa.acesso_fiscal,
+        modulosPermitidos: mods,
+        acessoFiscal: mods.includes('fiscal_comercializacao'),
       }
     }
 
     // Vínculo não passou na revalidação (revogado, empresa inativa, módulo removido):
-    // ignora o cookie silenciosamente e cai no contexto normal do usuário abaixo —
+    // limpa cookie inválido e cai no contexto normal do usuário abaixo —
     // nunca lançar erro aqui, isso quebraria a navegação de quem nem é parceiro.
+    try {
+      cookieStore.delete('parceiro_org_id')
+    } catch {
+      /* cookies() em alguns contextos é read-only */
+    }
   }
 
   const { data: usuario } = await supabaseAuth

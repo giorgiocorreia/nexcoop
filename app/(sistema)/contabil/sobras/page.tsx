@@ -12,7 +12,7 @@ export default async function SobrasPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  if (!ctx) redirect('/escritorio')
 
   const [usuarioRes, orgRes, contadorRes] = await Promise.all([
     supabaseAuth.from('usuarios').select('funcoes').eq('id', user.id).single(),

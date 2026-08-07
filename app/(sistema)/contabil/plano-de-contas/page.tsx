@@ -12,7 +12,9 @@ export default async function PlanoContasPage() {
   if (!user) redirect('/login')
 
   const ctx = await getOrgContext()
-  if (!ctx) redirect('/login')
+  // Parceiro sem contexto válido: volta ao escritório (não /login — evita loop
+  // login→dashboard→contabil quando cookie parceiro_org_id ainda existe).
+  if (!ctx) redirect('/escritorio')
 
   const { data: org } = await ctx.supabase
     .from('organizacoes')
