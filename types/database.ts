@@ -740,6 +740,28 @@ export interface SiteConteudo {
   destaque:       boolean
 }
 
+// Migration 096 — interessados vindos dos formulários do site público.
+// `dados` guarda os campos que não viraram coluna (variam bastante entre os
+// três formulários: CPF/área no de cooperado, empresa/cota no de parceria,
+// quantidade/data no de cacau).
+export interface SiteLead {
+  id:             string
+  organizacao_id: string
+  tipo:           'cooperado' | 'parceria' | 'agendamento_cacau'
+  nome:           string
+  email:          string | null
+  telefone:       string | null
+  mensagem:       string | null
+  dados:          Record<string, string>
+  status:         'novo' | 'em_contato' | 'convertido' | 'descartado'
+  observacoes:    string | null
+  origem:         string | null
+  user_agent:     string | null
+  ip:             string | null
+  criado_em:      string
+  atualizado_em:  string
+}
+
 export interface LojaEstoqueMovimento {
   id:            string
   org_id:        string
@@ -1617,6 +1639,8 @@ export type Database = {
       // ── Site institucional (085) ─────────────────────────────────────────
       site_config:                 TableDef<SiteConfig>
       site_conteudos:              TableDef<SiteConteudo>
+      // ── Leads dos formulários do site (096) ──────────────────────────────
+      site_leads:                  TableDef<SiteLead>
       // ── Carteirinha do filiado (089) ──────────────────────────────────────
       cooperado_carteirinhas:      TableDef<CooperadoCarteirinha>
       recibos:                     TableDef<Recibo>
