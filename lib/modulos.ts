@@ -16,6 +16,7 @@ export const MODULOS: ModuloDef[] = [
   { id: 'loja',            nome: 'Loja / PDV',            descricao: 'Ponto de venda e estoque',        base: false },
   { id: 'contabil',        nome: 'Contabilidade',         descricao: 'Plano de contas, DRE, balancete', base: false },
   { id: 'captacao',        nome: 'Captação de Projetos',  descricao: 'Editais e oportunidades',         base: false },
+  { id: 'site',            nome: 'Site institucional',    descricao: 'Site público da org e leads',     base: false },
 ]
 
 export const MODULOS_OPCIONAIS = MODULOS.filter(m => !m.base)

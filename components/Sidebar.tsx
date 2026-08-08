@@ -177,6 +177,14 @@ function buildNav(usuario: (Usuario & { organizacao: Organizacao | null }) | nul
   if (projetosItens.length > 0)
     grupos.push({ grupo: 'Projetos', itens: projetosItens })
 
+  // Site institucional. Hoje só os leads dos formulários (migration 096); a
+  // gestão de conteúdo do site ainda é feita fora daqui.
+  if (isAdmin && (!enforcaModulo || temModulo(org?.modulos_ativos, 'site')))
+    grupos.push({
+      grupo: 'Site',
+      itens: [{ label: 'Leads', href: '/site/leads', icone: '📨' }],
+    })
+
   // Contábil do admin da org é gateado por módulo. O grupo "Escritório" logo
   // abaixo (parceiro/contador externo) NÃO é gateado — acesso via vínculo em
   // profissionais_parceiros, outro caminho, não deve ser bloqueado por módulo.

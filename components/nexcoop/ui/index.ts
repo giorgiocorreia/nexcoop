@@ -19,3 +19,4 @@ export const MODULO_CONTABIL = { label: 'Contábil', href: '/contabil/plano-de-c
 export const MODULO_CAPTACAO = { label: 'Captação', href: '/captacao' } as const
 export const MODULO_CONFIG = { label: 'Configurações', href: '/configuracoes' } as const
 export const MODULO_ESCRITORIO = { label: 'Escritório', href: '/escritorio' } as const
+export const MODULO_SITE = { label: 'Site', href: '/site/leads' } as const
