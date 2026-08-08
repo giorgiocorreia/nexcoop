@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca — COOPAIBI</title>
+  <meta name="description" content="Acesse projetos, editais, relatórios e documentos da COOPAIBI disponíveis para download." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="icon" href="assets/logo-coopaibi.png" type="image/png" />
+  <style>
+    .bib-hero { background: linear-gradient(135deg, #0a1f0a, #1a5c1a); padding: 52px 0; }
+    .bib-hero h1 { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 8px; font-family: 'Montserrat', sans-serif; }
+    .bib-hero h1 em { color: #b0f070; font-style: normal; }
+    .bib-hero p { font-size: 14px; color: rgba(255,255,255,.75); max-width: 560px; line-height: 1.7; }
+
+    .bib-layout { display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: start; }
+    .bib-sidebar { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px; position: sticky; top: 80px; }
+    .bib-sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--g1); font-family: 'Montserrat', sans-serif; margin-bottom: 10px; }
+    .cat-link { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 13px; font-weight: 600; color: var(--muted); border-radius: 8px; transition: .2s; margin-bottom: 2px; font-family: 'Montserrat', sans-serif; text-decoration: none; }
+    .cat-link:hover { background: var(--gp); color: var(--g1); }
+    .cat-link.ativo { background: var(--g2); color: #fff; }
+    .cat-link.ativo .cat-count { background: rgba(255,255,255,.25); }
+    .cat-count { background: var(--gp); color: var(--g1); font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; font-family: 'Montserrat', sans-serif; }
+
+    .doc-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .doc-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; transition: all .2s; position: relative; overflow: hidden; }
+    .doc-card:hover { box-shadow: 0 6px 24px rgba(26,92,26,.1); transform: translateY(-2px); }
+    .doc-card.destaque { border-top: 3px solid var(--g2); }
+    .doc-cat { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: var(--gp); color: var(--g1); font-family: 'Montserrat', sans-serif; }
+    .doc-titulo { font-size: 15px; font-weight: 800; color: var(--text); font-family: 'Montserrat', sans-serif; line-height: 1.35; }
+    .doc-desc { font-size: 12px; color: var(--muted); line-height: 1.6; flex: 1; }
+    .doc-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); }
+    .doc-meta { font-size: 11px; color: var(--muted); }
+    .doc-meta span { margin-right: 10px; }
+    .btn-download { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--g2); color: #fff; border-radius: 20px; font-size: 12px; font-weight: 700; font-family: 'Montserrat', sans-serif; transition: .2s; text-decoration: none; }
+    .btn-download:hover { background: var(--g1); }
+    .doc-destaque-badge { position: absolute; top: 12px; right: 12px; background: var(--gold); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; font-family: 'Montserrat', sans-serif; }
+
+    .vazio { text-align: center; padding: 60px 24px; color: var(--muted); }
+    .vazio h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; font-family: 'Montserrat', sans-serif; }
+
+    @media(max-width:900px) {
+      .bib-layout { grid-template-columns: 1fr; }
+      .bib-sidebar { position: static; display: flex; flex-wrap: wrap; gap: 6px; }
+      .bib-sidebar-title { display: none; }
+      .doc-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ribbon">
+    <span>🌿 COOPAIBI — Cooperativa Mista Agropecuária de Ibirataia | Projeto Cacau que Refloresta</span></div>
+
+  <div class="topbar">
+    <div class="container">
+      <span>📍 Av. Aurelino Coelho Lima, nº 10 — Centro, Ibirataia/BA</span>
+      <span>📞 Loja: (73) 9 9976-8420 · Compra de Cacau: (73) 9 9862-9960</span>
+      <span>✉ contato@coopaibi.com.br</span>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo-coopaibi.png" alt="Logo COOPAIBI" />
+        <div class="nav-brand-text"><strong>COOPAIBI</strong><span>Cooperativa Mista Agropecuária de Ibirataia</span></div>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-item">Início</a>
+        <div class="nav-dropdown">
+          <button class="nav-item nav-dropdown-btn">Sobre <span class="nav-arrow">▾</span></button>
+          <div class="nav-dropdown-menu">
+            <a href="index.html#sobre" class="nav-dd-item">O Projeto</a>
+            <a href="index.html#sistema" class="nav-dd-item">Sistema Cabruca</a>
+            <a href="index.html#impacto" class="nav-dd-item">Impacto</a>
+          </div>
+        </div>
+        <div class="nav-dropdown">
+          <button class="nav-item nav-dropdown-btn">Serviços <span class="nav-arrow">▾</span></button>
+          <div class="nav-dropdown-menu">
+            <a href="loja.php" class="nav-dd-item">Loja Agropecuária</a>
+            <a href="cacau.php" class="nav-dd-item">Compra de Cacau</a>
+            <a href="videos.php" class="nav-dd-item">Vídeos</a>
+          </div>
+        </div>
+        <a href="acoes.php" class="nav-item">Ações</a>
+        <a href="biblioteca.php" class="nav-item active">Biblioteca</a>
+        <a href="parceiro.html" class="nav-item">Seja Parceiro</a>
+        <a href="admin/login.php" class="nav-item">Intranet</a>
+        <a href="cooperado.html" class="nav-cta">Seja Cooperado</a>
+      </div>
+      <button class="nav-toggle" onclick="toggleMenu()" aria-label="Menu">☰</button>
+    </div>
+    <div class="nav-mobile" id="nav-mobile">
+      <div class="nav-mobile-section"><div class="nav-mobile-title">Início</div><a href="index.html">Página Inicial</a></div>
+      <div class="nav-mobile-section"><div class="nav-mobile-title">Sobre</div><a href="index.html#sobre">O Projeto</a><a href="index.html#sistema">Sistema Cabruca</a><a href="index.html#impacto">Impacto</a></div>
+      <div class="nav-mobile-section"><div class="nav-mobile-title">Serviços</div><a href="loja.php">🛒 Loja</a><a href="cacau.php">🍫 Compra de Cacau</a><a href="videos.php">🎬 Vídeos</a></div>
+      <div class="nav-mobile-section"><div class="nav-mobile-title">Mais</div><a href="acoes.php">Ações</a><a href="biblioteca.php">Biblioteca</a><a href="parceiro.html">Seja Parceiro</a><a href="admin/login.php">Intranet</a></div>
+      <a href="cooperado.html" class="nav-cta" style="margin:12px 16px;display:block;text-align:center">Seja Cooperado</a>
+    </div>
+  </nav>
+
+  <!-- TICKER -->
+  <div style="background:#0f2a0f;border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="display:flex;align-items:stretch;height:46px">
+      <div style="background:#1a5c1a;color:#fff;font-size:10px;font-weight:800;padding:0 14px;display:flex;align-items:center;font-family:'Montserrat',sans-serif;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">📈 Mercado</div>
+      <div style="flex:1;overflow:hidden">
+        <div class="tradingview-widget-container" style="height:46px">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+          {"symbols":[{"proName":"CAPITALCOM:COCOA","title":"Cacau"},{"proName":"FX_IDC:USDBRL","title":"USD/BRL"},{"proName":"CAPITALCOM:COFFEE","title":"Café"},{"proName":"CAPITALCOM:SOYBEANS","title":"Soja"}],"showSymbolLogo":false,"isTransparent":true,"displayMode":"adaptive","colorTheme":"dark","locale":"pt_BR"}
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="bib-hero">
+    <div class="container">
+      <div class="sec-tag" style="color:#b0f070">📚 Biblioteca Digital</div>
+      <h1>Documentos e <em>projetos</em> COOPAIBI</h1>
+      <p>Acesse e baixe projetos, editais, relatórios e documentos institucionais da cooperativa. Disponíveis gratuitamente para parceiros e entidades interessadas.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:36px;padding-bottom:48px">
+    <div class="container">
+      <div class="bib-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="bib-sidebar">
+          <div class="bib-sidebar-title">Categorias</div>
+          <a href="biblioteca.php" class="cat-link ativo">
+            Todos os documentos
+            <span class="cat-count">2</span>
+          </a>
+                      <a href="biblioteca.php?cat=Projetos" class="cat-link ">
+              📁 Projetos              <span class="cat-count">2</span>
+            </a>
+                      <a href="biblioteca.php?cat=Editais" class="cat-link ">
+              📋 Editais              <span class="cat-count">0</span>
+            </a>
+                      <a href="biblioteca.php?cat=Relatorios" class="cat-link ">
+              📊 Relatorios              <span class="cat-count">0</span>
+            </a>
+                      <a href="biblioteca.php?cat=Estatuto+e+Atas" class="cat-link ">
+              📜 Estatuto e Atas              <span class="cat-count">0</span>
+            </a>
+                      <a href="biblioteca.php?cat=Outros" class="cat-link ">
+              📎 Outros              <span class="cat-count">0</span>
+            </a>
+                  </aside>
+
+        <!-- CONTEÚDO -->
+        <div>
+          <!-- BUSCA -->
+          <form method="GET" style="margin-bottom:20px;display:flex;gap:10px">
+                        <input type="text" name="busca" placeholder="Buscar documento..." value=""
+              style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:24px;font-size:13px;outline:none;font-family:'Montserrat',sans-serif" />
+            <button type="submit" style="padding:10px 20px;background:var(--g2);color:#fff;border:none;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">Buscar</button>
+                      </form>
+
+                    <div class="doc-grid">
+                        <div class="doc-card destaque">
+              <div class="doc-destaque-badge">⭐ Destaque</div>              <div>
+                <span class="doc-cat">📁 Projetos</span>
+              </div>
+              <div class="doc-titulo">Projeto Cacau que Refloresta — COOPAIBI</div>
+                              <div class="doc-desc">Projeto completo de restauracao agroflorestal com cacau no sul da Bahia....</div>
+                            <div class="doc-footer">
+                <div class="doc-meta">
+                  <span>📅 24/05/2026</span>
+                  <span>⬇ 2 downloads</span>
+                </div>
+                <a href="/sites/coopaibi/biblioteca/projcacauquerefloresta.pdf" class="btn-download">
+                  ⬇ Baixar PDF
+                </a>
+              </div>
+            </div>
+                        <div class="doc-card destaque">
+              <div class="doc-destaque-badge">⭐ Destaque</div>              <div>
+                <span class="doc-cat">📁 Projetos</span>
+              </div>
+              <div class="doc-titulo">Projeto Cacau que Refloresta — COOPAIBI</div>
+                              <div class="doc-desc">Projeto completo de restauracao agroflorestal com cacau no sul da Bahia....</div>
+                            <div class="doc-footer">
+                <div class="doc-meta">
+                  <span>📅 24/05/2026</span>
+                  <span>⬇ 2 downloads</span>
+                </div>
+                <a href="/sites/coopaibi/biblioteca/projcacauquerefloresta.pdf" class="btn-download">
+                  ⬇ Baixar PDF
+                </a>
+              </div>
+            </div>
+                      </div>
+                  </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTÃO FLUTUANTE WHATSAPP -->
+  <a href="https://wa.me/5571999783992" class="whatsapp-float" target="_blank" rel="noopener" aria-label="WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.122 1.528 5.855L.057 23.885c-.066.254.166.486.42.42l6.03-1.471A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.877 9.877 0 0 1-5.031-1.378l-.36-.214-3.735.979.995-3.638-.235-.374A9.86 9.86 0 0 1 2.1 12c0-5.468 4.432-9.9 9.9-9.9 5.467 0 9.9 4.432 9.9 9.9 0 5.467-4.433 9.9-9.9 9.9z"/></svg>
+    <span class="whatsapp-tooltip">Fale conosco</span>
+  </a>
+
+  <script>
+    function toggleMenu() { document.getElementById('nav-mobile').classList.toggle('open'); }
+    (function() {
+      document.querySelectorAll('.nav-dropdown').forEach(function(dd) {
+        dd.addEventListener('mouseenter', function() { dd.classList.add('ativo'); });
+        dd.addEventListener('mouseleave', function() { dd.classList.remove('ativo'); });
+      });
+    })();
+    var idiomaAtual='pt',originais=[],cacheEN=null;
+    function isVisivel(el){if(!el)return false;var s=window.getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden';}
+    function deveIgnorar(txt){if(!txt||txt.length<3)return true;if(/^[\d\s\.,;:\-\+\%\(\)\[\]\{\}\/\\@#!\?=\*&·•→]+$/.test(txt))return true;return false;}
+    function selecionarIdioma(lang,btn){if(lang===idiomaAtual)return;document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.remove('ativo');});btn.classList.add('ativo');if(lang==='pt'){originais.forEach(function(i){i.node.nodeValue=i.original;});idiomaAtual='pt';return;}if(cacheEN){originais.forEach(function(i){if(cacheEN[i.original.trim()])i.node.nodeValue=cacheEN[i.original.trim()];});idiomaAtual=lang;return;}var lbl=btn.innerHTML;btn.innerHTML='⏳';btn.disabled=true;var textos={};var idx=0;originais.forEach(function(i){textos['n'+(idx++)]=i.original.trim();});fetch('translate.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:lang,textos:textos})}).then(function(r){return r.json();}).then(function(res){if(res.ok){cacheEN={};originais.forEach(function(i,n){if(res.traduzidos['n'+n])cacheEN[i.original.trim()]=res.traduzidos['n'+n];});originais.forEach(function(i){if(cacheEN[i.original.trim()])i.node.nodeValue=cacheEN[i.original.trim()];});idiomaAtual=lang;}btn.innerHTML=lbl;btn.disabled=false;}).catch(function(){btn.innerHTML=lbl;btn.disabled=false;});}
+  </script>
+
+  <!-- BOTÃO TRADUTOR -->
+  <button class="gt-btn" onclick="document.getElementById('gt-popup').classList.add('aberto')" title="Traduzir página">
+    <img src="https://flagcdn.com/w40/br.png" id="gt-flag" alt="Idioma" />
+    <span id="gt-label">PT</span>
+  </button>
+
+  <!-- POPUP DE IDIOMAS -->
+  <div class="gt-popup" id="gt-popup" onclick="if(event.target===this)this.classList.remove('aberto')">
+    <div class="gt-popup-box">
+      <button class="gt-lang-btn" onclick="traduzirPara('pt','BR','PT')">
+        <img src="https://flagcdn.com/w80/br.png" alt="Português" />
+        Português
+      </button>
+      <button class="gt-lang-btn" onclick="traduzirPara('en','GB','EN')">
+        <img src="https://flagcdn.com/w80/gb.png" alt="English" />
+        English
+      </button>
+      <button class="gt-lang-btn" onclick="traduzirPara('es','ES','ES')">
+        <img src="https://flagcdn.com/w80/es.png" alt="Español" />
+        Español
+      </button>
+    </div>
+  </div>
+
+  <!-- GOOGLE TRANSLATE SCRIPT -->
+  <div id="google_translate_element" style="display:none"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'pt',
+        includedLanguages: 'en,es,pt',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+    function traduzirPara(lang, flagCode, label) {
+      document.getElementById('gt-popup').classList.remove('aberto');
+      document.getElementById('gt-flag').src = 'https://flagcdn.com/w40/' + flagCode.toLowerCase() + '.png';
+      document.getElementById('gt-label').textContent = label;
+      if (lang === 'pt') {
+        // Remover cookie do Google Translate e recarregar
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname + ';';
+        location.reload();
+        return;
+      }
+      // Definir cookie para o idioma escolhido
+      document.cookie = 'googtrans=/pt/' + lang + '; path=/';
+      document.cookie = 'googtrans=/pt/' + lang + '; path=/; domain=.' + location.hostname;
+      var sel = document.querySelector('.goog-te-combo');
+      if (sel) {
+        sel.value = lang;
+        sel.dispatchEvent(new Event('change'));
+      } else {
+        setTimeout(function(){ traduzirPara(lang, flagCode, label); }, 600);
+      }
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script>
+    // Filtro de categoria e busca da Biblioteca (ver correcoes.mjs). Substitui
+    // o que biblioteca.php fazia no MySQL: aqui a lista já está toda na
+    // página, então é só esconder o que não casa.
+    (function () {
+      // Sem acento e sem caixa dos dois lados: a categoria vem da URL
+      // ("Estatuto+e+Atas") e do rótulo do card ("📜 Estatuto e Atas").
+      function normalizar(t) {
+        return (t || '')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9 ]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim().toLowerCase()
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var params = new URLSearchParams(window.location.search)
+        var cat = normalizar(params.get('cat'))
+        var busca = normalizar(params.get('busca'))
+
+        // Deixa o campo mostrando o que foi buscado, como o PHP fazia ao
+        // reimprimir a página.
+        var campo = document.querySelector('input[name="busca"]')
+        if (campo && params.get('busca')) campo.value = params.get('busca')
+
+        // Link de categoria em evidência. O HTML vem com "Todos" marcado.
+        document.querySelectorAll('.cat-link').forEach(function (a) {
+          var href = a.getAttribute('href') || ''
+          var alvo = normalizar(new URLSearchParams(href.split('?')[1] || '').get('cat'))
+          a.classList.toggle('ativo', alvo === cat)
+        })
+
+        var cards = document.querySelectorAll('.doc-card')
+        var visiveis = 0
+        cards.forEach(function (card) {
+          var categoria = normalizar((card.querySelector('.doc-cat') || {}).textContent)
+          var texto = normalizar(card.textContent)
+          var passa = (!cat || categoria === cat) && (!busca || texto.indexOf(busca) !== -1)
+          card.style.display = passa ? '' : 'none'
+          if (passa) visiveis++
+        })
+
+        // Sem resultado a grade ficaria simplesmente vazia, sem explicar nada.
+        var grade = document.querySelector('.doc-grid')
+        if (grade && cards.length && !visiveis) {
+          var aviso = document.createElement('p')
+          aviso.style.cssText = 'padding:24px;color:#666;font-size:14px'
+          aviso.textContent = 'Nenhum documento encontrado para este filtro.'
+          grade.appendChild(aviso)
+        }
+      })
+    })()
+  </script>
+</body>
+</html>

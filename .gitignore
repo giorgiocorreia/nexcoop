@@ -42,3 +42,12 @@ yarn-error.log*
 next-env.d.ts
 .env*
 sites/coopaibi/
+
+# dumps de reversão gerados pelos scripts de correção de dados — são o
+# "antes" de uma operação feita em produção, não código. Ficam na máquina de
+# quem rodou; versionar espalharia dado de cooperado pelo histórico do repo.
+desfazer-*.json
+
+# rascunhos e temporários locais
+.tmp/
+supabase/.temp/
