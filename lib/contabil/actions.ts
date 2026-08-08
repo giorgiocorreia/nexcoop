@@ -1,12 +1,20 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  requireContabil,
+  requireContabilEscrita,
+  assertLinhaDaOrg,
+  assertItemExtratoDaOrg,
+  requireProprioUsuario,
+  requireEscritorioProprio,
+} from './guard'
 import { revalidatePath } from 'next/cache'
 import { registrarLog } from '@/lib/audit/logger'
 import { ContaContabil, ItemBalancete, ItemDRE, TipoConta, NaturezaConta, ItemBalancoPatrimonial, ItemLivroRazao, TipoOrg, getTerminologia } from './types'
 
 export async function getTipoOrg(orgId: string): Promise<TipoOrg> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data } = await supabase
     .from('organizacoes')
     .select('tipo')
@@ -18,7 +26,7 @@ export async function getTipoOrg(orgId: string): Promise<TipoOrg> {
 // ── PLANO DE CONTAS ──────────────────────────────────────────────────────────
 
 export async function getPlanoContas(orgId: string): Promise<ContaContabil[]> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('plano_contas')
     .select('*')
@@ -53,14 +61,14 @@ export async function criarConta(data: {
   nivel: number
   aceita_lancamento: boolean
 }) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(data.org_id)
   const { error } = await supabase.from('plano_contas').insert(data)
   if (error) throw new Error(error.message)
   revalidatePath('/contabil/plano-de-contas')
 }
 
 export async function seedPlanoContasCooperativa(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const contas = gerarPlanoContasPadrao(orgId)
   const { error } = await supabase.from('plano_contas').insert(contas)
   if (error) throw new Error(error.message)
@@ -68,7 +76,7 @@ export async function seedPlanoContasCooperativa(orgId: string) {
 }
 
 export async function seedPlanoContasOrg(orgId: string, tipoOrg: TipoOrg = 'cooperativa') {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const contas = tipoOrg === 'cooperativa'
     ? gerarPlanoContasPadrao(orgId)
     : gerarPlanoContasAssociacao(orgId)
@@ -172,7 +180,7 @@ function gerarPlanoContasAssociacao(orgId: string): Array<{
 // ── ESCRITURAÇÃO ─────────────────────────────────────────────────────────────
 
 export async function getLancamentosPendentes(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data: todos, error } = await supabase
     .from('lancamentos')
     .select('*')
@@ -201,9 +209,12 @@ export async function classificarLancamento(data: {
   exercicio_id?: string
   classificado_por: string
 }) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita(data.org_id)
+  const supabase = ctx.supabase
   const { error } = await supabase.from('partidas').insert({
     ...data,
+    // Autoria vem do autenticado, nunca do que a UI mandou.
+    classificado_por: ctx.usuarioId,
     classificado_em: new Date().toISOString(),
   })
   if (error) throw new Error(error.message)
@@ -223,7 +234,7 @@ export async function classificarLancamento(data: {
 // ── BALANCETE ────────────────────────────────────────────────────────────────
 
 export async function getBalancete(orgId: string, mes: number, ano: number): Promise<ItemBalancete[]> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const inicioMes = new Date(ano, mes - 1, 1).toISOString().split('T')[0]
   const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0]
   const inicioAno = new Date(ano, 0, 1).toISOString().split('T')[0]
@@ -293,7 +304,7 @@ function calcularSaldo(conta: any, partidas: any[]): number {
 // ── DRE ──────────────────────────────────────────────────────────────────────
 
 export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const tipoOrg = await getTipoOrg(orgId)
   const terminologia = getTerminologia(tipoOrg)
   const inicioAno = `${ano}-01-01`
@@ -353,7 +364,7 @@ export async function getDRE(orgId: string, ano: number): Promise<ItemDRE[]> {
 // ── EXERCÍCIOS ───────────────────────────────────────────────────────────────
 
 export async function getExercicioAtivo(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const ano = new Date().getFullYear()
   const { data } = await supabase
     .from('exercicios_contabeis')
@@ -365,7 +376,7 @@ export async function getExercicioAtivo(orgId: string) {
 }
 
 export async function abrirExercicio(orgId: string, ano: number) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const { error } = await supabase.from('exercicios_contabeis').insert({
     org_id: orgId,
     ano,
@@ -379,7 +390,7 @@ export async function abrirExercicio(orgId: string, ano: number) {
 // ── CONTADORES ───────────────────────────────────────────────────────────────
 
 export async function getContadoresDaOrg(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('contador_org')
     .select('*, usuarios:usuario_id(nome, email)')
@@ -389,7 +400,7 @@ export async function getContadoresDaOrg(orgId: string) {
 }
 
 export async function convidarContador(orgId: string, email: string, nivel: 'contador' | 'contador_aux') {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const { data: usuario } = await supabase
     .from('usuarios')
     .select('id')
@@ -408,7 +419,9 @@ export async function convidarContador(orgId: string, email: string, nivel: 'con
 }
 
 export async function toggleContador(id: string, ativo: boolean) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertLinhaDaOrg(ctx, 'contador_org', id)
+  const supabase = ctx.supabase
   const { error } = await supabase.from('contador_org').update({ ativo }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/configuracoes')
@@ -417,6 +430,7 @@ export async function toggleContador(id: string, ativo: boolean) {
 // ── ESCRITÓRIO CONTÁBIL ──────────────────────────────────────────────────────
 
 export async function getEscritorioDoContador(usuarioId: string) {
+  await requireProprioUsuario(usuarioId)
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('contador_org')
@@ -437,6 +451,7 @@ export async function criarOuAtualizarEscritorio(data: {
   email_contato: string
   telefone?: string
 }) {
+  await requireProprioUsuario(data.usuario_id)
   const supabase = createAdminClient()
 
   const { data: existing } = await supabase
@@ -490,7 +505,7 @@ export async function criarOuAtualizarEscritorio(data: {
 // ── PLANO DE CONTAS EXTERNO (DO ESCRITÓRIO) ──────────────────────────────────
 
 export async function getPlanoContasExterno(escritorioId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireEscritorioProprio(escritorioId)
   const { data, error } = await supabase
     .from('plano_contas_externo')
     .select('*')
@@ -507,7 +522,7 @@ export async function criarContaExterna(data: {
   nome: string
   tipo: TipoConta
 }) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireEscritorioProprio(data.escritorio_id)
   const { error } = await supabase.from('plano_contas_externo').insert(data)
   if (error) throw new Error(error.message)
   revalidatePath('/escritorio/plano-de-contas')
@@ -518,7 +533,7 @@ export async function importarPlanoExternoParaOrg(
   orgId: string,
   contadorOrgId: string
 ) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireEscritorioProprio(escritorioId)
   const { data, error } = await supabase
     .from('plano_contas_externo')
     .select('id')
@@ -532,7 +547,7 @@ export async function importarPlanoExternoParaOrg(
 // ── DE/PARA ──────────────────────────────────────────────────────────────────
 
 export async function getDePara(orgId: string, contadorOrgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('de_para_contas')
     .select(`
@@ -552,7 +567,7 @@ export async function salvarDePara(data: {
   conta_interna_id: string
   conta_externa_id: string
 }) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(data.org_id)
   const { error } = await supabase
     .from('de_para_contas')
     .upsert(data, { onConflict: 'org_id,contador_org_id,conta_interna_id' })
@@ -561,7 +576,9 @@ export async function salvarDePara(data: {
 }
 
 export async function removerDePara(id: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertLinhaDaOrg(ctx, 'de_para_contas', id)
+  const supabase = ctx.supabase
   const { error } = await supabase.from('de_para_contas').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/contabil/depara')
@@ -570,7 +587,7 @@ export async function removerDePara(id: string) {
 // ── NF-E ─────────────────────────────────────────────────────────────────────
 
 export async function getNFesImportadas(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('nfe_importadas')
     .select('*, itens:nfe_itens(*)')
@@ -600,7 +617,8 @@ export async function importarXMLNFe(orgId: string, xmlString: string, importado
 
   const tipo = String(ide?.tpNF) === '0' ? 'entrada' : 'saida'
 
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita(orgId)
+  const supabase = ctx.supabase
 
   const { data: nfeData, error: nfeError } = await supabase
     .from('nfe_importadas')
@@ -621,7 +639,7 @@ export async function importarXMLNFe(orgId: string, xmlString: string, importado
       valor_cofins: Number(total?.vCOFINS || 0),
       xml_original: xmlString,
       status: 'importada',
-      importado_por: importadoPor,
+      importado_por: ctx.usuarioId,
     })
     .select()
     .single()
@@ -650,7 +668,12 @@ export async function importarXMLNFe(orgId: string, xmlString: string, importado
 }
 
 export async function vincularNFeALancamento(nfeId: string, lancamentoId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  // As duas pontas precisam ser da mesma org — senão dá para vincular NF-e
+  // de uma organização a lançamento de outra.
+  await assertLinhaDaOrg(ctx, 'nfe_importadas', nfeId)
+  await assertLinhaDaOrg(ctx, 'lancamentos', lancamentoId, 'organizacao_id')
+  const supabase = ctx.supabase
   const { error } = await supabase
     .from('nfe_importadas')
     .update({ lancamento_id: lancamentoId, status: 'vinculada' })
@@ -660,7 +683,9 @@ export async function vincularNFeALancamento(nfeId: string, lancamentoId: string
 }
 
 export async function ignorarNFe(nfeId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertLinhaDaOrg(ctx, 'nfe_importadas', nfeId)
+  const supabase = ctx.supabase
   const { error } = await supabase
     .from('nfe_importadas')
     .update({ status: 'ignorada' })
@@ -672,7 +697,7 @@ export async function ignorarNFe(nfeId: string) {
 // ── CONFIGURAÇÕES CONTÁBEIS ──────────────────────────────────────────────────
 
 export async function getConfiguracaoContabil(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data } = await supabase
     .from('configuracoes_contabeis')
     .select('*')
@@ -690,7 +715,7 @@ export async function salvarConfiguracaoContabil(data: {
   classificacao_automatica?: boolean
   observacoes?: string
 }) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(data.org_id)
   const { error } = await supabase
     .from('configuracoes_contabeis')
     .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: 'org_id' })
@@ -708,7 +733,7 @@ export async function getBalancoPatrimonial(orgId: string, ano: number): Promise
   totalPassivoMaisPatrimonio: number
   equilibrado: boolean
 }> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const fimAno = `${ano}-12-31`
   const inicioAno = `${ano}-01-01`
 
@@ -779,7 +804,7 @@ export async function getLivroRazao(
   dataInicio: string,
   dataFim: string
 ): Promise<ItemLivroRazao[]> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
 
   const { data: conta } = await supabase
     .from('plano_contas')
@@ -824,7 +849,7 @@ export async function getLivroRazao(
 // ── SOBRAS / REFAC ───────────────────────────────────────────────────────────
 
 export async function calcularSobras(orgId: string, ano: number) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const tipoOrg = await getTipoOrg(orgId)
   const terminologia = getTerminologia(tipoOrg)
   const inicioAno = `${ano}-01-01`
@@ -894,7 +919,7 @@ export async function calcularSobras(orgId: string, ano: number) {
 // ── FECHAMENTO DE EXERCÍCIO ──────────────────────────────────────────────────
 
 export async function getFechamento(orgId: string, exercicioId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data } = await supabase
     .from('fechamentos_exercicio')
     .select('*')
@@ -917,8 +942,15 @@ export async function fecharExercicio(data: {
   crc_contador?: string
   observacoes?: string
 }) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita(data.org_id)
+  await assertLinhaDaOrg(ctx, 'exercicios_contabeis', data.exercicio_id)
+  const supabase = ctx.supabase
   const crypto = await import('crypto')
+
+  // Quem assina o fechamento é o autenticado — nunca o que a UI mandou.
+  // Antes dava para encerrar exercício em nome de terceiro e ainda gerar o
+  // hash de integridade legitimando a assinatura falsa.
+  const fechadoPor = ctx.usuarioId
 
   const conteudo = JSON.stringify({
     org_id: data.org_id,
@@ -927,13 +959,15 @@ export async function fecharExercicio(data: {
     fundo_reserva: data.fundo_reserva,
     refac: data.refac,
     sobras_distribuiveis: data.sobras_distribuiveis,
-    fechado_por: data.fechado_por,
+    fechado_por: fechadoPor,
     timestamp: new Date().toISOString(),
   })
   const hash = crypto.createHash('sha256').update(conteudo).digest('hex')
 
   const { error: fechError } = await supabase.from('fechamentos_exercicio').insert({
     ...data,
+    org_id: ctx.orgId,
+    fechado_por: fechadoPor,
     hash_fechamento: hash,
   })
   if (fechError) throw new Error(fechError.message)
@@ -943,7 +977,7 @@ export async function fecharExercicio(data: {
     .update({
       status: 'ENCERRADO',
       data_encerramento: new Date().toISOString().split('T')[0],
-      encerrado_por: data.fechado_por,
+      encerrado_por: fechadoPor,
       encerrado_em: new Date().toISOString(),
       hash_fechamento: hash,
     })
@@ -952,11 +986,11 @@ export async function fecharExercicio(data: {
 
   registrarLog({
     org_id: data.org_id,
-    usuario_id: data.fechado_por,
+    usuario_id: fechadoPor,
     acao: 'fechar_exercicio',
     modulo: 'contabil',
     descricao: `Exercício fechado`,
-    dados_depois: { exercicio_id: data.exercicio_id, hash_sha256: hash, fechado_por: data.fechado_por },
+    dados_depois: { exercicio_id: data.exercicio_id, hash_sha256: hash, fechado_por: fechadoPor },
   }).catch(e => console.error('[audit]', e))
 
   revalidatePath('/contabil/sobras')
@@ -967,7 +1001,7 @@ export async function fecharExercicio(data: {
 // ── LIVRO DIÁRIO ─────────────────────────────────────────────────────────────
 
 export async function getLivroDiario(orgId: string, exercicioId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('partidas')
     .select(`
@@ -995,7 +1029,9 @@ export async function getLivroDiario(orgId: string, exercicioId: string) {
 // ── DISTRIBUIÇÃO DE SOBRAS ───────────────────────────────────────────────────
 
 export async function calcularDistribuicaoSobras(orgId: string, fechamentoId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita(orgId)
+  await assertLinhaDaOrg(ctx, 'fechamentos_exercicio', fechamentoId)
+  const supabase = ctx.supabase
 
   const { data: fechamento } = await supabase
     .from('fechamentos_exercicio')
@@ -1042,7 +1078,9 @@ export async function calcularDistribuicaoSobras(orgId: string, fechamentoId: st
 }
 
 export async function getDistribuicaoSobras(fechamentoId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabil()
+  await assertLinhaDaOrg(ctx, 'fechamentos_exercicio', fechamentoId)
+  const supabase = ctx.supabase
   const { data, error } = await supabase
     .from('distribuicao_sobras')
     .select('*, cooperado:cooperado_id(nome, cpf)')
@@ -1053,7 +1091,9 @@ export async function getDistribuicaoSobras(fechamentoId: string) {
 }
 
 export async function atualizarStatusDistribuicao(id: string, status: 'pago' | 'retido') {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertLinhaDaOrg(ctx, 'distribuicao_sobras', id)
+  const supabase = ctx.supabase
   const { error } = await supabase
     .from('distribuicao_sobras')
     .update({ status })
@@ -1065,7 +1105,7 @@ export async function atualizarStatusDistribuicao(id: string, status: 'pago' | '
 // ── EXPORTAÇÃO SPED ECD ──────────────────────────────────────────────────────
 
 export async function gerarSpedECD(orgId: string, ano: number): Promise<string> {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
 
   const { data: org } = await supabase
     .from('organizacoes')
@@ -1167,7 +1207,7 @@ export async function getDadosRelatorioPDF(orgId: string, tipo: string, ano: num
 // ── CONCILIAÇÃO BANCÁRIA ──────────────────────────────────────────────────────
 
 export async function getExtratos(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('extratos_bancarios')
     .select('*')
@@ -1183,7 +1223,8 @@ export async function importarExtratoCSV(
   banco: string,
   userId: string
 ) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita(orgId)
+  const supabase = ctx.supabase
   const linhas = csvText.split('\n').filter(l => l.trim())
   const itens: any[] = []
   let dataInicio: string | null = null
@@ -1227,7 +1268,7 @@ export async function importarExtratoCSV(
 
   const { data: extrato, error } = await supabase
     .from('extratos_bancarios')
-    .insert({ org_id: orgId, banco, data_inicio: dataInicio, data_fim: dataFim, total_creditos: totalCreditos, total_debitos: totalDebitos, status: 'importado', importado_por: userId })
+    .insert({ org_id: orgId, banco, data_inicio: dataInicio, data_fim: dataFim, total_creditos: totalCreditos, total_debitos: totalDebitos, status: 'importado', importado_por: ctx.usuarioId })
     .select().single()
   if (error) throw new Error(error.message)
 
@@ -1241,7 +1282,9 @@ export async function importarExtratoCSV(
 }
 
 export async function getItensConciliacao(extratoId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabil()
+  await assertLinhaDaOrg(ctx, 'extratos_bancarios', extratoId)
+  const supabase = ctx.supabase
   const { data, error } = await supabase
     .from('extrato_itens')
     .select('*, lancamento:lancamento_id(descricao, valor, data_competencia)')
@@ -1252,7 +1295,10 @@ export async function getItensConciliacao(extratoId: string) {
 }
 
 export async function conciliarItem(itemId: string, lancamentoId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertItemExtratoDaOrg(ctx, itemId)
+  await assertLinhaDaOrg(ctx, 'lancamentos', lancamentoId, 'organizacao_id')
+  const supabase = ctx.supabase
   const { error } = await supabase
     .from('extrato_itens')
     .update({ lancamento_id: lancamentoId, status: 'conciliado' })
@@ -1262,7 +1308,9 @@ export async function conciliarItem(itemId: string, lancamentoId: string) {
 }
 
 export async function ignorarItemExtrato(itemId: string) {
-  const supabase = createAdminClient()
+  const ctx = await requireContabilEscrita()
+  await assertItemExtratoDaOrg(ctx, itemId)
+  const supabase = ctx.supabase
   const { error } = await supabase
     .from('extrato_itens')
     .update({ status: 'ignorado' })
@@ -1272,7 +1320,7 @@ export async function ignorarItemExtrato(itemId: string) {
 }
 
 export async function getLancamentosParaConciliar(orgId: string, dataInicio: string, dataFim: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('lancamentos')
     .select('*')
@@ -1287,7 +1335,7 @@ export async function getLancamentosParaConciliar(orgId: string, dataInicio: str
 // ── CALENDÁRIO DE OBRIGAÇÕES ──────────────────────────────────────────────────
 
 export async function getObrigacoes(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data, error } = await supabase
     .from('obrigacoes_acessorias')
     .select('*')
@@ -1306,14 +1354,14 @@ export async function criarObrigacao(data: {
   dia_vencimento: number
   responsavel?: string
 }) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(data.org_id)
   const { error } = await supabase.from('obrigacoes_acessorias').insert(data)
   if (error) throw new Error(error.message)
   revalidatePath('/contabil/calendario')
 }
 
 export async function seedObrigacoesCooperativa(orgId: string) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const obrigacoes = [
     { org_id: orgId, nome: 'SPED ECD', descricao: 'Escrituracao Contabil Digital', periodicidade: 'anual', dia_vencimento: 31, responsavel: 'Contador' },
     { org_id: orgId, nome: 'ECF', descricao: 'Escrituracao Contabil Fiscal', periodicidade: 'anual', dia_vencimento: 31, responsavel: 'Contador' },
@@ -1329,7 +1377,7 @@ export async function seedObrigacoesCooperativa(orgId: string) {
 }
 
 export async function getOcorrenciasMes(orgId: string, mes: number, ano: number) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabil(orgId)
   const { data: obrigacoes } = await supabase
     .from('obrigacoes_acessorias')
     .select('*')
@@ -1377,7 +1425,7 @@ export async function marcarObrigacaoEntregue(
   dataVencimento: string,
   observacao?: string
 ) {
-  const supabase = createAdminClient()
+  const { supabase } = await requireContabilEscrita(orgId)
   const { error } = await supabase
     .from('obrigacoes_ocorrencias')
     .upsert({
