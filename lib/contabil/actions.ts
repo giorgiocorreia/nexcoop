@@ -254,15 +254,33 @@ export async function getBalancete(orgId: string, mes: number, ano: number): Pro
 
   const resultado: ItemBalancete[] = []
 
+  // Saldo anterior tem regra DIFERENTE por natureza da conta:
+  //
+  // - Patrimoniais (ativo, passivo, PL) são cumulativas desde sempre — o caixa
+  //   de 31/12 é o caixa de 01/01 do ano seguinte. Antes o corte era o início
+  //   do ano para todas as contas, então em janeiro o balancete mostrava a
+  //   organização com ativo zerado e ia reconstruindo o saldo ao longo do
+  //   exercício. Não há lançamento de abertura que compensasse isso:
+  //   `fecharExercicio` só grava hash e muda status, não gera contrapartida.
+  //
+  // - De resultado (receita, despesa) zeram a cada exercício, por definição —
+  //   para essas o corte no início do ano é o correto.
+  const ehPatrimonial = (tipo: string) =>
+    tipo === 'ATIVO' || tipo === 'PASSIVO' || tipo === 'PATRIMONIO_LIQUIDO'
+
+  // Filtrados uma vez só: antes o mesmo filtro rodava para cada conta.
+  const antesDoMes = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d < inicioMes
+  })
+  const antesDoMesNoAno = antesDoMes.filter((p: any) => p.lancamentos?.data >= inicioAno)
+  const doMes = (partidas || []).filter((p: any) => {
+    const d = p.lancamentos?.data
+    return d && d >= inicioMes && d <= fimMes
+  })
+
   for (const conta of (contas || [])) {
-    const anteriores = (partidas || []).filter((p: any) => {
-      const d = p.lancamentos?.data
-      return d && d >= inicioAno && d < inicioMes
-    })
-    const doMes = (partidas || []).filter((p: any) => {
-      const d = p.lancamentos?.data
-      return d && d >= inicioMes && d <= fimMes
-    })
+    const anteriores = ehPatrimonial(conta.tipo) ? antesDoMes : antesDoMesNoAno
 
     const saldoAnterior = calcularSaldo(conta, anteriores)
     const debitos = doMes
@@ -735,7 +753,6 @@ export async function getBalancoPatrimonial(orgId: string, ano: number): Promise
 }> {
   const { supabase } = await requireContabil(orgId)
   const fimAno = `${ano}-12-31`
-  const inicioAno = `${ano}-01-01`
 
   const { data: contas } = await supabase
     .from('plano_contas')
@@ -750,9 +767,14 @@ export async function getBalancoPatrimonial(orgId: string, ano: number): Promise
     .select('*, lancamentos(data)')
     .eq('org_id', orgId)
 
-  const partidasAno = (partidas || []).filter((p: any) => {
+  // Balanço é uma fotografia da posição ACUMULADA até a data — tudo que houve
+  // até 31/12 do ano pedido, não só o que se movimentou dentro dele. Antes o
+  // filtro tinha piso no início do ano, então o balanço de um exercício
+  // ignorava todo o patrimônio construído nos anteriores (esta função só trata
+  // contas patrimoniais — ver o `continue` no laço abaixo).
+  const partidasAteFimDoAno = (partidas || []).filter((p: any) => {
     const d = p.lancamentos?.data
-    return d && d >= inicioAno && d <= fimAno
+    return d && d <= fimAno
   })
 
   const ativos: ItemBalancoPatrimonial[] = []
@@ -761,7 +783,7 @@ export async function getBalancoPatrimonial(orgId: string, ano: number): Promise
 
   for (const conta of (contas || [])) {
     if (!['ATIVO', 'PASSIVO', 'PATRIMONIO_LIQUIDO'].includes(conta.tipo)) continue
-    const saldo = calcularSaldoConta(conta, partidasAno)
+    const saldo = calcularSaldoConta(conta, partidasAteFimDoAno)
     if (saldo === 0) continue
     const item: ItemBalancoPatrimonial = {
       grupo: conta.tipo,
