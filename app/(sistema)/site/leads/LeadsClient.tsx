@@ -6,6 +6,9 @@
 // quantos interessados chegaram no mês nem quais já tinham sido respondidos.
 // Daí o eixo da tela ser o STATUS, e não a data — o que importa é o que ainda
 // está sem resposta.
+//
+// Filtro, contagem, CSV e link de WhatsApp moram em lib/site/leads-utils.ts,
+// que é onde a suíte de testes bate (regra 5 do CLAUDE.md).
 
 import { useMemo, useState, useTransition } from 'react'
 import {
@@ -13,27 +16,18 @@ import {
   Field, Select, Textarea, Modal, COM_C, MODULO_SITE, InfoRow,
 } from '@/components/nexcoop/ui'
 import { Btn } from '@/components/ui/Btn'
-import { atualizarLead } from '@/lib/site/leads-actions'
+import { atualizarLead, atualizarStatusEmLote } from '@/lib/site/leads-actions'
+import {
+  TIPO_LABEL, STATUS_LABEL, formatarData, linkWhatsapp, filtrarLeads,
+  contarPorStatus, contarNoMes, gerarCsv, nomeArquivoCsv,
+} from '@/lib/site/leads-utils'
 import type { SiteLead } from '@/types/database'
-
-const TIPO_LABEL: Record<SiteLead['tipo'], string> = {
-  cooperado:         'Adesão de cooperado',
-  parceria:          'Proposta de parceria',
-  agendamento_cacau: 'Entrega de cacau',
-}
 
 // Classe do Tabler (o kit renderiza <i className={`ti ${icone}`}>), não emoji.
 const TIPO_ICONE: Record<SiteLead['tipo'], string> = {
   cooperado:         'ti-user-plus',
   parceria:          'ti-building',
   agendamento_cacau: 'ti-plant',
-}
-
-const STATUS_LABEL: Record<SiteLead['status'], string> = {
-  novo:        'Novo',
-  em_contato:  'Em contato',
-  convertido:  'Convertido',
-  descartado:  'Descartado',
 }
 
 const STATUS_COR: Record<SiteLead['status'], { bg: string; cor: string }> = {
@@ -44,7 +38,7 @@ const STATUS_COR: Record<SiteLead['status'], { bg: string; cor: string }> = {
 }
 
 // Rótulos dos campos crus do HTML dos formulários — os mesmos de
-// lib/site/coopaibi/formularios.ts, para o detalhe não mostrar "ativ" e "msg".
+// lib/site/coopaibi/formularios-utils.ts, para o detalhe não mostrar "ativ".
 const ROTULOS: Record<string, string> = {
   nome: 'Nome completo', cpf: 'CPF / CNPJ', tel: 'Telefone/WhatsApp',
   telefone: 'Telefone/WhatsApp', email: 'E-mail', local: 'Localidade',
@@ -56,19 +50,9 @@ const ROTULOS: Record<string, string> = {
   observacoes: 'Observações',
 }
 
-function formatarData(iso: string): string {
-  return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
-}
-
-// Só dígitos, com 55 na frente quando o número vem no formato brasileiro.
-function linkWhatsapp(telefone: string): string | null {
-  const digitos = telefone.replace(/\D/g, '')
-  if (digitos.length < 10) return null
-  return `https://wa.me/${digitos.length <= 11 ? '55' + digitos : digitos}`
-}
+// Quantos aparecem por vez. A lista chega inteira do servidor (até 500), mas
+// renderizar 500 linhas de uma vez trava a rolagem no celular.
+const POR_PAGINA = 50
 
 interface Props {
   leads: SiteLead[]
@@ -80,34 +64,59 @@ export default function LeadsClient({ leads, limite }: Props) {
   const [tipo, setTipo] = useState<'todos' | SiteLead['tipo']>('todos')
   const [busca, setBusca] = useState('')
   const [aberto, setAberto] = useState<SiteLead | null>(null)
+  const [visiveis, setVisiveis] = useState(POR_PAGINA)
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  const [erroLote, setErroLote] = useState<string | null>(null)
+  const [salvandoLote, iniciarLote] = useTransition()
 
-  const contagem = useMemo(() => {
-    const c: Record<string, number> = { novo: 0, em_contato: 0, convertido: 0, descartado: 0 }
-    for (const l of leads) c[l.status] = (c[l.status] ?? 0) + 1
-    return c
-  }, [leads])
+  const contagem = useMemo(() => contarPorStatus(leads), [leads])
+  const noMes = useMemo(() => contarNoMes(leads), [leads])
 
-  // "Este mês" é o mês corrente do calendário, que é como a diretoria pergunta
-  // ("quantos chegaram esse mês?") — não os últimos 30 dias.
-  const noMes = useMemo(() => {
-    const agora = new Date()
-    return leads.filter(l => {
-      const d = new Date(l.criado_em)
-      return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()
-    }).length
-  }, [leads])
+  const filtrados = useMemo(
+    () => filtrarLeads(leads, { status: aba, tipo, busca }),
+    [leads, aba, tipo, busca]
+  )
 
-  const filtrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase()
-    return leads.filter(l => {
-      if (aba !== 'todos' && l.status !== aba) return false
-      if (tipo !== 'todos' && l.tipo !== tipo) return false
-      if (!termo) return true
-      const alvo = [l.nome, l.email, l.telefone, l.mensagem, ...Object.values(l.dados ?? {})]
-        .filter(Boolean).join(' ').toLowerCase()
-      return alvo.includes(termo)
+  // Mexer no filtro volta para a primeira página e limpa a seleção — manter
+  // selecionado o que saiu da vista faria a ação em lote pegar invisível.
+  function trocarFiltro(fn: () => void) {
+    fn()
+    setVisiveis(POR_PAGINA)
+    setSelecionados(new Set())
+    setErroLote(null)
+  }
+
+  function alternar(id: string) {
+    setSelecionados(prev => {
+      const novo = new Set(prev)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
     })
-  }, [leads, aba, tipo, busca])
+  }
+
+  function aplicarLote(status: SiteLead['status']) {
+    setErroLote(null)
+    iniciarLote(async () => {
+      const r = await atualizarStatusEmLote([...selecionados], status)
+      if (r.error) setErroLote(r.error)
+      else setSelecionados(new Set())
+    })
+  }
+
+  function exportar() {
+    // Exporta o que está FILTRADO na tela, não a base inteira: quem filtrou
+    // "novos de parceria" quer exportar isso.
+    const csv = gerarCsv(filtrados)
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nomeArquivoCsv()
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const mostrados = filtrados.slice(0, visiveis)
 
   return (
     <PageLayout
@@ -116,28 +125,33 @@ export default function LeadsClient({ leads, limite }: Props) {
       icone="ti-inbox"
       modulo={MODULO_SITE}
       breadcrumb={[{ label: 'Leads' }]}
+      acoes={
+        <Btn icone="ti-download" onClick={exportar} disabled={filtrados.length === 0}>
+          Exportar CSV
+        </Btn>
+      }
     >
       <div className="com-kpi-grid-4">
         <KpiCard label="Total" value={String(leads.length)} icon="ti-users"
           cor={COM_C.marca} corLt={COM_C.marcaLt} sub={`${noMes} neste mês`} />
         <KpiCard label="Novos" value={String(contagem.novo)} icon="ti-mail"
           cor={COM_C.azul} corLt={COM_C.azulLt} sub="sem resposta"
-          onClick={() => setAba('novo')} />
+          onClick={() => trocarFiltro(() => setAba('novo'))} />
         <KpiCard label="Em contato" value={String(contagem.em_contato)} icon="ti-phone"
           cor={COM_C.laranja} corLt={COM_C.laranjaLt}
-          onClick={() => setAba('em_contato')} />
+          onClick={() => trocarFiltro(() => setAba('em_contato'))} />
         <KpiCard label="Convertidos" value={String(contagem.convertido)} icon="ti-check"
           cor={COM_C.verde} corLt={COM_C.verdeLt}
-          onClick={() => setAba('convertido')} />
+          onClick={() => trocarFiltro(() => setAba('convertido'))} />
       </div>
 
       <Tabs
         ativa={aba}
-        onChange={(id) => setAba(id as typeof aba)}
+        onChange={(id) => trocarFiltro(() => setAba(id as typeof aba))}
         tabs={[
-          { id: 'todos',      label: 'Todos',      badge: leads.length },
-          { id: 'novo',       label: 'Novos',      badge: contagem.novo },
-          { id: 'em_contato', label: 'Em contato', badge: contagem.em_contato },
+          { id: 'todos',      label: 'Todos',       badge: leads.length },
+          { id: 'novo',       label: 'Novos',       badge: contagem.novo },
+          { id: 'em_contato', label: 'Em contato',  badge: contagem.em_contato },
           { id: 'convertido', label: 'Convertidos', badge: contagem.convertido },
           { id: 'descartado', label: 'Descartados', badge: contagem.descartado },
         ]}
@@ -146,20 +160,52 @@ export default function LeadsClient({ leads, limite }: Props) {
       <div className="com-toolbar">
         <input
           value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          onChange={(e) => trocarFiltro(() => setBusca(e.target.value))}
           placeholder="Buscar por nome, e-mail, telefone…"
           style={{
             flex: 1, minWidth: 220, padding: '8px 12px', fontSize: 13,
             border: `1px solid ${COM_C.borda}`, borderRadius: 8, outline: 'none',
           }}
         />
-        <Select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} style={{ maxWidth: 220 }}>
+        <Select
+          value={tipo}
+          onChange={(e) => trocarFiltro(() => setTipo(e.target.value as typeof tipo))}
+          style={{ maxWidth: 220 }}
+        >
           <option value="todos">Todos os formulários</option>
           <option value="cooperado">{TIPO_LABEL.cooperado}</option>
           <option value="parceria">{TIPO_LABEL.parceria}</option>
           <option value="agendamento_cacau">{TIPO_LABEL.agendamento_cacau}</option>
         </Select>
       </div>
+
+      {selecionados.size > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+          background: COM_C.marcaLt, border: `1px solid ${COM_C.borda}`,
+          borderRadius: 10, padding: '10px 14px', marginBottom: 14,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: COM_C.txt }}>
+            {selecionados.size} selecionado{selecionados.size > 1 ? 's' : ''}
+          </span>
+          <span style={{ flex: 1 }} />
+          <Btn tamanho="sm" onClick={() => aplicarLote('em_contato')} disabled={salvandoLote}>
+            Marcar em contato
+          </Btn>
+          <Btn tamanho="sm" variante="verde" onClick={() => aplicarLote('convertido')} disabled={salvandoLote}>
+            Convertido
+          </Btn>
+          <Btn tamanho="sm" onClick={() => aplicarLote('descartado')} disabled={salvandoLote}>
+            Descartar
+          </Btn>
+          <Btn tamanho="sm" onClick={() => setSelecionados(new Set())} disabled={salvandoLote}>
+            Limpar
+          </Btn>
+          {erroLote && (
+            <span style={{ fontSize: 12, color: COM_C.vermelho, width: '100%' }}>{erroLote}</span>
+          )}
+        </div>
+      )}
 
       {filtrados.length === 0 ? (
         <EmptyState
@@ -173,40 +219,53 @@ export default function LeadsClient({ leads, limite }: Props) {
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtrados.map(lead => (
-            <ListRow
-              key={lead.id}
-              onClick={() => setAberto(lead)}
-              icone={TIPO_ICONE[lead.tipo]}
-              iconeBg={STATUS_COR[lead.status].bg}
-              iconeCor={STATUS_COR[lead.status].cor}
-              titulo={lead.nome}
-              subtitulo={`${TIPO_LABEL[lead.tipo]} · ${formatarData(lead.criado_em)}${lead.telefone ? ' · ' + lead.telefone : ''}`}
-              badges={
-                <Badge
-                  label={STATUS_LABEL[lead.status]}
-                  bg={STATUS_COR[lead.status].bg}
-                  cor={STATUS_COR[lead.status].cor}
-                  dot
+          {mostrados.map(lead => (
+            <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="checkbox"
+                checked={selecionados.has(lead.id)}
+                onChange={() => alternar(lead.id)}
+                aria-label={`Selecionar ${lead.nome}`}
+                style={{ width: 16, height: 16, flexShrink: 0, cursor: 'pointer' }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ListRow
+                  onClick={() => setAberto(lead)}
+                  icone={TIPO_ICONE[lead.tipo]}
+                  iconeBg={STATUS_COR[lead.status].bg}
+                  iconeCor={STATUS_COR[lead.status].cor}
+                  titulo={lead.nome}
+                  subtitulo={`${TIPO_LABEL[lead.tipo]} · ${formatarData(lead.criado_em)}${lead.telefone ? ' · ' + lead.telefone : ''}`}
+                  badges={
+                    <Badge
+                      label={STATUS_LABEL[lead.status]}
+                      bg={STATUS_COR[lead.status].bg}
+                      cor={STATUS_COR[lead.status].cor}
+                      dot
+                    />
+                  }
                 />
-              }
-            />
+              </div>
+            </div>
           ))}
+        </div>
+      )}
+
+      {filtrados.length > mostrados.length && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Btn onClick={() => setVisiveis(v => v + POR_PAGINA)}>
+            Mostrar mais ({filtrados.length - mostrados.length} restantes)
+          </Btn>
         </div>
       )}
 
       {leads.length >= limite && (
         <div style={{ fontSize: 12, color: COM_C.txtSub, marginTop: 14 }}>
-          Mostrando os {limite} leads mais recentes.
+          Mostrando os {limite} leads mais recentes. Use a exportação para o histórico completo.
         </div>
       )}
 
-      {aberto && (
-        <DetalheLead
-          lead={aberto}
-          onClose={() => setAberto(null)}
-        />
-      )}
+      {aberto && <DetalheLead lead={aberto} onClose={() => setAberto(null)} />}
     </PageLayout>
   )
 }
@@ -224,7 +283,7 @@ function DetalheLead({ lead, onClose }: { lead: SiteLead; onClose: () => void })
   const CAMPOS_JA_MOSTRADOS = new Set(['nome', 'contato', 'email', 'tel', 'telefone', 'msg', 'observacoes'])
   const extras = Object.entries(lead.dados ?? {}).filter(([k]) => !CAMPOS_JA_MOSTRADOS.has(k))
 
-  const zap = lead.telefone ? linkWhatsapp(lead.telefone) : null
+  const zap = linkWhatsapp(lead.telefone)
 
   function salvar() {
     setErro(null)
