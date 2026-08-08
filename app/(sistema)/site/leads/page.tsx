@@ -32,12 +32,17 @@ export default async function SiteLeadsPage() {
     .single()
   if (!usuario || !isAdmin(usuario)) redirect('/dashboard')
 
+  // Gate de módulo vale SÓ para associação — mesma regra da Sidebar
+  // (components/Sidebar.tsx, `enforcaModulo`): cooperativa e central nunca
+  // perdem acesso por `modulos_ativos` incompleto. A COOPAIBI, por exemplo,
+  // tem só ["loja"] gravado e usa o sistema inteiro.
   const { data: org } = await admin
     .from('organizacoes')
-    .select('modulos_ativos')
+    .select('tipo, modulos_ativos')
     .eq('id', ctx.orgId)
     .single()
-  if (!temModulo(org?.modulos_ativos, 'site')) redirect('/dashboard')
+  const enforcaModulo = org?.tipo === 'associacao'
+  if (enforcaModulo && !temModulo(org?.modulos_ativos, 'site')) redirect('/dashboard')
 
   const { data: leads } = await ctx.supabase
     .from('site_leads')
