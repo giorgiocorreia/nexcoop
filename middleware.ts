@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { extrairSlugDoHost } from '@/lib/site/site-utils'
+import {
+  HOSTS_ESPELHO_COOPAIBI, caminhoDoEspelho, resolverEspelho,
+} from '@/lib/site/espelho-coopaibi'
 
 // Domínio raiz do produto — subdomínios diferentes disso (exceto os
 // reservados em extrairSlugDoHost: www/app/api) viram site público de org.
@@ -10,131 +13,26 @@ const DOMINIO_BASE = 'nexcoop.com.br'
 // Os arquivos em public/sites/coopaibi/ são cópia BYTE A BYTE do site em
 // produção no cPanel (Dropbox/.../coopaibi-site). Não editar: a fidelidade
 // é verificável por sha256 contra a origem. Tudo que o site precisa e que
-// não é arquivo estático é resolvido aqui, sem tocar no HTML.
+// não é arquivo estático é resolvido sem tocar no HTML.
+//
+// Os mapas de rota e a decisão de para onde vai cada caminho moram em
+// lib/site/espelho-coopaibi.ts — é o código que decide cada URL do site no
+// momento em que o DNS virar, e lá ele tem teste (espelho-coopaibi.test.ts).
+// Aqui fica só o efeito colateral: rewrite, redirect, clone de URL.
+//
 // coopaibi-site.vercel.app é o endereço de trabalho — é por ele que o site
-// é conferido enquanto o DNS não vira. Precisa vir ANTES de
+// é conferido enquanto o DNS não vira. A checagem precisa vir ANTES de
 // extrairSlugDoHost, que casa o padrão <slug>-site.vercel.app e mandaria
 // esse host pro template React em app/(site-org)/[slug] (o porte de 19/07,
 // que segue no repositório como matéria-prima da integração, mas não é mais
 // o que se publica).
-const HOSTS_ESPELHO_COOPAIBI = new Set([
-  'coopaibi.com.br',
-  'www.coopaibi.com.br',
-  'coopaibi-site.vercel.app',
-])
-const RAIZ_ESPELHO_COOPAIBI = '/sites/coopaibi'
-
-// Host do site antigo em cPanel, que segue servindo as 3 páginas dinâmicas
-// (dependiam do MySQL coopaibi_loja) e os endpoints PHP.
 //
-// REMOVIDO EM 08/08/2026, junto com PHP_NAVEGACAO_COOPAIBI e
-// PHP_ENDPOINT_COOPAIBI, que eram seus únicos usos e já estavam vazios: todas
-// as páginas e endpoints passaram a ser servidos aqui.
-//
-// O encaminhamento apontava para o próprio `https://coopaibi.com.br`, que
-// enquanto o DNS não virou ainda resolvia para o cPanel. Depois da virada
-// isso seria um laço (Vercel → Vercel), e bastava alguém repovoar um dos dois
-// conjuntos para reintroduzi-lo sem perceber. Se algum dia for preciso voltar
-// a encaminhar para o servidor antigo, o destino tem que ser um host que NÃO
+// O encaminhamento para o cPanel (LEGADO_COOPAIBI, PHP_NAVEGACAO_COOPAIBI,
+// PHP_ENDPOINT_COOPAIBI) foi removido em 08/08/2026: apontava para o próprio
+// coopaibi.com.br e viraria um laço Vercel→Vercel depois da virada. Se algum
+// dia for preciso encaminhar de novo, o destino tem que ser um host que NÃO
 // seja o domínio principal (ex.: antigo.coopaibi.com.br).
-
-// Páginas .php JÁ REFEITAS aqui — mapeiam pro arquivo estático equivalente
-// em public/sites/coopaibi/. O site original é PHP, então os links internos
-// apontam pra .php; refazer uma página era gerar o .html e trazer a entrada
-// para este mapa.
 //
-// index.php foi gerado por scripts/espelho-coopaibi/gerar-index.mjs a partir
-// do index.php original + o conteúdo do ticker de notícias, e conferido byte
-// a byte contra o que o cPanel serve.
-// Vazio hoje — todas as páginas passaram para PHP_INTEGRADAS_COOPAIBI. O
-// mapa fica porque é a parada intermediária natural: ao portar uma página
-// nova, congelar primeiro e integrar depois separa "o HTML está fiel?" de
-// "o dado está certo?", que são dois problemas diferentes.
-const PHP_REFEITAS_COOPAIBI: Record<string, string> = {
-  // Biblioteca — página fora do menu, criada para ter um link a enviar com
-  // o PDF do Projeto Cacau que Refloresta. Continua congelada porque a
-  // tabela `biblioteca` tem 2 linhas para o MESMO arquivo (cadastro
-  // duplicado) e nada além dele: integrar não traria nada.
-  //
-  // O filtro por categoria (?cat=) deixa de filtrar — serve sempre a mesma
-  // página. Com um documento só, não muda o que a pessoa vê.
-  'biblioteca.php': 'biblioteca.html',
-}
-
-// Páginas .php JÁ INTEGRADAS ao banco do NexCoop — vão para uma rota do
-// app, que devolve o mesmo HTML do site com os números vindos do Supabase.
-// É o destino de todas: o mapa acima (HTML congelado) é a parada
-// intermediária, este é a chegada.
-const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
-  // A home sempre foi quase estática — o index.php tinha uma consulta só,
-  // buscando 8 títulos para a faixa. Rota separada (/inicio) porque
-  // app/(site-org)/[slug]/page.tsx já serve o TEMPLATE PADRÃO das demais
-  // orgs, e route.ts não coexiste com page.tsx no mesmo caminho.
-  'index.php': 'inicio',
-  // O site original nunca teve index.html, mas `biblioteca.html` e
-  // `relatorio-compradores.html` linkam para ele 11 vezes (inclusive
-  // index.html#sobre e #sistema). No cPanel isso funcionava por acidente: o
-  // Apache resolvia index.html para o DirectoryIndex, que era o index.php.
-  // Aqui daria 404 no visitante — mapeado para a mesma rota da home.
-  'index.html': 'inicio',
-  // Preço do cacau sai de `cotacoes` em vez do cadastro próprio do site,
-  // que ficou parado em 24/05/2026 com R$ 14,00/kg enquanto a cooperativa
-  // já pagava R$ 18,66.
-  'cacau.php': 'cacau',
-  // Catálogo sai de `loja_produtos`, o mesmo cadastro do PDV e do estoque.
-  // O site tinha MySQL próprio, com um único produto cadastrado à mão,
-  // enquanto a Loja opera com 27.
-  'loja.php': 'loja',
-  // Notícias saem de `site_conteudos` (tipo 'noticia', migration 095). O
-  // ?slug= continua sendo o mesmo parâmetro do site original, para não
-  // quebrar link já compartilhado.
-  'noticias.php': 'noticias',
-  // Galeria sai de `site_conteudos` (tipo 'video'), com o youtube_id que a
-  // 095 trouxe. ?cat= e ?busca= seguem sendo os parâmetros originais.
-  'videos.php': 'videos',
-  // Ações é a única sem dado próprio a integrar: `acoes_eventos` está VAZIA
-  // no MySQL e o 8º Festival que a página mostra é hardcoded no acoes.php.
-  // Virou rota mesmo assim, só para ganhar a faixa rolante de notícias que
-  // agora vale em todas as páginas. Se um dia a cooperativa cadastrar
-  // eventos, é `site_conteudos` tipo 'evento' que entra aqui.
-  'acoes.php': 'acoes',
-}
-
-// Páginas .php que apontam para FORA do site — hoje só o admin antigo.
-//
-// O link "INTRANET" do menu ia para o painel PHP do cPanel, onde se
-// cadastrava produto, preço e notícia. Esse cadastro passou todo para o
-// NexCoop, então o link certo é o painel do NexCoop. Mandar para o cPanel
-// depois da virada seria um laço, e antes dela seria mandar a pessoa para
-// um admin que não alimenta mais nada.
-const PHP_EXTERNO_COOPAIBI: Record<string, string> = {
-  'admin/login.php': 'https://nexcoop.com.br/login',
-}
-
-// Endpoints chamados por fetch() de dentro do HTML — precisam de rewrite
-// (proxy), não redirect: 307/308 preservariam o método, mas o fetch é
-// same-origin relativo e um redirect cross-origin acrescentaria pré-flight
-// CORS sem necessidade. Com proxy os formulários de cooperado/parceria e o
-// tradutor PT/EN continuam funcionando exatamente como hoje.
-// Endpoints .php JÁ REIMPLEMENTADOS aqui — mapeiam para uma rota do app.
-// A URL .php é preservada porque é o que o HTML capturado chama; trocar
-// exigiria editar as páginas.
-//
-// Antes da virada de DNS eles eram proxy para o cPanel. Como a hospedagem
-// vai ficar só com o e-mail, tudo que não for e-mail tinha que sair de lá:
-// no instante em que o domínio apontar para a Vercel, um proxy para
-// coopaibi.com.br vira laço.
-const PHP_ENDPOINT_INTERNO_COOPAIBI: Record<string, string> = {
-  // Formulários: além de enviar o e-mail como o PHP fazia, gravam o lead em
-  // `site_leads` (migration 096). No cPanel o interessado virava mensagem
-  // na caixa de entrada e morria ali.
-  'enviar-cooperado.php': 'enviar/cooperado',
-  'enviar-parceria.php': 'enviar/parceria',
-  'enviar-agendamento-cacau.php': 'enviar/agendamento-cacau',
-  // Preço internacional do cacau (CC=F), com a mesma resposta JSON do PHP.
-  'cacau-preco-bolsa.php': 'cacau-bolsa',
-}
-
 // Nota sobre `translate.php`: era código morto e nunca precisou de proxy. A
 // tradução do site passou a ser o Google Translate Element (cookie googtrans,
 // função traduzirPara); a função antiga que o chamava — selecionarIdioma —
@@ -159,62 +57,20 @@ export async function middleware(request: NextRequest) {
   // `caminhoEspelho` é o caminho RELATIVO à raiz do site, que é como o HTML
   // original referencia tudo ("assets/style.css", "loja.php", "index.html").
   const ehHostEspelho = HOSTS_ESPELHO_COOPAIBI.has(hostname)
-  const caminhoEspelho = ehHostEspelho
-    ? request.nextUrl.pathname.replace(/^\/+/, '')
-    : request.nextUrl.pathname.startsWith(`${RAIZ_ESPELHO_COOPAIBI}/`)
-      ? request.nextUrl.pathname.slice(RAIZ_ESPELHO_COOPAIBI.length + 1)
-      : null
+  const caminhoEspelho = caminhoDoEspelho(hostname, request.nextUrl.pathname)
 
   if (caminhoEspelho !== null) {
-    // Endpoints .php reimplementados aqui: viram rota do app. Rewrite (e não
-    // redirect) porque são POST de formulário — um redirect trocaria o
-    // método ou exigiria pré-flight CORS à toa.
-    const endpointInterno = PHP_ENDPOINT_INTERNO_COOPAIBI[caminhoEspelho]
-    if (endpointInterno) {
-      const url = request.nextUrl.clone()
-      url.pathname = `/coopaibi/${endpointInterno}`
-      return NextResponse.rewrite(url)
-    }
+    // A escolha do destino (e a ordem de precedência entre endpoint, link
+    // externo, página integrada e página congelada) está em
+    // lib/site/espelho-coopaibi.ts, sob teste. Aqui só se executa.
+    const destino = resolverEspelho(caminhoEspelho, ehHostEspelho)
 
-    // Páginas que apontam para fora — hoje só a Intranet, que virou o
-    // painel do NexCoop.
-    const externo = PHP_EXTERNO_COOPAIBI[caminhoEspelho]
-    if (externo) {
-      return NextResponse.redirect(externo, 307)
+    if (destino.acao === 'redirect') {
+      return NextResponse.redirect(destino.url, destino.status)
     }
-    // (Aqui ficavam o proxy de endpoint e o redirect de página para o cPanel.
-    // Removidos em 08/08/2026 — nada mais depende do servidor antigo.)
-
-    // Páginas .php já integradas ao banco: vão para a rota do app, que
-    // devolve o HTML com o dado vivo. Precisa vir ANTES das refeitas — uma
-    // página integrada não tem mais .html congelado a servir.
-    const integrada = PHP_INTEGRADAS_COOPAIBI[caminhoEspelho]
-    if (integrada) {
+    if (destino.acao === 'rewrite') {
       const url = request.nextUrl.clone()
-      url.pathname = `/coopaibi/${integrada}`
-      return NextResponse.rewrite(url)
-    }
-
-    // Páginas .php já refeitas: servem o .html equivalente, mantendo a URL
-    // .php que os links internos do site original usam. Vale nas duas portas
-    // de entrada — inclusive no acesso direto por /sites/coopaibi/index.php.
-    const refeita = PHP_REFEITAS_COOPAIBI[caminhoEspelho]
-    if (refeita) {
-      const url = request.nextUrl.clone()
-      url.pathname = `${RAIZ_ESPELHO_COOPAIBI}/${refeita}`
-      return NextResponse.rewrite(url)
-    }
-
-    // No domínio próprio, mapeia pro arquivo estático correspondente. A raiz
-    // ("/") vai pra mesma rota que index.php — é a home, e servir a raiz de
-    // um arquivo congelado enquanto /index.php lê do banco deixaria as duas
-    // portas da mesma página fora de sincronia. Os demais caminhos resolvem
-    // sozinhos porque a URL do navegador continua na raiz do site.
-    if (ehHostEspelho) {
-      const url = request.nextUrl.clone()
-      url.pathname = caminhoEspelho === ''
-        ? `/coopaibi/${PHP_INTEGRADAS_COOPAIBI['index.php']}`
-        : `${RAIZ_ESPELHO_COOPAIBI}/${caminhoEspelho}`
+      url.pathname = destino.pathname
       return NextResponse.rewrite(url)
     }
     // Acesso direto por /sites/coopaibi/* — o arquivo estático já está no
