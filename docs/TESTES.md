@@ -44,13 +44,20 @@ resolve — é caminho literal e não casa `node_modules` aninhado.
 
 | Arquivo | Cobre |
 |---------|-------|
+| `lib/site/espelho-coopaibi.test.ts` | **a decisão de rota do site**: precedência entre endpoint/externo/integrada/congelada/estático, as duas portas de entrada, raiz do domínio, e que nenhum destino aponta para o cPanel |
 | `lib/site/coopaibi/formularios-utils.test.ts` | higienização de campo, limite de 2.000 chars, escape de HTML, mapa de campo por formulário, corpo do e-mail |
 | `lib/site/leads-utils.test.ts` | filtro, contagem por status, contagem do mês, link de WhatsApp, CSV |
 | `scripts/espelho-coopaibi/correcoes.test.ts` | catálogo de correções, seleção por página (`excetoEm`/`apenasEm`) e **idempotência** |
 
-**66 testes.** Cobrem o módulo Site. O resto do sistema **não tem teste
+**87 testes.** Cobrem o módulo Site. O resto do sistema **não tem teste
 nenhum** — comercialização, loja, contábil, financeiro seguem verificados à
 mão.
+
+O primeiro da lista é o que mais importa: era um encadeado de `if` dentro do
+`middleware.ts`, intestável sem subir servidor, e decide cada URL do site no
+momento em que o DNS virar. Foi extraído para `lib/site/espelho-coopaibi.ts`
+justamente para poder ser testado — o middleware ficou só com o efeito
+colateral (rewrite/redirect).
 
 ### Por que estes três, e não outros
 
