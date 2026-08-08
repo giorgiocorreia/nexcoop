@@ -67,6 +67,12 @@ const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
   // app/(site-org)/[slug]/page.tsx já serve o TEMPLATE PADRÃO das demais
   // orgs, e route.ts não coexiste com page.tsx no mesmo caminho.
   'index.php': 'inicio',
+  // O site original nunca teve index.html, mas `biblioteca.html` e
+  // `relatorio-compradores.html` linkam para ele 11 vezes (inclusive
+  // index.html#sobre e #sistema). No cPanel isso funcionava por acidente: o
+  // Apache resolvia index.html para o DirectoryIndex, que era o index.php.
+  // Aqui daria 404 no visitante — mapeado para a mesma rota da home.
+  'index.html': 'inicio',
   // Preço do cacau sai de `cotacoes` em vez do cadastro próprio do site,
   // que ficou parado em 24/05/2026 com R$ 14,00/kg enquanto a cooperativa
   // já pagava R$ 18,66.

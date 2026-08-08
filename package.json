@@ -12,7 +12,9 @@
     "start:preview": "next start -p 3001",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "teste:formularios": "node scripts/teste-formularios-site.mjs",
+    "teste:cobertura": "node scripts/teste-cobertura-espelho.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
