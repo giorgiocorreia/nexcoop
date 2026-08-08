@@ -1495,6 +1495,26 @@ type TableDef<T> = {
   Relationships: never[]
 }
 
+/**
+ * Igual a TableDef, mas com as FKs declaradas.
+ *
+ * O postgrest-js usa `Relationships` para tipar embed
+ * (`select('..., produtores (nome)')`). Como o TableDef acima fixa
+ * `never[]`, NENHUM embed tipa neste projeto — a maioria das queries não
+ * quebra porque o resultado cai em `any`, mas onde há cast estrito o
+ * compilador devolve SelectQueryError (era o caso de
+ * ContabilNfeEntradas.tsx:90, com a FK existindo e funcionando em runtime).
+ *
+ * Use este helper ao adicionar embed tipado em uma tabela nova. A correção
+ * ampla — TableDef aceitar relações por padrão — está em aberto.
+ */
+type TableDefRel<T, R extends readonly unknown[]> = {
+  Row:    T & Record<string, unknown>
+  Insert: Partial<T> & Record<string, unknown>
+  Update: Partial<T> & Record<string, unknown>
+  Relationships: R
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -1602,7 +1622,15 @@ export type Database = {
       // ── Comercialização (027) ──────────────────────────────────────────────
       rateio_entrega:              TableDef<RateioEntrega>
       // ── Comercialização (029) ──────────────────────────────────────────────
-      notas_entrega:               TableDef<NotaEntrega>
+      notas_entrega:               TableDefRel<NotaEntrega, [
+        {
+          foreignKeyName: 'notas_entrega_produtor_id_fkey'
+          columns: ['produtor_id']
+          isOneToOne: false
+          referencedRelation: 'produtores'
+          referencedColumns: ['id']
+        },
+      ]>
       comprovantes_pagamento:      TableDef<ComprovantePagamento>
       // ── Tesouraria (028) ──────────────────────────────────────────────────
       aportes_sangrias:            TableDef<AporteSangria>
