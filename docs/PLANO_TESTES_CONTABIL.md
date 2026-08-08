@@ -20,9 +20,16 @@
 
 | Item | Situação |
 |------|----------|
-| Framework de teste no `package.json` | **Não há** Jest/Vitest/Playwright configurado no app principal |
-| Testes de contábil | **Inexistentes** como suíte formal |
+| Framework de teste no `package.json` | **Vitest 4 desde 08/08/2026** (`npm test`) — ver `docs/TESTES.md`. Playwright continua não configurado |
+| Testes de contábil | **Inexistentes** como suíte formal — a suíte que existe cobre só o módulo Site |
 | Verificação usual | Manual em produção/homolog + `npx tsc --noEmit` |
+
+> **Atualização 08/08/2026:** a recomendação da tabela abaixo deixou de ser
+> hipótese na camada unitária — Vitest está instalado e rodando, no mesmo
+> formato de nexcore e nexfin (teste co-localizado, `environment: 'node'`).
+> O caminho para o contábil é o mesmo que funcionou no Site: extrair a parte
+> pura para `*-utils.ts` (regra 5 do `CLAUDE.md`) e testar de lá — o que hoje
+> depende de `createAdminClient()` não é testável sem banco.
 
 ### Recomendação de stack (quando for automatizar)
 

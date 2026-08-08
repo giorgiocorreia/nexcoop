@@ -1,7 +1,8 @@
 # Plano: Módulo Site — site institucional por organização
 
-**Status:** Não iniciado — documento de referência
-**Criado em:** 19/07/2026
+**Status:** Piloto COOPAIBI no ar pelo caminho `/sites/coopaibi/` — aguardando
+só a virada de DNS (ver `docs/VIRADA_DNS_COOPAIBI.md`)
+**Criado em:** 19/07/2026 · **Atualizado em:** 08/08/2026
 
 ---
 
@@ -397,19 +398,37 @@ renderizado, conferindo o resultado byte a byte contra o ar. Deu idêntico —
 O dado ainda vem congelado do cPanel. Ligá-lo no banco do NexCoop é a etapa
 seguinte, e é o que transforma o espelho em módulo de verdade.
 
-### ⚠ Bloqueio conhecido para a virada de DNS
+### ⚠ Bloqueio conhecido para a virada de DNS — **RESOLVIDO em 08/08/2026**
 
-`LEGADO_COOPAIBI` em `middleware.ts` aponta pra `https://coopaibi.com.br`,
-que hoje resolve pro cPanel. **No instante em que o domínio apontar pra
-Vercel, isso vira um laço Vercel→Vercel** e derruba Loja/Vídeos/Ações e os
-formulários. Antes da virada, uma das duas:
-1. apontar `LEGADO_COOPAIBI` pra um host que continue no cPanel
-   (ex.: `antigo.coopaibi.com.br`), ou
-2. concluir a integração dessas rotas com o NexCoop e remover o
-   encaminhamento.
+Era o seguinte: `LEGADO_COOPAIBI` em `middleware.ts` apontava pra
+`https://coopaibi.com.br`, que resolvia pro cPanel. No instante em que o
+domínio apontasse pra Vercel, viraria um laço Vercel→Vercel.
 
-Some junto o checklist de MX já registrado acima — o e-mail
-`contato@coopaibi.com.br` é pra onde os dois formulários mandam.
+Resolvido pelo caminho 2 (concluir a integração e remover o encaminhamento):
+a constante saiu junto com `PHP_NAVEGACAO_COOPAIBI` e `PHP_ENDPOINT_COOPAIBI`,
+que eram seus únicos usos e já estavam vazios — commit `92d81ab`. **Nenhuma
+rota depende mais do servidor antigo.**
+
+O roteiro completo da virada, incluindo os registros de e-mail que não podem
+ser tocados, está em **`docs/VIRADA_DNS_COOPAIBI.md`**.
+
+### Implementado em 07–08/08/2026 — captação de leads e verificação
+
+- **Migration 096 + `/site/leads`**: os três formulários (adesão, parceria,
+  agendamento de cacau) gravam em `site_leads` além de mandar o e-mail. Antes
+  o interessado virava mensagem na caixa e morria ali — ninguém sabia quantos
+  chegaram no mês nem quais foram respondidos. A tela tem KPIs, abas por
+  status, busca, exportação CSV, paginação e mudança de status em lote.
+- **Endpoints reimplementados**: os três `enviar-*.php` e o
+  `cacau-preco-bolsa.php` (Yahoo `CC=F` com Stooq de reserva).
+- **`index.html` mapeado para a home**: as páginas congeladas linkam pra ele
+  11 vezes. No cPanel funcionava por acidente (DirectoryIndex do Apache);
+  aqui era 404 e teria aparecido só depois da virada.
+- **Verificação automatizada**: `npm run teste:formularios` (26 verificações)
+  e `npm run teste:cobertura` (43 caminhos do site antigo). Ver
+  `docs/TESTES.md`.
+- **Conteúdo conferido contra o cPanel**: 1 notícia e 3 vídeos publicados,
+  todos migrados. Nada ficou pra trás.
 
 ## Fora de escopo (por enquanto)
 - Editor visual arrastar-e-soltar — template com seções ligáveis basta.

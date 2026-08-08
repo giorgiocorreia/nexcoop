@@ -78,7 +78,10 @@ Marianna/Humani é recepção clínica).
 
 3. **Migrations** sempre via Supabase Dashboard SQL Editor — nunca `npx supabase db push`.
 
-4. **`npx tsc --noEmit`** antes de todo commit. Se falhar, corrigir antes de commitar.
+4. **`npx tsc --noEmit`** e **`npm test`** antes de todo commit. Se falhar, corrigir antes de commitar.
+   - Vitest desde 08/08/2026 (mesmo formato de nexcore/nexfin). Ver `docs/TESTES.md`.
+   - Cobre só o módulo Site hoje. Ao mexer num módulo, extraia a parte pura
+     (regra 5) e teste-a — é assim que a cobertura cresce.
 
 5. **Funções puras** (parse, formatação, cálculo — sem I/O) NUNCA entram em arquivo `"use server"`.
    - Padrão: `lib/modulo/feature.ts` (server actions) + `lib/modulo/feature-utils.ts` (utilitários puros)

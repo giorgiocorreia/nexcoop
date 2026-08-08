@@ -24,6 +24,8 @@
 | Carteirinha de identificação | ✅ Completo | 24/07/2026 — migration 089; QR de verificação ao vivo (`/v/{codigo}`), PDF individual A4 e lote 4/folha, emissão individual e em lote, recorte de foto 3:4 |
 | Portal do Filiado | ✅ MVP | 24/07/2026 — `/filiado`: saldo + extrato PDF, carteirinha digital com QR e upload da própria foto; cotas/documentos/assembleias pendentes |
 | Fluxo de Saque / Vendas Comercialização | ✅ Completo | 16/07/2026 — `registrarConversaoESaque` + `/comercializacao/vendas` |
+| Site institucional (piloto COOPAIBI) | ✅ MVP | 08/08/2026 — 6 páginas servidas do banco, 4 endpoints reimplementados, captação de leads (migration 096) e tela `/site/leads`. No ar por `/sites/coopaibi/`; falta só a virada de DNS (`docs/VIRADA_DNS_COOPAIBI.md`) |
+| Testes automatizados | 🔄 Parcial | 08/08/2026 — Vitest 4, 66 testes, só o módulo Site (`docs/TESTES.md`) |
 
 ## UI — Design System (jul/2026)
 
