@@ -25,19 +25,23 @@ const HOSTS_ESPELHO_COOPAIBI = new Set([
 const RAIZ_ESPELHO_COOPAIBI = '/sites/coopaibi'
 
 // Host do site antigo em cPanel, que segue servindo as 3 páginas dinâmicas
-// (dependem do MySQL coopaibi_loja, que não existe aqui) e os endpoints PHP.
+// (dependiam do MySQL coopaibi_loja) e os endpoints PHP.
 //
-// ⚠ TROCAR ANTES DE VIRAR O DNS: hoje aponta pro próprio coopaibi.com.br,
-// que ainda resolve pro cPanel. No momento em que o domínio passar pra
-// Vercel isto vira um laço (Vercel → Vercel). Antes da virada, apontar pra
-// um host que continue no cPanel (ex.: antigo.coopaibi.com.br) ou concluir
-// a integração destas rotas com o NexCoop e remover o encaminhamento.
-const LEGADO_COOPAIBI = 'https://coopaibi.com.br'
+// REMOVIDO EM 08/08/2026, junto com PHP_NAVEGACAO_COOPAIBI e
+// PHP_ENDPOINT_COOPAIBI, que eram seus únicos usos e já estavam vazios: todas
+// as páginas e endpoints passaram a ser servidos aqui.
+//
+// O encaminhamento apontava para o próprio `https://coopaibi.com.br`, que
+// enquanto o DNS não virou ainda resolvia para o cPanel. Depois da virada
+// isso seria um laço (Vercel → Vercel), e bastava alguém repovoar um dos dois
+// conjuntos para reintroduzi-lo sem perceber. Se algum dia for preciso voltar
+// a encaminhar para o servidor antigo, o destino tem que ser um host que NÃO
+// seja o domínio principal (ex.: antigo.coopaibi.com.br).
 
 // Páginas .php JÁ REFEITAS aqui — mapeiam pro arquivo estático equivalente
 // em public/sites/coopaibi/. O site original é PHP, então os links internos
-// apontam pra .php; refazer uma página é gerar o .html e mover a entrada
-// daqui de PHP_NAVEGACAO_COOPAIBI (abaixo) pra este mapa.
+// apontam pra .php; refazer uma página era gerar o .html e trazer a entrada
+// para este mapa.
 //
 // index.php foi gerado por scripts/espelho-coopaibi/gerar-index.mjs a partir
 // do index.php original + o conteúdo do ticker de notícias, e conferido byte
@@ -96,10 +100,6 @@ const PHP_INTEGRADAS_COOPAIBI: Record<string, string> = {
   'acoes.php': 'acoes',
 }
 
-// Páginas PHP que continuam no cPanel — o visitante é redirecionado para lá.
-// Conforme cada uma for refeita, sai daqui e entra num dos mapas acima.
-const PHP_NAVEGACAO_COOPAIBI = new Set<string>([])
-
 // Páginas .php que apontam para FORA do site — hoje só o admin antigo.
 //
 // O link "INTRANET" do menu ia para o painel PHP do cPanel, onde se
@@ -135,14 +135,11 @@ const PHP_ENDPOINT_INTERNO_COOPAIBI: Record<string, string> = {
   'cacau-preco-bolsa.php': 'cacau-bolsa',
 }
 
-// Endpoints que continuam no cPanel via proxy.
-//
-// `translate.php` NÃO está aqui: é código morto. A tradução do site passou a
-// ser o Google Translate Element (cookie googtrans, função traduzirPara);
-// a função antiga que chamava translate.php — selecionarIdioma — não é
-// chamada por nenhum onclick das páginas atuais. Sete páginas ainda trazem
-// o fetch no fonte, e nenhuma o executa.
-const PHP_ENDPOINT_COOPAIBI = new Set<string>([])
+// Nota sobre `translate.php`: era código morto e nunca precisou de proxy. A
+// tradução do site passou a ser o Google Translate Element (cookie googtrans,
+// função traduzirPara); a função antiga que o chamava — selecionarIdioma —
+// não é acionada por nenhum onclick das páginas atuais. Sete páginas ainda
+// trazem o fetch no fonte, e nenhuma o executa.
 
 export async function middleware(request: NextRequest) {
   // ── Módulo Site: resolução por Host ──────────────────────────────────
@@ -185,17 +182,9 @@ export async function middleware(request: NextRequest) {
     if (externo) {
       return NextResponse.redirect(externo, 307)
     }
-    // Endpoints PHP que restaram no cPanel: proxy, preservando método e
-    // corpo. Vazio hoje — ver PHP_ENDPOINT_COOPAIBI.
-    if (PHP_ENDPOINT_COOPAIBI.has(caminhoEspelho)) {
-      return NextResponse.rewrite(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI))
-    }
-    // Páginas PHP ainda não refeitas: manda o visitante pro site antigo (307
-    // preserva método e não fica em cache de navegador, o que importa porque
-    // estas rotas vão deixar de redirecionar conforme a integração avançar).
-    if (PHP_NAVEGACAO_COOPAIBI.has(caminhoEspelho)) {
-      return NextResponse.redirect(new URL(`/${caminhoEspelho}`, LEGADO_COOPAIBI), 307)
-    }
+    // (Aqui ficavam o proxy de endpoint e o redirect de página para o cPanel.
+    // Removidos em 08/08/2026 — nada mais depende do servidor antigo.)
+
     // Páginas .php já integradas ao banco: vão para a rota do app, que
     // devolve o HTML com o dado vivo. Precisa vir ANTES das refeitas — uma
     // página integrada não tem mais .html congelado a servir.
