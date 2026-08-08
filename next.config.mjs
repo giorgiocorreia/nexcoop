@@ -41,20 +41,31 @@ const nextConfig = {
         //
         // Por que esta regra existe SEPARADA: o matcher do middleware pula
         // requisições que terminam em extensão de imagem (svg|png|jpg|jpeg|
-        // ...), então o middleware nunca vê /assets/logo-coopaibi.jpeg no
+        // ...), então o middleware nunca vê /assets/logo-coopaibi.png no
         // domínio próprio e os dois logos do site cairiam em 404. Rewrite de
         // next.config não passa pelo matcher, então cobre exatamente esse
-        // vão. É deliberadamente estreito (/assets/*, e só nos hosts da
+        // vão. É deliberadamente estreito (só estas pastas, e só nos hosts da
         // COOPAIBI) pra não colidir com o rewrite do middleware: o que ele
         // já reescreveu vira /sites/coopaibi/... e deixa de casar aqui.
         // Os hosts aqui têm que espelhar HOSTS_ESPELHO_COOPAIBI do
         // middleware.ts — inclusive coopaibi-site.vercel.app, o endereço de
         // trabalho usado enquanto o DNS não vira. Sem ele os dois logos dão
         // 404 justamente onde o site é conferido.
+        //
+        // As três pastas de arquivo do espelho, e por que as três:
+        //   assets/  — css e os logos da casca
+        //   img/     — logo em jpeg, usado nas páginas congeladas
+        //   uploads/ — fotos de notícia e de produto, gravadas pelo admin
+        //              antigo e copiadas junto com o espelho
+        // img/ e uploads/ ficaram de fora na primeira versão e só apareceram
+        // quando o teste de cobertura passou a rodar contra o domínio
+        // próprio (08/08/2026): pelo caminho direto /sites/coopaibi/... o
+        // arquivo é servido de public/ sem depender de rewrite nenhum, então
+        // rodar em localhost dava 43/43 e escondia a falha.
         {
-          source: '/assets/:arquivo*',
+          source: '/:pasta(assets|img|uploads)/:arquivo*',
           has: [{ type: 'host', value: '((www\\.)?coopaibi\\.com\\.br|coopaibi-site\\.vercel\\.app)' }],
-          destination: '/sites/coopaibi/assets/:arquivo*',
+          destination: '/sites/coopaibi/:pasta/:arquivo*',
         },
       ],
       afterFiles: [],
